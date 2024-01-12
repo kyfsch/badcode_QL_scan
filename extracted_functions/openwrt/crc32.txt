@@ -1,0 +1,12 @@
+extern uint32_t crc32(uint32_t, const unsigned char *, unsigned int);
+
+#define NUMBER_VECTORS   12
+struct {
+	unsigned int start_vector[NUMBER_VECTORS];
+	char code[4];
+	unsigned int header_length;
+	unsigned int reserved[3];
+	unsigned int length;
+	unsigned int img_CRC;
+	unsigned int CRC;
+} img_header;

@@ -1,0 +1,17 @@
+mt7530_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
+		struct switch_val *val)
+{
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+	u32 vid;
+	int vlan;
+
+	vlan = val->port_vlan;
+
+	vid = mt7530_r32(priv, REG_ESW_VLAN_VTIM(vlan));
+	if (vlan & 1)
+		vid = vid >> 12;
+	vid &= 0xfff;
+
+	val->value.i = vid;
+	return 0;
+}

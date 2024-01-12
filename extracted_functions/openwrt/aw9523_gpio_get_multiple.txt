@@ -1,0 +1,33 @@
+static int aw9523_gpio_get_multiple(struct gpio_chip *chip,
+				    unsigned long *mask,
+				    unsigned long *bits)
+{
+	struct aw9523 *awi = gpiochip_get_data(chip);
+	u8 m, state = 0;
+	int ret;
+
+	mutex_lock(&awi->i2c_lock);
+
+	/* Port 0 (gpio 0-7) */
+	m = *mask & U8_MAX;
+	if (m) {
+		ret = _aw9523_gpio_get_multiple(awi, 0, &state, m);
+		if (ret)
+			goto out;
+	}
+	*bits = state;
+
+	/* Port 1 (gpio 8-15) */
+	m = (*mask >> 8) & U8_MAX;
+	if (m) {
+		ret = _aw9523_gpio_get_multiple(awi, AW9523_PINS_PER_PORT,
+						&state, m);
+		if (ret)
+			goto out;
+
+		*bits |= (state << 8);
+	}
+out:
+	mutex_unlock(&awi->i2c_lock);
+	return ret;
+}

@@ -1,0 +1,4 @@
+swconfig_unlock(void)
+{
+	mutex_unlock(&swdevs_lock);
+}

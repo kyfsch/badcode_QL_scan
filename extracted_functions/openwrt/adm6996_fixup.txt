@@ -1,0 +1,22 @@
+static int adm6996_fixup(struct phy_device *dev)
+{
+	struct mii_bus *bus = dev->mdio.bus;
+	u16 reg;
+
+	/* Our custom registers are at PHY addresses 0-10. Claim those. */
+	if (dev->mdio.addr > 10)
+		return 0;
+
+	/* look for the switch on the bus */
+	reg = bus->read(bus, PHYADDR(ADM_SIG0)) & ADM_SIG0_MASK;
+	if (reg != ADM_SIG0_VAL)
+		return 0;
+
+	reg = bus->read(bus, PHYADDR(ADM_SIG1)) & ADM_SIG1_MASK;
+	if (reg != ADM_SIG1_VAL)
+		return 0;
+
+	dev->phy_id = (ADM_SIG0_VAL << 16) | ADM_SIG1_VAL;
+
+	return 0;
+}

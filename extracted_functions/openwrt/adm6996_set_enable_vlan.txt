@@ -1,0 +1,12 @@
+adm6996_set_enable_vlan(struct switch_dev *dev, const struct switch_attr *attr,
+			struct switch_val *val)
+{
+	struct adm6996_priv *priv = to_adm(dev);
+
+	if (val->value.i > 1)
+		return -EINVAL;
+
+	priv->enable_vlan = val->value.i;
+
+	return 0;
+};

@@ -1,0 +1,3 @@
+static void rtl931x_write_cam(int idx, struct rtl838x_l2_entry *e)
+{
+}

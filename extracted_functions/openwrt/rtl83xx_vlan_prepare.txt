@@ -1,0 +1,24 @@
+static int rtl83xx_vlan_prepare(struct dsa_switch *ds, int port,
+				const struct switchdev_obj_port_vlan *vlan)
+{
+	struct rtl838x_vlan_info info;
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	priv->r->vlan_tables_read(0, &info);
+
+	pr_debug("VLAN 0: Tagged ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
+		info.tagged_ports, info.untagged_ports, info.profile_id,
+		info.hash_mc_fid, info.hash_uc_fid, info.fid);
+
+	priv->r->vlan_tables_read(1, &info);
+	pr_debug("VLAN 1: Tagged ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
+		info.tagged_ports, info.untagged_ports, info.profile_id,
+		info.hash_mc_fid, info.hash_uc_fid, info.fid);
+	priv->r->vlan_set_untagged(1, info.untagged_ports);
+	pr_debug("SET: Untagged ports, VLAN %d: %llx\n", 1, info.untagged_ports);
+
+	priv->r->vlan_set_tagged(1, &info);
+	pr_debug("SET: Tagged ports, VLAN %d: %llx\n", 1, info.tagged_ports);
+
+	return 0;
+}

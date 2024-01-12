@@ -1,0 +1,40 @@
+static int rtl8366_set_vlan(struct rtl8366_smi *smi, int vid, u32 member,
+			    u32 untag, u32 fid)
+{
+	struct rtl8366_vlan_4k vlan4k;
+	int err;
+	int i;
+
+	/* Update the 4K table */
+	err = smi->ops->get_vlan_4k(smi, vid, &vlan4k);
+	if (err)
+		return err;
+
+	vlan4k.member = member;
+	vlan4k.untag = untag;
+	vlan4k.fid = fid;
+	err = smi->ops->set_vlan_4k(smi, &vlan4k);
+	if (err)
+		return err;
+
+	/* Try to find an existing MC entry for this VID */
+	for (i = 0; i < smi->num_vlan_mc; i++) {
+		struct rtl8366_vlan_mc vlanmc;
+
+		err = smi->ops->get_vlan_mc(smi, i, &vlanmc);
+		if (err)
+			return err;
+
+		if (vid == vlanmc.vid) {
+			/* update the MC entry */
+			vlanmc.member = member;
+			vlanmc.untag = untag;
+			vlanmc.fid = fid;
+
+			err = smi->ops->set_vlan_mc(smi, i, &vlanmc);
+			break;
+		}
+	}
+
+	return err;
+}

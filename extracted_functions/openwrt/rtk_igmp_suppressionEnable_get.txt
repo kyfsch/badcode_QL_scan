@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_igmp_suppressionEnable_get(rtk_enable_t *pReportSuppression, rtk_enable_t *pLeaveSuppression)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pReportSuppression)
+        return RT_ERR_NULL_POINTER;
+
+    if(NULL == pLeaveSuppression)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicIGMPSuppression((rtk_uint32 *)pReportSuppression, (rtk_uint32 *)pLeaveSuppression))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

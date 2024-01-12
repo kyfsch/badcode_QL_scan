@@ -1,0 +1,8 @@
+static void sata_oxnas_freeze(struct ata_port *ap)
+{
+	struct sata_oxnas_host_priv *hd = ap->host->private_data;
+
+	DPRINTK("\n");
+	hd->port_frozen |= BIT(ap->port_no);
+	smp_wmb();
+}

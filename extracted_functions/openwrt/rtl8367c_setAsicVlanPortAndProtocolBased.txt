@@ -1,0 +1,66 @@
+ret_t rtl8367c_setAsicVlanPortAndProtocolBased(rtk_uint32 port, rtk_uint32 index, rtl8367c_protocolvlancfg *pPpbCfg)
+{
+    rtk_uint32  reg_addr, bit_mask, bit_value;
+    ret_t   retVal;
+
+    /* Error Checking */
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(index > RTL8367C_PROTOVLAN_GIDX_MAX)
+        return RT_ERR_VLAN_PROTO_AND_PORT;
+
+    if( (pPpbCfg->valid != FALSE) && (pPpbCfg->valid != TRUE) )
+        return RT_ERR_INPUT;
+
+    if(pPpbCfg->vlan_idx > RTL8367C_CVIDXMAX)
+        return RT_ERR_VLAN_ENTRY_NOT_FOUND;
+
+    if(pPpbCfg->priority > RTL8367C_PRIMAX)
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    /* Valid bit */
+    reg_addr  = RTL8367C_VLAN_PPB_VALID_REG(index);
+    bit_mask  = 0x0001 << port;
+    bit_value = ((TRUE == pPpbCfg->valid) ? 0x1 : 0x0);
+    retVal    = rtl8367c_setAsicRegBits(reg_addr, bit_mask, bit_value);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    /* Calculate the actual register address for CVLAN index*/
+    if(port < 8)
+    {
+        reg_addr = RTL8367C_VLAN_PPB_CTRL_REG(index, port);
+        bit_mask = RTL8367C_VLAN_PPB_CTRL_MASK(port);
+    }
+    else if(port == 8)
+    {
+        reg_addr = RTL8367C_REG_VLAN_PPB0_CTRL4;
+        bit_mask = RTL8367C_VLAN_PPB0_CTRL4_PORT8_INDEX_MASK;
+    }
+    else if(port == 9)
+    {
+        reg_addr = RTL8367C_REG_VLAN_PPB0_CTRL4;
+        bit_mask = RTL8367C_VLAN_PPB0_CTRL4_PORT9_INDEX_MASK;
+    }
+    else if(port == 10)
+    {
+        reg_addr = RTL8367C_REG_VLAN_PPB0_CTRL4;
+        bit_mask = RTL8367C_VLAN_PPB0_CTRL4_PORT10_INDEX_MASK;
+    }
+
+    bit_value = pPpbCfg->vlan_idx;
+    retVal  = rtl8367c_setAsicRegBits(reg_addr, bit_mask, bit_value);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    /* write priority */
+    reg_addr  = RTL8367C_VLAN_PPB_PRIORITY_ITEM_REG(port, index);
+    bit_mask  = RTL8367C_VLAN_PPB_PRIORITY_ITEM_MASK(port);
+    bit_value = pPpbCfg->priority;
+    retVal    = rtl8367c_setAsicRegBits(reg_addr, bit_mask, bit_value);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

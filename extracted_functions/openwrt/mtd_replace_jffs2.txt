@@ -1,0 +1,19 @@
+int mtd_replace_jffs2(const char *mtd, int fd, int ofs, const char *filename)
+{
+	outfd = fd;
+	mtdofs = ofs;
+
+	buf = malloc(erasesize);
+	target_ino = 1;
+	if (!last_ino)
+		last_ino = 1;
+	add_file(filename, target_ino);
+	pad(erasesize);
+
+	/* add eof marker, pad to eraseblock size and write the data */
+	add_data(JFFS2_EOF, sizeof(JFFS2_EOF) - 1);
+	pad(erasesize);
+	free(buf);
+
+	return (mtdofs - ofs);
+}

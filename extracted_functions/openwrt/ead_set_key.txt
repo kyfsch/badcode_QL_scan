@@ -1,0 +1,22 @@
+ead_set_key(unsigned char *skey)
+{
+	uint32_t *ivp = (uint32_t *)skey;
+
+	memset(aes_enc_ctx, 0, sizeof(aes_enc_ctx));
+	memset(aes_dec_ctx, 0, sizeof(aes_dec_ctx));
+
+	/* first 32 bytes of skey are used as aes key for
+	 * encryption and decryption */
+	rijndaelKeySetupEnc(aes_enc_ctx, skey);
+	rijndaelKeySetupDec(aes_dec_ctx, skey);
+
+	/* the following bytes are used as initialization vector for messages
+	 * (highest byte cleared to avoid overflow) */
+	ivp += 8;
+	ead_rx_iv = ntohl(*ivp) & 0x00ffffff;
+	ead_tx_iv = ead_rx_iv;
+
+	/* the last bytes are used to feed the random iv increment */
+	ivp++;
+	ivofs_vec = *ivp;
+}

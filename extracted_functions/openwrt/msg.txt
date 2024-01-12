@@ -1,0 +1,12 @@
+void msg(const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+
+	if (run_daemon)
+		vsyslog(LOG_INFO | LOG_USER, fmt, ap);
+	else
+		vfprintf(stderr, fmt, ap);
+
+	va_end(ap);
+}

@@ -1,0 +1,13 @@
+static void retx_statistics(int fd, DSL_XTUDir_t direction) {
+#ifdef INCLUDE_DSL_CPE_PM_RETX_COUNTERS
+#ifdef INCLUDE_DSL_CPE_PM_RETX_THRESHOLDS
+	IOCTL_DIR(DSL_ReTxStatistics_t, DSL_FIO_RETX_STATISTICS_GET, direction);
+
+	m_u32("rx_corrupted", out.data.nRxCorruptedTotal);
+	m_u32("rx_uncorrected_protected", out.data.nRxUncorrectedProtected);
+	m_u32("rx_retransmitted", out.data.nRxRetransmitted);
+	m_u32("rx_corrected", out.data.nRxCorrected);
+	m_u32("tx_retransmitted", out.data.nTxRetransmitted);
+#endif
+#endif
+}

@@ -1,0 +1,6 @@
+rtl_phy_restore(struct switch_dev *dev, int port, struct rtl_phyregs *regs)
+{
+	rtl_set(dev, RTL_PORT_REG(port, NWAY), regs->nway);
+	rtl_set(dev, RTL_PORT_REG(port, SPEED), regs->speed);
+	rtl_set(dev, RTL_PORT_REG(port, DUPLEX), regs->duplex);
+}

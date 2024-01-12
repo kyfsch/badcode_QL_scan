@@ -1,0 +1,5 @@
+void ifx_deu_des_ctr (void *ctx, uint8_t *dst, const uint8_t *src,
+                uint8_t *iv, size_t nbytes, int encdec, int inplace)
+{
+     ifx_deu_des (ctx, dst, src, iv, nbytes, encdec, 4);
+}

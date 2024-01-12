@@ -1,0 +1,8 @@
+static ssize_t ubootenv_read(struct file *file, char __user *buffer, size_t count, loff_t *ppos)
+{
+	struct ubootenv_drvdata *data = to_ubootenv_drvdata(file);
+
+	if (!data->env)
+		return 0;
+	return simple_read_from_buffer(buffer, count, ppos, data->env, data->rmem->size);
+}

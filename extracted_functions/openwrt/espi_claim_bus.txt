@@ -1,0 +1,35 @@
+static void espi_claim_bus(struct fsl_spi *fsl)
+{
+	ccsr_espi_t *espi = fsl->espi;
+	uint32_t csmode;
+	int i;
+
+	/* Enable eSPI interface */
+	out_be32(&espi->mode, ESPI_MODE_RXTHR(3)
+			| ESPI_MODE_TXTHR(4) | ESPI_MODE_EN);
+
+	out_be32(&espi->mask, 0x00000000); /* Mask  all eSPI interrupts */
+
+	/* Init CS mode interface */
+	for (i = 0; i < ESPI_MAX_CS_NUM; i++)
+		out_be32(&espi->csmode[i], ESPI_CSMODE_INIT_VAL);
+
+	csmode = ESPI_CSMODE_INIT_VAL;
+
+	/* Set eSPI BRG clock source */
+	csmode |= ESPI_CSMODE_PM(fsl->pm) | fsl->div16;
+
+	/* Set eSPI mode */
+	if (fsl->mode & SPI_CPHA)
+		csmode |= ESPI_CSMODE_CP_BEGIN_EDGCLK;
+	if (fsl->mode & SPI_CPOL)
+		csmode |= ESPI_CSMODE_CI_INACTIVEHIGH;
+
+	/* Character bit order: msb first */
+	csmode |= ESPI_CSMODE_REV_MSB_FIRST;
+
+	/* Character length in bits, between 0x3~0xf, i.e. 4bits~16bits */
+	csmode |= ESPI_CSMODE_LEN(7);
+
+	out_be32(&espi->csmode[fsl->cs], csmode);
+}

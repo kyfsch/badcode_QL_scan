@@ -1,0 +1,20 @@
+ret_t rtl8367c_getAsicI2CGpioPinGroup(rtk_uint32 * pPinGroup_ID)
+{
+
+    rtk_uint32 regData;
+    ret_t retVal;
+    if( (retVal = rtl8367c_getAsicReg(RTL8367C_REG_M_I2C_SYS_CTL, &regData)) != RT_ERR_OK)
+        return retVal;
+    regData &= 0xF000 ;
+    regData = (regData >> 12);
+
+    if( regData == 0x5 )
+        *pPinGroup_ID = 0;
+    else if(regData == 0xA)
+        *pPinGroup_ID = 1;
+    else if(regData == 0xF)
+        *pPinGroup_ID = 2;
+    else
+       return RT_ERR_FAILED;
+    return RT_ERR_OK ;
+}

@@ -1,0 +1,53 @@
+static void rtk_hal_dump_table(void)
+{
+	rtk_uint32 i;
+	rtk_uint32 address = 0;
+	rtk_l2_ucastAddr_t l2_data;
+	rtk_l2_ipMcastAddr_t ipMcastAddr;
+	rtk_l2_age_time_t age_timout;
+
+	rtk_l2_aging_get(&age_timout);
+	printk("Mac table age timeout =%d\n",(unsigned int)age_timout);
+
+	printk("hash  port(0:17)   fid   vid  mac-address\n");
+	while (1) {
+		if (rtk_l2_addr_next_get(READMETHOD_NEXT_L2UC, UTP_PORT0, &address, &l2_data) != RT_ERR_OK) {
+			break;
+		} else {
+			printk("%03x   ", l2_data.address);
+			for (i = 0; i < 5; i++)
+				if ( l2_data.port == i)
+					printk("1");
+				else
+					printk("-");
+			for (i = 16; i < 18; i++)
+				if ( l2_data.port == i)
+					printk("1");
+				else
+					printk("-");
+
+			printk("      %2d", l2_data.fid);
+			printk("  %4d", l2_data.cvid);
+			printk("  %02x%02x%02x%02x%02x%02x\n", l2_data.mac.octet[0],
+			l2_data.mac.octet[1], l2_data.mac.octet[2], l2_data.mac.octet[3],
+			l2_data.mac.octet[4], l2_data.mac.octet[5]);
+			address ++;
+			}
+	}
+
+	address = 0;
+	while (1) {
+        if (rtk_l2_ipMcastAddr_next_get(&address, &ipMcastAddr) != RT_ERR_OK) {
+            break;
+        } else {
+            printk("%03x   ", ipMcastAddr.address);
+            for (i = 0; i < 5; i++)
+                printk("%c", RTK_PORTMASK_IS_PORT_SET(ipMcastAddr.portmask, i) ? '1' : '-');
+            for (i = 16; i < 18; i++)
+                printk("%c", RTK_PORTMASK_IS_PORT_SET(ipMcastAddr.portmask, i) ? '1' : '-');
+			printk("                ");
+			printk("01005E%06x\n", (ipMcastAddr.dip & 0xefffff));
+            address ++;
+            }
+    }
+}

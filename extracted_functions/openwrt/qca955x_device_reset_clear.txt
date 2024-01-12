@@ -1,0 +1,10 @@
+static void qca955x_device_reset_clear(unsigned int mask)
+{
+	unsigned int t, reg;
+
+	reg = KSEG1ADDR(AR71XX_RESET_BASE +
+			QCA955X_RESET_REG_RESET_MODULE);
+
+	t = READREG(reg);
+	WRITEREG(reg, t & ~mask);
+}

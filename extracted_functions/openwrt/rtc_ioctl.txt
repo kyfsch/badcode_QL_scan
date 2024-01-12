@@ -1,0 +1,6 @@
+static long rtc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+	long ret;
+	ret = rtc_do_ioctl(cmd, arg);
+	return ret;
+}

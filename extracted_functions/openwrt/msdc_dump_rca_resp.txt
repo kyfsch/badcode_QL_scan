@@ -1,0 +1,10 @@
+static void msdc_dump_rca_resp(struct msdc_host *host, u32 resp)
+{
+	u32 status = (((resp >> 15) & 0x1) << 23) |
+		     (((resp >> 14) & 0x1) << 22) |
+		     (((resp >> 13) & 0x1) << 19) |
+		     (resp & 0x1fff);
+
+	N_MSG(RSP, "[RCA] 0x%.4x", resp >> 16);
+	msdc_dump_card_status(host, status);
+}

@@ -1,0 +1,77 @@
+radius_user_get_state(struct radius_user_data *u, struct blob_attr *data,
+		      const char *id)
+{
+	static const struct blobmsg_policy policy[__USER_ATTR_MAX] = {
+		[USER_ATTR_PASSWORD] = { "password", BLOBMSG_TYPE_STRING },
+		[USER_ATTR_HASH] = { "hash", BLOBMSG_TYPE_STRING },
+		[USER_ATTR_SALT] = { "salt", BLOBMSG_TYPE_STRING },
+		[USER_ATTR_METHODS] = { "methods", BLOBMSG_TYPE_ARRAY },
+		[USER_ATTR_RADIUS] = { "radius", BLOBMSG_TYPE_ARRAY },
+		[USER_ATTR_VLAN] = { "vlan-id", BLOBMSG_TYPE_INT32 },
+		[USER_ATTR_MAX_RATE_UP] = { "max-rate-up", BLOBMSG_TYPE_INT32 },
+		[USER_ATTR_MAX_RATE_DOWN] = { "max-rate-down", BLOBMSG_TYPE_INT32 },
+	};
+	struct blob_attr *tb[__USER_ATTR_MAX], *cur;
+	char *password_buf, *salt_buf, *name_buf;
+	struct radius_parse_attr_state astate = {};
+	struct hostapd_radius_attr *attr;
+	struct radius_user_state *state;
+	int pw_len = 0, salt_len = 0;
+	struct eap_user *eap;
+	struct wpabuf *val;
+	size_t attrsize = 0;
+	void *attrdata;
+	int n_attr = 0;
+
+	state = avl_find_element(&u->user_state, id, state, node);
+	if (state)
+		return &state->data;
+
+	blobmsg_parse(policy, __USER_ATTR_MAX, tb, blobmsg_data(data), blobmsg_len(data));
+
+	if ((cur = tb[USER_ATTR_SALT]) != NULL)
+		salt_len = strlen(blobmsg_get_string(cur)) / 2;
+	if ((cur = tb[USER_ATTR_HASH]) != NULL)
+		pw_len = strlen(blobmsg_get_string(cur)) / 2;
+	else if ((cur = tb[USER_ATTR_PASSWORD]) != NULL)
+		pw_len = blobmsg_len(cur) - 1;
+	radius_count_attrs(tb, &n_attr, &attrsize);
+
+	state = calloc_a(sizeof(*state), &name_buf, strlen(id) + 1,
+			 &password_buf, pw_len,
+			 &salt_buf, salt_len,
+			 &astate.attr, n_attr * sizeof(*astate.attr),
+			 &astate.buf, n_attr * sizeof(*astate.buf),
+			 &astate.attrdata, attrsize);
+	eap = &state->data;
+	eap->salt = salt_len ? salt_buf : NULL;
+	eap->salt_len = salt_len;
+	eap->password = pw_len ? password_buf : NULL;
+	eap->password_len = pw_len;
+	eap->force_version = -1;
+
+	if ((cur = tb[USER_ATTR_SALT]) != NULL)
+		hexstr2bin(blobmsg_get_string(cur), salt_buf, salt_len);
+	if ((cur = tb[USER_ATTR_PASSWORD]) != NULL)
+		memcpy(password_buf, blobmsg_get_string(cur), pw_len);
+	else if ((cur = tb[USER_ATTR_HASH]) != NULL) {
+		hexstr2bin(blobmsg_get_string(cur), password_buf, pw_len);
+		eap->password_hash = 1;
+	}
+	radius_user_parse_methods(eap, tb[USER_ATTR_METHODS]);
+
+	if (n_attr > 0) {
+		cur = tb[USER_ATTR_RADIUS];
+		eap->accept_attr = astate.attr;
+		radius_parse_attrs(tb, &astate);
+	}
+
+	state->node.key = strcpy(name_buf, id);
+	avl_insert(&u->user_state, &state->node);
+
+	return &state->data;
+
+free:
+	free(state);
+	return NULL;
+}

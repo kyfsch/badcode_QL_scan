@@ -1,0 +1,34 @@
+static int oxnas_pcie_wr_conf(struct pci_bus *bus, u32 devfn,
+			      int where, int size, u32 val)
+{
+	unsigned long flags;
+	struct oxnas_pcie *pcie = sys_to_pcie(bus->sysdata);
+	unsigned offset;
+	u32 value;
+	u32 lanes;
+
+	/* Only a single device per bus for PCIe point-to-point links */
+	if (PCI_SLOT(devfn) > 0)
+		return PCIBIOS_DEVICE_NOT_FOUND;
+
+	if (!pcie->haslink)
+		return PCIBIOS_DEVICE_NOT_FOUND;
+
+	offset = oxnas_pcie_cfg_to_offset(bus->sysdata, bus->number, devfn,
+					  where);
+
+	value = val << (8 * (where & 3));
+	lanes = (0xf >> (4-size)) << (where & 3);
+	/* it race with mem and io write, but the possibility is low, normally
+	 * all config writes happens at driver initialize stage, wont interleave
+	 * with others.
+	 * and many pcie cards use dword (4bytes) access mem/io access only,
+	 * so not bother to copy that ugly work-around now. */
+	spin_lock_irqsave(&pcie->lock, flags);
+	set_out_lanes(pcie, lanes);
+	writel_relaxed(value, pcie->cfgbase + offset);
+	set_out_lanes(pcie, 0xf);
+	spin_unlock_irqrestore(&pcie->lock, flags);
+
+	return PCIBIOS_SUCCESSFUL;
+}

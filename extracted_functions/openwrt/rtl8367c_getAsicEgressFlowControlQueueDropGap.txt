@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicEgressFlowControlQueueDropGap(rtk_uint32 *pGap)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_FLOWCTRL_QUEUE_GAP, RTL8367C_FLOWCTRL_QUEUE_GAP_MASK, pGap);
+}

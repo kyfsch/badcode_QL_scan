@@ -1,0 +1,8 @@
+ar8216_init_globals(struct ar8xxx_priv *priv)
+{
+	/* standard atheros magic */
+	ar8xxx_write(priv, 0x38, 0xc000050e);
+
+	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+		   AR8216_GCTRL_MTU, 1518 + 8 + 2);
+}

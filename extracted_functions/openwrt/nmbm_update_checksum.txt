@@ -1,0 +1,5 @@
+static void nmbm_update_checksum(struct nmbm_header *header)
+{
+	header->checksum = 0;
+	header->checksum = nmbm_crc32(0, header, header->size);
+}

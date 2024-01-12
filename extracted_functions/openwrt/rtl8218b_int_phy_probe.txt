@@ -1,0 +1,24 @@
+static int rtl8218b_int_phy_probe(struct phy_device *phydev)
+{
+	struct device *dev = &phydev->mdio.dev;
+	int addr = phydev->mdio.addr;
+
+	if (soc_info.family != RTL8380_FAMILY_ID)
+		return -ENODEV;
+	if (addr >= 24)
+		return -ENODEV;
+
+	pr_debug("%s: id: %d\n", __func__, addr);
+	/* All base addresses of the PHYs start at multiples of 8 */
+	devm_phy_package_join(dev, phydev, addr & (~7),
+			      sizeof(struct rtl83xx_shared_private));
+
+	if (!(addr % 8)) {
+		struct rtl83xx_shared_private *shared = phydev->shared->priv;
+		shared->name = "RTL8218B (internal)";
+		/* Configuration must be done while patching still possible */
+		return rtl8380_configure_int_rtl8218b(phydev);
+	}
+
+	return 0;
+}

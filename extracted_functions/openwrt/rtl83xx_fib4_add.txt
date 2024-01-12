@@ -1,0 +1,95 @@
+static int rtl83xx_fib4_add(struct rtl838x_switch_priv *priv,
+			    struct fib_entry_notifier_info *info)
+{
+	struct fib_nh *nh = fib_info_nh(info->fi, 0);
+	struct net_device *dev = fib_info_nh(info->fi, 0)->fib_nh_dev;
+	int port;
+	struct rtl83xx_route *r;
+	bool to_localhost;
+	int vlan = is_vlan_dev(dev) ? vlan_dev_vlan_id(dev) : 0;
+
+	pr_debug("In %s, ip %pI4, len %d\n", __func__, &info->dst, info->dst_len);
+	if (!info->dst) {
+		pr_info("Not offloading default route for now\n");
+		return 0;
+	}
+
+	pr_debug("GW: %pI4, interface name %s, mac %016llx, vlan %d\n", &nh->fib_nh_gw4, dev->name,
+		ether_addr_to_u64(dev->dev_addr), vlan
+	);
+
+	port = rtl83xx_port_dev_lower_find(dev, priv);
+	if (port < 0)
+		return -1;
+
+	/* For now we only work with routes that have a gateway and are not ourself */
+/*	if ((!nh->fib_nh_gw4) && (info->dst_len != 32)) */
+/*		return 0; */
+
+	if ((info->dst & 0xff) == 0xff)
+		return 0;
+
+	/* Do not offload routes to 192.168.100.x */
+	if ((info->dst & 0xffffff00) == 0xc0a86400)
+		return 0;
+
+	/* Do not offload routes to 127.x.x.x */
+	if ((info->dst & 0xff000000) == 0x7f000000)
+		return 0;
+
+	/* Allocate route or host-route (entry if hardware supports this) */
+	if (info->dst_len == 32 && priv->r->host_route_write)
+		r = rtl83xx_host_route_alloc(priv, nh->fib_nh_gw4);
+	else
+		r = rtl83xx_route_alloc(priv, nh->fib_nh_gw4);
+
+	if (!r) {
+		pr_err("%s: No more free route entries\n", __func__);
+		return -1;
+	}
+
+	r->dst_ip = info->dst;
+	r->prefix_len = info->dst_len;
+	r->nh.rvid = vlan;
+	to_localhost = !nh->fib_nh_gw4;
+
+	if (priv->r->set_l3_router_mac) {
+		u64 mac = ether_addr_to_u64(dev->dev_addr);
+
+		pr_debug("Local route and router mac %016llx\n", mac);
+
+		if (rtl83xx_alloc_router_mac(priv, mac))
+			goto out_free_rt;
+
+		/* vid = 0: Do not care about VID */
+		r->nh.if_id = rtl83xx_alloc_egress_intf(priv, mac, vlan);
+		if (r->nh.if_id < 0)
+			goto out_free_rmac;
+
+		if (to_localhost) {
+			int slot;
+
+			r->nh.mac = mac;
+			r->nh.port = priv->port_ignore;
+			r->attr.valid = true;
+			r->attr.action = ROUTE_ACT_TRAP2CPU;
+			r->attr.type = 0;
+
+			slot = priv->r->find_l3_slot(r, false);
+			pr_debug("%s: Got slot for route: %d\n", __func__, slot);
+			priv->r->host_route_write(slot, r);
+		}
+	}
+
+	/* We need to resolve the mac address of the GW */
+	if (!to_localhost)
+		rtl83xx_port_ipv4_resolve(priv, dev, nh->fib_nh_gw4);
+
+	nh->fib_nh_flags |= RTNH_F_OFFLOAD;
+
+	return 0;
+
+out_free_rmac:
+out_free_rt:
+	return 0;
+}

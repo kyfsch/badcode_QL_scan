@@ -1,0 +1,28 @@
+rtk_api_ret_t rtk_l2_limitLearningCntAction_get(rtk_port_t port, rtk_l2_limitLearnCntAction_t *pAction)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 action;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (port != RTK_WHOLE_SYSTEM)
+        return RT_ERR_PORT_ID;
+
+    if(NULL == pAction)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicLutLearnOverAct(&action)) != RT_ERR_OK)
+        return retVal;
+
+    if ( 1 == action )
+        *pAction = LIMIT_LEARN_CNT_ACTION_DROP;
+    else if ( 0 == action )
+        *pAction = LIMIT_LEARN_CNT_ACTION_FORWARD;
+    else if ( 2 == action )
+        *pAction = LIMIT_LEARN_CNT_ACTION_TO_CPU;
+    else
+    *pAction = action;
+
+    return RT_ERR_OK;
+}

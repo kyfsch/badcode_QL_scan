@@ -1,0 +1,12 @@
+static void rtl930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
+{
+	u32 cmd = 1 << 17 | /* Execute cmd */
+	          0 << 16 | /* Read */
+	          4 << 12 | /* Table type 0b10 */
+	          (msti & 0xfff);
+	priv->r->exec_tbl0_cmd(cmd);
+
+	for (int i = 0; i < 2; i++)
+		port_state[i] = sw_r32(RTL930X_TBL_ACCESS_DATA_0(i));
+	pr_debug("MSTI: %d STATE: %08x, %08x\n", msti, port_state[0], port_state[1]);
+}

@@ -1,0 +1,9 @@
+struct ringbuf_entry * ringbuf_get(struct ringbuf *r, int i)
+{
+	struct ringbuf_entry *e = r->buf + (((r->fill + i) % r->len) * r->slen);
+
+	if (e->len > 0)
+		return e;
+
+	return NULL;
+}

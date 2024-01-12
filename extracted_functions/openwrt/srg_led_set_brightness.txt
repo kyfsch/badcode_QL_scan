@@ -1,0 +1,16 @@
+srg_led_set_brightness(struct led_classdev *led_cdev,
+			enum led_brightness value)
+{
+	struct srg_led *sysled = container_of(led_cdev, struct srg_led, led);
+	struct srg_led_ctrl *sysled_ctrl = sysled->ctrl;
+	int ret;
+
+	mutex_lock(&sysled_ctrl->lock);
+	ret = srg_led_i2c_write(sysled_ctrl, sysled->index + 4, value);
+	if (!ret) {
+		sysled_ctrl->control[sysled->index] = !!value;
+		ret = srg_led_control_sync(sysled_ctrl);
+	}
+	mutex_unlock(&sysled_ctrl->lock);
+	return ret;
+}

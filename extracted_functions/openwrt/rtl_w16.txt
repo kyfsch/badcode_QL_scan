@@ -1,0 +1,10 @@
+rtl_w16(struct switch_dev *dev, unsigned int page, unsigned int phy, unsigned int reg, u16 val)
+{
+	struct rtl_priv *priv = to_rtl(dev);
+	struct mii_bus *bus = priv->bus;
+
+	rtl_set_page(priv, page);
+	bus->write(bus, phy, reg, val);
+	bus->read(bus, phy, reg); /* flush */
+	return 0;
+}

@@ -1,0 +1,10 @@
+static void XmodemProtocol(AT91S_PipeStatus status, void *pVoid)
+{
+	AT91PS_SBuffer pSBuffer = (AT91PS_SBuffer) xmodemPipe.pBuffer->pChild;
+	AT91PS_USART   pUsart     = svcXmodem.pUsart;
+			
+	if (pSBuffer->szRdBuffer == 0) {
+		/* Start a tempo to wait the Xmodem protocol complete */
+		svcXmodem.tempo.Start(&(svcXmodem.tempo), 10, 0, AT91_XmodemComplete, pUsart);								
+	}
+}

@@ -1,0 +1,5 @@
+static void fe_free_dma(struct fe_priv *priv)
+{
+	fe_clean_tx(priv);
+	fe_clean_rx(priv);
+}

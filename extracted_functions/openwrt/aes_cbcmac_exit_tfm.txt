@@ -1,0 +1,5 @@
+static void aes_cbcmac_exit_tfm(struct crypto_tfm *tfm)
+{
+    struct aes_ctx *mctx = crypto_tfm_ctx(tfm);
+    kfree(mctx->temp);
+}

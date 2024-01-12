@@ -1,0 +1,21 @@
+ret_t rtl8367c_getAsicAclVidRange(rtk_uint32 index, rtk_uint32* pType, rtk_uint32* pUpperVid, rtk_uint32* pLowerVid)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+
+    if(index > RTL8367C_ACLRANGEMAX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    retVal = rtl8367c_getAsicReg(RTL8367C_REG_ACL_VID_RANGE_ENTRY0_CTRL1 + index*2, &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    *pType = (regData & RTL8367C_ACL_VID_RANGE_ENTRY0_CTRL1_CHECK0_TYPE_MASK) >> RTL8367C_ACL_VID_RANGE_ENTRY0_CTRL1_CHECK0_TYPE_OFFSET;
+    *pUpperVid = regData & RTL8367C_ACL_VID_RANGE_ENTRY0_CTRL1_CHECK0_HIGH_MASK;
+
+    retVal = rtl8367c_getAsicReg(RTL8367C_REG_ACL_VID_RANGE_ENTRY0_CTRL0 + index*2, pLowerVid);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

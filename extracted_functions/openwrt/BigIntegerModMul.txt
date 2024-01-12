@@ -1,0 +1,12 @@
+  BigIntegerModMul(res, prod, A, n);
+
+  BigIntegerFree(A);
+  BigIntegerFree(v);
+  BigIntegerFree(prod);
+
+  if(BigIntegerCmpInt(res, 1) <= 0) {   /* Check for Av^u == 1 (mod n) */
+    BigIntegerFree(res);
+    BigIntegerFree(b);
+    BigIntegerFree(n);
+    return NULL;
+  }

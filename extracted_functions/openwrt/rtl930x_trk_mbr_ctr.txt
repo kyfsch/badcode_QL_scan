@@ -1,0 +1,4 @@
+inline static int rtl930x_trk_mbr_ctr(int group)
+{
+	return RTL930X_TRK_MBR_CTRL + (group << 2);
+}

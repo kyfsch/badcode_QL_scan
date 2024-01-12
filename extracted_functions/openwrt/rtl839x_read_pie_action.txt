@@ -1,0 +1,26 @@
+static void rtl839x_read_pie_action(u32 r[],  struct pie_rule *pr)
+{
+	if (r[13] & BIT(3)) { /* ACT_MASK_FWD set, is it a drop? */
+		if ((r[14] & 0x7) == 1) {
+			pr->drop = true;
+		} else {
+			pr->fwd_sel = true;
+			pr->fwd_act = r[14] & 0x7;
+		}
+	}
+
+	pr->bypass_sel = r[13] & BIT(11);
+	pr->mpls_sel = r[13] & BIT(10);
+	pr->nopri_sel = r[13] & BIT(9);
+	pr->ovid_sel = r[13] & BIT(8);
+	pr->ivid_sel = r[13] & BIT(7);
+	pr->meter_sel = r[13] & BIT(6);
+	pr->mir_sel = r[13] & BIT(5);
+	pr->log_sel = r[13] & BIT(4);
+
+	/* TODO: Read in data fields */
+
+	pr->bypass_all = r[16] & BIT(9);
+	pr->bypass_igr_stp = r[16] & BIT(8);
+	pr->bypass_ibc_sc = r[16] & BIT(7);
+}

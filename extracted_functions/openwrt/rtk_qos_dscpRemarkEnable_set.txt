@@ -1,0 +1,19 @@
+rtk_api_ret_t rtk_qos_dscpRemarkEnable_set(rtk_port_t port, rtk_enable_t enable)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /*for whole system function, the port value should be 0xFF*/
+    if (port != RTK_WHOLE_SYSTEM)
+        return RT_ERR_PORT_ID;
+
+    if (enable >= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicRemarkingDscpAbility(enable)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

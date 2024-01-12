@@ -1,0 +1,12 @@
+static void ubnt_ledbar_perform_transaction(struct ubnt_ledbar *ledbar,
+					   const char *transaction, int len,
+					   char *result, int result_len)
+{
+	int i;
+
+	for (i = 0; i < len; i++)
+		i2c_smbus_write_byte(ledbar->client, transaction[i]);
+
+	for (i = 0; i < result_len; i++)
+		result[i] = i2c_smbus_read_byte(ledbar->client);
+}

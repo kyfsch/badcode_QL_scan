@@ -1,0 +1,5 @@
+ar8xxx_phy_read(struct mii_bus *bus, int phy_addr, int reg_addr)
+{
+	struct ar8xxx_priv *priv = bus->priv;
+	return priv->chip->phy_read(priv, phy_addr, reg_addr);
+}

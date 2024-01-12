@@ -1,0 +1,4 @@
+static uint32_t size2blk(struct nmbm_instance *ni, uint64_t size)
+{
+	return (size + bmtd.blk_size - 1) >> bmtd.blk_shift;
+}

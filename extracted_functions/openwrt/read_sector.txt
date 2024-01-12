@@ -1,0 +1,10 @@
+static int read_sector(off_t pos)
+{
+	if (pread(mtdfd, readbuf, TFFS_SECTOR_SIZE, pos) != TFFS_SECTOR_SIZE) {
+		return -1;
+	}
+
+	sector_ids[pos / TFFS_SECTOR_SIZE] = read_uint32(readbuf, 0x00);
+
+	return 0;
+}

@@ -1,0 +1,32 @@
+char * nvram_find_mtd(void)
+{
+	FILE *fp;
+	int i, part_size;
+	char dev[PATH_MAX];
+	char *path = NULL;
+	struct stat s;
+
+	if ((fp = fopen("/proc/mtd", "r")))
+	{
+		while( fgets(dev, sizeof(dev), fp) )
+		{
+			if( strstr(dev, "nvram") && sscanf(dev, "mtd%d: %08x", &i, &part_size) )
+			{
+				nvram_part_size = part_size;
+
+				sprintf(dev, "/dev/mtdblock%d", i);
+				if( stat(dev, &s) > -1 && (s.st_mode & S_IFBLK) )
+				{
+					if( (path = (char *) malloc(strlen(dev)+1)) != NULL )
+					{
+						strncpy(path, dev, strlen(dev)+1);
+						break;
+					}
+				}
+			}
+		}
+		fclose(fp);
+	}
+
+	return path;
+}

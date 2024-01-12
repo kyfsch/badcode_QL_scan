@@ -1,0 +1,53 @@
+static int number(int num, int base, int size,
+                  int precision, int type)
+{
+  char c, sign, tmp[66];
+  const char *digits="0123456789ABCDEF";
+  int i;
+
+  if (type & LEFT)
+    type &= ~ZEROPAD;
+  if (base < 2 || base > 16)
+    return 0;
+  c = (type & ZEROPAD) ? '0' : ' ';
+  sign = 0;
+
+  if(type & SIGN && num < 0)
+    {
+      sign = '-';
+      num = -num;
+      size--;
+    }
+  
+  i = 0;
+  if(num == 0)
+    tmp[i++] = digits[0];
+  else while(num != 0)
+    tmp[i++] = digits[do_div(num, base)];
+
+  if(i > precision)
+    precision = i;
+  size -= precision;
+  
+  if(!(type&(ZEROPAD+LEFT)))
+    while(size-->0)
+      putc(' ');
+  
+  if(sign)
+    putc(sign);
+
+  if (!(type & LEFT))
+    while (size-- > 0)
+      putc(c);
+
+  while (i < precision--)
+    putc('0');
+  
+  while (i-- > 0)
+    putc(tmp[i]);
+
+  while (size-- > 0)
+    putc(' ');;
+
+  return 1;
+}

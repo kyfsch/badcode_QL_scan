@@ -1,0 +1,41 @@
+static int rtl83xx_port_fdb_add(struct dsa_switch *ds, int port,
+				const unsigned char *addr, u16 vid)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	u64 mac = ether_addr_to_u64(addr);
+	struct rtl838x_l2_entry e;
+	int err = 0, idx;
+	u64 seed = priv->r->l2_hash_seed(mac, vid);
+
+	if (priv->is_lagmember[port]) {
+		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
+		return 0;
+	}
+
+	mutex_lock(&priv->reg_mutex);
+
+	idx = rtl83xx_find_l2_hash_entry(priv, seed, false, &e);
+
+	/* Found an existing or empty entry */
+	if (idx >= 0) {
+		rtl83xx_setup_l2_uc_entry(&e, port, vid, mac);
+		priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
+		goto out;
+	}
+
+	/* Hash buckets full, try CAM */
+	idx = rtl83xx_find_l2_cam_entry(priv, seed, false, &e);
+
+	if (idx >= 0) {
+		rtl83xx_setup_l2_uc_entry(&e, port, vid, mac);
+		priv->r->write_cam(idx, &e);
+		goto out;
+	}
+
+	err = -ENOTSUPP;
+
+out:
+	mutex_unlock(&priv->reg_mutex);
+
+	return err;
+}

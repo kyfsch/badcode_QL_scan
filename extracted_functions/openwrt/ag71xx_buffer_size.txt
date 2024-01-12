@@ -1,0 +1,5 @@
+static int ag71xx_buffer_size(struct ag71xx *ag)
+{
+	return ag->rx_buf_size +
+	       SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+}

@@ -1,0 +1,13 @@
+ar8xxx_sw_set_pvid(struct switch_dev *dev, int port, int vlan)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+
+	/* make sure no invalid PVIDs get set */
+
+	if (vlan < 0 || vlan >= dev->vlans ||
+	    port < 0 || port >= AR8X16_MAX_PORTS)
+		return -EINVAL;
+
+	priv->pvid[port] = vlan;
+	return 0;
+}

@@ -1,0 +1,4 @@
+static u64 rtl838x_l2_hash_seed(u64 mac, u32 vid)
+{
+	return mac << 12 | vid;
+}

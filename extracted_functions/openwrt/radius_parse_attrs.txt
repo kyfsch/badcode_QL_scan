@@ -1,0 +1,55 @@
+radius_parse_attrs(struct blob_attr **tb, struct radius_parse_attr_state *state)
+{
+	struct blob_attr *data = tb[USER_ATTR_RADIUS];
+	struct hostapd_radius_attr *prev = NULL;
+	struct blob_attr *cur;
+	int len, rem;
+	void *val;
+
+	if ((cur = tb[USER_ATTR_VLAN]) != NULL && blobmsg_get_u32(cur) < 4096) {
+		char buf[5];
+
+		val = radius_add_attr(state, 0, RADIUS_ATTR_TUNNEL_TYPE, 4);
+		WPA_PUT_BE32(val, RADIUS_TUNNEL_TYPE_VLAN);
+
+		val = radius_add_attr(state, 0, RADIUS_ATTR_TUNNEL_MEDIUM_TYPE, 4);
+		WPA_PUT_BE32(val, RADIUS_TUNNEL_MEDIUM_TYPE_802);
+
+		len = snprintf(buf, sizeof(buf), "%d", blobmsg_get_u32(cur));
+		val = radius_add_attr(state, 0, RADIUS_ATTR_TUNNEL_PRIVATE_GROUP_ID, len);
+		memcpy(val, buf, len);
+	}
+
+	if ((cur = tb[USER_ATTR_MAX_RATE_UP]) != NULL) {
+		val = radius_add_attr(state, VENDOR_ID_WISPR, 7, 4);
+		WPA_PUT_BE32(val, blobmsg_get_u32(cur));
+	}
+
+	if ((cur = tb[USER_ATTR_MAX_RATE_DOWN]) != NULL) {
+		val = radius_add_attr(state, VENDOR_ID_WISPR, 8, 4);
+		WPA_PUT_BE32(val, blobmsg_get_u32(cur));
+	}
+
+	blobmsg_for_each_attr(cur, data, rem) {
+		struct radius_parse_attr_data *data;
+		void *val;
+		int size;
+
+		data = radius_parse_attr(cur);
+		if (!data)
+			continue;
+
+		val = radius_add_attr(state, data->vendor, data->type, data->size);
+		switch (data->format) {
+		case 's':
+			memcpy(val, data->data, data->size);
+			break;
+		case 'x':
+			hexstr2bin(data->data, val, data->size);
+			break;
+		case 'd':
+			WPA_PUT_BE32(val, atoi(data->data));
+			break;
+		}
+	}
+}

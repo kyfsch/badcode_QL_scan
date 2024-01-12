@@ -1,0 +1,13 @@
+struct table_reg *rtl_table_get(rtl838x_tbl_reg_t r, int t)
+{
+	if (r >= RTL_TBL_END)
+		return NULL;
+
+	if (t >= BIT(rtl838x_tbl_regs[r].c_bit-rtl838x_tbl_regs[r].t_bit))
+		return NULL;
+
+	mutex_lock(&rtl838x_tbl_regs[r].lock);
+	rtl838x_tbl_regs[r].tbl = t;
+
+	return &rtl838x_tbl_regs[r];
+}

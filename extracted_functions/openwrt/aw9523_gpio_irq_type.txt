@@ -1,0 +1,10 @@
+static int aw9523_gpio_irq_type(struct irq_data *d, unsigned int type)
+{
+	switch (type) {
+	case IRQ_TYPE_NONE:
+	case IRQ_TYPE_EDGE_BOTH:
+		return 0;
+	default:
+		return -EINVAL;
+	};
+}

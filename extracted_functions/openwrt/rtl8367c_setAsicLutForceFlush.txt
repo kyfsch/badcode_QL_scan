@@ -1,0 +1,17 @@
+ret_t rtl8367c_setAsicLutForceFlush(rtk_uint32 portmask)
+{
+    ret_t retVal;
+
+    if(portmask > RTL8367C_PORTMASK)
+        return RT_ERR_PORT_MASK;
+
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_FORCE_FLUSH_REG, RTL8367C_FORCE_FLUSH_PORTMASK_MASK, portmask & 0xff);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_FORCE_FLUSH1, RTL8367C_PORTMASK1_MASK, (portmask >> 8) & 0x7);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

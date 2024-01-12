@@ -1,0 +1,6 @@
+static void rtl8214fc_sfp_remove(void *upstream)
+{
+	struct phy_device *phydev = upstream;
+
+	rtl8214fc_media_set(phydev, false);
+}

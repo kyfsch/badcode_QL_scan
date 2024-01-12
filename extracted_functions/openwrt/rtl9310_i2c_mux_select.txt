@@ -1,0 +1,17 @@
+static int rtl9310_i2c_mux_select(struct i2c_mux_core *muxc, u32 chan)
+{
+	struct rtl9300_mux *mux = i2c_mux_priv(muxc);
+
+	/* Set SCL pin */
+	REG_MASK(0, 0, BIT(RTL9310_I2C_MST_IF_SEL_GPIO_SCL_SEL + channels[chan].scl_num),
+		 RTL9310_I2C_MST_IF_SEL);
+
+	/* Set SDA pin */
+	REG_MASK(channels[chan].scl_num, 0xf << RTL9310_I2C_CTRL_SDA_OUT_SEL,
+		 channels[chan].sda_num << RTL9310_I2C_CTRL_SDA_OUT_SEL, RTL9310_I2C_CTRL);
+
+	mux->i2c->sda_num = channels[chan].sda_num;
+	mux->i2c->scl_num = channels[chan].scl_num;
+
+	return 0;
+}

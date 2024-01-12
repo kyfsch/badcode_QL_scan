@@ -1,0 +1,10 @@
+static void en7523_pci_unprepare(struct clk_hw *hw)
+{
+	struct en_clk_gate *cg = container_of(hw, struct en_clk_gate, hw);
+	void __iomem *np_base = cg->base;
+	u32 val;
+
+	val = readl(np_base + REG_PCI_CONTROL);
+	val &= ~REG_PCI_CONTROL_REFCLK_EN1;
+	writel(val, np_base + REG_PCI_CONTROL);
+}

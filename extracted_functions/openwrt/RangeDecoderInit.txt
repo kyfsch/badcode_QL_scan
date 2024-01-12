@@ -1,0 +1,22 @@
+void RangeDecoderInit(CRangeDecoder *rd,
+  #ifdef _LZMA_IN_CB
+    ILzmaInCallback *inCallback
+  #else
+    Byte *stream, UInt32 bufferSize
+  #endif
+    )
+{
+  int i;
+  #ifdef _LZMA_IN_CB
+  rd->InCallback = inCallback;
+  rd->Buffer = rd->BufferLim = 0;
+  #else
+  rd->Buffer = stream;
+  rd->BufferLim = stream + bufferSize;
+  #endif
+  rd->ExtraBytes = 0;
+  rd->Code = 0;
+  rd->Range = (0xFFFFFFFF);
+  for(i = 0; i < 5; i++)
+    rd->Code = (rd->Code << 8) | ReadByte;
+}

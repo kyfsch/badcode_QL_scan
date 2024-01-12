@@ -1,0 +1,4 @@
+static inline bool ar934x_nfc_use_irq(struct ar934x_nfc *nfc)
+{
+	return AR934X_NFC_USE_IRQ;
+}

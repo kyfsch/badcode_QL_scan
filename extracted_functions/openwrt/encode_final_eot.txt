@@ -1,0 +1,24 @@
+static u32 encode_final_eot(oxnas_dma_device_settings_t* src_settings,
+				oxnas_dma_device_settings_t* dst_settings,
+				unsigned long length)
+{
+	// Write the length, with EOT configuration for a final transfer
+	unsigned long encoded = length;
+	if (dst_settings->write_final_eot_) {
+		encoded |= DMA_BYTE_CNT_WR_EOT_MASK;
+	} else {
+		encoded &= ~DMA_BYTE_CNT_WR_EOT_MASK;
+	}
+	if (src_settings->read_final_eot_) {
+		encoded |= DMA_BYTE_CNT_RD_EOT_MASK;
+	} else {
+		encoded &= ~DMA_BYTE_CNT_RD_EOT_MASK;
+	}
+	/*    if((src_settings->transfer_mode_) ||
+	 (src_settings->transfer_mode_)) {
+	 encoded |= DMA_BYTE_CNT_BURST_MASK;
+	 } else {
+	 encoded &= ~DMA_BYTE_CNT_BURST_MASK;
+	 }*/
+	return encoded;
+}

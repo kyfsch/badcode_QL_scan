@@ -1,0 +1,4 @@
+static int mt7988_pinctrl_probe(struct platform_device *pdev)
+{
+	return mtk_moore_pinctrl_probe(pdev, &mt7988_data);
+}

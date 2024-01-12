@@ -1,0 +1,9 @@
+static int rb4xx_gpio_remove(struct platform_device *pdev)
+{
+	struct rb4xx_gpio *gpio = platform_get_drvdata(pdev);
+
+	gpiochip_remove(&gpio->chip);
+	mutex_destroy(&gpio->lock);
+
+	return 0;
+}

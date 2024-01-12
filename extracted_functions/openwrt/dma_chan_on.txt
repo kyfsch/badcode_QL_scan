@@ -1,0 +1,5 @@
+static void dma_chan_on(struct dc_ep_dev *dev, u8 cn)
+{
+	ep_wr32(cn, DMA_CS);
+	ep_wr32_mask(0, BIT(0), DMA_CCTRL);
+}

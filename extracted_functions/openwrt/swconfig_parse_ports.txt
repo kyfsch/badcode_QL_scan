@@ -1,0 +1,31 @@
+swconfig_parse_ports(struct sk_buff *msg, struct nlattr *head,
+		struct switch_val *val, int max)
+{
+	struct nlattr *nla;
+	int rem;
+
+	val->len = 0;
+	nla_for_each_nested(nla, head, rem) {
+		struct nlattr *tb[SWITCH_PORT_ATTR_MAX+1];
+		struct switch_port *port;
+
+		if (val->len >= max)
+			return -EINVAL;
+
+		port = &val->value.ports[val->len];
+
+		if (nla_parse_nested_deprecated(tb, SWITCH_PORT_ATTR_MAX, nla,
+				port_policy, NULL))
+			return -EINVAL;
+
+		if (!tb[SWITCH_PORT_ID])
+			return -EINVAL;
+
+		port->id = nla_get_u32(tb[SWITCH_PORT_ID]);
+		if (tb[SWITCH_PORT_FLAG_TAGGED])
+			port->flags |= (1 << SWITCH_PORT_FLAG_TAGGED);
+		val->len++;
+	}
+
+	return 0;
+}

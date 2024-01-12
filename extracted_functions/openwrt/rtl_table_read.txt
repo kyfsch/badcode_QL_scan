@@ -1,0 +1,4 @@
+int rtl_table_read(struct table_reg *r, int idx)
+{
+	return rtl_table_exec(r, false, idx);
+}

@@ -1,0 +1,26 @@
+rtk_api_ret_t rtk_switch_portmask_P2L_get(rtk_uint32 physicalPortmask, rtk_portmask_t *pLogicalPmask)
+{
+    rtk_uint32 log_port, phy_port;
+
+    if(init_state != INIT_COMPLETED)
+        return RT_ERR_NOT_INIT;
+
+    if(NULL == pLogicalPmask)
+        return RT_ERR_NULL_POINTER;
+
+    RTK_PORTMASK_CLEAR(*pLogicalPmask);
+
+    for(phy_port = halCtrl->min_phy_port; phy_port <= halCtrl->max_phy_port; phy_port++)
+    {
+        if(physicalPortmask & (0x0001 << phy_port))
+        {
+            log_port = rtk_switch_port_P2L_get(phy_port);
+            if(log_port != UNDEFINE_PORT)
+            {
+                RTK_PORTMASK_PORT_SET(*pLogicalPmask, log_port);
+            }
+        }
+    }
+
+    return RT_ERR_OK;
+}

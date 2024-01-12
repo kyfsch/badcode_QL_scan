@@ -1,0 +1,6 @@
+static int __init mtdsplit_bcm63xx_init(void)
+{
+	register_mtd_parser(&mtdsplit_bcm63xx_parser);
+
+	return 0;
+}

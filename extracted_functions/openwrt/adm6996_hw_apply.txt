@@ -1,0 +1,38 @@
+adm6996_hw_apply(struct switch_dev *dev)
+{
+	struct adm6996_priv *priv = to_adm(dev);
+
+	pr_devel("hw_apply\n");
+
+	mutex_lock(&priv->reg_mutex);
+
+	if (!priv->enable_vlan) {
+		if (priv->vlan_enabled) {
+			if (priv->model == ADM6996L)
+				adm6996_disable_vlan_6996l(priv);
+			else
+				adm6996_disable_vlan(priv);
+			priv->vlan_enabled = 0;
+		}
+		goto out;
+	}
+
+	if (!priv->vlan_enabled) {
+		if (priv->model == ADM6996L)
+			adm6996_enable_vlan_6996l(priv);
+		else
+			adm6996_enable_vlan(priv);
+		priv->vlan_enabled = 1;
+	}
+
+	adm6996_apply_port_pvids(priv);
+	if (priv->model == ADM6996L)
+		adm6996_apply_vlan_filters_6996l(priv);
+	else
+		adm6996_apply_vlan_filters(priv);
+
+out:
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}

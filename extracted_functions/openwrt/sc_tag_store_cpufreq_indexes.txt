@@ -1,0 +1,11 @@
+static ssize_t sc_tag_store_cpufreq_indexes(const u8 *pld, u16 pld_len, const char *buf, size_t count)
+{
+	const struct sc_u32tvs *tvs;
+
+	if (soc_is_ar71xx() || soc_is_ar724x())
+		tvs = sc_cpufreq_indexes_ath79_7x;
+	else
+		tvs = sc_cpufreq_indexes_ath79_9x;
+
+	return sc_tag_store_u32tvs(pld, pld_len, buf, count, tvs, sc_tag_cpufreq_ath79_arraysize());
+}

@@ -1,0 +1,57 @@
+int AT91F_MCI_MMC_Init (AT91PS_MciDevice pMCI_Device)
+{
+    unsigned int	tab_response[4];
+	unsigned int	mult,blocknr;
+	unsigned int 	i,Nb_Cards_Found=0;
+
+	//* Resets all MMC Cards in Idle state
+	AT91F_MCI_SendCommand(pMCI_Device, AT91C_MMC_GO_IDLE_STATE_CMD, AT91C_NO_ARGUMENT);
+
+    if(AT91F_MCI_MMC_GetAllOCR(pMCI_Device) == AT91C_INIT_ERROR)
+    	return AT91C_INIT_ERROR;
+
+	Nb_Cards_Found = AT91F_MCI_MMC_GetAllCID(pMCI_Device,tab_response);
+	if (Nb_Cards_Found != AT91C_CMD_SEND_ERROR)
+	{
+	    //* Set the Mode Register
+    	AT91C_BASE_MCI->MCI_MR = AT91C_MCI_MR_PDCMODE;
+
+		for(i = 0; i < Nb_Cards_Found; i++)
+		{
+			if (AT91F_MCI_GetCSD(pMCI_Device,
+									  pMCI_Device->pMCI_DeviceFeatures[i].Relative_Card_Address,
+									  tab_response) != AT91C_CMD_SEND_OK)
+				pMCI_Device->pMCI_DeviceFeatures[i].Relative_Card_Address = 0;					  
+			else
+			{
+				pMCI_Device->pMCI_DeviceFeatures[i].Max_Read_DataBlock_Length = 1 << ((tab_response[1] >> AT91C_CSD_RD_B_LEN_S) & AT91C_CSD_RD_B_LEN_M );
+	 			pMCI_Device->pMCI_DeviceFeatures[i].Max_Write_DataBlock_Length =	1 << ((tab_response[3] >> AT91C_CSD_WBLEN_S) & AT91C_CSD_WBLEN_M );
+				pMCI_Device->pMCI_DeviceFeatures[i].Sector_Size = 1 + ((tab_response[2] >> AT91C_CSD_v22_SECT_SIZE_S) & AT91C_CSD_v22_SECT_SIZE_M );
+		  		pMCI_Device->pMCI_DeviceFeatures[i].Read_Partial = (tab_response[1] >> AT91C_CSD_RD_B_PAR_S) & AT91C_CSD_RD_B_PAR_M;
+				pMCI_Device->pMCI_DeviceFeatures[i].Write_Partial = (tab_response[3] >> AT91C_CSD_WBLOCK_P_S) & AT91C_CSD_WBLOCK_P_M;
+				
+				// None in MMC specification version 2.2
+				pMCI_Device->pMCI_DeviceFeatures[i].Erase_Block_Enable = 0;
+				
+				pMCI_Device->pMCI_DeviceFeatures[i].Read_Block_Misalignment = (tab_response[1] >> AT91C_CSD_RD_B_MIS_S) & AT91C_CSD_RD_B_MIS_M;
+				pMCI_Device->pMCI_DeviceFeatures[i].Write_Block_Misalignment = (tab_response[1] >> AT91C_CSD_WR_B_MIS_S) & AT91C_CSD_WR_B_MIS_M;
+
+				//// Compute Memory Capacity
+				// compute MULT
+				mult = 1 << ( ((tab_response[2] >> AT91C_CSD_C_SIZE_M_S) & AT91C_CSD_C_SIZE_M_M) + 2 );
+				// compute MSB of C_SIZE
+				blocknr = ((tab_response[1] >> AT91C_CSD_CSIZE_H_S) & AT91C_CSD_CSIZE_H_M) << 2;
+				// compute MULT * (LSB of C-SIZE + MSB already computed + 1) = BLOCKNR
+				blocknr = mult * ( ( blocknr + ( (tab_response[2] >> AT91C_CSD_CSIZE_L_S) & AT91C_CSD_CSIZE_L_M) ) + 1 );
+
+				pMCI_Device->pMCI_DeviceFeatures[i].Memory_Capacity =  pMCI_Device->pMCI_DeviceFeatures[i].Max_Read_DataBlock_Length * blocknr;
+		  		//// End of Compute Memory Capacity
+		  		
+			}	// end of else			  
+		}	// end of for
+		
+		return AT91C_INIT_OK;
+	}	// end of if
+
+    return AT91C_INIT_ERROR;
+}

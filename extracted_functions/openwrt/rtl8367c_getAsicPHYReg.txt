@@ -1,0 +1,11 @@
+ret_t rtl8367c_getAsicPHYReg(rtk_uint32 phyNo, rtk_uint32 phyAddr, rtk_uint32 *pRegData )
+{
+    rtk_uint32 ocp_addr;
+
+    if(phyAddr > RTL8367C_PHY_REGNOMAX)
+        return RT_ERR_PHY_REG_ID;
+
+    ocp_addr = 0xa400 + phyAddr*2;
+
+    return rtl8367c_getAsicPHYOCPReg(phyNo, ocp_addr, pRegData);
+}

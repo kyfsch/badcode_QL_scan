@@ -1,0 +1,75 @@
+static int hc_wlan_data_unpack_lzor(const u16 tag_id, const u8 *inbuf, size_t inlen,
+				    void *outbuf, size_t *outlen)
+{
+	u16 rle_ofs, rle_len;
+	const u32 *needle;
+	u8 *tempbuf;
+	size_t templen, lzo_len;
+	int ret;
+
+	lzo_len = inlen + sizeof(hc_lzor_prefix);
+	if (lzo_len > *outlen)
+		return -EFBIG;
+
+	/* Temporary buffer same size as the outbuf */
+	templen = *outlen;
+	tempbuf = kmalloc(templen, GFP_KERNEL);
+	if (!tempbuf)
+		return -ENOMEM;
+
+	/* Concatenate into the outbuf */
+	memcpy(outbuf, hc_lzor_prefix, sizeof(hc_lzor_prefix));
+	memcpy(outbuf + sizeof(hc_lzor_prefix), inbuf, inlen);
+
+	/* LZO-decompress lzo_len bytes of outbuf into the tempbuf */
+	ret = lzo1x_decompress_safe(outbuf, lzo_len, tempbuf, &templen);
+	if (ret) {
+		if (LZO_E_INPUT_NOT_CONSUMED == ret) {
+			/*
+			 * The tag length is always aligned thus the LZO payload may be padded,
+			 * which can trigger a spurious error which we ignore here.
+			 */
+			pr_debug(RB_HC_PR_PFX "LZOR: LZO EOF before buffer end - this may be harmless\n");
+		} else {
+			pr_debug(RB_HC_PR_PFX "LZOR: LZO decompression error (%d)\n", ret);
+			goto fail;
+		}
+	}
+
+	/*
+	 * Post decompression we have a blob (possibly byproduct of the lzo
+	 * dictionary). We need to find RB_MAGIC_ERD. The magic number seems to
+	 * be 32bit-aligned in the decompression output.
+	 */
+	needle = (const u32 *)tempbuf;
+	while (RB_MAGIC_ERD != *needle++) {
+		if ((u8 *)needle >= tempbuf+templen) {
+			pr_debug(RB_HC_PR_PFX "LZOR: ERD magic not found\n");
+			ret = -ENODATA;
+			goto fail;
+		}
+	};
+	templen -= (u8 *)needle - tempbuf;
+
+	/* Past magic. Look for tag node */
+	ret = routerboot_tag_find((u8 *)needle, templen, tag_id, &rle_ofs, &rle_len);
+	if (ret) {
+		pr_debug(RB_HC_PR_PFX "LZOR: no RLE data for id 0x%04x\n", tag_id);
+		goto fail;
+	}
+
+	if (rle_len > templen) {
+		pr_debug(RB_HC_PR_PFX "LZOR: Invalid RLE data length\n");
+		ret = -EINVAL;
+		goto fail;
+	}
+
+	/* RLE-decode tempbuf from needle back into the outbuf */
+	ret = routerboot_rle_decode((u8 *)needle+rle_ofs, rle_len, outbuf, outlen);
+	if (ret)
+		pr_debug(RB_HC_PR_PFX "LZOR: RLE decoding error (%d)\n", ret);
+
+fail:
+	kfree(tempbuf);
+	return ret;
+}

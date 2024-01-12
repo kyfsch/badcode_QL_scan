@@ -1,0 +1,8 @@
+void dc_aca_event_addr_get(struct dc_ep_priv *priv,
+	struct aca_event_reg_addr *regs)
+{
+	regs->txin_acc_sub = TXIN_ACA_ACCUM_SUB;
+	regs->txout_acc_add = TXOUT_ACA_ACCUM_ADD;
+	regs->rxin_acc_sub = RXIN_ACA_ACCUM_SUB;
+	regs->rxout_acc_add = RXOUT_ACA_ACCUM_ADD;
+}

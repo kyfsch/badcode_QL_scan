@@ -1,0 +1,6 @@
+bbt_block_is_bad(u16 block)
+{
+	u8 cur = bmtd.bbt_buf[block / 4];
+
+	return cur & (3 << ((block % 4) * 2));
+}

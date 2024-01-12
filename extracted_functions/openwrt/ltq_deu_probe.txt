@@ -1,0 +1,57 @@
+static int ltq_deu_probe(struct platform_device *pdev)
+{
+    int ret = -ENOSYS;
+
+
+    START_DEU_POWER;
+    CRTCL_SECT_HASH_INIT;
+    
+#define IFX_DEU_DRV_VERSION         "2.0.0"
+         printk(KERN_INFO "Infineon Technologies DEU driver version %s \n", IFX_DEU_DRV_VERSION);
+
+    FIND_DEU_CHIP_VERSION;
+
+#if defined(CONFIG_CRYPTO_DEV_DES)
+    if ((ret = ifxdeu_init_des ())) {
+        printk (KERN_ERR "IFX DES initialization failed!\n");
+    }
+#endif
+#if defined(CONFIG_CRYPTO_DEV_AES)
+    if ((ret = ifxdeu_init_aes ())) {
+        printk (KERN_ERR "IFX AES initialization failed!\n");
+    }
+
+#endif
+#if defined(CONFIG_CRYPTO_DEV_ARC4)
+    if ((ret = ifxdeu_init_arc4 ())) {
+        printk (KERN_ERR "IFX ARC4 initialization failed!\n");
+    }
+
+#endif
+#if defined(CONFIG_CRYPTO_DEV_SHA1)
+    if ((ret = ifxdeu_init_sha1 ())) {
+        printk (KERN_ERR "IFX SHA1 initialization failed!\n");
+    }
+#endif
+#if defined(CONFIG_CRYPTO_DEV_MD5)
+    if ((ret = ifxdeu_init_md5 ())) {
+        printk (KERN_ERR "IFX MD5 initialization failed!\n");
+    }
+
+#endif
+#if defined(CONFIG_CRYPTO_DEV_SHA1_HMAC)
+    if ((ret = ifxdeu_init_sha1_hmac ())) {
+        printk (KERN_ERR "IFX SHA1_HMAC initialization failed!\n");
+    }
+#endif
+#if defined(CONFIG_CRYPTO_DEV_MD5_HMAC)
+    if ((ret = ifxdeu_init_md5_hmac ())) {
+        printk (KERN_ERR "IFX MD5_HMAC initialization failed!\n");
+    }
+#endif
+
+
+
+    return ret;
+
+}

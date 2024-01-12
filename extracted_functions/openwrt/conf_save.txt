@@ -1,0 +1,19 @@
+static void conf_save(void);
+static int show_textbox_ext(const char *title, char *text, int r, int c,
+			    int *keys, int *vscroll, int *hscroll,
+			    update_text_fn update_text, void *data);
+static void show_textbox(const char *title, const char *text, int r, int c);
+static void show_helptext(const char *title, const char *text);
+static void show_help(struct menu *menu);
+
+static char filename[PATH_MAX+1];
+static void set_config_filename(const char *config_filename)
+{
+	static char menu_backtitle[PATH_MAX+128];
+
+	snprintf(menu_backtitle, sizeof(menu_backtitle), "%s - %s",
+		 config_filename, rootmenu.prompt->text);
+	set_dialog_backtitle(menu_backtitle);
+
+	snprintf(filename, sizeof(filename), "%s", config_filename);
+}

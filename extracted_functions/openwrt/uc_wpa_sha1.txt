@@ -1,0 +1,31 @@
+uc_value_t *uc_wpa_sha1(uc_vm_t *vm, size_t nargs)
+{
+	u8 hash[SHA1_MAC_LEN];
+	char hash_hex[2 * ARRAY_SIZE(hash) + 1];
+	uc_value_t *val;
+	size_t *lens;
+	const u8 **args;
+	int i;
+
+	if (!nargs)
+		return NULL;
+
+	args = alloca(nargs * sizeof(*args));
+	lens = alloca(nargs * sizeof(*lens));
+	for (i = 0; i < nargs; i++) {
+		val = uc_fn_arg(i);
+		if (ucv_type(val) != UC_STRING)
+			return NULL;
+
+		args[i] = ucv_string_get(val);
+		lens[i] = ucv_string_length(val);
+	}
+
+	if (sha1_vector(nargs, args, lens, hash))
+		return NULL;
+
+	for (i = 0; i < ARRAY_SIZE(hash); i++)
+		sprintf(hash_hex + 2 * i, "%02x", hash[i]);
+
+	return ucv_string_new_length(hash_hex, 2 * ARRAY_SIZE(hash));
+}

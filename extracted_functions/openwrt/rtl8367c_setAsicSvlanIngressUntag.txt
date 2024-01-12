@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicSvlanIngressUntag(rtk_uint32 mode)
+{
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_SVLAN_CFG, RTL8367C_VS_UNTAG_MASK, mode);
+}

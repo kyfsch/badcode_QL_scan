@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsicPortLoopback(rtk_uint32 port, rtk_uint32 *pEnable)
+{
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    return rtl8367c_getAsicRegBit(RTL8367C_PORT_MISC_CFG_REG(port), RTL8367C_PORT0_MISC_CFG_MAC_LOOPBACK_OFFSET, pEnable);
+}

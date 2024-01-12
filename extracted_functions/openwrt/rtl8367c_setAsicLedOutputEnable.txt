@@ -1,0 +1,15 @@
+ret_t rtl8367c_setAsicLedOutputEnable(rtk_uint32 enabled)
+{
+    ret_t retVal;
+    rtk_uint32 regdata;
+
+    if (enabled == 1)
+        regdata = 0;
+    else
+        regdata = 1;
+
+    /* Enable/Disable H/W IGMP/MLD */
+    retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_LED_SYS_CONFIG, RTL8367C_LED_IO_DISABLE_OFFSET, regdata);
+
+    return retVal;
+}

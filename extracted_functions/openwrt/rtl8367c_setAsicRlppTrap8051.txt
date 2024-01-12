@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicRlppTrap8051(rtk_uint32 enabled)
+{
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_RLDP_CTRL0, RTL8367C_RLPP_8051_TRAP_OFFSET, enabled);
+}

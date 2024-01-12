@@ -1,0 +1,16 @@
+static int mt7621_ecc_wait_idle(struct mt7621_nfc *nfc, u32 reg)
+{
+	struct device *dev = nfc->dev;
+	u32 val;
+	int ret;
+
+	ret = readw_poll_timeout_atomic(nfc->ecc_regs + reg, val,
+					val & ECC_IDLE, 10,
+					ECC_ENGINE_TIMEOUT);
+	if (ret) {
+		dev_warn(dev, "ECC engine timed out entering idle mode\n");
+		return -EIO;
+	}
+
+	return 0;
+}

@@ -1,0 +1,52 @@
+static bool nmbm_find_signature(struct nmbm_instance *ni,
+				struct nmbm_signature *signature,
+				uint32_t *signature_ba)
+{
+	struct nmbm_signature sig;
+	uint64_t off, addr;
+	uint32_t block_count, ba, limit;
+	bool success;
+	int ret;
+
+	/* Calculate top and bottom block address */
+	block_count = bmtd.total_blks;
+	ba = block_count;
+	limit = (block_count / NMBM_MGMT_DIV) * (NMBM_MGMT_DIV - ni->max_ratio);
+	if (ni->max_reserved_blocks && block_count - limit > ni->max_reserved_blocks)
+		limit = block_count - ni->max_reserved_blocks;
+
+	while (ba >= limit) {
+		ba--;
+		addr = ba2addr(ni, ba);
+
+		if (nmbm_check_bad_phys_block(ni, ba))
+			continue;
+
+		/* Check every page.
+		 * As long as at leaset one page contains valid signature,
+		 * the block is treated as a valid signature block.
+		 */
+		for (off = 0; off < bmtd.blk_size;
+		     off += bmtd.pg_size) {
+			ret = nmbn_read_data(ni, addr + off, &sig,
+					     sizeof(sig));
+			if (ret)
+				continue;
+
+			/* Check for header size and checksum */
+			success = nmbm_check_header(&sig, sizeof(sig));
+			if (!success)
+				continue;
+
+			/* Check for header magic */
+			if (sig.header.magic == NMBM_MAGIC_SIGNATURE) {
+				/* Found it */
+				memcpy(signature, &sig, sizeof(sig));
+				*signature_ba = ba;
+				return true;
+			}
+		}
+	};
+
+	return false;
+}

@@ -1,0 +1,10 @@
+int ehci_hcd_init(int index, enum usb_init_type init, struct ehci_hccr **hccr,
+		  struct ehci_hcor **hcor)
+{
+	start_oxnas_usb_ehci();
+	*hccr = (struct ehci_hccr *)(USB_HOST_BASE + 0x100);
+	*hcor = (struct ehci_hcor *)((uint32_t)*hccr +
+			HC_LENGTH(ehci_readl(&(*hccr)->cr_capbase)));
+	ghcor = *hcor;
+	return 0;
+}

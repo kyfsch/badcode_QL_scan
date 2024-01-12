@@ -1,0 +1,27 @@
+static int msdc_get_card_status(struct mmc_host *mmc, struct msdc_host *host, u32 *status)
+{
+	struct mmc_command cmd;
+	struct mmc_request mrq;
+	u32 err;
+
+	memset(&cmd, 0, sizeof(struct mmc_command));
+	cmd.opcode = MMC_SEND_STATUS;
+	if (mmc->card) {
+		cmd.arg = mmc->card->rca << 16;
+	} else {
+		ERR_MSG("cmd13 mmc card is null");
+		cmd.arg = host->app_cmd_arg;
+	}
+	cmd.flags = MMC_RSP_SPI_R2 | MMC_RSP_R1 | MMC_CMD_AC;
+
+	memset(&mrq, 0, sizeof(struct mmc_request));
+	mrq.cmd = &cmd; cmd.mrq = &mrq;
+	cmd.data = NULL;
+
+	err = msdc_do_command(host, &cmd, 1, CMD_TIMEOUT);
+
+	if (status)
+		*status = cmd.resp[0];
+
+	return err;
+}

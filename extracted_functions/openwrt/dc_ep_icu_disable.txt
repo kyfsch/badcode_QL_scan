@@ -1,0 +1,12 @@
+void dc_ep_icu_disable(struct dc_ep_priv *priv)
+{
+	/* Disable all PCIe related interrupts */
+	wr32(0, PCIE_APPL_MSI_EN);
+
+	wr32(PCI_MSI_8_MODE, RCU_MSI);
+
+	/* Disable all interrupts in ICU level */
+	wr32(0, ICU_DMA_TX_IMER);
+	wr32(0, ICU_DMA_RX_IMER);
+	wr32(0, ICU_IMER);
+}

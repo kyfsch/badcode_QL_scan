@@ -1,0 +1,41 @@
+bool sym_string_within_range(struct symbol *sym, const char *str)
+{
+	struct property *prop;
+	long long val;
+
+	switch (sym->type) {
+	case S_STRING:
+		return sym_string_valid(sym, str);
+	case S_INT:
+		if (!sym_string_valid(sym, str))
+			return false;
+		prop = sym_get_range_prop(sym);
+		if (!prop)
+			return true;
+		val = strtoll(str, NULL, 10);
+		return val >= sym_get_range_val(prop->expr->left.sym, 10) &&
+		       val <= sym_get_range_val(prop->expr->right.sym, 10);
+	case S_HEX:
+		if (!sym_string_valid(sym, str))
+			return false;
+		prop = sym_get_range_prop(sym);
+		if (!prop)
+			return true;
+		val = strtoll(str, NULL, 16);
+		return val >= sym_get_range_val(prop->expr->left.sym, 16) &&
+		       val <= sym_get_range_val(prop->expr->right.sym, 16);
+	case S_BOOLEAN:
+	case S_TRISTATE:
+		switch (str[0]) {
+		case 'y': case 'Y':
+			return sym_tristate_within_range(sym, yes);
+		case 'm': case 'M':
+			return sym_tristate_within_range(sym, mod);
+		case 'n': case 'N':
+			return sym_tristate_within_range(sym, no);
+		}
+		return false;
+	default:
+		return false;
+	}
+}

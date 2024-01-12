@@ -1,0 +1,10 @@
+static u32 rtl8231_read_cached(struct rtl8231_gpios *gpios, u32 reg)
+{
+	if (reg > 0x1f)
+		return 0;
+
+	if (gpios->reg_cached & (1 << reg))
+		return gpios->reg_shadow[reg];
+
+	return rtl8231_read(gpios, reg);
+}

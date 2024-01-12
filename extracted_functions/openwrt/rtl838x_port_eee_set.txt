@@ -1,0 +1,24 @@
+static void rtl838x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
+{
+	u32 v;
+
+	/* This works only for Ethernet ports, and on the RTL838X, ports from 24 are SFP */
+	if (port >= 24)
+		return;
+
+	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
+	v = enable ? 0x3 : 0x0;
+
+	/* Set EEE state for 100 (bit 9) & 1000MBit (bit 10) */
+	sw_w32_mask(0x3 << 9, v << 9, priv->r->mac_force_mode_ctrl(port));
+
+	/* Set TX/RX EEE state */
+	if (enable) {
+		sw_w32_mask(0, BIT(port), RTL838X_EEE_PORT_TX_EN);
+		sw_w32_mask(0, BIT(port), RTL838X_EEE_PORT_RX_EN);
+	} else {
+		sw_w32_mask(BIT(port), 0, RTL838X_EEE_PORT_TX_EN);
+		sw_w32_mask(BIT(port), 0, RTL838X_EEE_PORT_RX_EN);
+	}
+	priv->ports[port].eee_enabled = enable;
+}

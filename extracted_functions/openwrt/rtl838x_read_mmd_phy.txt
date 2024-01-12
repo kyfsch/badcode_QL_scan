@@ -1,0 +1,36 @@
+int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
+{
+	int err;
+	u32 v;
+
+	mutex_lock(&smi_lock);
+
+	err = rtl838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
+
+	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
+	mdelay(10);
+
+	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
+
+	v = addr << 16 | reg;
+	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_3);
+
+	/* mmd-access | read | cmd-start */
+	v = 1 << 1 | 0 << 2 | 1;
+	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+
+	err = rtl838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
+
+	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
+
+	err = 0;
+
+errout:
+	mutex_unlock(&smi_lock);
+
+	return err;
+}

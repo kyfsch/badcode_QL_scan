@@ -1,0 +1,30 @@
+swconfig_dump_attr(struct swconfig_callback *cb, void *arg)
+{
+	struct switch_attr *op = arg;
+	struct genl_info *info = cb->info;
+	struct sk_buff *msg = cb->msg;
+	int id = cb->args[0];
+	void *hdr;
+
+	hdr = genlmsg_put(msg, info->snd_portid, info->snd_seq, &switch_fam,
+			NLM_F_MULTI, SWITCH_CMD_NEW_ATTR);
+	if (IS_ERR(hdr))
+		return -1;
+
+	if (nla_put_u32(msg, SWITCH_ATTR_OP_ID, id))
+		goto nla_put_failure;
+	if (nla_put_u32(msg, SWITCH_ATTR_OP_TYPE, op->type))
+		goto nla_put_failure;
+	if (nla_put_string(msg, SWITCH_ATTR_OP_NAME, op->name))
+		goto nla_put_failure;
+	if (op->description)
+		if (nla_put_string(msg, SWITCH_ATTR_OP_DESCRIPTION,
+			op->description))
+			goto nla_put_failure;
+
+	genlmsg_end(msg, hdr);
+	return msg->len;
+nla_put_failure:
+	genlmsg_cancel(msg, hdr);
+	return -EMSGSIZE;
+}

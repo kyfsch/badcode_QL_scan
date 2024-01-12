@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_l2_localPktPermit_set(rtk_port_t port, rtk_enable_t permit)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* check port valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if (permit >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if ((retVal = rtl8367c_setAsicPortBlockSpa(rtk_switch_port_L2P_get(port), permit)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

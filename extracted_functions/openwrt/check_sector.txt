@@ -1,0 +1,18 @@
+static int check_sector(off_t pos)
+{
+	if (!read_oob_sector_health) {
+		return 1;
+	}
+	if (read_sectoroob(pos)) {
+		return 0;
+	}
+	if (read_uint8(oobbuf, 0x00) != 0xff) {
+		/* block is bad */
+		return 0;
+	}
+	if (read_uint8(oobbuf, 0x01) != 0xff) {
+		/* sector is bad */
+		return 0;
+	}
+	return 1;
+}

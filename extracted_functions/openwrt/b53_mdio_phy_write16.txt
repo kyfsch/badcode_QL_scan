@@ -1,0 +1,7 @@
+static int b53_mdio_phy_write16(struct b53_device *dev, int addr, u8 reg,
+				u16 value)
+{
+	struct mii_bus *bus = dev->priv;
+
+	return mdiobus_write(bus, addr, reg, value);
+}

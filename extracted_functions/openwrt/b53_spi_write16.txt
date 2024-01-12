@@ -1,0 +1,16 @@
+static int b53_spi_write16(struct b53_device *dev, u8 page, u8 reg, u16 value)
+{
+	struct spi_device *spi = dev->priv;
+	int ret;
+	u8 txbuf[4];
+
+	ret = b53_prepare_reg_access(spi, page);
+	if (ret)
+		return ret;
+
+	txbuf[0] = B53_SPI_CMD_NORMAL | B53_SPI_CMD_WRITE;
+	txbuf[1] = reg;
+	put_unaligned_le16(value, &txbuf[2]);
+
+	return spi_write(spi, txbuf, sizeof(txbuf));
+}

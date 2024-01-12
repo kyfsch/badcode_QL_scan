@@ -1,0 +1,9 @@
+struct gstr str_new(void)
+{
+	struct gstr gs;
+	gs.s = xmalloc(sizeof(char) * 64);
+	gs.len = 64;
+	gs.max_width = 0;
+	strcpy(gs.s, "\0");
+	return gs;
+}

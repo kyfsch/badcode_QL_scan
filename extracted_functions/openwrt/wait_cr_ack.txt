@@ -1,0 +1,5 @@
+static void wait_cr_ack(void __iomem *phy_base)
+{
+	while ((ioread32(phy_base + PHY_STAT) >> 16) & 0x1f)
+		; /* wait for an ack bit to be set */
+}

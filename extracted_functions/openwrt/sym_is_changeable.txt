@@ -1,0 +1,4 @@
+bool sym_is_changeable(struct symbol *sym)
+{
+	return sym->visible > sym->rev_dep.tri;
+}

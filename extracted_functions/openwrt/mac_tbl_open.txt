@@ -1,0 +1,4 @@
+static int mac_tbl_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, mac_tbl_read, 0);
+}

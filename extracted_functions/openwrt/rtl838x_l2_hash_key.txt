@@ -1,0 +1,24 @@
+static u32 rtl838x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
+{
+	u32 h1, h2, h3, h;
+
+	if (sw_r32(priv->r->l2_ctrl_0) & 1) {
+		h1 = (seed >> 11) & 0x7ff;
+		h1 = ((h1 & 0x1f) << 6) | ((h1 >> 5) & 0x3f);
+
+		h2 = (seed >> 33) & 0x7ff;
+		h2 = ((h2 & 0x3f) << 5) | ((h2 >> 6) & 0x1f);
+
+		h3 = (seed >> 44) & 0x7ff;
+		h3 = ((h3 & 0x7f) << 4) | ((h3 >> 7) & 0xf);
+
+		h = h1 ^ h2 ^ h3 ^ ((seed >> 55) & 0x1ff);
+		h ^= ((seed >> 22) & 0x7ff) ^ (seed & 0x7ff);
+	} else {
+		h = ((seed >> 55) & 0x1ff) ^ ((seed >> 44) & 0x7ff) ^
+		    ((seed >> 33) & 0x7ff) ^ ((seed >> 22) & 0x7ff) ^
+		    ((seed >> 11) & 0x7ff) ^ (seed & 0x7ff);
+	}
+
+	return h;
+}

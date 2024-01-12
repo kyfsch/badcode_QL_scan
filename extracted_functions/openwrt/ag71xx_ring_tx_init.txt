@@ -1,0 +1,24 @@
+static void ag71xx_ring_tx_init(struct ag71xx *ag)
+{
+	struct ag71xx_ring *ring = &ag->tx_ring;
+	int ring_size = BIT(ring->order);
+	int ring_mask = BIT(ring->order) - 1;
+	int i;
+
+	for (i = 0; i < ring_size; i++) {
+		struct ag71xx_desc *desc = ag71xx_ring_desc(ring, i);
+
+		desc->next = (u32) (ring->descs_dma +
+			AG71XX_DESC_SIZE * ((i + 1) & ring_mask));
+
+		desc->ctrl = DESC_EMPTY;
+		ring->buf[i].skb = NULL;
+	}
+
+	/* flush descriptors */
+	wmb();
+
+	ring->curr = 0;
+	ring->dirty = 0;
+	netdev_reset_queue(ag->dev);
+}

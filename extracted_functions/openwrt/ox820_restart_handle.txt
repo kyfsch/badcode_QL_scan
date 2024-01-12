@@ -1,0 +1,90 @@
+static int ox820_restart_handle(struct notifier_block *this,
+				 unsigned long mode, void *cmd)
+{
+	struct oxnas_restart_context *ctx = container_of(this, struct
+							oxnas_restart_context,
+							restart_handler);
+	u32 value;
+
+	/* Assert reset to cores as per power on defaults
+	 * Don't touch the DDR interface as things will come to an impromptu stop
+	 * NB Possibly should be asserting reset for PLLB, but there are timing
+	 *    concerns here according to the docs */
+	value = BIT(OX820_SYS_CTRL_RST_COPRO)		|
+		BIT(OX820_SYS_CTRL_RST_USBHS)		|
+		BIT(OX820_SYS_CTRL_RST_USBHSPHYA)	|
+		BIT(OX820_SYS_CTRL_RST_MACA)		|
+		BIT(OX820_SYS_CTRL_RST_PCIEA)		|
+		BIT(OX820_SYS_CTRL_RST_SGDMA)		|
+		BIT(OX820_SYS_CTRL_RST_CIPHER)		|
+		BIT(OX820_SYS_CTRL_RST_SATA)		|
+		BIT(OX820_SYS_CTRL_RST_SATA_LINK)	|
+		BIT(OX820_SYS_CTRL_RST_SATA_PHY)	|
+		BIT(OX820_SYS_CTRL_RST_PCIEPHY)		|
+		BIT(OX820_SYS_CTRL_RST_STATIC)		|
+		BIT(OX820_SYS_CTRL_RST_UART1)		|
+		BIT(OX820_SYS_CTRL_RST_UART2)		|
+		BIT(OX820_SYS_CTRL_RST_MISC)		|
+		BIT(OX820_SYS_CTRL_RST_I2S)		|
+		BIT(OX820_SYS_CTRL_RST_SD)		|
+		BIT(OX820_SYS_CTRL_RST_MACB)		|
+		BIT(OX820_SYS_CTRL_RST_PCIEB)		|
+		BIT(OX820_SYS_CTRL_RST_VIDEO)		|
+		BIT(OX820_SYS_CTRL_RST_USBHSPHYB)	|
+		BIT(OX820_SYS_CTRL_RST_USBDEV);
+
+	regmap_write(ctx->sys_ctrl, OX820_RST_SET_REGOFFSET, value);
+
+	/* Release reset to cores as per power on defaults */
+	regmap_write(ctx->sys_ctrl, OX820_RST_CLR_REGOFFSET, BIT(OX820_SYS_CTRL_RST_GPIO));
+
+	/* Disable clocks to cores as per power-on defaults - must leave DDR
+	 * related clocks enabled otherwise we'll stop rather abruptly. */
+	value =
+		BIT(OX820_SYS_CTRL_CLK_COPRO)		|
+		BIT(OX820_SYS_CTRL_CLK_DMA)		|
+		BIT(OX820_SYS_CTRL_CLK_CIPHER)		|
+		BIT(OX820_SYS_CTRL_CLK_SD)		|
+		BIT(OX820_SYS_CTRL_CLK_SATA)		|
+		BIT(OX820_SYS_CTRL_CLK_I2S)		|
+		BIT(OX820_SYS_CTRL_CLK_USBHS)		|
+		BIT(OX820_SYS_CTRL_CLK_MAC)		|
+		BIT(OX820_SYS_CTRL_CLK_PCIEA)		|
+		BIT(OX820_SYS_CTRL_CLK_STATIC)		|
+		BIT(OX820_SYS_CTRL_CLK_MACB)		|
+		BIT(OX820_SYS_CTRL_CLK_PCIEB)		|
+		BIT(OX820_SYS_CTRL_CLK_REF600)		|
+		BIT(OX820_SYS_CTRL_CLK_USBDEV);
+
+	regmap_write(ctx->sys_ctrl, OX820_CLK_CLR_REGOFFSET, value);
+
+	/* Enable clocks to cores as per power-on defaults */
+
+	/* Set sys-control pin mux'ing as per power-on defaults */
+	regmap_write(ctx->sys_ctrl, OX820_SECONDARY_SEL_REGOFFSET, 0);
+	regmap_write(ctx->sys_ctrl, OX820_TERTIARY_SEL_REGOFFSET, 0);
+	regmap_write(ctx->sys_ctrl, OX820_QUATERNARY_SEL_REGOFFSET, 0);
+	regmap_write(ctx->sys_ctrl, OX820_DEBUG_SEL_REGOFFSET, 0);
+	regmap_write(ctx->sys_ctrl, OX820_ALTERNATIVE_SEL_REGOFFSET, 0);
+	regmap_write(ctx->sys_ctrl, OX820_PULLUP_SEL_REGOFFSET, 0);
+
+	regmap_write(ctx->sys_ctrl, OX820_SEC_SECONDARY_SEL_REGOFFSET, 0);
+	regmap_write(ctx->sys_ctrl, OX820_SEC_TERTIARY_SEL_REGOFFSET, 0);
+	regmap_write(ctx->sys_ctrl, OX820_SEC_QUATERNARY_SEL_REGOFFSET, 0);
+	regmap_write(ctx->sys_ctrl, OX820_SEC_DEBUG_SEL_REGOFFSET, 0);
+	regmap_write(ctx->sys_ctrl, OX820_SEC_ALTERNATIVE_SEL_REGOFFSET, 0);
+	regmap_write(ctx->sys_ctrl, OX820_SEC_PULLUP_SEL_REGOFFSET, 0);
+
+	/* No need to save any state, as the ROM loader can determine whether
+	 * reset is due to power cycling or programatic action, just hit the
+	 * (self-clearing) CPU reset bit of the block reset register */
+	value =
+		BIT(OX820_SYS_CTRL_RST_SCU) |
+		BIT(OX820_SYS_CTRL_RST_ARM0) |
+		BIT(OX820_SYS_CTRL_RST_ARM1);
+
+	regmap_write(ctx->sys_ctrl, OX820_RST_SET_REGOFFSET, value);
+
+	pr_emerg("Unable to restart system\n");
+	return NOTIFY_DONE;
+}

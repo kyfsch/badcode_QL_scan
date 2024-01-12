@@ -1,0 +1,54 @@
+static int rtl8226_read_status(struct phy_device *phydev)
+{
+	int ret = 0;
+	u32 val;
+
+/* TODO: ret = genphy_read_status(phydev);
+ * 	if (ret < 0) {
+ * 		pr_info("%s: genphy_read_status failed\n", __func__);
+ * 		return ret;
+ * 	}
+ */
+
+	/* Link status must be read twice */
+	for (int i = 0; i < 2; i++)
+		val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA402);
+
+	phydev->link = val & BIT(2) ? 1 : 0;
+	if (!phydev->link)
+		goto out;
+
+	/* Read duplex status */
+	val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA434);
+	if (val < 0)
+		goto out;
+	phydev->duplex = !!(val & BIT(3));
+
+	/* Read speed */
+	val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA434);
+	switch (val & 0x0630) {
+	case 0x0000:
+		phydev->speed = SPEED_10;
+		break;
+	case 0x0010:
+		phydev->speed = SPEED_100;
+		break;
+	case 0x0020:
+		phydev->speed = SPEED_1000;
+		break;
+	case 0x0200:
+		phydev->speed = SPEED_10000;
+		break;
+	case 0x0210:
+		phydev->speed = SPEED_2500;
+		break;
+	case 0x0220:
+		phydev->speed = SPEED_5000;
+		break;
+	default:
+		break;
+	}
+
+out:
+	return ret;
+}

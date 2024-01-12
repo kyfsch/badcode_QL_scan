@@ -1,0 +1,11 @@
+void fe_m32(struct fe_priv *eth, u32 clear, u32 set, unsigned reg)
+{
+	u32 val;
+
+	spin_lock(&eth->page_lock);
+	val = __raw_readl(fe_base + reg);
+	val &= ~clear;
+	val |= set;
+	__raw_writel(val, fe_base + reg);
+	spin_unlock(&eth->page_lock);
+}

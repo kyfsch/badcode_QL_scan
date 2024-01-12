@@ -1,0 +1,27 @@
+u32 rtl9300_sds_rxcal_leq_read(int sds_num)
+{
+	u32 leq_gray, leq_bin;
+	bool leq_manual;
+
+	if (!(sds_num % 2))
+		rtl930x_write_sds_phy(sds_num, 0x1f, 0x2, 0x2f);
+	else
+		rtl930x_write_sds_phy(sds_num - 1, 0x1f, 0x2, 0x31);
+
+	/* ##Page0x2E, Reg0x15[9], REG0_RX_EN_TEST=[1] */
+	rtl9300_sds_field_w(sds_num, 0x2e, 0x15, 9, 9, 0x1);
+
+	/* ##Page0x21, Reg0x06[11 6], REG0_RX_DEBUG_SEL=[0 1 x x x x] */
+	rtl9300_sds_field_w(sds_num, 0x21, 0x06, 11, 6, 0x10);
+	mdelay(1);
+
+	/* ##LEQ Read Out */
+	leq_gray = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 7, 3);
+	leq_manual = !!rtl9300_sds_field_r(sds_num, 0x2e, 0x18, 15, 15);
+	leq_bin = rtl9300_sds_rxcal_gray_to_binary(leq_gray);
+
+	pr_info("LEQ_gray: %u, LEQ_bin: %u", leq_gray, leq_bin);
+	pr_info("LEQ manual: %u", leq_manual);
+
+	return leq_bin;
+}

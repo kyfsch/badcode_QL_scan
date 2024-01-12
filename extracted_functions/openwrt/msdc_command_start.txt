@@ -1,0 +1,129 @@
+static unsigned int msdc_command_start(struct msdc_host   *host,
+				       struct mmc_command *cmd,
+				       int                 tune,   /* not used */
+				       unsigned long       timeout)
+{
+	void __iomem *base = host->base;
+	u32 opcode = cmd->opcode;
+	u32 rawcmd;
+	u32 wints = MSDC_INT_CMDRDY  | MSDC_INT_RSPCRCERR  | MSDC_INT_CMDTMO  |
+		    MSDC_INT_ACMDRDY | MSDC_INT_ACMDCRCERR | MSDC_INT_ACMDTMO |
+		    MSDC_INT_ACMD19_DONE;
+
+	u32 resp;
+	unsigned long tmo;
+
+	/* Protocol layer does not provide response type, but our hardware needs
+	 * to know exact type, not just size!
+	 */
+	if (opcode == MMC_SEND_OP_COND || opcode == SD_APP_OP_COND) {
+		resp = RESP_R3;
+	} else if (opcode == MMC_SET_RELATIVE_ADDR) {
+		resp = (mmc_cmd_type(cmd) == MMC_CMD_BCR) ? RESP_R6 : RESP_R1;
+	} else if (opcode == MMC_FAST_IO) {
+		resp = RESP_R4;
+	} else if (opcode == MMC_GO_IRQ_STATE) {
+		resp = RESP_R5;
+	} else if (opcode == MMC_SELECT_CARD) {
+		resp = (cmd->arg != 0) ? RESP_R1B : RESP_NONE;
+	} else if (opcode == SD_IO_RW_DIRECT || opcode == SD_IO_RW_EXTENDED) {
+		resp = RESP_R1; /* SDIO workaround. */
+	} else if (opcode == SD_SEND_IF_COND && (mmc_cmd_type(cmd) == MMC_CMD_BCR)) {
+		resp = RESP_R1;
+	} else {
+		switch (mmc_resp_type(cmd)) {
+		case MMC_RSP_R1:
+			resp = RESP_R1;
+			break;
+		case MMC_RSP_R1B:
+			resp = RESP_R1B;
+			break;
+		case MMC_RSP_R2:
+			resp = RESP_R2;
+			break;
+		case MMC_RSP_R3:
+			resp = RESP_R3;
+			break;
+		case MMC_RSP_NONE:
+		default:
+			resp = RESP_NONE;
+			break;
+		}
+	}
+
+	cmd->error = 0;
+	/* rawcmd :
+	 * vol_swt << 30 | auto_cmd << 28 | blklen << 16 | go_irq << 15 |
+	 * stop << 14 | rw << 13 | dtype << 11 | rsptyp << 7 | brk << 6 | opcode
+	 */
+	rawcmd = opcode | msdc_rsp[resp] << 7 | host->blksz << 16;
+
+	if (opcode == MMC_READ_MULTIPLE_BLOCK) {
+		rawcmd |= (2 << 11);
+	} else if (opcode == MMC_READ_SINGLE_BLOCK) {
+		rawcmd |= (1 << 11);
+	} else if (opcode == MMC_WRITE_MULTIPLE_BLOCK) {
+		rawcmd |= ((2 << 11) | (1 << 13));
+	} else if (opcode == MMC_WRITE_BLOCK) {
+		rawcmd |= ((1 << 11) | (1 << 13));
+	} else if (opcode == SD_IO_RW_EXTENDED) {
+		if (cmd->data->flags & MMC_DATA_WRITE)
+			rawcmd |= (1 << 13);
+		if (cmd->data->blocks > 1)
+			rawcmd |= (2 << 11);
+		else
+			rawcmd |= (1 << 11);
+	} else if (opcode == SD_IO_RW_DIRECT && cmd->flags == (unsigned int)-1) {
+		rawcmd |= (1 << 14);
+	} else if ((opcode == SD_APP_SEND_SCR) ||
+		(opcode == SD_APP_SEND_NUM_WR_BLKS) ||
+		(opcode == SD_SWITCH && (mmc_cmd_type(cmd) == MMC_CMD_ADTC)) ||
+		(opcode == SD_APP_SD_STATUS && (mmc_cmd_type(cmd) == MMC_CMD_ADTC)) ||
+		(opcode == MMC_SEND_EXT_CSD && (mmc_cmd_type(cmd) == MMC_CMD_ADTC))) {
+		rawcmd |= (1 << 11);
+	} else if (opcode == MMC_STOP_TRANSMISSION) {
+		rawcmd |= (1 << 14);
+		rawcmd &= ~(0x0FFF << 16);
+	}
+
+	N_MSG(CMD, "CMD<%d><0x%.8x> Arg<0x%.8x>", opcode, rawcmd, cmd->arg);
+
+	tmo = jiffies + timeout;
+
+	if (opcode == MMC_SEND_STATUS) {
+		for (;;) {
+			if (!sdc_is_cmd_busy())
+				break;
+
+			if (time_after(jiffies, tmo)) {
+				ERR_MSG("XXX cmd_busy timeout: before CMD<%d>", opcode);
+				cmd->error = -ETIMEDOUT;
+				msdc_reset_hw(host);
+				goto end;
+			}
+		}
+	} else {
+		for (;;) {
+			if (!sdc_is_busy())
+				break;
+			if (time_after(jiffies, tmo)) {
+				ERR_MSG("XXX sdc_busy timeout: before CMD<%d>", opcode);
+				cmd->error = -ETIMEDOUT;
+				msdc_reset_hw(host);
+				goto end;
+			}
+		}
+	}
+
+	//BUG_ON(in_interrupt());
+	host->cmd     = cmd;
+	host->cmd_rsp = resp;
+
+	init_completion(&host->cmd_done);
+
+	sdr_set_bits(MSDC_INTEN, wints);
+	sdc_send_cmd(rawcmd, cmd->arg);
+
+end:
+	return cmd->error;
+}

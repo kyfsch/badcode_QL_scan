@@ -1,0 +1,46 @@
+static AT91S_DataFlashStatus AT91F_DataFlashWriteBuffer(
+	AT91PS_DataFlash pDataFlash,
+	unsigned char BufferCommand,
+	unsigned char *dataBuffer,
+	unsigned int bufferAddress,
+	int SizeToWrite )
+{
+	int cmdsize;
+	/* Test if the buffer command is legal */
+	if ((BufferCommand != DB_BUF1_WRITE) && (BufferCommand != DB_BUF2_WRITE))
+		return AT91C_DATAFLASH_BAD_COMMAND;
+
+	/* buffer address must be lower than page size */
+	if (bufferAddress > pDataFlash->pDevice->pages_size)
+		return AT91C_DATAFLASH_BAD_ADDRESS;
+
+    	/* Send first Write Command */
+	pDataFlash->pDataFlashDesc->command[0] = BufferCommand;
+	pDataFlash->pDataFlashDesc->command[1] = 0;
+	if (pDataFlash->pDevice->pages_number >= 16384)
+	{
+	   	pDataFlash->pDataFlashDesc->command[2] = 0;
+	   	pDataFlash->pDataFlashDesc->command[3] = (unsigned char)(((unsigned int)(bufferAddress &  pDataFlash->pDevice->byte_mask)) >> 8) ;
+	   	pDataFlash->pDataFlashDesc->command[4] = (unsigned char)((unsigned int)bufferAddress  & 0x00FF) ;
+		cmdsize = 5;
+	}
+	else
+	{
+	   	pDataFlash->pDataFlashDesc->command[2] = (unsigned char)(((unsigned int)(bufferAddress &  pDataFlash->pDevice->byte_mask)) >> 8) ;
+	   	pDataFlash->pDataFlashDesc->command[3] = (unsigned char)((unsigned int)bufferAddress  & 0x00FF) ;
+	   	pDataFlash->pDataFlashDesc->command[4] = 0;
+		cmdsize = 4;
+	}
+		
+	pDataFlash->pDataFlashDesc->tx_cmd_pt 	 = pDataFlash->pDataFlashDesc->command ;
+	pDataFlash->pDataFlashDesc->tx_cmd_size  = cmdsize ;
+	pDataFlash->pDataFlashDesc->rx_cmd_pt 	 = pDataFlash->pDataFlashDesc->command ;
+	pDataFlash->pDataFlashDesc->rx_cmd_size  = cmdsize ;
+
+	pDataFlash->pDataFlashDesc->rx_data_pt 	 = dataBuffer ;
+	pDataFlash->pDataFlashDesc->tx_data_pt 	 = dataBuffer ;
+	pDataFlash->pDataFlashDesc->rx_data_size = SizeToWrite ;
+	pDataFlash->pDataFlashDesc->tx_data_size = SizeToWrite ;
+
+	return AT91F_SpiWrite(pDataFlash->pDataFlashDesc);
+}

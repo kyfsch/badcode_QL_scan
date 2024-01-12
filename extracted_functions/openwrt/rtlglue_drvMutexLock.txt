@@ -1,0 +1,5 @@
+static void rtlglue_drvMutexLock(void)
+{
+    /* It is empty currently. Implement this function if Lock/Unlock function is needed */
+    return;
+}

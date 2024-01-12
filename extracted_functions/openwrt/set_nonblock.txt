@@ -1,0 +1,8 @@
+set_nonblock(int enable)
+{
+	if (enable == !!(sockflags & O_NONBLOCK))
+		return;
+
+	sockflags ^= O_NONBLOCK;
+	fcntl(s, F_SETFL, sockflags);
+}

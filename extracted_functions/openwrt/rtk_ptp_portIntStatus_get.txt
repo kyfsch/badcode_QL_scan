@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_ptp_portIntStatus_get(rtk_port_t port, rtk_ptp_intStatus_t *pStatusMask)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check port is PTP port */
+    RTK_CHK_PORT_IS_PTP(port);
+
+    if(NULL == pStatusMask)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicEavPortInterruptStatus(rtk_switch_port_L2P_get(port), pStatusMask)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

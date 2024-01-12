@@ -1,0 +1,56 @@
+static void aca_sram_desc_parse(struct dc_ep_priv *priv, const char *data,
+	u32 sid)
+{
+	u32 dbase, dnum;
+	struct aca_sram_desc *desc_base;
+	struct aca_mem_layout *mem_layout = to_mem_layout(priv);
+	struct aca_pdmem_layout *pdmem = to_pdmem_layout(priv);
+
+	desc_base = (struct aca_sram_desc *)data;
+	dbase = be32_to_cpu(desc_base->dbase);
+	dnum = be32_to_cpu(desc_base->dnum);
+
+	dev_dbg(priv->dev, "Sec %s desc base 0x%08x, des_num: %d\n",
+		sec_id_to_str(sid), dbase, dnum);
+
+	switch (sid) {
+	case ACA_SEC_MEM_TXIN:
+		mem_layout->txin_host_desc_base = dbase;
+		mem_layout->txin_host_dnum = dnum;
+		break;
+
+	case ACA_SEC_MEM_TXOUT:
+		mem_layout->txout_host_desc_base = dbase;
+		mem_layout->txout_host_dnum = dnum;
+		break;
+
+	case ACA_SEC_MEM_RXIN:
+		mem_layout->rxin_host_desc_base = dbase;
+		mem_layout->rxin_host_dnum = dnum;
+		break;
+
+	case ACA_SEC_MEM_RXOUT:
+		mem_layout->rxout_host_desc_base = dbase;
+		mem_layout->rxout_host_dnum = dnum;
+		break;
+	case ACA_SEC_MEM_TXIN_PDRING:
+		pdmem->txin_pd_desc_base = dbase;
+		pdmem->txin_pd_dnum = dnum;
+		break;
+	case ACA_SEC_MEM_TXOUT_PDRING:
+		pdmem->txout_pd_desc_base = dbase;
+		pdmem->txout_pd_dnum = dnum;
+		break;
+	case ACA_SEC_MEM_RXIN_PDRING:
+		pdmem->rxin_pd_desc_base = dbase;
+		pdmem->rxin_pd_dnum = dnum;
+		break;
+	case ACA_SEC_MEM_RXOUT_PDRING:
+		pdmem->rxin_pd_desc_base = dbase;
+		pdmem->rxin_pd_dnum = dnum;
+		break;
+	default:
+		dev_err(priv->dev, "Unknow aca sram section %d\n", sid);
+		break;
+	}
+}

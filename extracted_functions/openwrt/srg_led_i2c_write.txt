@@ -1,0 +1,4 @@
+srg_led_i2c_write(struct srg_led_ctrl *sysled_ctrl, u8 reg, u8 value)
+{
+	return i2c_smbus_write_byte_data(sysled_ctrl->client, reg, value);
+}

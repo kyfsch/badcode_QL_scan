@@ -1,0 +1,91 @@
+int rb_softconfig_init(struct kobject *rb_kobj, struct mtd_info *mtd)
+{
+	size_t bytes_read, buflen;
+	const u8 *buf;
+	int i, ret;
+	u32 magic;
+
+	sc_buf = NULL;
+	sc_kobj = NULL;
+
+	ret = __get_mtd_device(mtd);
+	if (ret)
+		return -ENODEV;
+
+	sc_buflen = mtd->size;
+	sc_buf = kmalloc(sc_buflen, GFP_KERNEL);
+	if (!sc_buf) {
+		__put_mtd_device(mtd);
+		return -ENOMEM;
+	}
+
+	ret = mtd_read(mtd, 0, sc_buflen, &bytes_read, sc_buf);
+	__put_mtd_device(mtd);
+
+	if (ret)
+		goto fail;
+
+	if (bytes_read != sc_buflen) {
+		ret = -EIO;
+		goto fail;
+	}
+
+	/* Check we have what we expect */
+	magic = *(const u32 *)sc_buf;
+	if (RB_MAGIC_SOFT != magic) {
+		ret = -EINVAL;
+		goto fail;
+	}
+
+	/* Skip magic and 32bit CRC located immediately after */
+	buf = sc_buf + (sizeof(magic) + sizeof(u32));
+	buflen = sc_buflen - (sizeof(magic) + sizeof(u32));
+
+	/* Populate sysfs */
+	ret = -ENOMEM;
+	sc_kobj = kobject_create_and_add(RB_MTD_SOFT_CONFIG, rb_kobj);
+	if (!sc_kobj)
+		goto fail;
+
+	rwlock_init(&sc_bufrwl);
+
+	/* Locate and publish all known tags */
+	for (i = 0; i < ARRAY_SIZE(sc_attrs); i++) {
+		ret = routerboot_tag_find(buf, buflen, sc_attrs[i].tag_id,
+					  &sc_attrs[i].pld_ofs, &sc_attrs[i].pld_len);
+		if (ret) {
+			sc_attrs[i].pld_ofs = sc_attrs[i].pld_len = 0;
+			continue;
+		}
+
+		/* Account for skipped magic and crc32 */
+		sc_attrs[i].pld_ofs += sizeof(magic) + sizeof(u32);
+
+		ret = sysfs_create_file(sc_kobj, &sc_attrs[i].kattr.attr);
+		if (ret)
+			pr_warn(RB_SC_PR_PFX "Could not create %s sysfs entry (%d)\n",
+			       sc_attrs[i].kattr.attr.name, ret);
+	}
+
+	/* Finally add the 'commit' attribute */
+	if (RB_SC_HAS_WRITE_SUPPORT) {
+		ret = sysfs_create_file(sc_kobj, &sc_kattrcommit.attr);
+		if (ret) {
+			pr_err(RB_SC_PR_PFX "Could not create %s sysfs entry (%d), aborting!\n",
+			       sc_kattrcommit.attr.name, ret);
+			goto sysfsfail;	// required attribute
+		}
+	}
+
+	pr_info("MikroTik RouterBOARD software configuration sysfs driver v" RB_SOFTCONFIG_VER "\n");
+
+	return 0;
+
+sysfsfail:
+	kobject_put(sc_kobj);
+	sc_kobj = NULL;
+fail:
+	kfree(sc_buf);
+	sc_buf = NULL;
+	return ret;
+}

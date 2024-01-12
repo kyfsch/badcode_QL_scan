@@ -1,0 +1,26 @@
+static void rtl838x_hw_en_rxtx(struct rtl838x_eth_priv *priv)
+{
+	/* Disable Head of Line features for all RX rings */
+	sw_w32(0xffffffff, priv->r->dma_if_rx_ring_size(0));
+
+	/* Truncate RX buffer to DEFAULT_MTU bytes, pad TX */
+	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_83XX | TX_PAD_EN_838X, priv->r->dma_if_ctrl);
+
+	/* Enable RX done, RX overflow and TX done interrupts */
+	sw_w32(0xfffff, priv->r->dma_if_intr_msk);
+
+	/* Enable DMA, engine expects empty FCS field */
+	sw_w32_mask(0, RX_EN | TX_EN, priv->r->dma_if_ctrl);
+
+	/* Restart TX/RX to CPU port */
+	sw_w32_mask(0x0, 0x3, priv->r->mac_port_ctrl(priv->cpu_port));
+	/* Set Speed, duplex, flow control
+	 * FORCE_EN | LINK_EN | NWAY_EN | DUP_SEL
+	 * | SPD_SEL = 0b10 | FORCE_FC_EN | PHY_MASTER_SLV_MANUAL_EN
+	 * | MEDIA_SEL
+	 */
+	sw_w32(0x6192F, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
+
+	/* Enable CRC checks on CPU-port */
+	sw_w32_mask(0, BIT(3), priv->r->mac_port_ctrl(priv->cpu_port));
+}

@@ -1,0 +1,13 @@
+static int rtl83xx_set_features(struct net_device *dev, netdev_features_t features)
+{
+	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+
+	if ((features ^ dev->features) & NETIF_F_RXCSUM) {
+		if (!(features & NETIF_F_RXCSUM))
+			sw_w32_mask(BIT(3), 0, priv->r->mac_port_ctrl(priv->cpu_port));
+		else
+			sw_w32_mask(0, BIT(3), priv->r->mac_port_ctrl(priv->cpu_port));
+	}
+
+	return 0;
+}

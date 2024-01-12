@@ -1,0 +1,19 @@
+static ssize_t sc_tag_show_boolts(const u8 *pld, u16 pld_len, char *buf,
+				  const struct sc_boolts *bts)
+{
+	const char *fmt;
+	char *out = buf;
+	u32 data;	// cpu-endian
+
+	if (sizeof(data) != pld_len)
+		return -EINVAL;
+
+	read_lock(&sc_bufrwl);
+	data = *(u32 *)pld;		// pld aliases sc_buf
+	read_unlock(&sc_bufrwl);
+
+	fmt = (data) ? "%s [%s]\n" : "[%s] %s\n";
+	out += sprintf(out, fmt, bts->strfalse, bts->strtrue);
+
+	return out - buf;
+}

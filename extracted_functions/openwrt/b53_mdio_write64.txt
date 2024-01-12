@@ -1,0 +1,17 @@
+static int b53_mdio_write64(struct b53_device *dev, u8 page, u8 reg,
+			     u64 value)
+{
+	struct mii_bus *bus = dev->priv;
+	unsigned i;
+	u64 temp = value;
+
+	for (i = 0; i < 4; i++) {
+		int ret = mdiobus_write(bus, B53_PSEUDO_PHY, REG_MII_DATA0 + i,
+				    temp & 0xffff);
+		if (ret)
+			return ret;
+		temp >>= 16;
+	}
+
+	return b53_mdio_op(dev, page, reg, REG_MII_ADDR_WRITE);
+}

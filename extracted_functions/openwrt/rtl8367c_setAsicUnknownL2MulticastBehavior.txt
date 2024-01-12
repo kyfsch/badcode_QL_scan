@@ -1,0 +1,24 @@
+ret_t rtl8367c_setAsicUnknownL2MulticastBehavior(rtk_uint32 port, rtk_uint32 behave)
+{
+    ret_t retVal;
+
+    if(port >  RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(behave >= L2_UNKOWN_MULTICAST_END)
+        return RT_ERR_NOT_ALLOWED;
+    if(port < 8)
+    {
+        retVal = rtl8367c_setAsicRegBits(RTL8367C_UNKNOWN_L2_MULTICAST_REG(port), RTL8367C_UNKNOWN_L2_MULTICAST_MASK(port), behave);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+    }
+    else
+    {
+        retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_UNKNOWN_L2_MULTICAST_CTRL1, 3 << ((port - 8) << 1), behave);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+    }
+
+    return RT_ERR_OK;
+}

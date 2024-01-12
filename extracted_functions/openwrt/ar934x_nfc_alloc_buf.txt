@@ -1,0 +1,14 @@
+static int ar934x_nfc_alloc_buf(struct ar934x_nfc *nfc, unsigned size)
+{
+	nfc->buf = dma_alloc_coherent(nfc->parent, size,
+				      &nfc->buf_dma, GFP_KERNEL);
+	if (nfc->buf == NULL) {
+		dev_err(nfc->parent, "no memory for DMA buffer\n");
+		return -ENOMEM;
+	}
+
+	nfc->buf_size = size;
+	nfc_dbg(nfc, "buf:%p size:%u\n", nfc->buf, nfc->buf_size);
+
+	return 0;
+}

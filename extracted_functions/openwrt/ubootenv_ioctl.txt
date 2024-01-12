@@ -1,0 +1,22 @@
+static long ubootenv_ioctl(struct file *file, u_int cmd, u_long arg)
+{
+	struct ubootenv_drvdata *data = to_ubootenv_drvdata(file);
+	void __user *argp = (void __user *)arg;
+	struct mtd_info_user info = {
+		.type = MTD_NORFLASH,
+		.size = data->rmem->size,
+	};
+
+	switch (cmd) {
+	case MEMISLOCKED:
+	case MEMERASE:
+		break;
+	case MEMGETINFO:
+		if (copy_to_user(argp, &info, sizeof(struct mtd_info_user)))
+			return -EFAULT;
+		break;
+	default:
+		return -ENOTTY;
+	}
+	return 0;
+}

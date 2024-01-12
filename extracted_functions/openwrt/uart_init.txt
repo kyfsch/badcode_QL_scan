@@ -1,0 +1,12 @@
+void uart_init(void)
+{
+	/* Reset UART1 */
+	reset_block(SYS_CTRL_RST_UART1, 1);
+	udelay(100);
+	reset_block(SYS_CTRL_RST_UART1, 0);
+	udelay(100);
+
+	/* Setup pin mux'ing for UART1 */
+	pinmux_set(PINMUX_BANK_MFA, 30, PINMUX_UARTA_SIN);
+	pinmux_set(PINMUX_BANK_MFA, 31, PINMUX_UARTA_SOUT);
+}

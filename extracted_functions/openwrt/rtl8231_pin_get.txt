@@ -1,0 +1,13 @@
+static int rtl8231_pin_get(struct rtl8231_gpios *gpios, u32 gpio, u16 *state)
+{
+	u32 v = rtl8231_read(gpios, RTL8231_GPIO_DATA(gpio));
+
+	if (v & 0x80000000) {
+		pr_err("Error reading RTL8231\n");
+		return -1;
+	}
+
+	*state = v & 0xffff;
+
+	return 0;
+}

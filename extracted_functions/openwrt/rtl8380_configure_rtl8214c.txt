@@ -1,0 +1,18 @@
+static int rtl8380_configure_rtl8214c(struct phy_device *phydev)
+{
+	u32 phy_id, val;
+	int mac = phydev->mdio.addr;
+
+	val = phy_read(phydev, 2);
+	phy_id = val << 16;
+	val = phy_read(phydev, 3);
+	phy_id |= val;
+	pr_debug("Phy on MAC %d: %x\n", mac, phy_id);
+
+	phydev_info(phydev, "Detected external RTL8214C\n");
+
+	/* GPHY auto conf */
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+
+	return 0;
+}

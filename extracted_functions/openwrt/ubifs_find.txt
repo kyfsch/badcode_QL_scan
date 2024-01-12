@@ -1,0 +1,19 @@
+static int ubifs_find(struct mtd_info *mtd, loff_t *offs, loff_t size)
+{
+	const loff_t end = *offs + size;
+	uint32_t magic;
+	size_t retlen;
+	int rc;
+
+	for (; *offs < end; *offs += mtd->erasesize) {
+		rc = mtd_read(mtd, *offs, sizeof(magic), &retlen,
+			      (unsigned char *) &magic);
+		if (rc || retlen != sizeof(magic))
+			continue;
+
+		if (be32_to_cpu(magic) == UBI_MAGIC)
+			return 0;
+	}
+
+	return -ENOENT;
+}

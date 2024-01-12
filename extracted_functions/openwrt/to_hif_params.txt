@@ -1,0 +1,4 @@
+static inline struct aca_hif_params *to_hif_params(struct dc_ep_priv *priv)
+{
+	return priv->aca.hif_params;
+}

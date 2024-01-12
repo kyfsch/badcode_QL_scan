@@ -1,0 +1,6 @@
+void rtl838x_dbgfs_cleanup(struct rtl838x_switch_priv *priv)
+{
+	debugfs_remove_recursive(priv->dbgfs_dir);
+
+/*	kfree(priv->dbgfs_entries); */
+}

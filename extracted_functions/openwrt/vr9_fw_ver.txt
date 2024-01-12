@@ -1,0 +1,6 @@
+static void vr9_fw_ver(unsigned int *major, unsigned int *minor)
+{
+
+    *major = FW_VER_ID->major;
+    *minor = FW_VER_ID->minor;
+}

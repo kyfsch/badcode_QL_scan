@@ -1,0 +1,10 @@
+void ifxdeu_fini_des (void)
+{
+        crypto_unregister_alg (&ifxdeu_des_alg);
+        crypto_unregister_skcipher (&ifxdeu_ecb_des_alg);
+        crypto_unregister_skcipher (&ifxdeu_cbc_des_alg);
+        crypto_unregister_alg (&ifxdeu_des3_ede_alg);
+        crypto_unregister_skcipher (&ifxdeu_ecb_des3_ede_alg);
+        crypto_unregister_skcipher (&ifxdeu_cbc_des3_ede_alg);
+
+}

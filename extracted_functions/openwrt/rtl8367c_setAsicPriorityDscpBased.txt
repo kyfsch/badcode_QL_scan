@@ -1,0 +1,10 @@
+ret_t rtl8367c_setAsicPriorityDscpBased(rtk_uint32 dscp, rtk_uint32 priority )
+{
+    if(priority > RTL8367C_PRIMAX )
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    if(dscp > RTL8367C_DSCPMAX)
+        return RT_ERR_QOS_DSCP_VALUE;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_QOS_DSCP_TO_PRIORITY_REG(dscp), RTL8367C_QOS_DSCP_TO_PRIORITY_MASK(dscp), priority);
+}

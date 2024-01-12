@@ -1,0 +1,15 @@
+static int aw9523_gpio_get(struct gpio_chip *chip, unsigned int offset)
+{
+	struct aw9523 *awi = gpiochip_get_data(chip);
+	u8 regbit = offset % AW9523_PINS_PER_PORT;
+	unsigned int val;
+	int ret;
+
+	mutex_lock(&awi->i2c_lock);
+	ret = aw9523_get_port_state(awi->regmap, offset, regbit, &val);
+	mutex_unlock(&awi->i2c_lock);
+	if (ret)
+		return ret;
+
+	return !!(val & BIT(regbit));
+}

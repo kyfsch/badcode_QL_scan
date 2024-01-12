@@ -1,0 +1,6 @@
+static void rtl930x_pie_lookup_enable(struct rtl838x_switch_priv *priv, int index)
+{
+	int block = index / PIE_BLOCK_SIZE;
+
+	sw_w32_mask(0, BIT(block), RTL930X_PIE_BLK_LOOKUP_CTRL);
+}

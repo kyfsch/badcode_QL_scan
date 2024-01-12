@@ -1,0 +1,138 @@
+int selfsigned(char **arg)
+{
+	mbedtls_pk_context key;
+	mbedtls_x509write_cert cert;
+	mbedtls_mpi serial;
+
+	char *subject = "";
+	unsigned int ksize = 512;
+	int exp = 65537;
+	unsigned int days = 30;
+	char *keypath = NULL, *certpath = NULL;
+	bool pem = true;
+	time_t from = time(NULL), to;
+	char fstr[20], tstr[20], sstr[17];
+	int len;
+	bool rsa = true;
+	mbedtls_ecp_group_id curve = MBEDTLS_ECP_DP_SECP256R1;
+
+	while (*arg && **arg == '-') {
+		if (!strcmp(*arg, "-der")) {
+			pem = false;
+		} else if (!strcmp(*arg, "-newkey") && arg[1]) {
+			if (!strncmp(arg[1], "rsa:", 4)) {
+				rsa = true;
+				ksize = (unsigned int)atoi(arg[1] + 4);
+			} else if (!strcmp(arg[1], "ec")) {
+				rsa = false;
+			} else {
+				fprintf(stderr, "error: invalid algorithm\n");
+				return 1;
+			}
+			arg++;
+		} else if (!strcmp(*arg, "-days") && arg[1]) {
+			days = (unsigned int)atoi(arg[1]);
+			arg++;
+		} else if (!strcmp(*arg, "-pkeyopt") && arg[1]) {
+			if (strncmp(arg[1], "ec_paramgen_curve:", 18)) {
+				fprintf(stderr, "error: invalid pkey option: %s\n", arg[1]);
+				return 1;
+			}
+			curve = ecp_curve((const char *)(arg[1] + 18));
+			if (curve == MBEDTLS_ECP_DP_NONE) {
+				fprintf(stderr, "error: invalid curve name: %s\n", arg[1] + 18);
+				return 1;
+			}
+			arg++;
+		} else if (!strcmp(*arg, "-keyout") && arg[1]) {
+			keypath = arg[1];
+			arg++;
+		} else if (!strcmp(*arg, "-out") && arg[1]) {
+			certpath = arg[1];
+			arg++;
+		} else if (!strcmp(*arg, "-subj") && arg[1]) {
+			if (arg[1][0] != '/' || strchr(arg[1], ';')) {
+				fprintf(stderr, "error: invalid subject");
+				return 1;
+			}
+			subject = calloc(strlen(arg[1]) + 1, 1);
+			char *oldc = arg[1] + 1, *newc = subject, *delim;
+			do {
+				delim = strchr(oldc, '=');
+				if (!delim) {
+					fprintf(stderr, "error: invalid subject");
+					return 1;
+				}
+				memcpy(newc, oldc, delim - oldc + 1);
+				newc += delim - oldc + 1;
+				oldc = delim + 1;
+
+				delim = strchr(oldc, '/');
+				if (!delim) {
+					delim = arg[1] + strlen(arg[1]);
+				}
+				memcpy(newc, oldc, delim - oldc);
+				newc += delim - oldc;
+				*newc++ = ',';
+				oldc = delim + 1;
+			} while(*delim);
+			arg++;
+		}
+		arg++;
+	}
+	gen_key(&key, rsa, ksize, exp, curve, pem);
+
+	if (keypath)
+		write_key(&key, keypath, pem);
+
+	from = (from < 1000000000) ? 1000000000 : from;
+	strftime(fstr, sizeof(fstr), "%Y%m%d%H%M%S", gmtime(&from));
+	to = from + 60 * 60 * 24 * days;
+	if (to < from)
+		to = INT_MAX;
+	strftime(tstr, sizeof(tstr), "%Y%m%d%H%M%S", gmtime(&to));
+
+	fprintf(stderr, "Generating selfsigned certificate with subject '%s'"
+			" and validity %s-%s\n", subject, fstr, tstr);
+
+	mbedtls_x509write_crt_init(&cert);
+	mbedtls_x509write_crt_set_md_alg(&cert, MBEDTLS_MD_SHA256);
+	mbedtls_x509write_crt_set_issuer_key(&cert, &key);
+	mbedtls_x509write_crt_set_subject_key(&cert, &key);
+	mbedtls_x509write_crt_set_subject_name(&cert, subject);
+	mbedtls_x509write_crt_set_issuer_name(&cert, subject);
+	mbedtls_x509write_crt_set_validity(&cert, fstr, tstr);
+	mbedtls_x509write_crt_set_basic_constraints(&cert, 0, -1);
+	mbedtls_x509write_crt_set_subject_key_identifier(&cert);
+	mbedtls_x509write_crt_set_authority_key_identifier(&cert);
+
+	_urandom(NULL, (void *) buf, 8);
+	for (len = 0; len < 8; len++)
+		sprintf(sstr + len*2, "%02x", (unsigned char) buf[len]);
+
+	mbedtls_mpi_init(&serial);
+	mbedtls_mpi_read_string(&serial, 16, sstr);
+	mbedtls_x509write_crt_set_serial(&cert, &serial);
+
+	if (pem) {
+		if (mbedtls_x509write_crt_pem(&cert, (void *) buf, sizeof(buf), _urandom, NULL) < 0) {
+			fprintf(stderr, "Failed to generate certificate\n");
+			return 1;
+		}
+
+		len = strlen(buf);
+	} else {
+		len = mbedtls_x509write_crt_der(&cert, (void *) buf, sizeof(buf), _urandom, NULL);
+		if (len < 0) {
+			fprintf(stderr, "Failed to generate certificate: %d\n", len);
+			return 1;
+		}
+	}
+	write_file(certpath, len, pem, true);
+
+	mbedtls_x509write_crt_free(&cert);
+	mbedtls_mpi_free(&serial);
+	mbedtls_pk_free(&key);
+
+	return 0;
+}

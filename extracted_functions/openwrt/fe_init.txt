@@ -1,0 +1,62 @@
+static int __init fe_init(struct net_device *dev)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+	struct device_node *port;
+	int err;
+
+	fe_reset_fe(priv);
+
+	if (priv->soc->switch_init) {
+		err = priv->soc->switch_init(priv);
+		if (err) {
+			if (err == -EPROBE_DEFER)
+				return err;
+
+			netdev_err(dev, "failed to initialize switch core\n");
+			return -ENODEV;
+		}
+	}
+
+	fe_reset_phy(priv);
+
+	of_get_mac_address(priv->dev->of_node, dev->dev_addr);
+
+	/* If the mac address is invalid, use random mac address  */
+	if (!is_valid_ether_addr(dev->dev_addr)) {
+		eth_hw_addr_random(dev);
+		dev_err(priv->dev, "generated random MAC address %pM\n",
+			dev->dev_addr);
+	}
+
+	err = fe_mdio_init(priv);
+	if (err)
+		return err;
+
+	if (priv->soc->port_init)
+		for_each_child_of_node(priv->dev->of_node, port)
+			if (of_device_is_compatible(port, "mediatek,eth-port") &&
+			    of_device_is_available(port))
+				priv->soc->port_init(priv, port);
+
+	if (priv->phy) {
+		err = priv->phy->connect(priv);
+		if (err)
+			goto err_phy_disconnect;
+	}
+
+	err = fe_hw_init(dev);
+	if (err)
+		goto err_phy_disconnect;
+
+	if ((priv->flags & FE_FLAG_HAS_SWITCH) && priv->soc->switch_config)
+		priv->soc->switch_config(priv);
+
+	return 0;
+
+err_phy_disconnect:
+	if (priv->phy)
+		priv->phy->disconnect(priv);
+	fe_mdio_cleanup(priv);
+
+	return err;
+}

@@ -1,0 +1,11 @@
+static void init_one_color(struct dialog_color *color)
+{
+	static int pair = 0;
+
+	pair++;
+	init_pair(pair, color->fg, color->bg);
+	if (color->hl)
+		color->atr = A_BOLD | COLOR_PAIR(pair);
+	else
+		color->atr = COLOR_PAIR(pair);
+}

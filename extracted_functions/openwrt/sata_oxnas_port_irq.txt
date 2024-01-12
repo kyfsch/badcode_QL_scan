@@ -1,0 +1,60 @@
+static void sata_oxnas_port_irq(struct ata_port *ap, int force_error)
+{
+	struct ata_queued_cmd *qc;
+	struct sata_oxnas_port_priv *pd = ap->private_data;
+	void __iomem *port_base = pd->port_base;
+
+	u32 int_status;
+	unsigned long flags = 0;
+
+	DPRINTK("ENTER port %d irqstatus %x\n", ap->port_no,
+		ioread32(port_base + INT_STATUS));
+
+	if (ap->qc_active & (1ULL << ATA_TAG_INTERNAL)) {
+			qc = ata_qc_from_tag(ap, ATA_TAG_INTERNAL);
+			DPRINTK("completing non-ncq cmd\n");
+
+			if (qc)
+				ata_qc_complete(qc);
+
+			return;
+	}
+
+	qc = ata_qc_from_tag(ap, ap->link.active_tag);
+
+
+	/* record the port's interrupt */
+	int_status = ioread32(port_base + INT_STATUS);
+
+	/* If there's no command associated with this IRQ, ignore it. We may get
+	 * spurious interrupts when cleaning-up after a failed command, ignore
+	 * these too. */
+	if (likely(qc)) {
+		/* get the status before any error cleanup */
+		qc->err_mask = ac_err_mask(sata_oxnas_check_status(ap));
+		if (force_error) {
+			/* Pretend there has been a link error */
+			qc->err_mask |= AC_ERR_ATA_BUS;
+			DPRINTK(" ####force error####\n");
+		}
+		/* tell libata we're done */
+		local_irq_save(flags);
+		sata_oxnas_irq_clear(ap);
+		local_irq_restore(flags);
+		ata_qc_complete(qc);
+	} else {
+		VPRINTK("Ignoring interrupt, can't find the command tag="
+			"%d %08x\n", ap->link.active_tag, ap->qc_active);
+	}
+
+	/* maybe a hotplug event */
+	if (unlikely(int_status & INT_LINK_SERROR)) {
+		u32 serror;
+
+		sata_oxnas_scr_read_port(ap, SCR_ERROR, &serror);
+		if (serror & (SERR_DEV_XCHG | SERR_PHYRDY_CHG)) {
+			ata_ehi_hotplugged(&ap->link.eh_info);
+			ata_port_freeze(ap);
+		}
+	}
+}

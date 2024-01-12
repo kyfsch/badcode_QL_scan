@@ -1,0 +1,16 @@
+static void rtl83xx_setup_l2_uc_entry(struct rtl838x_l2_entry *e, int port, int vid, u64 mac)
+{
+	memset(e, 0, sizeof(*e));
+
+	e->type = L2_UNICAST;
+	e->valid = true;
+
+	e->age = 3;
+	e->is_static = true;
+
+	e->port = port;
+
+	e->rvid = e->vid = vid;
+	e->is_ip_mc = e->is_ipv6_mc = false;
+	u64_to_ether_addr(mac, e->mac);
+}

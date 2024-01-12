@@ -1,0 +1,11 @@
+static void radius_deinit(struct radius_state *s)
+{
+	if (s->radius)
+		radius_server_deinit(s->radius);
+
+	if (s->eap.ssl_ctx)
+		tls_deinit(s->eap.ssl_ctx);
+
+	radius_userdata_free(&s->phase1);
+	radius_userdata_free(&s->phase2);
+}

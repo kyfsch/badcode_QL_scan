@@ -1,0 +1,12 @@
+static long rtcl_round_rate(struct clk_hw *hw, unsigned long rate, unsigned long *parent_rate)
+{
+	struct rtcl_clk *clk = rtcl_hw_to_clk(hw);
+	unsigned long rrate = max(clk->min, min(clk->max, rate));
+	const struct rtcl_round_set *round = &rtcl_round_set[rtcl_ccu->soc][clk->idx];
+
+	rrate = ((rrate + (round->step >> 1)) / round->step) * round->step;
+	rrate -= (rrate > clk->max) ? round->step : 0;
+	rrate += (rrate < clk->min) ? round->step : 0;
+
+	return rrate;
+}

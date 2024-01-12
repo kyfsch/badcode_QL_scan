@@ -1,0 +1,79 @@
+nvram_handle_t * nvram_open(const char *file, int rdonly)
+{
+	int i;
+	int fd;
+	char *mtd = NULL;
+	nvram_handle_t *h;
+	nvram_header_t *header;
+	int offset = -1;
+
+	/* If erase size or file are undefined then try to define them */
+	if( (nvram_part_size == 0) || (file == NULL) )
+	{
+		/* Finding the mtd will set the appropriate erase size */
+		if( (mtd = nvram_find_mtd()) == NULL || nvram_part_size == 0 )
+		{
+			free(mtd);
+			return NULL;
+		}
+	}
+
+	if( (fd = open(file ? file : mtd, O_RDWR)) > -1 )
+	{
+		char *mmap_area = (char *) mmap(
+			NULL, nvram_part_size, PROT_READ | PROT_WRITE,
+			(( rdonly == NVRAM_RO ) ? MAP_PRIVATE : MAP_SHARED) | MAP_LOCKED, fd, 0);
+
+		if( mmap_area != MAP_FAILED )
+		{
+			/*
+			 * Start looking for NVRAM_MAGIC at beginning of MTD
+			 * partition. Stop if there is less than NVRAM_MIN_SPACE
+			 * to check, that was the lowest used size.
+			 */
+			for( i = 0; i <= ((nvram_part_size - NVRAM_MIN_SPACE) / sizeof(uint32_t)); i++ )
+			{
+				if( ((uint32_t *)mmap_area)[i] == NVRAM_MAGIC )
+				{
+					offset = i * sizeof(uint32_t);
+					break;
+				}
+			}
+
+			if( offset < 0 )
+			{
+				munmap(mmap_area, nvram_part_size);
+				free(mtd);
+				close(fd);
+				return NULL;
+			}
+			else if( (h = malloc(sizeof(nvram_handle_t))) != NULL )
+			{
+				memset(h, 0, sizeof(nvram_handle_t));
+
+				h->fd     = fd;
+				h->mmap   = mmap_area;
+				h->length = nvram_part_size;
+				h->offset = offset;
+
+				header = nvram_header(h);
+
+				if (header->magic == NVRAM_MAGIC &&
+				    (rdonly || header->len < h->length - h->offset)) {
+					_nvram_rehash(h);
+					free(mtd);
+					return h;
+				}
+				else
+				{
+					munmap(h->mmap, h->length);
+					free(h);
+				}
+			}
+		}
+	}
+
+	free(mtd);
+	close(fd);
+	return NULL;
+}

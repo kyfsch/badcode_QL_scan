@@ -1,0 +1,51 @@
+rtk_api_ret_t rtk_l2_addr_del(rtk_mac_t *pMac, rtk_l2_ucastAddr_t *pL2_data)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 method;
+    rtl8367c_luttb l2Table;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* must be unicast address */
+    if ((pMac == NULL) || (pMac->octet[0] & 0x1))
+        return RT_ERR_MAC;
+
+    if (pL2_data->fid > RTL8367C_FIDMAX || pL2_data->efid > RTL8367C_EFIDMAX)
+        return RT_ERR_L2_FID;
+
+    memset(&l2Table, 0, sizeof(rtl8367c_luttb));
+
+    /* fill key (MAC,FID) to get L2 entry */
+    memcpy(l2Table.mac.octet, pMac->octet, ETHER_ADDR_LEN);
+    l2Table.ivl_svl     = pL2_data->ivl;
+    l2Table.cvid_fid    = pL2_data->cvid;
+    l2Table.fid         = pL2_data->fid;
+    l2Table.efid        = pL2_data->efid;
+    method = LUTREADMETHOD_MAC;
+    retVal = rtl8367c_getAsicL2LookupTb(method, &l2Table);
+    if (RT_ERR_OK ==  retVal)
+    {
+        memcpy(l2Table.mac.octet, pMac->octet, ETHER_ADDR_LEN);
+        l2Table.ivl_svl     = pL2_data->ivl;
+        l2Table.cvid_fid    = pL2_data->cvid;
+        l2Table.fid = pL2_data->fid;
+        l2Table.efid = pL2_data->efid;
+        l2Table.spa = 0;
+        l2Table.nosalearn = 0;
+        l2Table.sa_block = 0;
+        l2Table.da_block = 0;
+        l2Table.auth = 0;
+        l2Table.age = 0;
+        l2Table.lut_pri = 0;
+        l2Table.sa_en = 0;
+        l2Table.fwd_en = 0;
+        if((retVal = rtl8367c_setAsicL2LookupTb(&l2Table)) != RT_ERR_OK)
+            return retVal;
+
+        pL2_data->address = l2Table.address;
+        return RT_ERR_OK;
+    }
+    else
+        return retVal;
+}

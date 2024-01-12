@@ -1,0 +1,27 @@
+int RangeDecoderBitDecode(CProb *prob, CRangeDecoder *rd)
+{
+  UInt32 bound = (rd->Range >> kNumBitModelTotalBits) * *prob;
+  if (rd->Code < bound)
+  {
+    rd->Range = bound;
+    *prob += (kBitModelTotal - *prob) >> kNumMoveBits;
+    if (rd->Range < kTopValue)
+    {
+      rd->Code = (rd->Code << 8) | ReadByte;
+      rd->Range <<= 8;
+    }
+    return 0;
+  }
+  else
+  {
+    rd->Range -= bound;
+    rd->Code -= bound;
+    *prob -= (*prob) >> kNumMoveBits;
+    if (rd->Range < kTopValue)
+    {
+      rd->Code = (rd->Code << 8) | ReadByte;
+      rd->Range <<= 8;
+    }
+    return 1;
+  }
+}

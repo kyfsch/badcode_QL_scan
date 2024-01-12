@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicRldpLeaveLoopedPortmask(rtk_uint32 portmask)
+{
+    return rtl8367c_setAsicReg(RTL8367C_REG_RLDP_RELEASED_INDICATOR, portmask);
+}

@@ -1,0 +1,27 @@
+static ssize_t sc_tag_show_u32tvs(const u8 *pld, u16 pld_len, char *buf,
+				  const struct sc_u32tvs tvs[], const int tvselmts)
+{
+	const char *fmt;
+	char *out = buf;
+	u32 data;	// cpu-endian
+	int i;
+
+	// fallback to raw hex output if we can't handle the input
+	if (tvselmts < 0)
+		return routerboot_tag_show_u32s(pld, pld_len, buf);
+
+	if (sizeof(data) != pld_len)
+		return -EINVAL;
+
+	read_lock(&sc_bufrwl);
+	data = *(u32 *)pld;		// pld aliases sc_buf
+	read_unlock(&sc_bufrwl);
+
+	for (i = 0; i < tvselmts; i++) {
+		fmt = (tvs[i].val == data) ? "[%s] " : "%s ";
+		out += sprintf(out, fmt, tvs[i].str);
+	}
+
+	out += sprintf(out, "\n");
+	return out - buf;
+}

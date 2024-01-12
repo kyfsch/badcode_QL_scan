@@ -1,0 +1,16 @@
+int ifxdeu_init_sha1_hmac (void)
+{
+    int ret = -ENOSYS;
+
+
+
+    if ((ret = crypto_register_shash(&ifxdeu_sha1_hmac_alg)))
+        goto sha1_err;
+
+    printk (KERN_NOTICE "IFX DEU SHA1_HMAC initialized%s.\n", disable_deudma ? "" : " (DMA)");
+    return ret;
+
+sha1_err:
+    printk(KERN_ERR "IFX DEU SHA1_HMAC initialization failed!\n");
+    return ret;
+}

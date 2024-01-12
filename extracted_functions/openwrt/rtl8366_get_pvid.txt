@@ -1,0 +1,17 @@
+static int rtl8366_get_pvid(struct rtl8366_smi *smi, int port, int *val)
+{
+	struct rtl8366_vlan_mc vlanmc;
+	int err;
+	int index;
+
+	err = smi->ops->get_mc_index(smi, port, &index);
+	if (err)
+		return err;
+
+	err = smi->ops->get_vlan_mc(smi, index, &vlanmc);
+	if (err)
+		return err;
+
+	*val = vlanmc.vid;
+	return 0;
+}

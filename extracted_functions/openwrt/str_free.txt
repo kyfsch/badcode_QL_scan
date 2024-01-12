@@ -1,0 +1,7 @@
+void str_free(struct gstr *gs)
+{
+	if (gs->s)
+		free(gs->s);
+	gs->s = NULL;
+	gs->len = 0;
+}

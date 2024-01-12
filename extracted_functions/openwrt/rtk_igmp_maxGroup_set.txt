@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_igmp_maxGroup_set(rtk_port_t port, rtk_uint32 group)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check port valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if(group > RTL8367C_IGMP_MAX_GOUP)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if ((retVal = rtl8367c_setAsicIGMPPortMAXGroup(rtk_switch_port_L2P_get(port), group))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

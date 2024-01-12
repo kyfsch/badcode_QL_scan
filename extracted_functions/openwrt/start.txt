@@ -1,0 +1,10 @@
+void start(void)
+{
+	serial_console_init();
+	puts("=== " CONFIG_PROGRAM_NAME " ===\n");
+
+	load();
+
+	puts("Halting execution.\n");
+	while (true) {}
+}

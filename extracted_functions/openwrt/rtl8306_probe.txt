@@ -1,0 +1,22 @@
+rtl8306_probe(struct phy_device *pdev)
+{
+	struct rtl_priv *priv;
+
+	list_for_each_entry(priv, &phydevs, list) {
+		/*
+		 * share one rtl_priv instance between virtual phy
+		 * devices on the same bus
+		 */
+		if (priv->bus == pdev->mdio.bus)
+			goto found;
+	}
+	priv = kzalloc(sizeof(struct rtl_priv), GFP_KERNEL);
+	if (!priv)
+		return -ENOMEM;
+
+	priv->bus = pdev->mdio.bus;
+
+found:
+	pdev->priv = priv;
+	return 0;
+}

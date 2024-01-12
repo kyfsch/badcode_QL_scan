@@ -1,0 +1,81 @@
+static int rtl8366_set_pvid(struct rtl8366_smi *smi, unsigned port,
+			    unsigned vid)
+{
+	struct rtl8366_vlan_mc vlanmc;
+	struct rtl8366_vlan_4k vlan4k;
+	int err;
+	int i;
+
+	/* Try to find an existing MC entry for this VID */
+	for (i = 0; i < smi->num_vlan_mc; i++) {
+		err = smi->ops->get_vlan_mc(smi, i, &vlanmc);
+		if (err)
+			return err;
+
+		if (vid == vlanmc.vid) {
+			err = smi->ops->set_vlan_mc(smi, i, &vlanmc);
+			if (err)
+				return err;
+
+			err = smi->ops->set_mc_index(smi, port, i);
+			return err;
+		}
+	}
+
+	/* We have no MC entry for this VID, try to find an empty one */
+	for (i = 0; i < smi->num_vlan_mc; i++) {
+		err = smi->ops->get_vlan_mc(smi, i, &vlanmc);
+		if (err)
+			return err;
+
+		if (vlanmc.vid == 0 && vlanmc.member == 0) {
+			/* Update the entry from the 4K table */
+			err = smi->ops->get_vlan_4k(smi, vid, &vlan4k);
+			if (err)
+				return err;
+
+			vlanmc.vid = vid;
+			vlanmc.member = vlan4k.member;
+			vlanmc.untag = vlan4k.untag;
+			vlanmc.fid = vlan4k.fid;
+			err = smi->ops->set_vlan_mc(smi, i, &vlanmc);
+			if (err)
+				return err;
+
+			err = smi->ops->set_mc_index(smi, port, i);
+			return err;
+		}
+	}
+
+	/* MC table is full, try to find an unused entry and replace it */
+	for (i = 0; i < smi->num_vlan_mc; i++) {
+		int used;
+
+		err = rtl8366_mc_is_used(smi, i, &used);
+		if (err)
+			return err;
+
+		if (!used) {
+			/* Update the entry from the 4K table */
+			err = smi->ops->get_vlan_4k(smi, vid, &vlan4k);
+			if (err)
+				return err;
+
+			vlanmc.vid = vid;
+			vlanmc.member = vlan4k.member;
+			vlanmc.untag = vlan4k.untag;
+			vlanmc.fid = vlan4k.fid;
+			err = smi->ops->set_vlan_mc(smi, i, &vlanmc);
+			if (err)
+				return err;
+
+			err = smi->ops->set_mc_index(smi, port, i);
+			return err;
+		}
+	}
+
+	dev_err(smi->parent,
+		"all VLAN member configurations are in use\n");
+
+	return -ENOSPC;
+}

@@ -1,0 +1,38 @@
+int BN_sub_word(BIGNUM *a, BN_ULONG w)
+	{
+	int i;
+
+	if (BN_is_zero(a) || a->neg)
+		{
+		a->neg=0;
+		i=BN_add_word(a,w);
+		a->neg=1;
+		return(i);
+		}
+
+	w&=BN_MASK2;
+	if ((a->top == 1) && (a->d[0] < w))
+		{
+		a->d[0]=w-a->d[0];
+		a->neg=1;
+		return(1);
+		}
+	i=0;
+	for (;;)
+		{
+		if (a->d[i] >= w)
+			{
+			a->d[i]-=w;
+			break;
+			}
+		else
+			{
+			a->d[i]=(a->d[i]-w)&BN_MASK2;
+			i++;
+			w=1;
+			}
+		}
+	if ((a->d[i] == 0) && (i == (a->top-1)))
+		a->top--;
+	return(1);
+	}

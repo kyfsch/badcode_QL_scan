@@ -1,0 +1,22 @@
+int on_key_esc(WINDOW *win)
+{
+	int key;
+	int key2;
+	int key3;
+
+	nodelay(win, TRUE);
+	keypad(win, FALSE);
+	key = wgetch(win);
+	key2 = wgetch(win);
+	do {
+		key3 = wgetch(win);
+	} while (key3 != ERR);
+	nodelay(win, FALSE);
+	keypad(win, TRUE);
+	if (key == KEY_ESC && key2 == ERR)
+		return KEY_ESC;
+	else if (key != ERR && key != KEY_ESC && key2 == ERR)
+		ungetch(key);
+
+	return -1;
+}

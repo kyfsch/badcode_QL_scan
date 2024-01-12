@@ -1,0 +1,6 @@
+static void dc_aca_test_init(struct dc_ep_dev *dev, void *soc_base)
+{
+	umt_txin_send(dev, (u8 __iomem *)soc_base, 8);
+	ppe_txout_send(dev, (TXOUT_PD_DBASE + dev->membase), 8);
+	ppe_rxout_send(dev, (RXOUT_PD_DBASE + dev->membase), 8);
+}

@@ -1,0 +1,12 @@
+static ssize_t stp_state_read(struct file *filp, char __user *buffer, size_t count,
+			     loff_t *ppos)
+{
+	struct rtl838x_port *p = filp->private_data;
+	struct dsa_switch *ds = p->dp->ds;
+	int value = rtl83xx_port_get_stp_state(ds->priv, p->dp->index);
+
+	if (value < 0)
+		return -EINVAL;
+
+	return rtl838x_common_read(buffer, count, ppos, (u32)value);
+}

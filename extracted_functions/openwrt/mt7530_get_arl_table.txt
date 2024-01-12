@@ -1,0 +1,60 @@
+static int mt7530_get_arl_table(struct switch_dev *dev,
+				const struct switch_attr *attr,
+				struct switch_val *val)
+{
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+	char *buf = priv->arl_buf;
+	size_t size = sizeof(priv->arl_buf);
+	size_t count = 0;
+	size_t retry_times = 100;
+	int ret;
+	u32 atc;
+
+	ret = snprintf(buf, size, "address resolution table\n");
+	if (ret >= size || ret <= 0) {
+		priv->arl_buf[0] = 0;
+		goto out;
+	}
+	buf += ret;
+	size = size - ret;
+
+	mt7530_w32(priv, REG_ESW_WT_MAC_ATC, REG_MAC_ATC_START);
+
+	do {
+		atc = mt7530_r32(priv, REG_ESW_WT_MAC_ATC);
+		if (atc & REG_MAC_ATC_SRCH_HIT && !(atc & REG_MAC_ATC_BUSY)) {
+			u32 atrd;
+
+			++count;
+			atrd = mt7530_r32(priv, REG_ESW_TABLE_ATRD);
+			if (atrd & REG_ATRD_VALID) {
+				u32 mac1;
+				u32 mac2;
+
+				mac1 = mt7530_r32(priv, REG_ESW_TABLE_TSRA1);
+				mac2 = mt7530_r32(priv, REG_ESW_TABLE_TSRA2);
+
+				if (!(atc & REG_MAC_ATC_SRCH_END))
+					mt7530_w32(priv, REG_ESW_WT_MAC_ATC, REG_MAC_ATC_NEXT);
+
+				buf = mt7530_print_arl_table_row(atrd, mac1, mac2, buf, &size);
+				if (!buf) {
+					pr_warn("%s: too many addresses\n", __func__);
+					goto out;
+				}
+			} else if (!(atc & REG_MAC_ATC_SRCH_END)) {
+				mt7530_w32(priv, REG_ESW_WT_MAC_ATC, REG_MAC_ATC_NEXT);
+			}
+		} else {
+			--retry_times;
+			usleep_range(1000, 5000);
+		}
+	} while (!(atc & REG_MAC_ATC_SRCH_END) &&
+		 count < MT7530_NUM_ARL_RECORDS &&
+		 retry_times > 0);
+out:
+	val->value.s = priv->arl_buf;
+	val->len = strlen(priv->arl_buf);
+
+	return 0;
+}

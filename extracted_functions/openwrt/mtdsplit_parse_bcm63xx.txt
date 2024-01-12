@@ -1,0 +1,19 @@
+static int mtdsplit_parse_bcm63xx(struct mtd_info *master,
+				  const struct mtd_partition **pparts,
+				  struct mtd_part_parser_data *data)
+{
+	struct bcm_tag hdr;
+	loff_t offset;
+
+	if (mtd_type_is_nand(master))
+		return -EINVAL;
+
+	/* find bcm63xx_cfe image on erase block boundaries */
+	for (offset = 0; offset < master->size; offset += master->erasesize) {
+		if (!bcm63xx_read_image_tag(master, offset, (void *) &hdr))
+			return bcm63xx_parse_partitions(master, pparts,
+							(void *) &hdr);
+	}
+
+	return -EINVAL;
+}

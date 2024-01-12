@@ -1,0 +1,69 @@
+static bool nmbm_rebuild_info_table(struct nmbm_instance *ni)
+{
+	uint32_t table_start_ba, table_end_ba, next_start_ba;
+	uint32_t main_table_end_ba;
+	bool success;
+
+	/* Set initial value */
+	ni->main_table_ba = 0;
+	ni->backup_table_ba = 0;
+	ni->mapping_blocks_ba = ni->mapping_blocks_top_ba;
+
+	/* Write main table */
+	success = nmbm_write_info_table(ni, ni->mgmt_start_ba,
+					ni->mapping_blocks_top_ba,
+					&table_start_ba, &table_end_ba);
+	if (!success) {
+		/* Failed to write main table, data will be lost */
+		nlog_err(ni, "Unable to write at least one info table!\n");
+		nlog_err(ni, "Please save your data before power off!\n");
+		ni->protected = 1;
+		return false;
+	}
+
+	/* Main info table is successfully written, record its offset */
+	ni->main_table_ba = table_start_ba;
+	main_table_end_ba = table_end_ba;
+
+	/* Adjust mapping_blocks_ba */
+	ni->mapping_blocks_ba = table_end_ba;
+
+	nmbm_mark_tables_clean(ni);
+
+	nlog_table_creation(ni, true, table_start_ba, table_end_ba);
+
+	/* Reserve spare blocks for main info table. */
+	success = nmbm_try_reserve_blocks(ni, table_end_ba,
+					  &next_start_ba,
+					  ni->info_table_spare_blocks, 0,
+					  ni->mapping_blocks_top_ba -
+					  size2blk(ni, ni->info_table_size));
+	if (!success) {
+		/* There is no spare block. */
+		nlog_debug(ni, "No room for backup info table\n");
+		return true;
+	}
+
+	/* Write backup info table. */
+	success = nmbm_write_info_table(ni, next_start_ba,
+					ni->mapping_blocks_top_ba,
+					&table_start_ba, &table_end_ba);
+	if (!success) {
+		/* There is no enough blocks for backup table. */
+		nlog_debug(ni, "No room for backup info table\n");
+		return true;
+	}
+
+	/* Backup table is successfully written, record its offset */
+	ni->backup_table_ba = table_start_ba;
+
+	/* Adjust mapping_blocks_off */
+	ni->mapping_blocks_ba = table_end_ba;
+
+	/* Erase spare blocks of main table to clean possible interference data */
+	nmbm_erase_range(ni, main_table_end_ba, ni->backup_table_ba);
+
+	nlog_table_creation(ni, false, table_start_ba, table_end_ba);
+
+	return true;
+}

@@ -1,0 +1,67 @@
+static unsigned int sata_oxnas_qc_issue(struct ata_queued_cmd *qc)
+{
+	struct sata_oxnas_port_priv *pd = qc->ap->private_data;
+	struct sata_oxnas_host_priv *hd = qc->ap->host->private_data;
+
+	void __iomem *port_base = pd->port_base;
+	void __iomem *core_base = pd->core_base;
+	int port_no = qc->ap->port_no;
+	int no_microcode = (hd->current_ucode == UNKNOWN_MODE);
+	u32 reg;
+
+	/* check the core is idle */
+	if (ioread32(port_base + SATA_COMMAND) & CMD_CORE_BUSY) {
+		int count = 0;
+
+		DPRINTK("core busy for a command on port %d\n",
+			qc->ap->port_no);
+		do {
+			mdelay(1);
+			if (++count > 100) {
+				DPRINTK("core busy for a command on port %d\n",
+					qc->ap->port_no);
+				/* CrazyDumpDebug(); */
+				sata_oxnas_cleanup(qc->ap->host);
+			}
+		} while (ioread32(port_base + SATA_COMMAND) & CMD_CORE_BUSY);
+	}
+
+	/* enable passing of error signals to DMA sub-core by clearing the
+	 * appropriate bit */
+	reg = ioread32(core_base + DATA_PLANE_CTRL);
+	if (no_microcode)
+		reg |= (DPC_ERROR_MASK_BIT | (DPC_ERROR_MASK_BIT << 1));
+	reg &= ~(DPC_ERROR_MASK_BIT << port_no);
+	iowrite32(reg, core_base + DATA_PLANE_CTRL);
+
+	/* Disable all interrupts for ports and RAID controller */
+	iowrite32(~0, port_base + INT_DISABLE);
+
+	/* Disable all interrupts for core */
+	iowrite32(~0, core_base + CORE_INT_DISABLE);
+	wmb();
+
+	/* Load the command settings into the orb registers */
+	sata_oxnas_tf_load(qc->ap, &qc->tf);
+
+	/* both pio and dma commands use dma */
+	if (ata_is_dma(qc->tf.protocol) || ata_is_pio(qc->tf.protocol)) {
+		/* Start the DMA */
+		iowrite32(SGDMA_CONTROL_GO,	pd->sgdma_base + SGDMA_CONTROL);
+		wmb();
+	}
+
+	/* enable End of command interrupt */
+	iowrite32(INT_WANT, port_base + INT_ENABLE);
+	iowrite32(COREINT_END, core_base + CORE_INT_ENABLE);
+	wmb();
+
+	/* Start the command */
+	reg = ioread32(port_base + SATA_COMMAND);
+	reg &= ~SATA_OPCODE_MASK;
+	reg |= CMD_WRITE_TO_ORB_REGS;
+	iowrite32(reg , port_base + SATA_COMMAND);
+	wmb();
+
+	return 0;
+}

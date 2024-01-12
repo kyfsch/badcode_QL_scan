@@ -1,0 +1,10 @@
+static void nlog_table_creation(struct nmbm_instance *ni, bool main_table,
+			       uint32_t start_ba, uint32_t end_ba)
+{
+	if (start_ba == end_ba - 1)
+		nlog_info(ni, "%s info table has been written to block %u\n",
+			 main_table ? "Main" : "Backup", start_ba);
+	else
+		nlog_info(ni, "%s info table has been written to block %u-%u\n",
+			 main_table ? "Main" : "Backup", start_ba, end_ba - 1);
+}

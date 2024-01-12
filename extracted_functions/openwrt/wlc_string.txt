@@ -1,0 +1,10 @@
+static int wlc_string(wlc_param param, void *data, void *value)
+{
+	char *var = *((char **) data);
+	
+	if ((param & PARAM_MODE) == GET) {
+		strcpy(value, var);
+	}
+
+	return 0;
+}

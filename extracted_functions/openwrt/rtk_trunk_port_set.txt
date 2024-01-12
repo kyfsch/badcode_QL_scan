@@ -1,0 +1,75 @@
+rtk_api_ret_t rtk_trunk_port_set(rtk_trunk_group_t trk_gid, rtk_portmask_t *pTrunk_member_portmask)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 pmsk;
+    rtk_uint32 regValue, type, tmp;
+
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0249)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_getAsicReg(0x1300, &regValue)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0000)) != RT_ERR_OK)
+        return retVal;
+
+    switch (regValue)
+    {
+        case 0x0276:
+        case 0x0597:
+        case 0x6367:
+            type = 0;
+            break;
+        case 0x0652:
+        case 0x6368:
+            type = 1;
+            break;
+        case 0x0801:
+        case 0x6511:
+            type = 2;
+            break;
+        default:
+            return RT_ERR_FAILED;
+    }
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Trunk Group Valid */
+    RTK_CHK_TRUNK_GROUP_VALID(trk_gid);
+
+    if(NULL == pTrunk_member_portmask)
+        return RT_ERR_NULL_POINTER;
+
+    RTK_CHK_PORTMASK_VALID(pTrunk_member_portmask);
+
+    if((retVal = rtk_switch_portmask_L2P_get(pTrunk_member_portmask, &pmsk)) != RT_ERR_OK)
+        return retVal;
+
+    if((type == 0) || (type == 1))
+    {
+        if ((pmsk | RTL8367C_PORT_TRUNK_GROUP_MASK_MASK(trk_gid)) != (rtk_uint32)RTL8367C_PORT_TRUNK_GROUP_MASK_MASK(trk_gid))
+            return RT_ERR_PORT_MASK;
+
+        pmsk = (pmsk & RTL8367C_PORT_TRUNK_GROUP_MASK_MASK(trk_gid)) >> RTL8367C_PORT_TRUNK_GROUP_MASK_OFFSET(trk_gid);
+    }
+    else if(type == 2)
+    {
+        tmp = 0;
+
+        if(pmsk & 0x2)
+            tmp |= 1;
+        if(pmsk & 0x8)
+            tmp |=2;
+        if(pmsk & 0x80)
+            tmp |=8;
+
+        pmsk = tmp;
+    }
+
+    if ((retVal = rtl8367c_setAsicTrunkingGroup(trk_gid, pmsk)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

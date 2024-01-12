@@ -1,0 +1,10 @@
+ead_get_tx_iv(void)
+{
+	unsigned int ofs;
+
+	ofs = 1 + ((ivofs_vec >> 2 * ivofs_idx) & 0x3);
+	ivofs_idx = (ivofs_idx + 1) % 16;
+	ead_tx_iv += ofs;
+
+	return ead_tx_iv;
+}

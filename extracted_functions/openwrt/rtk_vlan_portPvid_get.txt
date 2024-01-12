@@ -1,0 +1,30 @@
+rtk_api_ret_t rtk_vlan_portPvid_get(rtk_port_t port, rtk_vlan_t *pPvid, rtk_pri_t *pPriority)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 index, pri;
+    rtl8367c_vlanconfiguser mbrCfg;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if(NULL == pPvid)
+        return RT_ERR_NULL_POINTER;
+
+    if(NULL == pPriority)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicVlanPortBasedVID(rtk_switch_port_L2P_get(port), &index, &pri)) != RT_ERR_OK)
+        return retVal;
+
+    memset(&mbrCfg, 0x00, sizeof(rtl8367c_vlanconfiguser));
+    if ((retVal = rtl8367c_getAsicVlanMemberConfig(index, &mbrCfg)) != RT_ERR_OK)
+        return retVal;
+
+    *pPvid = mbrCfg.evid;
+    *pPriority = pri;
+
+    return RT_ERR_OK;
+}

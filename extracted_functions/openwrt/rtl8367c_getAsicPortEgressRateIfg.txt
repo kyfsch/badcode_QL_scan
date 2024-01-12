@@ -1,0 +1,8 @@
+ret_t rtl8367c_getAsicPortEgressRateIfg(rtk_uint32 *ifg)
+{
+    ret_t retVal;
+
+    retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_SCHEDULE_WFQ_CTRL, RTL8367C_SCHEDULE_WFQ_CTRL_OFFSET, ifg);
+
+    return retVal;
+}

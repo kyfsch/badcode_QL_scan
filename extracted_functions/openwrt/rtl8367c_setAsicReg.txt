@@ -1,0 +1,52 @@
+ret_t rtl8367c_setAsicReg(rtk_uint32 reg, rtk_uint32 value)
+{
+#if defined(RTK_X86_ASICDRV)/*RTK-CNSD2-NickWu-20061222: for x86 compile*/
+
+    ret_t retVal;
+
+    retVal = Access_Write(reg,2,value);
+    if(TRUE != retVal) return RT_ERR_SMI;
+
+    if(0x8367B == cleDebuggingDisplay)
+        PRINT("W[0x%4.4x]=0x%4.4x\n",reg,value);
+
+#elif defined(CONFIG_RTL8367C_ASICDRV_TEST)
+
+    /*MIBs emulating*/
+    if(reg == RTL8367C_REG_MIB_ADDRESS)
+    {
+        CleVirtualReg[RTL8367C_MIB_COUNTER_BASE_REG] = 0x1;
+        CleVirtualReg[RTL8367C_MIB_COUNTER_BASE_REG+1] = 0x2;
+        CleVirtualReg[RTL8367C_MIB_COUNTER_BASE_REG+2] = 0x3;
+        CleVirtualReg[RTL8367C_MIB_COUNTER_BASE_REG+3] = 0x4;
+    }
+
+    if(reg >= CLE_VIRTUAL_REG_SIZE)
+        return RT_ERR_OUT_OF_RANGE;
+
+    CleVirtualReg[reg] = value;
+
+    if(0x8367B == cleDebuggingDisplay)
+        PRINT("W[0x%4.4x]=0x%4.4x\n",reg,CleVirtualReg[reg]);
+
+#elif defined(EMBEDDED_SUPPORT)
+    if(reg > RTL8367C_REGDATAMAX || value > RTL8367C_REGDATAMAX )
+        return RT_ERR_INPUT;
+
+    setReg(reg, value);
+
+#else
+    ret_t retVal;
+
+    retVal = smi_write(reg, value);
+    if(retVal != RT_ERR_OK)
+        return RT_ERR_SMI;
+  #ifdef CONFIG_RTL865X_CLE
+    if(0x8367B == cleDebuggingDisplay)
+        PRINT("W[0x%4.4x]=0x%4.4x\n",reg,value);
+  #endif
+
+#endif
+
+    return RT_ERR_OK;
+}

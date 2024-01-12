@@ -1,0 +1,16 @@
+static int rtl838x_set_mac_address(struct net_device *dev, void *p)
+{
+	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	const struct sockaddr *addr = p;
+	u8 *mac = (u8 *) (addr->sa_data);
+
+	if (!is_valid_ether_addr(addr->sa_data))
+		return -EADDRNOTAVAIL;
+
+	dev_addr_set(dev, addr->sa_data);
+	rtl838x_set_mac_hw(dev, mac);
+
+	pr_info("Using MAC %08x%08x\n", sw_r32(priv->r->mac), sw_r32(priv->r->mac + 4));
+
+	return 0;
+}

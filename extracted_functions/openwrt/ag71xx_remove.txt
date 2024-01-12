@@ -1,0 +1,15 @@
+static int ag71xx_remove(struct platform_device *pdev)
+{
+	struct net_device *dev = platform_get_drvdata(pdev);
+	struct ag71xx *ag;
+
+	if (!dev)
+		return 0;
+
+	ag = netdev_priv(dev);
+	ag71xx_debugfs_exit(ag);
+	ag71xx_phy_disconnect(ag);
+	unregister_netdev(dev);
+	platform_set_drvdata(pdev, NULL);
+	return 0;
+}

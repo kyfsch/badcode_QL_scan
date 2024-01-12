@@ -1,0 +1,25 @@
+static int check_block(off_t pos, uint32_t sector)
+{
+	if (!check_sector(pos)) {
+		return 0;
+	}
+	if (read_sector(pos)) {
+		return 0;
+	}
+	if (read_uint64(readbuf, 0x00) != TFFS_BLOCK_HEADER_MAGIC) {
+		fprintf(stderr, "Warning: block without magic header. Skipping block\n");
+		return 0;
+	}
+	if (read_uint32(readbuf, 0x0c) != TFFS_SECTORS_PER_PAGE) {
+		fprintf(stderr, "Warning: block with wrong number of sectors per page. Skipping block\n");
+		return 0;
+	}
+
+	uint32_t num_hdr_bad = read_uint32(readbuf, 0x0c);
+	for (uint32_t i = 0; i < num_hdr_bad; i++) {
+		uint32_t bad = sector + read_uint64(readbuf, 0x1c + sizeof(uint64_t)*i);
+		sector_mark_bad(bad);
+	}
+
+	return 1;
+}

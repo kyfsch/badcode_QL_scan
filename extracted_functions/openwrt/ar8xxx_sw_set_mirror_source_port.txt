@@ -1,0 +1,13 @@
+ar8xxx_sw_set_mirror_source_port(struct switch_dev *dev,
+				 const struct switch_attr *attr,
+				 struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+
+	mutex_lock(&priv->reg_mutex);
+	priv->source_port = val->value.i;
+	priv->chip->set_mirror_regs(priv);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}

@@ -1,0 +1,11 @@
+char * nvram_find_staging(void)
+{
+	struct stat s;
+
+	if( (stat(NVRAM_STAGING, &s) > -1) && (s.st_mode & S_IFREG) )
+	{
+		return NVRAM_STAGING;
+	}
+
+	return NULL;
+}

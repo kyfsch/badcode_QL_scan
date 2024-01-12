@@ -1,0 +1,4 @@
+int __init bcma_fbs_register(void)
+{
+	return platform_driver_register(&bcma_fbs_driver);
+}

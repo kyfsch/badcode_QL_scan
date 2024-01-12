@@ -1,0 +1,58 @@
+static int ssb_fbs_set(struct ssb_fbs *priv, struct device_node *node)
+{
+	struct ssb_sprom *sprom = &priv->sprom;
+	const struct firmware *fw;
+	const char *sprom_name;
+	int err;
+
+	if (of_property_read_string(node, "brcm,sprom", &sprom_name))
+		sprom_name = NULL;
+
+	if (sprom_name) {
+		err = request_firmware_direct(&fw, sprom_name, priv->dev);
+		if (err)
+			dev_err(priv->dev, "%s load error\n", sprom_name);
+	} else {
+		err = -ENOENT;
+	}
+
+	if (err) {
+		sprom->revision = 0x02;
+		sprom->board_rev = 0x0017;
+		sprom->country_code = 0x00;
+		sprom->ant_available_bg = 0x03;
+		sprom->pa0b0 = 0x15ae;
+		sprom->pa0b1 = 0xfa85;
+		sprom->pa0b2 = 0xfe8d;
+		sprom->pa1b0 = 0xffff;
+		sprom->pa1b1 = 0xffff;
+		sprom->pa1b2 = 0xffff;
+		sprom->gpio0 = 0xff;
+		sprom->gpio1 = 0xff;
+		sprom->gpio2 = 0xff;
+		sprom->gpio3 = 0xff;
+		sprom->maxpwr_bg = 0x4c;
+		sprom->itssi_bg = 0x00;
+		sprom->boardflags_lo = 0x2848;
+		sprom->boardflags_hi = 0x0000;
+		priv->devid_override = false;
+
+		dev_warn(priv->dev, "using basic SPROM\n");
+	} else {
+		size_t size = min(fw->size, (size_t) SSB_FBS_MAX_SIZE);
+		u16 tmp_sprom[SSB_FBS_MAX_SIZE >> 1];
+		u32 i, j;
+
+		for (i = 0, j = 0; i < size; i += 2, j++)
+			tmp_sprom[j] = (fw->data[i] << 8) | fw->data[i + 1];
+
+		release_firmware(fw);
+		ssb_fbs_fixup(priv, tmp_sprom);
+		sprom_extract(priv, tmp_sprom, size >> 1);
+
+		priv->devid_override = sprom_override_devid(priv, sprom,
+							    tmp_sprom);
+	}
+
+	return 0;
+}

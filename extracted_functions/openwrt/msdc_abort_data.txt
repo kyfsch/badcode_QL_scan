@@ -1,0 +1,22 @@
+static void msdc_abort_data(struct msdc_host *host)
+{
+	void __iomem *base = host->base;
+	struct mmc_command *stop = host->mrq->stop;
+
+	ERR_MSG("Need to Abort.");
+
+	msdc_reset_hw(host);
+	msdc_clr_fifo();
+	msdc_clr_int();
+
+	// need to check FIFO count 0 ?
+
+	if (stop) {  /* try to stop, but may not success */
+		ERR_MSG("stop when abort CMD<%d>", stop->opcode);
+		(void)msdc_do_command(host, stop, 0, CMD_TIMEOUT);
+	}
+
+	//if (host->mclk >= 25000000) {
+	//      msdc_set_mclk(host, 0, host->mclk >> 1);
+	//}
+}

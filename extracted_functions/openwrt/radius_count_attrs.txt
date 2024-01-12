@@ -1,0 +1,28 @@
+radius_count_attrs(struct blob_attr **tb, int *n_attr, size_t *attr_size)
+{
+	struct blob_attr *data = tb[USER_ATTR_RADIUS];
+	struct blob_attr *cur;
+	int rem;
+
+	blobmsg_for_each_attr(cur, data, rem) {
+		struct radius_parse_attr_data *data;
+		size_t prev = *attr_size;
+
+		data = radius_parse_attr(cur);
+		if (!data)
+			continue;
+
+		*attr_size += data->size;
+		if (data->vendor)
+			*attr_size += VENDOR_ATTR_SIZE;
+
+		(*n_attr)++;
+	}
+
+	*n_attr += !!tb[USER_ATTR_VLAN] * 3 +
+		   !!tb[USER_ATTR_MAX_RATE_UP] +
+		   !!tb[USER_ATTR_MAX_RATE_DOWN];
+	*attr_size += !!tb[USER_ATTR_VLAN] * (4 + 4 + 5) +
+		      !!tb[USER_ATTR_MAX_RATE_UP] * (4 + VENDOR_ATTR_SIZE) +
+		      !!tb[USER_ATTR_MAX_RATE_DOWN] * (4 + VENDOR_ATTR_SIZE);
+}

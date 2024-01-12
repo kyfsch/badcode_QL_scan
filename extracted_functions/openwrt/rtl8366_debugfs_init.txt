@@ -1,0 +1,1 @@
+static inline void rtl8366_debugfs_init(struct rtl8366_smi *smi) {}

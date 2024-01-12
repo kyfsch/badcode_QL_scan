@@ -1,0 +1,53 @@
+static int rtl8218b_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
+{
+	int port = phydev->mdio.addr;
+	u64 poll_state;
+	u32 val;
+	bool an_enabled;
+
+	pr_info("In %s, port %d, enabled %d\n", __func__, port, e->eee_enabled);
+
+	poll_state = disable_polling(port);
+
+	/* Set GPHY page to copper */
+	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
+	val = phy_read(phydev, MII_BMCR);
+	an_enabled = val & BMCR_ANENABLE;
+
+	if (e->eee_enabled) {
+		/* 100/1000M EEE Capability */
+		phy_write(phydev, 13, 0x0007);
+		phy_write(phydev, 14, 0x003C);
+		phy_write(phydev, 13, 0x4007);
+		phy_write(phydev, 14, 0x0006);
+
+		val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
+		val |= BIT(4);
+		phy_write_paged(phydev, RTL821X_PAGE_MAC, 25, val);
+	} else {
+		/* 100/1000M EEE Capability */
+		phy_write(phydev, 13, 0x0007);
+		phy_write(phydev, 14, 0x003C);
+		phy_write(phydev, 13, 0x0007);
+		phy_write(phydev, 14, 0x0000);
+
+		val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
+		val &= ~BIT(4);
+		phy_write_paged(phydev, RTL821X_PAGE_MAC, 25, val);
+	}
+
+	/* Restart AN if enabled */
+	if (an_enabled) {
+		val = phy_read(phydev, MII_BMCR);
+		val |= BMCR_ANRESTART;
+		phy_write(phydev, MII_BMCR, val);
+	}
+
+	/* GPHY page back to auto */
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+
+	pr_info("%s done\n", __func__);
+	resume_polling(poll_state);
+
+	return 0;
+}

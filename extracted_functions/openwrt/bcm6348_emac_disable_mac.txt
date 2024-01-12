@@ -1,0 +1,17 @@
+static void bcm6348_emac_disable_mac(struct bcm6348_emac *emac)
+{
+	int limit;
+	u32 val;
+
+	val = emac_readl(emac, ENET_CTL_REG);
+	val |= ENET_CTL_DISABLE_MASK;
+	emac_writel(emac, val, ENET_CTL_REG);
+
+	limit = 1000;
+	do {
+		val = emac_readl(emac, ENET_CTL_REG);
+		if (!(val & ENET_CTL_DISABLE_MASK))
+			break;
+		udelay(1);
+	} while (limit--);
+}

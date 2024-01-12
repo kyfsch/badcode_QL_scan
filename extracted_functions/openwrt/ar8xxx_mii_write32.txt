@@ -1,0 +1,17 @@
+ar8xxx_mii_write32(struct ar8xxx_priv *priv, int phy_id, int regnum, u32 val)
+{
+	struct mii_bus *bus = priv->mii_bus;
+	u16 lo, hi;
+
+	lo = val & 0xffff;
+	hi = (u16) (val >> 16);
+
+	if (priv->chip->mii_lo_first)
+	{
+		bus->write(bus, phy_id, regnum, lo);
+		bus->write(bus, phy_id, regnum + 1, hi);
+	} else {
+		bus->write(bus, phy_id, regnum + 1, hi);
+		bus->write(bus, phy_id, regnum, lo);
+	}
+}

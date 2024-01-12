@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicPortUnmatchedSaBehavior(rtk_uint32 *pBehavior)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_PORT_SECURIT_CTRL_REG, RTL8367C_UNMATCHED_SA_BEHAVE_MASK, pBehavior);
+}

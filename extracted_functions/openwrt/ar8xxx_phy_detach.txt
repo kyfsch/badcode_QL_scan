@@ -1,0 +1,18 @@
+ar8xxx_phy_detach(struct phy_device *phydev)
+{
+	struct net_device *dev = phydev->attached_dev;
+
+	if (!dev)
+		return;
+
+#ifdef CONFIG_ETHERNET_PACKET_MANGLE
+	dev->phy_ptr = NULL;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
+	dev->priv_flags &= ~IFF_NO_IP_ALIGN;
+#else
+	dev->extra_priv_flags &= ~IFF_NO_IP_ALIGN;
+#endif
+	dev->eth_mangle_rx = NULL;
+	dev->eth_mangle_tx = NULL;
+#endif
+}

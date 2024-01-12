@@ -1,0 +1,16 @@
+static void rtl9300_i2c_config_io(struct rtl9300_i2c *i2c, int scl_num, int sda_num)
+{
+	u32 v;
+
+	/* Set SCL pin */
+	REG_MASK(i2c, 0, BIT(RTL9300_I2C_CTRL1_GPIO8_SCL_SEL), RTL9300_I2C_CTRL1);
+
+	/* Set SDA pin */
+	REG_MASK(i2c, 0x7 << RTL9300_I2C_CTRL1_SDA_OUT_SEL,
+		 i2c->sda_num << RTL9300_I2C_CTRL1_SDA_OUT_SEL, RTL9300_I2C_CTRL1);
+
+	/* Set SDA pin to I2C functionality */
+	v = readl(i2c->base + RTL9300_I2C_MST_GLB_CTRL);
+	v |= BIT(i2c->sda_num);
+	writel(v, i2c->base + RTL9300_I2C_MST_GLB_CTRL);
+}

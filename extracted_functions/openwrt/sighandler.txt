@@ -1,0 +1,3 @@
+static void sighandler(__attribute__((unused)) int signal)
+{
+}

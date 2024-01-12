@@ -1,0 +1,10 @@
+uc_value_t *wpa_ucode_call(size_t nargs)
+{
+	if (uc_vm_call(&vm, true, nargs) != EXCEPTION_NONE)
+		return NULL;
+
+	if (!gc_timer.pending)
+		uloop_timeout_set(&gc_timer, 10);
+
+	return uc_vm_stack_pop(&vm);
+}

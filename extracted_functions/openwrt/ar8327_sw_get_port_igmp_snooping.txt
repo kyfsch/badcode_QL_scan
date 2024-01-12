@@ -1,0 +1,16 @@
+ar8327_sw_get_port_igmp_snooping(struct switch_dev *dev,
+				 const struct switch_attr *attr,
+				 struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port = val->port_vlan;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+
+	mutex_lock(&priv->reg_mutex);
+	val->value.i = ar8327_get_port_igmp(priv, port);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}

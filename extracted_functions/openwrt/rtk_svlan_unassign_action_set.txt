@@ -1,0 +1,14 @@
+rtk_api_ret_t rtk_svlan_unassign_action_set(rtk_svlan_unassign_action_t action)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (action >= UNASSIGN_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    retVal = rtl8367c_setAsicSvlanEgressUnassign((rtk_uint32)action);
+
+    return retVal;
+}

@@ -1,0 +1,14 @@
+static int __init mt7621_qtn_rgmii_init(void)
+{
+	void __iomem *base = ioremap(RGMII_REG_BASE, RGMII_REG_SIZE);
+
+	if (!base)
+		return -ENOMEM;
+	oldval = ioread32(base);
+	if (oldval != RGMII_REG_VALUE) {
+		iowrite32(RGMII_REG_VALUE, base);
+		pr_info(MODULE_NAME ": changed register 0x%08x value from 0x%08x to 0x%08x\n", RGMII_REG_BASE, oldval,  RGMII_REG_VALUE);
+	}
+	iounmap(base);
+	return 0;
+}

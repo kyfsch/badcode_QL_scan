@@ -1,0 +1,33 @@
+mtd_erase(const char *mtd)
+{
+	int fd;
+	struct erase_info_user mtdEraseInfo;
+
+	if (quiet < 2)
+		fprintf(stderr, "Erasing %s ...\n", mtd);
+
+	fd = mtd_check_open(mtd);
+	if(fd < 0) {
+		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
+		exit(1);
+	}
+
+	mtdEraseInfo.length = erasesize;
+
+	for (mtdEraseInfo.start = 0;
+		 mtdEraseInfo.start < mtdsize;
+		 mtdEraseInfo.start += erasesize) {
+		if (mtd_block_is_bad(fd, mtdEraseInfo.start)) {
+			if (!quiet)
+				fprintf(stderr, "\nSkipping bad block at 0x%x   ", mtdEraseInfo.start);
+		} else {
+			ioctl(fd, MEMUNLOCK, &mtdEraseInfo);
+			if(ioctl(fd, MEMERASE, &mtdEraseInfo))
+				fprintf(stderr, "Failed to erase block on %s at 0x%x\n", mtd, mtdEraseInfo.start);
+		}
+	}
+
+	close(fd);
+	return 0;
+
+}

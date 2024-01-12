@@ -1,0 +1,6 @@
+static u32 ag71xx_ethtool_get_msglevel(struct net_device *dev)
+{
+	struct ag71xx *ag = netdev_priv(dev);
+
+	return ag->msg_enable;
+}

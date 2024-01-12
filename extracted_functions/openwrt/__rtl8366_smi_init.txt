@@ -1,0 +1,35 @@
+static int __rtl8366_smi_init(struct rtl8366_smi *smi, const char *name)
+{
+	int err;
+
+	if (!smi->ext_mbus) {
+		err = gpio_request(smi->gpio_sda, name);
+		if (err) {
+			printk(KERN_ERR "rtl8366_smi: gpio_request failed for %u, err=%d\n",
+				smi->gpio_sda, err);
+			goto err_out;
+		}
+
+		err = gpio_request(smi->gpio_sck, name);
+		if (err) {
+			printk(KERN_ERR "rtl8366_smi: gpio_request failed for %u, err=%d\n",
+				smi->gpio_sck, err);
+			goto err_free_sda;
+		}
+	}
+
+	spin_lock_init(&smi->lock);
+
+	/* start the switch */
+	if (smi->hw_reset) {
+		smi->hw_reset(smi, false);
+		msleep(RTL8366_SMI_HW_START_DELAY);
+	}
+
+	return 0;
+
+ err_free_sda:
+	gpio_free(smi->gpio_sda);
+ err_out:
+	return err;
+}

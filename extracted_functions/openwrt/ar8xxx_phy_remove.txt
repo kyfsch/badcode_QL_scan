@@ -1,0 +1,23 @@
+ar8xxx_phy_remove(struct phy_device *phydev)
+{
+	struct ar8xxx_priv *priv = phydev->priv;
+
+	if (WARN_ON(!priv))
+		return;
+
+	phydev->priv = NULL;
+
+	mutex_lock(&ar8xxx_dev_list_lock);
+
+	if (--priv->use_count > 0) {
+		mutex_unlock(&ar8xxx_dev_list_lock);
+		return;
+	}
+
+	list_del(&priv->list);
+	mutex_unlock(&ar8xxx_dev_list_lock);
+
+	unregister_switch(&priv->dev);
+	ar8xxx_mib_stop(priv);
+	ar8xxx_free(priv);
+}

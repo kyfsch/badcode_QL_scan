@@ -1,0 +1,14 @@
+static void osafeloader_extract_parse_options(int argc, char **argv) {
+	int c;
+
+	while ((c = getopt(argc, argv, "p:o:")) != -1) {
+		switch (c) {
+		case 'p':
+			partition_name = optarg;
+			break;
+		case 'o':
+			out_path = optarg;
+			break;
+		}
+	}
+}

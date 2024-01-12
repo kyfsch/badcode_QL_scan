@@ -1,0 +1,8 @@
+DSL_BSP_DriverHandleDelete (DSL_DEV_Device_t * nHandle)
+{
+	DSL_DEV_Device_t *pDev = (DSL_DEV_Device_t *) nHandle;
+	if (pDev->nInUse)
+		pDev->nInUse--;
+        module_put(pDev->owner);
+	return 0;
+}

@@ -1,0 +1,53 @@
+static void rtl931x_pie_init(struct rtl838x_switch_priv *priv)
+{
+	u32 template_selectors;
+
+	mutex_init(&priv->pie_mutex);
+
+	pr_info("%s\n", __func__);
+	/* Enable ACL lookup on all ports, including CPU_PORT */
+	for (int i = 0; i <= priv->cpu_port; i++)
+		sw_w32(1, RTL931X_ACL_PORT_LOOKUP_CTRL(i));
+
+	/* Include IPG in metering */
+	sw_w32_mask(0, 1, RTL931X_METER_GLB_CTRL);
+
+	/* Delete all present rules, block size is 128 on all SoC families */
+	rtl931x_pie_rule_del(priv, 0, priv->n_pie_blocks * 128 - 1);
+
+	/* Assign first half blocks 0-7 to VACL phase, second half to IACL */
+	/* 3 bits are used for each block, values for PIE blocks are */
+	/* 6: Disabled, 0: VACL, 1: IACL, 2: EACL */
+	/* And for OpenFlow Flow blocks: 3: Ingress Flow table 0, */
+	/* 4: Ingress Flow Table 3, 5: Egress flow table 0 */
+	for (int i = 0; i < priv->n_pie_blocks; i++) {
+		int pos = (i % 10) * 3;
+		u32 r = RTL931X_PIE_BLK_PHASE_CTRL + 4 * (i / 10);
+
+		if (i < priv->n_pie_blocks / 2)
+			sw_w32_mask(0x7 << pos, 0, r);
+		else
+			sw_w32_mask(0x7 << pos, 1 << pos, r);
+	}
+
+	/* Enable predefined templates 0, 1 for first quarter of all blocks */
+	template_selectors = 0 | (1 << 4);
+	for (int i = 0; i < priv->n_pie_blocks / 4; i++)
+		sw_w32(template_selectors, RTL931X_PIE_BLK_TMPLTE_CTRL(i));
+
+	/* Enable predefined templates 2, 3 for second quarter of all blocks */
+	template_selectors = 2 | (3 << 4);
+	for (int i = priv->n_pie_blocks / 4; i < priv->n_pie_blocks / 2; i++)
+		sw_w32(template_selectors, RTL931X_PIE_BLK_TMPLTE_CTRL(i));
+
+	/* Enable predefined templates 0, 1 for third quater of all blocks */
+	template_selectors = 0 | (1 << 4);
+	for (int i = priv->n_pie_blocks / 2; i < priv->n_pie_blocks * 3 / 4; i++)
+		sw_w32(template_selectors, RTL931X_PIE_BLK_TMPLTE_CTRL(i));
+
+	/* Enable predefined templates 2, 3 for fourth quater of all blocks */
+	template_selectors = 2 | (3 << 4);
+	for (int i = priv->n_pie_blocks * 3 / 4; i < priv->n_pie_blocks; i++)
+		sw_w32(template_selectors, RTL931X_PIE_BLK_TMPLTE_CTRL(i));
+
+}

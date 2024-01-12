@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicSvlanEgressUnassign(rtk_uint32* pEnabled)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_SVLAN_CFG, RTL8367C_VS_UIFSEG_OFFSET, pEnabled);
+}

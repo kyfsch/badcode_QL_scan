@@ -1,0 +1,11 @@
+static int rtl838x_mdio_remove(struct rtl838x_eth_priv *priv)
+{
+	pr_debug("%s called\n", __func__);
+	if (!priv->mii_bus)
+		return 0;
+
+	mdiobus_unregister(priv->mii_bus);
+	mdiobus_free(priv->mii_bus);
+
+	return 0;
+}

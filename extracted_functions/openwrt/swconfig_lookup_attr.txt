@@ -1,0 +1,79 @@
+swconfig_lookup_attr(struct switch_dev *dev, struct genl_info *info,
+		struct switch_val *val)
+{
+	struct genlmsghdr *hdr = nlmsg_data(info->nlhdr);
+	const struct switch_attrlist *alist;
+	const struct switch_attr *attr = NULL;
+	unsigned int attr_id;
+
+	/* defaults */
+	struct switch_attr *def_list;
+	unsigned long *def_active;
+	int n_def;
+
+	if (!info->attrs[SWITCH_ATTR_OP_ID])
+		goto done;
+
+	switch (hdr->cmd) {
+	case SWITCH_CMD_SET_GLOBAL:
+	case SWITCH_CMD_GET_GLOBAL:
+		alist = &dev->ops->attr_global;
+		def_list = default_global;
+		def_active = &dev->def_global;
+		n_def = ARRAY_SIZE(default_global);
+		break;
+	case SWITCH_CMD_SET_VLAN:
+	case SWITCH_CMD_GET_VLAN:
+		alist = &dev->ops->attr_vlan;
+		def_list = default_vlan;
+		def_active = &dev->def_vlan;
+		n_def = ARRAY_SIZE(default_vlan);
+		if (!info->attrs[SWITCH_ATTR_OP_VLAN])
+			goto done;
+		val->port_vlan = nla_get_u32(info->attrs[SWITCH_ATTR_OP_VLAN]);
+		if (val->port_vlan >= dev->vlans)
+			goto done;
+		break;
+	case SWITCH_CMD_SET_PORT:
+	case SWITCH_CMD_GET_PORT:
+		alist = &dev->ops->attr_port;
+		def_list = default_port;
+		def_active = &dev->def_port;
+		n_def = ARRAY_SIZE(default_port);
+		if (!info->attrs[SWITCH_ATTR_OP_PORT])
+			goto done;
+		val->port_vlan = nla_get_u32(info->attrs[SWITCH_ATTR_OP_PORT]);
+		if (val->port_vlan >= dev->ports)
+			goto done;
+		break;
+	default:
+		WARN_ON(1);
+		goto done;
+	}
+
+	if (!alist)
+		goto done;
+
+	attr_id = nla_get_u32(info->attrs[SWITCH_ATTR_OP_ID]);
+	if (attr_id >= SWITCH_ATTR_DEFAULTS_OFFSET) {
+		attr_id -= SWITCH_ATTR_DEFAULTS_OFFSET;
+		if (attr_id >= n_def)
+			goto done;
+		if (!test_bit(attr_id, def_active))
+			goto done;
+		attr = &def_list[attr_id];
+	} else {
+		if (attr_id >= alist->n_attr)
+			goto done;
+		attr = &alist->attr[attr_id];
+	}
+
+	if (attr->disabled)
+		attr = NULL;
+
+done:
+	if (!attr)
+		pr_debug("attribute lookup failed\n");
+	val->attr = attr;
+	return attr;
+}

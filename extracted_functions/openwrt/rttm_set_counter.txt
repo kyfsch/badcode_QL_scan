@@ -1,0 +1,4 @@
+static inline void rttm_set_counter(void __iomem *base, unsigned int counter)
+{
+	iowrite32(counter, base + RTTM_CNT);
+}

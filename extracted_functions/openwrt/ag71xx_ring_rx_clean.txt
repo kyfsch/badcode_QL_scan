@@ -1,0 +1,16 @@
+static void ag71xx_ring_rx_clean(struct ag71xx *ag)
+{
+	struct ag71xx_ring *ring = &ag->rx_ring;
+	int ring_size = BIT(ring->order);
+	int i;
+
+	if (!ring->buf)
+		return;
+
+	for (i = 0; i < ring_size; i++)
+		if (ring->buf[i].rx_buf) {
+			dma_unmap_single(&ag->pdev->dev, ring->buf[i].dma_addr,
+					 ag->rx_buf_size, DMA_FROM_DEVICE);
+			skb_free_frag(ring->buf[i].rx_buf);
+		}
+}

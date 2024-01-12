@@ -1,0 +1,6 @@
+ar8xxx_phy_write(struct mii_bus *bus, int phy_addr, int reg_addr,
+		 u16 reg_val)
+{
+	struct ar8xxx_priv *priv = bus->priv;
+	return priv->chip->phy_write(priv, phy_addr, reg_addr, reg_val);
+}

@@ -1,0 +1,15 @@
+ret_t rtl8367c_setAsicRldpCheckingStatePara(rtk_uint32 retryCount, rtk_uint32 retryPeriod)
+{
+    ret_t retVal;
+
+    if(retryCount > 0xFF)
+        return RT_ERR_OUT_OF_RANGE;
+    if(retryPeriod > RTL8367C_REGDATAMAX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_RLDP_RETRY_COUNT_REG, RTL8367C_RLDP_RETRY_COUNT_CHKSTATE_MASK, retryCount);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return rtl8367c_setAsicReg(RTL8367C_RLDP_RETRY_PERIOD_CHKSTATE_REG, retryPeriod);
+}

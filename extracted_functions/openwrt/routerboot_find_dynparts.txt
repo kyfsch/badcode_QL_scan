@@ -1,0 +1,60 @@
+static void routerboot_find_dynparts(struct mtd_info *master)
+{
+	size_t bytes_read, offset;
+	bool allfound;
+	int err, i;
+	u32 buf;
+
+	/*
+	 * Dynamic RouterBoot partitions offsets are aligned to RB_BLOCK_SIZE:
+	 * read the whole partition at RB_BLOCK_SIZE intervals to find sigs.
+	 * Skip partition content when possible.
+	 */
+	offset = 0;
+	while (offset < master->size) {
+		err = mtd_read(master, offset, sizeof(buf), &bytes_read, (u8 *)&buf);
+		if (err) {
+			pr_err("%s: mtd_read error while parsing (offset: 0x%X): %d\n",
+			       master->name, offset, err);
+			continue;
+		}
+
+		allfound = true;
+
+		for (i = 0; i < ARRAY_SIZE(rb_dynparts); i++) {
+			if (rb_dynparts[i].found)
+				continue;
+
+			allfound = false;
+
+			if (rb_dynparts[i].magic == buf) {
+				rb_dynparts[i].offset = offset;
+
+				if (rb_dynparts[i].size_fixup) {
+					err = rb_dynparts[i].size_fixup(master, &rb_dynparts[i]);
+					if (err) {
+						pr_err("%s: size fixup error while parsing \"%s\": %d\n",
+						       master->name, rb_dynparts[i].name, err);
+						continue;
+					}
+				}
+
+				rb_dynparts[i].found = true;
+
+				/*
+				 * move offset to skip the whole partition on
+				 * next iteration if size > RB_BLOCK_SIZE.
+				 */
+				if (rb_dynparts[i].size > RB_BLOCK_SIZE)
+					offset += ALIGN_DOWN((rb_dynparts[i].size - RB_BLOCK_SIZE), RB_BLOCK_SIZE);
+
+				break;
+			}
+		}
+
+		offset += RB_BLOCK_SIZE;
+
+		if (allfound)
+			break;
+	}
+}

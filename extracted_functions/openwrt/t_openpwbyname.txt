@@ -1,0 +1,16 @@
+t_openpwbyname(pwname)
+     const char * pwname;
+{
+  FILE * fp;
+  struct t_pw * t;
+
+  if(pwname == NULL)            /* Deprecated */
+    return t_openpw(NULL);
+
+  if((fp = fopen(pwname, "r")) == NULL)
+    return NULL;
+
+  t = t_openpw(fp);
+  t->close_on_exit = 1;
+  return t;
+}

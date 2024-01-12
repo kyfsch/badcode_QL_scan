@@ -1,0 +1,4 @@
+static inline struct wpa_global *get_wpa_global_from_object(struct ubus_object *obj)
+{
+	return container_of(obj, struct wpa_global, ubus_global);
+}

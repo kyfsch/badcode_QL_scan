@@ -1,0 +1,11 @@
+ar8216_atu_flush(struct ar8xxx_priv *priv)
+{
+	int ret;
+
+	ret = ar8216_wait_bit(priv, AR8216_REG_ATU_FUNC0, AR8216_ATU_ACTIVE, 0);
+	if (!ret)
+		ar8xxx_write(priv, AR8216_REG_ATU_FUNC0, AR8216_ATU_OP_FLUSH |
+							 AR8216_ATU_ACTIVE);
+
+	return ret;
+}

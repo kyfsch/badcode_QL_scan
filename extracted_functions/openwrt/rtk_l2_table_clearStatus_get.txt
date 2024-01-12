@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_l2_table_clearStatus_get(rtk_l2_clearStatus_t *pStatus)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pStatus)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicLutFlushAllStatus((rtk_uint32 *)pStatus)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

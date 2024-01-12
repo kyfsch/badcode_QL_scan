@@ -1,0 +1,17 @@
+rtk_api_ret_t rtk_port_sgmiiNway_get(rtk_port_t port, rtk_enable_t *pState)
+{
+    rtk_uint32 ext_id;
+
+     /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    if(rtk_switch_isSgmiiPort(port) != RT_ERR_OK)
+        return RT_ERR_PORT_ID;
+
+    if(NULL == pState)
+        return RT_ERR_NULL_POINTER;
+
+    ext_id = port - 15;
+    return rtl8367c_getSgmiiNway(ext_id, (rtk_uint32 *)pState);
+}

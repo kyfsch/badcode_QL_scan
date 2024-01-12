@@ -1,0 +1,6 @@
+int rtl839x_l3_setup(struct rtl838x_switch_priv *priv)
+{
+	rtl839x_setup_port_macs(priv);
+
+	return 0;
+}

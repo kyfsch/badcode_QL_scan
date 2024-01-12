@@ -1,0 +1,40 @@
+static void _rtl8367c_aclRuleStUser2Smi(rtl8367c_aclrule *pAclUser, rtl8367c_aclrulesmi *pAclSmi)
+{
+    rtk_uint8 *care_ptr, *data_ptr;
+    rtk_uint8 care_tmp, data_tmp;
+    rtk_uint32 i;
+
+    pAclSmi->data_bits_ext.rule_info = ((pAclUser->data_bits.active_portmsk >> 8) & 0x7) << 1;
+    pAclSmi->data_bits.rule_info = ((pAclUser->data_bits.active_portmsk & 0xff) << 8) | ((pAclUser->data_bits.tag_exist & 0x1F) << 3) | (pAclUser->data_bits.type & 0x07);
+
+    for(i = 0;i < RTL8367C_ACLRULEFIELDNO; i++)
+        pAclSmi->data_bits.field[i] = pAclUser->data_bits.field[i];
+
+    pAclSmi->valid = pAclUser->valid;
+
+    pAclSmi->care_bits_ext.rule_info = ((pAclUser->care_bits.active_portmsk >> 8) & 0x7) << 1;
+    pAclSmi->care_bits.rule_info = ((pAclUser->care_bits.active_portmsk & 0xff) << 8) | ((pAclUser->care_bits.tag_exist & 0x1F) << 3) | (pAclUser->care_bits.type & 0x07);
+
+    for(i = 0; i < RTL8367C_ACLRULEFIELDNO; i++)
+        pAclSmi->care_bits.field[i] = pAclUser->care_bits.field[i];
+
+    care_ptr = (rtk_uint8*)&pAclSmi->care_bits;
+    data_ptr = (rtk_uint8*)&pAclSmi->data_bits;
+
+    for ( i = 0; i < sizeof(struct acl_rule_smi_st); i++)
+    {
+        care_tmp = *(care_ptr + i) & ~(*(data_ptr + i));
+        data_tmp = *(care_ptr + i) & *(data_ptr + i);
+
+        *(care_ptr + i) = care_tmp;
+        *(data_ptr + i) = data_tmp;
+    }
+
+    care_ptr = (rtk_uint8*)&pAclSmi->care_bits_ext;
+    data_ptr = (rtk_uint8*)&pAclSmi->data_bits_ext;
+    care_tmp = *care_ptr & ~(*data_ptr);
+    data_tmp = *care_ptr & *data_ptr;
+
+    *care_ptr = care_tmp;
+    *data_ptr = data_tmp;
+}

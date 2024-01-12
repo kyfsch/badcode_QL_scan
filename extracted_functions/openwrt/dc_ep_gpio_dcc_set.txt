@@ -1,0 +1,15 @@
+int dc_ep_gpio_dcc_set(struct dc_ep_priv *priv, u32 gpio, u32 val)
+{
+	struct dc_aca *aca = to_aca(priv);
+
+	if (gpio > aca->max_gpio)
+		return -EINVAL;
+
+	if (val >= GPIO_DRV_CUR_MAX)
+		return -EINVAL;
+
+	mutex_lock(&aca->pin_lock);
+	wr32_mask((0x3 << (gpio * 2)), (val << (gpio * 2)), PADC_DCC);
+	mutex_unlock(&aca->pin_lock);
+	return 0;
+}

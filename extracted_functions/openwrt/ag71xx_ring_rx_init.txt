@@ -1,0 +1,39 @@
+static int ag71xx_ring_rx_init(struct ag71xx *ag)
+{
+	struct ag71xx_ring *ring = &ag->rx_ring;
+	int ring_size = BIT(ring->order);
+	int ring_mask = BIT(ring->order) - 1;
+	unsigned int i;
+	int ret;
+
+	ret = 0;
+	for (i = 0; i < ring_size; i++) {
+		struct ag71xx_desc *desc = ag71xx_ring_desc(ring, i);
+
+		desc->next = (u32) (ring->descs_dma +
+			AG71XX_DESC_SIZE * ((i + 1) & ring_mask));
+
+		DBG("ag71xx: RX desc at %p, next is %08x\n",
+			desc, desc->next);
+	}
+
+	for (i = 0; i < ring_size; i++) {
+		struct ag71xx_desc *desc = ag71xx_ring_desc(ring, i);
+
+		if (!ag71xx_fill_rx_buf(ag, &ring->buf[i], ag->rx_buf_offset,
+					netdev_alloc_frag)) {
+			ret = -ENOMEM;
+			break;
+		}
+
+		desc->ctrl = DESC_EMPTY;
+	}
+
+	/* flush descriptors */
+	wmb();
+
+	ring->curr = 0;
+	ring->dirty = 0;
+
+	return ret;
+}

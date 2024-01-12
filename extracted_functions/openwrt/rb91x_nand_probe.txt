@@ -1,0 +1,75 @@
+static int rb91x_nand_probe(struct platform_device *pdev)
+{
+	struct rb91x_nand_drvdata *drvdata;
+	struct mtd_info *mtd;
+	int r;
+	struct device *dev = &pdev->dev;
+	struct gpio_descs *gpios;
+
+	drvdata = devm_kzalloc(dev, sizeof(*drvdata), GFP_KERNEL);
+	if (!drvdata)
+		return -ENOMEM;
+
+	platform_set_drvdata(pdev, drvdata);
+
+	gpios = gpiod_get_array(dev, NULL, GPIOD_OUT_LOW);
+	if (IS_ERR(gpios)) {
+		if (PTR_ERR(gpios) != -EPROBE_DEFER) {
+			dev_err(dev, "failed to get gpios: %ld\n",
+				PTR_ERR(gpios));
+		}
+		return PTR_ERR(gpios);
+	}
+
+	if (gpios->ndescs != RB91X_NAND_GPIOS) {
+		dev_err(dev, "expected %d gpios\n", RB91X_NAND_GPIOS);
+		return -EINVAL;
+	}
+
+	drvdata->gpio = gpios->desc;
+
+	gpiod_direction_input(drvdata->gpio[RB91X_NAND_RDY]);
+
+	drvdata->ath79_gpio_base = ioremap(AR71XX_GPIO_BASE, AR71XX_GPIO_SIZE);
+
+	drvdata->dev = dev;
+
+	drvdata->chip.priv = drvdata;
+
+	drvdata->chip.legacy.cmd_ctrl = rb91x_nand_cmd_ctrl;
+	drvdata->chip.legacy.dev_ready = rb91x_nand_dev_ready;
+	drvdata->chip.legacy.read_byte = rb91x_nand_read_byte;
+	drvdata->chip.legacy.write_buf = rb91x_nand_write_buf;
+	drvdata->chip.legacy.read_buf = rb91x_nand_read_buf;
+
+	drvdata->chip.legacy.chip_delay = 25;
+	drvdata->chip.ecc.engine_type      = NAND_ECC_ENGINE_TYPE_SOFT;
+	drvdata->chip.ecc.algo             = NAND_ECC_ALGO_HAMMING;
+	drvdata->chip.options = NAND_NO_SUBPAGE_WRITE;
+
+	r = nand_scan(&drvdata->chip, 1);
+	if (r) {
+		dev_err(dev, "nand_scan() failed: %d\n", r);
+		return r;
+	}
+
+	mtd = nand_to_mtd(&drvdata->chip);
+	mtd->dev.parent = dev;
+	mtd_set_of_node(mtd, dev->of_node);
+	mtd->owner = THIS_MODULE;
+	if (mtd->writesize == 512)
+		mtd_set_ooblayout(mtd, &rb91x_nand_ecclayout_ops);
+
+	r = mtd_device_register(mtd, NULL, 0);
+	if (r) {
+		dev_err(dev, "mtd_device_register() failed: %d\n",
+			r);
+		goto err_release_nand;
+	}
+
+	return 0;
+
+err_release_nand:
+	rb91x_nand_release(drvdata);
+	return r;
+}

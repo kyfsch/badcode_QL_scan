@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_trunk_mode_set(rtk_trunk_mode_t mode)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(mode >= TRUNK_MODE_END)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicTrunkingMode((rtk_uint32)mode)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,19 @@
+uc_bpf_map_get(uc_vm_t *vm, size_t nargs)
+{
+	struct uc_bpf_map *map = uc_fn_thisval("bpf.map");
+	uc_value_t *a_key = uc_fn_arg(0);
+	void *key, *val;
+
+	if (!map)
+		err_return(EINVAL, NULL);
+
+	key = uc_bpf_map_arg(a_key, "key", map->key_size);
+	if (!key)
+		return NULL;
+
+	val = alloca(map->val_size);
+	if (bpf_map_lookup_elem(map->fd.fd, key, val))
+		return NULL;
+
+	return ucv_string_new_length(val, map->val_size);
+}

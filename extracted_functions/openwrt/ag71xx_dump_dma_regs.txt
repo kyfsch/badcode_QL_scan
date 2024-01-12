@@ -1,0 +1,14 @@
+static void ag71xx_dump_dma_regs(struct ag71xx *ag)
+{
+	DBG("%s: dma_tx_ctrl=%08x, dma_tx_desc=%08x, dma_tx_status=%08x\n",
+		ag->dev->name,
+		ag71xx_rr(ag, AG71XX_REG_TX_CTRL),
+		ag71xx_rr(ag, AG71XX_REG_TX_DESC),
+		ag71xx_rr(ag, AG71XX_REG_TX_STATUS));
+
+	DBG("%s: dma_rx_ctrl=%08x, dma_rx_desc=%08x, dma_rx_status=%08x\n",
+		ag->dev->name,
+		ag71xx_rr(ag, AG71XX_REG_RX_CTRL),
+		ag71xx_rr(ag, AG71XX_REG_RX_DESC),
+		ag71xx_rr(ag, AG71XX_REG_RX_STATUS));
+}

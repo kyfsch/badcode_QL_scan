@@ -1,0 +1,4 @@
+static int curses_item_index(void)
+{
+	return  item_index(current_item(curses_menu));
+}

@@ -1,0 +1,25 @@
+static int ptm_showtime_enter(struct port_cell_info *port_cell, void *xdata_addr)
+{
+	int i;
+
+	ASSERT(port_cell != NULL, "port_cell is NULL");
+	ASSERT(xdata_addr != NULL, "xdata_addr is NULL");
+
+	//  TODO: ReTX set xdata_addr
+	g_xdata_addr = xdata_addr;
+
+	g_showtime = 1;
+
+	for ( i = 0; i < ARRAY_SIZE(g_net_dev); i++ )
+		netif_carrier_on(g_net_dev[i]);
+
+	IFX_REG_W32(0x0F, UTP_CFG);
+
+	//#ifdef CONFIG_VR9
+	//    IFX_REG_W32_MASK(1 << 17, 0, FFSM_CFG0);
+	//#endif
+
+	printk("enter showtime\n");
+
+	return 0;
+}

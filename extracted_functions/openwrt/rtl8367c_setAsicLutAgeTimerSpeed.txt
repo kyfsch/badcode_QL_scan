@@ -1,0 +1,10 @@
+ret_t rtl8367c_setAsicLutAgeTimerSpeed(rtk_uint32 timer, rtk_uint32 speed)
+{
+    if(timer>RTL8367C_LUT_AGETIMERMAX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if(speed >RTL8367C_LUT_AGESPEEDMAX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_LUT_CFG, RTL8367C_AGE_TIMER_MASK | RTL8367C_AGE_SPEED_MASK, (timer << RTL8367C_AGE_TIMER_OFFSET) | (speed << RTL8367C_AGE_SPEED_OFFSET));
+}

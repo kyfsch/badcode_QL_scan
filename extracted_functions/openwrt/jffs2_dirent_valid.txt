@@ -1,0 +1,7 @@
+static bool jffs2_dirent_valid(struct jffs2_raw_dirent *node)
+{
+	return ((je16_to_cpu(node->magic) == JFFS2_MAGIC_BITMASK) &&
+		(je16_to_cpu(node->nodetype) == JFFS2_NODETYPE_DIRENT) &&
+		je32_to_cpu(node->ino) &&
+		je32_to_cpu(node->node_crc) == jffs2_dirent_crc(node));
+}

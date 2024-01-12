@@ -1,0 +1,5 @@
+static void sata_oxnas_qc_free(struct ata_queued_cmd *qc)
+{
+	DPRINTK("\n");
+	sata_oxnas_release_hw(qc->ap);
+}

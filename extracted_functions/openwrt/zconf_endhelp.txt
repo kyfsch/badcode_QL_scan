@@ -1,0 +1,8 @@
+		zconf_endhelp();
+		return T_HELPTEXT;
+	}
+	YY_BREAK
+
+case YY_STATE_EOF(INITIAL):
+case YY_STATE_EOF(ASSIGN_VAL):
+{

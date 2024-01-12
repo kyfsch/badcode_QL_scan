@@ -1,0 +1,10 @@
+rtl_attr_get_int(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	int idx = attr->id + (val->port_vlan * attr->ofs);
+
+	if (idx >= ARRAY_SIZE(rtl_regs))
+		return -EINVAL;
+
+	val->value.i = rtl_get(dev, idx);
+	return 0;
+}

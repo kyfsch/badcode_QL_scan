@@ -1,0 +1,18 @@
+static int rtl8214c_phy_probe(struct phy_device *phydev)
+{
+	struct device *dev = &phydev->mdio.dev;
+	int addr = phydev->mdio.addr;
+
+	/* All base addresses of the PHYs start at multiples of 8 */
+	devm_phy_package_join(dev, phydev, addr & (~7),
+				sizeof(struct rtl83xx_shared_private));
+
+	if (!(addr % 8)) {
+		struct rtl83xx_shared_private *shared = phydev->shared->priv;
+		shared->name = "RTL8214C";
+		/* Configuration must be done whil patching still possible */
+		return rtl8380_configure_rtl8214c(phydev);
+	}
+
+	return 0;
+}

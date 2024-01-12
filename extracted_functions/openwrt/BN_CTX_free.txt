@@ -1,0 +1,12 @@
+void BN_CTX_free(BN_CTX *ctx)
+	{
+	int i;
+
+	if (ctx == NULL) return;
+	assert(ctx->depth == 0);
+
+	for (i=0; i < BN_CTX_NUM; i++)
+		BN_clear_free(&(ctx->bn[i]));
+	if (ctx->flags & BN_FLG_MALLOCED)
+		free(ctx);
+	}

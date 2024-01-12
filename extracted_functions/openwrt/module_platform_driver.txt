@@ -1,0 +1,209 @@
+module_platform_driver(bcm6348_iudma_driver);
+
+/*
+ * BCM6348 Eternet MACs
+ */
+
+/* MTU */
+#define ENET_MAX_MTU			2046
+
+#define ENET_TAG_SIZE			6
+#define ENET_MTU_OVERHEAD		(VLAN_ETH_HLEN + VLAN_HLEN + \
+					 ENET_TAG_SIZE)
+
+/* Default number of descriptor */
+#define ENET_DEF_RX_DESC		64
+#define ENET_DEF_TX_DESC		32
+#define ENET_DEF_CPY_BREAK		128
+
+/* Maximum burst len for dma (4 bytes unit) */
+#define ENET_DMA_MAXBURST		8
+
+/* Receiver Configuration register */
+#define ENET_RXCFG_REG			0x0
+#define ENET_RXCFG_ALLMCAST_SHIFT	1
+#define ENET_RXCFG_ALLMCAST_MASK	(1 << ENET_RXCFG_ALLMCAST_SHIFT)
+#define ENET_RXCFG_PROMISC_SHIFT	3
+#define ENET_RXCFG_PROMISC_MASK		(1 << ENET_RXCFG_PROMISC_SHIFT)
+#define ENET_RXCFG_LOOPBACK_SHIFT	4
+#define ENET_RXCFG_LOOPBACK_MASK	(1 << ENET_RXCFG_LOOPBACK_SHIFT)
+#define ENET_RXCFG_ENFLOW_SHIFT		5
+#define ENET_RXCFG_ENFLOW_MASK		(1 << ENET_RXCFG_ENFLOW_SHIFT)
+
+/* Receive Maximum Length register */
+#define ENET_RXMAXLEN_REG		0x4
+#define ENET_RXMAXLEN_SHIFT		0
+#define ENET_RXMAXLEN_MASK		(0x7ff << ENET_RXMAXLEN_SHIFT)
+
+/* Transmit Maximum Length register */
+#define ENET_TXMAXLEN_REG		0x8
+#define ENET_TXMAXLEN_SHIFT		0
+#define ENET_TXMAXLEN_MASK		(0x7ff << ENET_TXMAXLEN_SHIFT)
+
+/* MII Status/Control register */
+#define ENET_MIISC_REG			0x10
+#define ENET_MIISC_MDCFREQDIV_SHIFT	0
+#define ENET_MIISC_MDCFREQDIV_MASK	(0x7f << ENET_MIISC_MDCFREQDIV_SHIFT)
+#define ENET_MIISC_PREAMBLEEN_SHIFT	7
+#define ENET_MIISC_PREAMBLEEN_MASK	(1 << ENET_MIISC_PREAMBLEEN_SHIFT)
+
+/* MII Data register */
+#define ENET_MIID_REG			0x14
+#define ENET_MIID_DATA_SHIFT		0
+#define ENET_MIID_DATA_MASK		(0xffff << ENET_MIID_DATA_SHIFT)
+#define ENET_MIID_TA_SHIFT		16
+#define ENET_MIID_TA_MASK		(0x3 << ENET_MIID_TA_SHIFT)
+#define ENET_MIID_REG_SHIFT		18
+#define ENET_MIID_REG_MASK		(0x1f << ENET_MIID_REG_SHIFT)
+#define ENET_MIID_PHY_SHIFT		23
+#define ENET_MIID_PHY_MASK		(0x1f << ENET_MIID_PHY_SHIFT)
+#define ENET_MIID_OP_SHIFT		28
+#define ENET_MIID_OP_WRITE		(0x5 << ENET_MIID_OP_SHIFT)
+#define ENET_MIID_OP_READ		(0x6 << ENET_MIID_OP_SHIFT)
+
+/* Ethernet Interrupt Mask register */
+#define ENET_IRMASK_REG			0x18
+
+/* Ethernet Interrupt register */
+#define ENET_IR_REG			0x1c
+#define ENET_IR_MII			BIT(0)
+#define ENET_IR_MIB			BIT(1)
+#define ENET_IR_FLOWC			BIT(2)
+
+/* Ethernet Control register */
+#define ENET_CTL_REG			0x2c
+#define ENET_CTL_ENABLE_SHIFT		0
+#define ENET_CTL_ENABLE_MASK		(1 << ENET_CTL_ENABLE_SHIFT)
+#define ENET_CTL_DISABLE_SHIFT		1
+#define ENET_CTL_DISABLE_MASK		(1 << ENET_CTL_DISABLE_SHIFT)
+#define ENET_CTL_SRESET_SHIFT		2
+#define ENET_CTL_SRESET_MASK		(1 << ENET_CTL_SRESET_SHIFT)
+#define ENET_CTL_EPHYSEL_SHIFT		3
+#define ENET_CTL_EPHYSEL_MASK		(1 << ENET_CTL_EPHYSEL_SHIFT)
+
+/* Transmit Control register */
+#define ENET_TXCTL_REG			0x30
+#define ENET_TXCTL_FD_SHIFT		0
+#define ENET_TXCTL_FD_MASK		(1 << ENET_TXCTL_FD_SHIFT)
+
+/* Transmit Watermask register */
+#define ENET_TXWMARK_REG		0x34
+#define ENET_TXWMARK_WM_SHIFT		0
+#define ENET_TXWMARK_WM_MASK		(0x3f << ENET_TXWMARK_WM_SHIFT)
+
+/* MIB Control register */
+#define ENET_MIBCTL_REG			0x38
+#define ENET_MIBCTL_RDCLEAR_SHIFT	0
+#define ENET_MIBCTL_RDCLEAR_MASK	(1 << ENET_MIBCTL_RDCLEAR_SHIFT)
+
+/* Perfect Match Data Low register */
+#define ENET_PML_REG(x)			(0x58 + (x) * 8)
+#define ENET_PMH_REG(x)			(0x5c + (x) * 8)
+#define ENET_PMH_DATAVALID_SHIFT	16
+#define ENET_PMH_DATAVALID_MASK		(1 << ENET_PMH_DATAVALID_SHIFT)
+
+/* MIB register */
+#define ENET_MIB_REG(x)			(0x200 + (x) * 4)
+#define ENET_MIB_REG_COUNT		55
+
+/*
+ * TX transmit threshold (4 bytes unit), FIFO is 256 bytes, the value
+ * must be low enough so that a DMA transfer of above burst length can
+ * not overflow the fifo
+ */
+#define ENET_TX_FIFO_TRESH		32
+
+struct bcm6348_emac {
+	struct bcm6348_iudma *iudma;
+	void __iomem *base;
+
+	struct clk **clock;
+	unsigned int num_clocks;
+
+	struct reset_control **reset;
+	unsigned int num_resets;
+
+	int copybreak;
+
+	int irq_rx;
+	int irq_tx;
+
+	/* hw view of rx & tx dma ring */
+	dma_addr_t rx_desc_dma;
+	dma_addr_t tx_desc_dma;
+
+	/* allocated size (in bytes) for rx & tx dma ring */
+	unsigned int rx_desc_alloc_size;
+	unsigned int tx_desc_alloc_size;
+
+	struct napi_struct napi;
+
+	/* dma channel id for rx */
+	int rx_chan;
+
+	/* number of dma desc in rx ring */
+	int rx_ring_size;
+
+	/* cpu view of rx dma ring */
+	struct bcm6348_iudma_desc *rx_desc_cpu;
+
+	/* current number of armed descriptor given to hardware for rx */
+	int rx_desc_count;
+
+	/* next rx descriptor to fetch from hardware */
+	int rx_curr_desc;
+
+	/* next dirty rx descriptor to refill */
+	int rx_dirty_desc;
+
+	/* size of allocated rx skbs */
+	unsigned int rx_skb_size;
+
+	/* list of skb given to hw for rx */
+	struct sk_buff **rx_skb;
+
+	/* used when rx skb allocation failed, so we defer rx queue
+	 * refill */
+	struct timer_list rx_timeout;
+
+	/* lock rx_timeout against rx normal operation */
+	spinlock_t rx_lock;
+
+	/* dma channel id for tx */
+	int tx_chan;
+
+	/* number of dma desc in tx ring */
+	int tx_ring_size;
+
+	/* cpu view of tx dma ring */
+	struct bcm6348_iudma_desc *tx_desc_cpu;
+
+	/* number of available descriptor for tx */
+	int tx_desc_count;
+
+	/* next tx descriptor avaiable */
+	int tx_curr_desc;
+
+	/* next dirty tx descriptor to reclaim */
+	int tx_dirty_desc;
+
+	/* list of skb given to hw for tx */
+	struct sk_buff **tx_skb;
+
+	/* lock used by tx reclaim and xmit */
+	spinlock_t tx_lock;
+
+	/* network device reference */
+	struct net_device *net_dev;
+
+	/* platform device reference */
+	struct platform_device *pdev;
+
+	/* external mii bus */
+	bool ext_mii;
+
+	/* phy */
+	int old_link;
+	int old_duplex;
+	int old_pause;
+};

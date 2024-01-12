@@ -1,0 +1,7 @@
+static bool sata_oxnas_qc_fill_rtf(struct ata_queued_cmd *qc)
+{
+	/* Read the most recently received FIS from the SATA core ORB registers
+	 and convert to an ATA taskfile */
+	sata_oxnas_tf_read(qc->ap, &qc->result_tf);
+	return true;
+}

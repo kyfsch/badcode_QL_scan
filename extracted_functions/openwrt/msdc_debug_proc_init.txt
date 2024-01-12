@@ -1,0 +1,4 @@
+void msdc_debug_proc_init(void)
+{
+	proc_create("msdc_debug", 0660, NULL, &msdc_debug_fops);
+}

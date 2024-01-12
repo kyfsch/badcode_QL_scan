@@ -1,0 +1,9 @@
+static void do_scroll(WINDOW *win, int *scroll, int n)
+{
+	/* Scroll menu up */
+	scrollok(win, TRUE);
+	wscrl(win, n);
+	scrollok(win, FALSE);
+	*scroll = *scroll + n;
+	wrefresh(win);
+}

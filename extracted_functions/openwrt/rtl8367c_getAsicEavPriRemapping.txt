@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsicEavPriRemapping(rtk_uint32 srcpriority, rtk_uint32 *pPriority)
+{
+    if(srcpriority > RTL8367C_PRIMAX )
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    return rtl8367c_getAsicRegBits(RTL8367C_EAV_PRIORITY_REMAPPING_REG(srcpriority), RTL8367C_EAV_PRIORITY_REMAPPING_MASK(srcpriority),pPriority);
+}

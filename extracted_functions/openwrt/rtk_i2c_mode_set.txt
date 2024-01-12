@@ -1,0 +1,22 @@
+rtk_api_ret_t rtk_i2c_mode_set( rtk_I2C_16bit_mode_t i2cmode )
+{
+    if(i2cmode >= I2C_Mode_END)
+    {
+        return RT_ERR_INPUT;
+    }
+    else if(i2cmode == I2C_70B_LSB_16BIT_MODE)
+    {
+        rtk_i2c_mode = I2C_70B_LSB_16BIT_MODE;
+
+        return RT_ERR_OK;
+    }
+    else if( i2cmode == I2C_LSB_16BIT_MODE)
+    {
+        rtk_i2c_mode = I2C_LSB_16BIT_MODE;
+        return RT_ERR_OK;
+    }
+    else
+        return RT_ERR_FAILED;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,25 @@
+rtk_api_ret_t rtk_port_isolation_set(rtk_port_t port, rtk_portmask_t *pPortmask)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 pmask;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if(NULL == pPortmask)
+        return RT_ERR_NULL_POINTER;
+
+    /* check port mask */
+    RTK_CHK_PORTMASK_VALID(pPortmask);
+
+    if ((retVal = rtk_switch_portmask_L2P_get(pPortmask, &pmask)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicPortIsolationPermittedPortmask(rtk_switch_port_L2P_get(port), pmask)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

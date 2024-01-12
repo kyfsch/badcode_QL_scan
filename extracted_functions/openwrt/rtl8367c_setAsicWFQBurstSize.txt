@@ -1,0 +1,8 @@
+ret_t rtl8367c_setAsicWFQBurstSize(rtk_uint32 burstsize)
+{
+    ret_t retVal;
+
+    retVal = rtl8367c_setAsicReg(RTL8367C_SCHEDULE_WFQ_BURST_SIZE_REG, burstsize);
+
+    return retVal;
+}

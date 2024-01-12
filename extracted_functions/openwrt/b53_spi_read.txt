@@ -1,0 +1,16 @@
+static int b53_spi_read(struct b53_device *dev, u8 page, u8 reg, u8 *data,
+			unsigned len)
+{
+	struct spi_device *spi = dev->priv;
+	int ret;
+
+	ret = b53_prepare_reg_access(spi, page);
+	if (ret)
+		return ret;
+
+	ret = b53_spi_prepare_reg_read(spi, reg);
+	if (ret)
+		return ret;
+
+	return b53_spi_read_reg(spi, B53_SPI_DATA, data, len);
+}

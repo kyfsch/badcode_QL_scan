@@ -1,0 +1,12 @@
+int wpa_ucode_registry_add(uc_value_t *reg, uc_value_t *val)
+{
+	uc_value_t *data;
+	int i = 0;
+
+	while (ucv_array_get(reg, i))
+		i++;
+
+	ucv_array_set(reg, i, ucv_get(val));
+
+	return i + 1;
+}

@@ -1,0 +1,29 @@
+static int wl_glue_ssb_probe(struct ssb_device *dev, const struct ssb_device_id *id)
+{
+	void *mmio;
+	void *wldev;
+
+	if (!attach_cb)
+	{
+		pr_err("No attach callback registered\n");
+		return -ENOSYS;
+	}
+
+	if (dev->bus->bustype != SSB_BUSTYPE_SSB)
+	{
+		pr_err("Attaching to SSB behind PCI is not supported. Please remove the b43 ssb bridge\n");
+		return -EINVAL;
+	}
+
+	mmio = (void *) 0x18000000 + dev->core_index * 0x1000;
+	wldev = attach_cb(id->vendor, id->coreid, (ulong)mmio, dev, dev->irq);
+
+	if (!wldev)
+	{
+		pr_err("The attach callback failed, SSB probe aborted\n");
+		return -ENODEV;
+	}
+
+	ssb_set_drvdata(dev, wldev);
+	return 0;
+}

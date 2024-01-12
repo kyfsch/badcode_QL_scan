@@ -1,0 +1,14 @@
+swconfig_trig_deactivate(struct led_classdev *led_cdev)
+{
+	struct swconfig_trig_data *trig_data;
+
+	swconfig_trig_update_port_mask(led_cdev->trigger);
+
+	trig_data = (void *) led_cdev->trigger_data;
+	if (trig_data) {
+		device_remove_file(led_cdev->dev, &dev_attr_port_mask);
+		device_remove_file(led_cdev->dev, &dev_attr_speed_mask);
+		device_remove_file(led_cdev->dev, &dev_attr_mode);
+		kfree(trig_data);
+	}
+}

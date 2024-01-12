@@ -1,0 +1,34 @@
+void __init identify_rtl9302(void)
+{
+	switch (sw_r32(RTL93XX_MODEL_NAME_INFO) & 0xfffffff0) {
+	case 0x93020810:
+		soc_info.name = "RTL9302A 12x2.5G";
+		break;
+	case 0x93021010:
+		soc_info.name = "RTL9302B 8x2.5G";
+		break;
+	case 0x93021810:
+		soc_info.name = "RTL9302C 16x2.5G";
+		break;
+	case 0x93022010:
+		soc_info.name = "RTL9302D 24x2.5G";
+		break;
+	case 0x93020800:
+		soc_info.name = "RTL9302A";
+		break;
+	case 0x93021000:
+		soc_info.name = "RTL9302B";
+		break;
+	case 0x93021800:
+		soc_info.name = "RTL9302C";
+		break;
+	case 0x93022000:
+		soc_info.name = "RTL9302D";
+		break;
+	case 0x93023001:
+		soc_info.name = "RTL9302F";
+		break;
+	default:
+		soc_info.name = "RTL9302";
+	}
+}

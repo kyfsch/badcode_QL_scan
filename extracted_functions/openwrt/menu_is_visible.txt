@@ -1,0 +1,37 @@
+bool menu_is_visible(struct menu *menu)
+{
+	struct menu *child;
+	struct symbol *sym;
+	tristate visible;
+
+	if (!menu->prompt)
+		return false;
+
+	if (menu->visibility) {
+		if (expr_calc_value(menu->visibility) == no)
+			return false;
+	}
+
+	sym = menu->sym;
+	if (sym) {
+		sym_calc_value(sym);
+		visible = menu->prompt->visible.tri;
+	} else
+		visible = menu->prompt->visible.tri = expr_calc_value(menu->prompt->visible.expr);
+
+	if (visible != no)
+		return true;
+
+	if (!sym || sym_get_tristate_value(menu->sym) == no)
+		return false;
+
+	for (child = menu->list; child; child = child->next) {
+		if (menu_is_visible(child)) {
+			if (sym)
+				sym->flags |= SYMBOL_DEF_USER;
+			return true;
+		}
+	}
+
+	return false;
+}

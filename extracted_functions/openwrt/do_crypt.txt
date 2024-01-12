@@ -1,0 +1,44 @@
+int do_crypt(FILE *infile, FILE *outfile, ctx_t *ctx)
+{
+    unsigned char inbuf[CRYPT_BUF_SIZE];
+    unsigned char outbuf[CRYPT_BUF_SIZE + MBEDTLS_MAX_BLOCK_LENGTH];
+    size_t inlen, outlen, step;
+    int ret;
+
+    if (mbedtls_cipher_get_cipher_mode(ctx) == MBEDTLS_MODE_ECB) {
+	step = mbedtls_cipher_get_block_size(ctx);
+	if (step > CRYPT_BUF_SIZE) {
+	    step = CRYPT_BUF_SIZE;
+	}
+    } else {
+	step = CRYPT_BUF_SIZE;
+    }
+
+    for (;;) {
+	inlen = fread(inbuf, 1, step, infile);
+	if (inlen <= 0)
+	    break;
+	ret = mbedtls_cipher_update(ctx, inbuf, inlen, outbuf, &outlen);
+	if (ret) {
+	    fprintf(stderr, "Error: mbedtls_cipher_update: %d\n", ret);
+	    return ret;
+	}
+	ret = fwrite(outbuf, 1, outlen, outfile);
+	if (ret != outlen) {
+	    fprintf(stderr, "Error: cipher_update short write.\n");
+	    return ret - outlen;
+	}
+    }
+    ret = mbedtls_cipher_finish(ctx, outbuf, &outlen);
+    if (ret) {
+	fprintf(stderr, "Error: mbedtls_cipher_finish: %d\n", ret);
+	return ret;
+    }
+    ret = fwrite(outbuf, 1, outlen, outfile);
+    if (ret != outlen) {
+	fprintf(stderr, "Error: cipher_finish short write.\n");
+	return ret - outlen;
+    }
+
+    return 0;
+}

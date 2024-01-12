@@ -1,0 +1,83 @@
+ar8xxx_phy_probe(struct phy_device *phydev)
+{
+	struct ar8xxx_priv *priv;
+	struct switch_dev *swdev;
+	int ret;
+
+	/* skip PHYs at unused adresses */
+	if (phydev->mdio.addr != 0 && phydev->mdio.addr != 3 && phydev->mdio.addr != 4)
+		return -ENODEV;
+
+	if (!ar8xxx_is_possible(phydev->mdio.bus))
+		return -ENODEV;
+
+	mutex_lock(&ar8xxx_dev_list_lock);
+	list_for_each_entry(priv, &ar8xxx_dev_list, list)
+		if (priv->mii_bus == phydev->mdio.bus)
+			goto found;
+
+	priv = ar8xxx_create();
+	if (priv == NULL) {
+		ret = -ENOMEM;
+		goto unlock;
+	}
+
+	priv->mii_bus = phydev->mdio.bus;
+	priv->pdev = &phydev->mdio.dev;
+
+	ret = of_property_read_u32(priv->pdev->of_node, "qca,mib-poll-interval",
+				   &priv->mib_poll_interval);
+	if (ret)
+		priv->mib_poll_interval = 0;
+
+	ret = ar8xxx_id_chip(priv);
+	if (ret)
+		goto free_priv;
+
+	ret = ar8xxx_probe_switch(priv);
+	if (ret)
+		goto free_priv;
+
+	swdev = &priv->dev;
+	swdev->alias = dev_name(&priv->mii_bus->dev);
+	ret = register_switch(swdev, NULL);
+	if (ret)
+		goto free_priv;
+
+	pr_info("%s: %s rev. %u switch registered on %s\n",
+		swdev->devname, swdev->name, priv->chip_rev,
+		dev_name(&priv->mii_bus->dev));
+
+	list_add(&priv->list, &ar8xxx_dev_list);
+
+found:
+	priv->use_count++;
+
+	if (phydev->mdio.addr == 0 && priv->chip->config_at_probe) {
+		priv->phy = phydev;
+
+		ret = ar8xxx_start(priv);
+		if (ret)
+			goto err_unregister_switch;
+	} else if (priv->chip->phy_rgmii_set) {
+		priv->chip->phy_rgmii_set(priv, phydev);
+	}
+
+	phydev->priv = priv;
+
+	mutex_unlock(&ar8xxx_dev_list_lock);
+
+	return 0;
+
+err_unregister_switch:
+	if (--priv->use_count)
+		goto unlock;
+
+	unregister_switch(&priv->dev);
+
+free_priv:
+	ar8xxx_free(priv);
+unlock:
+	mutex_unlock(&ar8xxx_dev_list_lock);
+	return ret;
+}

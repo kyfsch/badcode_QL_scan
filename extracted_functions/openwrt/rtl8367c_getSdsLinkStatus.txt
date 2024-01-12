@@ -1,0 +1,116 @@
+ret_t rtl8367c_getSdsLinkStatus(rtk_uint32 ext_id, rtk_uint32 *pSignalDetect, rtk_uint32 *pSync, rtk_uint32 *pLink)
+{
+    rtk_uint32 retVal, regValue, type, running = 0, retVal2;
+
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0249)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_getAsicReg(0x1300, &regValue)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0000)) != RT_ERR_OK)
+        return retVal;
+
+    switch (regValue)
+    {
+        case 0x0276:
+        case 0x0597:
+        case 0x6367:
+            type = 0;
+            break;
+        case 0x0652:
+        case 0x6368:
+            type = 1;
+            break;
+        case 0x0801:
+        case 0x6511:
+            type = 2;
+            break;
+        default:
+            return RT_ERR_FAILED;
+    }
+
+    if(type == 0)
+    {
+        if (1 == ext_id)
+        {
+            if ((retVal = rtl8367c_getAsicRegBit(0x130c, 5, &running))!=RT_ERR_OK)
+                return retVal;
+
+            if(running == 1)
+            {
+                if ((retVal = rtl8367c_setAsicRegBit(0x130c, 5, 0))!=RT_ERR_OK)
+                    return retVal;
+            }
+
+            retVal = rtl8367c_setAsicReg(0x6601, 0x003D);
+
+            if(retVal == RT_ERR_OK)
+                retVal = rtl8367c_setAsicReg(0x6600, 0x0080);
+
+            if(retVal == RT_ERR_OK)
+                retVal = rtl8367c_getAsicReg(0x6602, &regValue);
+
+            if(running == 1)
+            {
+                if ((retVal2 = rtl8367c_setAsicRegBit(0x130c, 5, 1))!=RT_ERR_OK)
+                    return retVal2;
+            }
+
+            if(retVal != RT_ERR_OK)
+                return retVal;
+
+            *pSignalDetect = (regValue & 0x0100) ? 1 : 0;
+            *pSync = (regValue & 0x0001) ? 1 : 0;
+            *pLink = (regValue & 0x0010) ? 1 : 0;
+        }
+        else
+            return RT_ERR_PORT_ID;
+    }
+    else if(type == 1)
+    {
+        if (1 == ext_id)
+        {
+            if ((retVal = rtl8367c_setAsicReg(0x6601, 0x003D))!=RT_ERR_OK)
+                return retVal;
+            if ((retVal = rtl8367c_setAsicReg(0x6600, 0x0081))!=RT_ERR_OK)
+                return retVal;
+            if ((retVal = rtl8367c_getAsicReg(0x6602, &regValue))!=RT_ERR_OK)
+                return retVal;
+
+            *pSignalDetect = (regValue & 0x0100) ? 1 : 0;
+            *pSync = (regValue & 0x0001) ? 1 : 0;
+            *pLink = (regValue & 0x0010) ? 1 : 0;
+        }
+        else if (2 == ext_id)
+        {
+            if ((retVal = rtl8367c_setAsicReg(0x6601, 0x003D))!=RT_ERR_OK)
+                return retVal;
+            if ((retVal = rtl8367c_setAsicReg(0x6600, 0x0080))!=RT_ERR_OK)
+                return retVal;
+            if ((retVal = rtl8367c_getAsicReg(0x6602, &regValue))!=RT_ERR_OK)
+                return retVal;
+
+            *pSignalDetect = (regValue & 0x0100) ? 1 : 0;
+            *pSync = (regValue & 0x0001) ? 1 : 0;
+            *pLink = (regValue & 0x0010) ? 1 : 0;
+        }
+        else
+            return RT_ERR_PORT_ID;
+    }
+    else if(type == 2)
+    {
+        if((retVal = rtl8367c_getAsicSdsReg(0, 30, 1, &regValue)) != RT_ERR_OK)
+            return retVal;
+        if((retVal = rtl8367c_getAsicSdsReg(0, 30, 1, &regValue)) != RT_ERR_OK)
+            return retVal;
+
+        *pSignalDetect = (regValue & 0x0100) ? 1 : 0;
+        *pSync = (regValue & 0x0001) ? 1 : 0;
+        *pLink = (regValue & 0x0010) ? 1 : 0;
+
+    }
+
+    return RT_ERR_OK;
+}

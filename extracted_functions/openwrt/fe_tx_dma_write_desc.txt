@@ -1,0 +1,7 @@
+static void fe_tx_dma_write_desc(struct fe_tx_ring *ring, struct fe_map_state *st)
+{
+	fe_set_txd(&st->txd, &ring->tx_dma[st->ring_idx]);
+	memset(&st->txd, 0, sizeof(st->txd));
+	st->txd.txd4 = st->def_txd4;
+	st->ring_idx = NEXT_TX_DESP_IDX(st->ring_idx);
+}

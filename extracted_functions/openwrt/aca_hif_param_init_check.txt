@@ -1,0 +1,19 @@
+static bool aca_hif_param_init_check(struct dc_ep_priv *priv)
+{
+	u32 addr;
+	int timeout = ACA_LOOP_CNT;
+	u32 offset = offsetof(struct aca_hif_params, magic);
+	struct aca_fw_param *fw_param = to_aca_fw_param(priv);
+
+	/* addr = rd32(ACA_HIF_LOC_POS);*/
+	addr = fw_param->init_addr;
+	while (--timeout && (rd32(addr + offset) != ACA_MAGIC))
+		udelay(1);
+
+	if (timeout <= 0) {
+		dev_err(priv->dev, "aca hif params init failed\n");
+		return false;
+	}
+
+	return true;
+}

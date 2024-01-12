@@ -1,0 +1,8 @@
+hostapd_bss_del_ban(void *eloop_data, void *user_ctx)
+{
+	struct ubus_banned_client *ban = eloop_data;
+	struct hostapd_data *hapd = user_ctx;
+
+	avl_delete(&hapd->ubus.banned, &ban->avl);
+	free(ban);
+}

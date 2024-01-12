@@ -1,0 +1,26 @@
+rtl_attr_set_int(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	int idx = attr->id + (val->port_vlan * attr->ofs);
+	struct rtl_phyregs port;
+
+	if (attr->id >= ARRAY_SIZE(rtl_regs))
+		return -EINVAL;
+
+	if ((attr->max > 0) && (val->value.i > attr->max))
+		return -EINVAL;
+
+	/* access to phy register 22 on port 4/5
+	 * needs phy status save/restore */
+	if ((val->port_vlan > 3) &&
+		(rtl_regs[idx].reg == 22) &&
+		(rtl_regs[idx].page == 0)) {
+
+		rtl_phy_save(dev, val->port_vlan, &port);
+		rtl_set(dev, idx, val->value.i);
+		rtl_phy_restore(dev, val->port_vlan, &port);
+	} else {
+		rtl_set(dev, idx, val->value.i);
+	}
+
+	return 0;
+}

@@ -1,0 +1,84 @@
+static ssize_t sc_commit_store(struct kobject *kobj, struct kobj_attribute *attr,
+			      const char *buf, size_t count)
+{
+	struct mtd_info *mtd;
+	struct erase_info ei;
+	size_t bytes_rw, ret = count;
+	bool flush;
+	u32 crc;
+
+	if (!RB_SC_HAS_WRITE_SUPPORT)
+		return -EOPNOTSUPP;
+
+	read_lock(&sc_bufrwl);
+	crc = RB_SC_GETCRC();
+	read_unlock(&sc_bufrwl);
+
+	if (crc)
+		return count;	// NO-OP
+
+	ret = kstrtobool(buf, &flush);
+	if (ret)
+		return ret;
+
+	mtd = get_mtd_device_nm(RB_MTD_SOFT_CONFIG);	// TODO allow override
+	if (IS_ERR(mtd))
+		return -ENODEV;
+
+	write_lock(&sc_bufrwl);
+	if (!flush)	// reread
+		ret = mtd_read(mtd, 0, mtd->size, &bytes_rw, sc_buf);
+	else {	// crc32 + commit
+		/*
+		 * CRC32 is computed on the entire buffer, excluding the CRC
+		 * value itself. CRC is already null when we reach this point,
+		 * so we can compute the CRC32 on the buffer as is.
+		 * The expected CRC32 is Ethernet FCS style, meaning the seed is
+		 * ~0 and the final result is also bitflipped.
+		 */
+
+		crc = ~crc32(~0, sc_buf, sc_buflen);
+		RB_SC_SETCRC(crc);
+
+		/*
+		 * The soft_config partition is assumed to be entirely contained
+		 * in a single eraseblock.
+		 */
+
+		ei.addr = 0;
+		ei.len = mtd->size;
+		ret = mtd_erase(mtd, &ei);
+		if (!ret)
+			ret = mtd_write(mtd, 0, mtd->size, &bytes_rw, sc_buf);
+
+		/*
+		 * Handling mtd_write() failure here is a tricky situation. The
+		 * proposed approach is to let userspace deal with retrying,
+		 * with the caveat that it must try to flush the buffer again as
+		 * rereading the mtd contents could potentially read garbage.
+		 * The rationale is: even if we keep a shadow buffer of the
+		 * original content, there is no guarantee that we will ever be
+		 * able to write it anyway.
+		 * Regardless, it appears that RouterBOOT will ignore an invalid
+		 * soft_config (including a completely wiped segment) and will
+		 * write back factory defaults when it happens.
+		 */
+	}
+	write_unlock(&sc_bufrwl);
+
+	put_mtd_device(mtd);
+
+	if (ret)
+		goto mtdfail;
+
+	if (bytes_rw != sc_buflen) {
+		ret = -EIO;
+		goto mtdfail;
+	}
+
+	return count;
+
+mtdfail:
+	RB_SC_CLRCRC();	// mark buffer content as dirty/invalid
+	return ret;
+}

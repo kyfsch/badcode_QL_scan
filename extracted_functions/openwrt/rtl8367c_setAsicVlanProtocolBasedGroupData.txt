@@ -1,0 +1,28 @@
+ret_t rtl8367c_setAsicVlanProtocolBasedGroupData(rtk_uint32 index, rtl8367c_protocolgdatacfg *pPbCfg)
+{
+    rtk_uint32  frameType;
+    rtk_uint32  etherType;
+    ret_t   retVal;
+
+    /* Error Checking */
+    if(index > RTL8367C_PROTOVLAN_GIDX_MAX)
+        return RT_ERR_VLAN_PROTO_AND_PORT;
+
+    if(pPbCfg->frameType >= PPVLAN_FRAME_TYPE_END )
+        return RT_ERR_INPUT;
+
+    frameType = pPbCfg->frameType;
+    etherType = pPbCfg->etherType;
+
+    /* Frame type */
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_VLAN_PPB_FRAMETYPE_REG(index), RTL8367C_VLAN_PPB_FRAMETYPE_MASK, frameType);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    /* Ether type */
+    retVal = rtl8367c_setAsicReg(RTL8367C_VLAN_PPB_ETHERTYPR_REG(index), etherType);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

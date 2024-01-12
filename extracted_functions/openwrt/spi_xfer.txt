@@ -1,0 +1,4 @@
+int spi_xfer(const struct spi_transfer *msg, int n)
+{
+	return espi_xfer(&spi, msg, n);
+}

@@ -1,0 +1,38 @@
+int ag71xx_setup_gmac(struct device_node *np)
+{
+	struct device_node *np_dev;
+	void __iomem *base;
+	int err = 0;
+
+	np = of_get_child_by_name(np, "gmac-config");
+	if (!np)
+		return 0;
+
+	np_dev = of_parse_phandle(np, "device", 0);
+	if (!np_dev)
+		goto out;
+
+	base = of_iomap(np_dev, 0);
+	if (!base) {
+		pr_err("%pOF: can't map GMAC registers\n", np_dev);
+		err = -ENOMEM;
+		goto err_iomap;
+	}
+
+	if (of_device_is_compatible(np_dev, "qca,ar9330-gmac"))
+		ag71xx_setup_gmac_933x(np, base);
+	else if (of_device_is_compatible(np_dev, "qca,ar9340-gmac"))
+		ag71xx_setup_gmac_934x(np, base);
+	else if (of_device_is_compatible(np_dev, "qca,qca9550-gmac"))
+		ag71xx_setup_gmac_955x(np, base);
+	else if (of_device_is_compatible(np_dev, "qca,qca9560-gmac"))
+		ag71xx_setup_gmac_956x(np, base);
+
+	iounmap(base);
+
+err_iomap:
+	of_node_put(np_dev);
+out:
+	of_node_put(np);
+	return err;
+}

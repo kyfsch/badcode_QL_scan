@@ -1,0 +1,21 @@
+static int b53_srab_request_grant(struct b53_device *dev)
+{
+	u8 __iomem *regs = dev->priv;
+	u32 ctrls;
+	int i;
+
+	ctrls = readl(regs + B53_SRAB_CTRLS);
+	ctrls |= B53_SRAB_CTRLS_RCAREQ;
+	writel(ctrls, regs + B53_SRAB_CTRLS);
+
+	for (i = 0; i < 20; i++) {
+		ctrls = readl(regs + B53_SRAB_CTRLS);
+		if (ctrls & B53_SRAB_CTRLS_RCAGNT)
+			break;
+		usleep_range(10, 100);
+	}
+	if (WARN_ON(i == 5))
+		return -EIO;
+
+	return 0;
+}

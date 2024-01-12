@@ -1,0 +1,15 @@
+ret_t rtl8367c_setAsicPortMirrorOverride(rtk_uint32 rxMirror, rtk_uint32 txMirror, rtk_uint32 aclMirror)
+{
+    ret_t retVal;
+
+    if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_MIRROR_CTRL3, RTL8367C_MIRROR_RX_OVERRIDE_EN_OFFSET, rxMirror)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_MIRROR_CTRL3, RTL8367C_MIRROR_TX_OVERRIDE_EN_OFFSET, txMirror)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_MIRROR_CTRL3, RTL8367C_MIRROR_ACL_OVERRIDE_EN_OFFSET, aclMirror)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

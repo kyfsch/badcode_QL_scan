@@ -1,0 +1,53 @@
+static void bcm6348_pci_fixup(struct pci_dev *dev)
+{
+	struct bcm6348_pci *priv = &bcm6348_pci;
+	struct bcm6348_cb *cb = &priv->cb;
+	static int io_window = -1;
+	int i, found, new_io_window;
+	u32 val;
+
+	/* look for any io resource */
+	found = 0;
+	for (i = 0; i < DEVICE_COUNT_RESOURCE; i++) {
+		if (pci_resource_flags(dev, i) & IORESOURCE_IO) {
+			found = 1;
+			break;
+		}
+	}
+
+	if (!found)
+		return;
+
+	/* skip our fake bus with only cardbus bridge on it */
+	if (dev->bus->number == priv->cb_bus)
+		return;
+
+	/* find on which bus the device is */
+	if (cb->bus_assigned &&
+	    dev->bus->number == cb->cardbus_busn &&
+	    PCI_SLOT(dev->devfn) == 0)
+		new_io_window = 1;
+	else
+		new_io_window = 0;
+
+	if (new_io_window == io_window)
+		return;
+
+	if (io_window != -1) {
+		pr_err("bcm63xx: both PCI and cardbus devices "
+		       "need IO, which hardware cannot do\n");
+		return;
+	}
+
+	pr_info("bcm63xx: PCI IO window assigned to %s\n",
+	       (new_io_window == 0) ? "PCI" : "cardbus");
+
+	val = __raw_readl(priv->pci + MPI_L2PIOREMAP_REG);
+	if (io_window)
+		val |= MPI_L2PREMAP_IS_CARDBUS_MASK;
+	else
+		val &= ~MPI_L2PREMAP_IS_CARDBUS_MASK;
+	__raw_writel(val, priv->pci + MPI_L2PIOREMAP_REG);
+
+	io_window = new_io_window;
+}

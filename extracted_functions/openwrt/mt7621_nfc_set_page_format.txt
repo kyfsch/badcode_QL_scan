@@ -1,0 +1,30 @@
+static int mt7621_nfc_set_page_format(struct mt7621_nfc *nfc)
+{
+	struct nand_chip *nand = &nfc->nand;
+	struct mtd_info *mtd = nand_to_mtd(nand);
+	int i, spare_size;
+	u32 pagefmt;
+
+	spare_size = mt7621_nfc_set_spare_per_sector(nfc);
+	if (spare_size < 0)
+		return spare_size;
+
+	for (i = 0; i < ARRAY_SIZE(mt7621_nfi_page_size); i++) {
+		if (mt7621_nfi_page_size[i] == mtd->writesize)
+			break;
+	}
+
+	if (unlikely(i >= ARRAY_SIZE(mt7621_nfi_page_size))) {
+		dev_err(nfc->dev, "Page size (%u) is not supported\n",
+			mtd->writesize);
+		return -EINVAL;
+	}
+
+	pagefmt = i | (spare_size << PAGEFMT_SPARE_S) |
+		  (NFI_FDM_SIZE << PAGEFMT_FDM_S) |
+		  (NFI_FDM_SIZE << PAGEFMT_FDM_ECC_S);
+
+	nfi_write16(nfc, NFI_PAGEFMT, pagefmt);
+
+	return 0;
+}

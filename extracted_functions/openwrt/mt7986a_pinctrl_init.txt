@@ -1,0 +1,4 @@
+static int __init mt7986a_pinctrl_init(void)
+{
+	return platform_driver_register(&mt7986a_pinctrl_driver);
+}

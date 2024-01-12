@@ -1,0 +1,24 @@
+void sata_oxnas_link_write(struct ata_port *ap, unsigned int link_reg, u32 val)
+{
+	struct sata_oxnas_port_priv *pd = ap->private_data;
+	struct sata_oxnas_host_priv *hd = ap->host->private_data;
+	void __iomem *port_base = pd->port_base;
+	u32 patience;
+	unsigned long flags;
+
+	DPRINTK("P%d [0x%02x]->0x%08x\n", ap->port_no, link_reg, val);
+
+	spin_lock_irqsave(&hd->phy_lock, flags);
+	iowrite32(val, port_base + LINK_DATA);
+
+	/* accessed twice as a work around for a bug in the SATA abp bridge
+	 * hardware (bug 6828) */
+	iowrite32(link_reg , port_base + LINK_WR_ADDR);
+	ioread32(port_base + LINK_WR_ADDR);
+
+	for (patience = 0x100000; patience > 0; --patience) {
+		if (ioread32(port_base + LINK_CONTROL) & 0x00000001)
+			break;
+	}
+	spin_unlock_irqrestore(&hd->phy_lock, flags);
+}

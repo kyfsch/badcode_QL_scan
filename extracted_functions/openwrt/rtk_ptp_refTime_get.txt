@@ -1,0 +1,12 @@
+rtk_api_ret_t rtk_ptp_refTime_get(rtk_ptp_timeStamp_t *pTimeStamp)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if ((retVal = rtl8367c_getAsicEavSysTime(&pTimeStamp->sec, &pTimeStamp->nsec))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

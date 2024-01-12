@@ -1,0 +1,5 @@
+int on_key_resize(void)
+{
+	dialog_clear();
+	return KEY_RESIZE;
+}

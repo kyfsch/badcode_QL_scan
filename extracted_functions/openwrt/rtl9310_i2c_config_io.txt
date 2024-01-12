@@ -1,0 +1,16 @@
+static void rtl9310_i2c_config_io(struct rtl9300_i2c *i2c, int scl_num, int sda_num)
+{
+	u32 v;
+
+	/* Set SCL pin */
+	REG_MASK(i2c, 0, BIT(RTL9310_I2C_MST_IF_SEL_GPIO_SCL_SEL + scl_num), RTL9310_I2C_MST_IF_SEL);
+
+	/* Set SDA pin */
+	REG_MASK(i2c, 0x7 << RTL9310_I2C_CTRL_SDA_OUT_SEL,
+		 i2c->sda_num << RTL9310_I2C_CTRL_SDA_OUT_SEL, RTL9310_I2C_CTRL);
+
+	/* Set SDA pin to I2C functionality */
+	v = readl(i2c->base + RTL9310_I2C_MST_IF_SEL);
+	v |= BIT(i2c->sda_num);
+	writel(v, i2c->base + RTL9310_I2C_MST_IF_SEL);
+}

@@ -1,0 +1,19 @@
+static int rtl9310_i2c_config_xfer(struct rtl9300_i2c *i2c, u16 addr, u16 len)
+{
+	/* Set bus frequency */
+	REG_MASK(i2c, 0x3 << RTL9310_I2C_CTRL_SCL_FREQ,
+		 i2c->bus_freq << RTL9310_I2C_CTRL_SCL_FREQ, RTL9310_I2C_CTRL);
+
+	/* Set slave device address */
+	REG_MASK(i2c, 0x7f << RTL9310_I2C_CTRL_DEV_ADDR,
+		 addr << RTL9310_I2C_CTRL_DEV_ADDR, RTL9310_I2C_CTRL);
+
+	/* Set data length */
+	REG_MASK(i2c, 0xf << RTL9310_I2C_CTRL_DATA_WIDTH,
+		 ((len - 1) & 0xf) << RTL9310_I2C_CTRL_DATA_WIDTH, RTL9310_I2C_CTRL);
+
+	/* Set read mode to random */
+	REG_MASK(i2c, 0x1 << RTL9310_I2C_CTRL_READ_MODE, 0, RTL9310_I2C_CTRL);
+
+	return 0;
+}

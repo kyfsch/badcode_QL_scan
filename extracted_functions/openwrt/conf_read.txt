@@ -1,0 +1,69 @@
+int conf_read(const char *name)
+{
+	struct symbol *sym;
+	int conf_unsaved = 0;
+	int i;
+
+	conf_set_changed(false);
+
+	if (conf_read_simple(name, S_DEF_USER)) {
+		sym_calc_value(modules_sym);
+		return 1;
+	}
+
+	sym_calc_value(modules_sym);
+
+	for_all_symbols(i, sym) {
+		sym_calc_value(sym);
+		if (sym_is_choice(sym) || (sym->flags & SYMBOL_NO_WRITE))
+			continue;
+		if (sym_has_value(sym) && (sym->flags & SYMBOL_WRITE)) {
+			/* check that calculated value agrees with saved value */
+			switch (sym->type) {
+			case S_BOOLEAN:
+			case S_TRISTATE:
+				if (sym->def[S_DEF_USER].tri == sym_get_tristate_value(sym))
+					continue;
+				break;
+			default:
+				if (!strcmp(sym->curr.val, sym->def[S_DEF_USER].val))
+					continue;
+				break;
+			}
+		} else if (!sym_has_value(sym) && !(sym->flags & SYMBOL_WRITE))
+			/* no previous value and not saved */
+			continue;
+		conf_unsaved++;
+		/* maybe print value in verbose mode... */
+	}
+
+	for_all_symbols(i, sym) {
+		if (sym_has_value(sym) && !sym_is_choice_value(sym)) {
+			/* Reset values of generates values, so they'll appear
+			 * as new, if they should become visible, but that
+			 * doesn't quite work if the Kconfig and the saved
+			 * configuration disagree.
+			 */
+			if (sym->visible == no && !conf_unsaved)
+				sym->flags &= ~SYMBOL_DEF_USER;
+			switch (sym->type) {
+			case S_STRING:
+			case S_INT:
+			case S_HEX:
+				/* Reset a string value if it's out of range */
+				if (sym_string_within_range(sym, sym->def[S_DEF_USER].val))
+					break;
+				sym->flags &= ~(SYMBOL_VALID|SYMBOL_DEF_USER);
+				conf_unsaved++;
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+	if (conf_warnings || conf_unsaved)
+		conf_set_changed(true);
+
+	return 0;
+}

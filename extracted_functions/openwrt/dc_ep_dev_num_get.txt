@@ -1,0 +1,9 @@
+int dc_ep_dev_num_get(int *dev_num)
+{
+	if ((g_dc_ep_info.dev_num <= 0)
+		|| (g_dc_ep_info.dev_num > DC_EP_MAX_NUM))
+		return -EIO;
+
+	*dev_num = g_dc_ep_info.dev_num;
+	return 0;
+}

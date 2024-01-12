@@ -1,0 +1,47 @@
+static int b53_port_get_stats(struct switch_dev *sw_dev, int port,
+				struct switch_port_stats *stats)
+{
+	struct b53_device *dev = sw_to_b53(sw_dev);
+	const struct b53_mib_desc *mibs;
+	int txb_id, rxb_id;
+	u64 rxb, txb;
+
+	if (!(BIT(port) & dev->enabled_ports))
+		return -EINVAL;
+
+	txb_id = B53XX_MIB_TXB_ID;
+	rxb_id = B53XX_MIB_RXB_ID;
+
+	if (is5365(dev)) {
+		if (port == 5)
+			port = 8;
+
+		mibs = b53_mibs_65;
+	} else if (is63xx(dev)) {
+		mibs = b53_mibs_63xx;
+		txb_id = B63XX_MIB_TXB_ID;
+		rxb_id = B63XX_MIB_RXB_ID;
+	} else {
+		mibs = b53_mibs;
+	}
+
+	dev->buf[0] = 0;
+
+	if (mibs->size == 8) {
+		b53_read64(dev, B53_MIB_PAGE(port), mibs[txb_id].offset, &txb);
+		b53_read64(dev, B53_MIB_PAGE(port), mibs[rxb_id].offset, &rxb);
+	} else {
+		u32 val32;
+
+		b53_read32(dev, B53_MIB_PAGE(port), mibs[txb_id].offset, &val32);
+		txb = val32;
+
+		b53_read32(dev, B53_MIB_PAGE(port), mibs[rxb_id].offset, &val32);
+		rxb = val32;
+	}
+
+	stats->tx_bytes = txb;
+	stats->rx_bytes = rxb;
+
+	return 0;
+}

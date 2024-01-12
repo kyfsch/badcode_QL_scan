@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicAclGpioPolarity(rtk_uint32 polarity)
+{
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_ACL_GPIO_POLARITY, RTL8367C_ACL_GPIO_POLARITY_OFFSET, polarity);
+}

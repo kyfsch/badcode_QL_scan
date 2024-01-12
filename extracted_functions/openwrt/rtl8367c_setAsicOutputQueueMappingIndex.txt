@@ -1,0 +1,10 @@
+ret_t rtl8367c_setAsicOutputQueueMappingIndex(rtk_uint32 port, rtk_uint32 index )
+{
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(index >= RTL8367C_QUEUENO)
+        return RT_ERR_QUEUE_NUM;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_QOS_PORT_QUEUE_NUMBER_REG(port), RTL8367C_QOS_PORT_QUEUE_NUMBER_MASK(port), index);
+}

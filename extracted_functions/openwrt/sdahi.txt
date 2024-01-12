@@ -1,0 +1,5 @@
+static inline void sdahi(void)
+{
+	gpio_direction_input(sda_index);
+	udelay(ADAP_DELAY);
+}

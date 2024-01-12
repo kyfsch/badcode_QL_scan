@@ -1,0 +1,8 @@
+static int rb4xx_cpld_gpio_set_0_7(struct rb4xx_cpld *cpld, u8 values)
+{
+	/* GPIO 0-7 change can be sent via command + bitfield */
+	u8 cmd[2] = {
+		CPLD_CMD_WRITE_CFG, values
+	};
+	return rb4xx_cpld_cmd(cpld, &cmd, 2);
+}

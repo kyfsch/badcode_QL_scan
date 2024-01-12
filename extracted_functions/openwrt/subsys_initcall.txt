@@ -1,0 +1,7 @@
+subsys_initcall(nct5104d_gpio_init);
+
+static void __exit nct5104d_gpio_exit(void)
+{
+	platform_device_unregister(nct5104d_gpio_pdev);
+	platform_driver_unregister(&nct5104d_gpio_driver);
+}

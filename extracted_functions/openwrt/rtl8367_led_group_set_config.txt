@@ -1,0 +1,14 @@
+static int rtl8367_led_group_set_config(struct rtl8366_smi *smi,
+				        unsigned int led, unsigned int cfg)
+{
+	u16 mask;
+	u16 set;
+	int err;
+
+	mask = (RTL8367_LED_CONFIG_LED_CFG_M << (led * 4)) |
+		RTL8367_LED_CONFIG_SEL;
+	set = (cfg & RTL8367_LED_CONFIG_LED_CFG_M) << (led * 4);
+
+	REG_RMW(smi, RTL8367_LED_CONFIG_REG, mask, set);
+	return 0;
+}

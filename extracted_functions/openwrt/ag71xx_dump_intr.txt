@@ -1,0 +1,11 @@
+static inline void ag71xx_dump_intr(struct ag71xx *ag, char *label, u32 intr)
+{
+	DBG("%s: %s intr=%08x %s%s%s%s%s%s\n",
+		ag->dev->name, label, intr,
+		(intr & AG71XX_INT_TX_PS) ? "TXPS " : "",
+		(intr & AG71XX_INT_TX_UR) ? "TXUR " : "",
+		(intr & AG71XX_INT_TX_BE) ? "TXBE " : "",
+		(intr & AG71XX_INT_RX_PR) ? "RXPR " : "",
+		(intr & AG71XX_INT_RX_OF) ? "RXOF " : "",
+		(intr & AG71XX_INT_RX_BE) ? "RXBE " : "");
+}

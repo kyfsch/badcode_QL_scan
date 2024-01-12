@@ -1,0 +1,53 @@
+static void rtk_hal_dump_mib(void)
+{
+
+	printk("==================%8s%8s%8s%8s%8s%8s%8s\n", "Port0", "Port1",
+	       "Port2", "Port3", "Port4", "Port16", "Port17");
+	/* Get TX Unicast Pkts */
+	printk("TX Unicast Pkts  :");
+	rtk_dump_mib_type(STAT_IfOutUcastPkts);
+	/* Get TX Multicast Pkts */
+	printk("TX Multicast Pkts:");
+	rtk_dump_mib_type(STAT_IfOutMulticastPkts);
+	/* Get TX BroadCast Pkts */
+	printk("TX BroadCast Pkts:");
+	rtk_dump_mib_type(STAT_IfOutBroadcastPkts);
+	/* Get TX Collisions */
+	/* Get TX Puase Frames */
+	printk("TX Pause Frames  :");
+	rtk_dump_mib_type(STAT_Dot3OutPauseFrames);
+	/* Get TX Drop Events */
+	/* Get RX Unicast Pkts */
+	printk("RX Unicast Pkts  :");
+	rtk_dump_mib_type(STAT_IfInUcastPkts);
+	/* Get RX Multicast Pkts */
+	printk("RX Multicast Pkts:");
+	rtk_dump_mib_type(STAT_IfInMulticastPkts);
+	/* Get RX Broadcast Pkts */
+	printk("RX Broadcast Pkts:");
+	rtk_dump_mib_type(STAT_IfInBroadcastPkts);
+	/* Get RX FCS Erros */
+	printk("RX FCS Errors    :");
+	rtk_dump_mib_type(STAT_Dot3StatsFCSErrors);
+	/* Get RX Undersize Pkts */
+	printk("RX Undersize Pkts:");
+	rtk_dump_mib_type(STAT_EtherStatsUnderSizePkts);
+	/* Get RX Discard Pkts */
+	printk("RX Discard Pkts  :");
+	rtk_dump_mib_type(STAT_Dot1dTpPortInDiscards);
+	/* Get RX Fragments */
+	printk("RX Fragments     :");
+	rtk_dump_mib_type(STAT_EtherStatsFragments);
+	/* Get RX Oversize Pkts */
+	printk("RX Oversize Pkts :");
+	rtk_dump_mib_type(STAT_EtherOversizeStats);
+	/* Get RX Jabbers */
+	printk("RX Jabbers       :");
+	rtk_dump_mib_type(STAT_EtherStatsJabbers);
+	/* Get RX Pause Frames */
+	printk("RX Pause Frames  :");
+	rtk_dump_mib_type(STAT_Dot3InPauseFrames);
+	/* clear MIB */
+	rtk_stat_global_reset();
+	
+}

@@ -1,0 +1,14 @@
+ret_t rtl8367c_getAsicVlanEgressTagMode(rtk_uint32 port, rtl8367c_egtagmode *pTagMode)
+{
+    rtk_uint32 regData;
+    ret_t  retVal;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if((retVal = rtl8367c_getAsicRegBits(RTL8367C_PORT_MISC_CFG_REG(port), RTL8367C_VLAN_EGRESS_MDOE_MASK, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    *pTagMode = (rtl8367c_egtagmode)regData;
+    return RT_ERR_OK;
+}

@@ -1,0 +1,15 @@
+static int esw_get_port_led(struct switch_dev *dev,
+			const struct switch_attr *attr,
+			struct switch_val *val)
+{
+	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
+	int idx = val->port_vlan;
+
+	if (idx < 0 || idx >= RT305X_ESW_NUM_PORTS ||
+	    idx >= RT305X_ESW_NUM_LEDS)
+		return -EINVAL;
+
+	val->value.i = esw_r32(esw, RT305X_ESW_REG_P0LED + 4*idx);
+
+	return 0;
+}

@@ -1,0 +1,5 @@
+static const char *aw9523_pinctrl_get_group_name(struct pinctrl_dev *pctldev,
+						 unsigned int selector)
+{
+	return aw9523_pins[selector].name;
+}

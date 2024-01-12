@@ -1,0 +1,72 @@
+int rtcl_init_sram(void)
+{
+	struct gen_pool *sram_pool;
+	phys_addr_t sram_pbase;
+	unsigned long sram_vbase;
+	struct device_node *node;
+	struct platform_device *pdev = NULL;
+	void *dram_start;
+	int dram_size;
+	const char *wrn = ", rate setting disabled.\n";
+
+	switch (rtcl_ccu->soc) {
+	case SOC_RTL838X:
+		dram_start = &rtcl_838x_dram_start;
+		dram_size = rtcl_838x_dram_size;
+		break;
+	case SOC_RTL839X:
+		dram_start = &rtcl_839x_dram_start;
+		dram_size = rtcl_839x_dram_size;
+		break;
+	default:
+		return -ENXIO;
+	}
+
+	for_each_compatible_node(node, NULL, "mmio-sram") {
+		pdev = of_find_device_by_node(node);
+		if (pdev) {
+			of_node_put(node);
+			break;
+		}
+	}
+
+	if (!pdev) {
+		dev_warn(&rtcl_ccu->pdev->dev, "no SRAM device found%s", wrn);
+		return -ENXIO;
+	}
+
+	sram_pool = gen_pool_get(&pdev->dev, NULL);
+	if (!sram_pool) {
+		dev_warn(&rtcl_ccu->pdev->dev, "SRAM pool unavailable%s", wrn);
+		goto err_put_device;
+	}
+
+	sram_vbase = gen_pool_alloc(sram_pool, dram_size);
+	if (!sram_vbase) {
+		dev_warn(&rtcl_ccu->pdev->dev, "can not allocate SRAM%s", wrn);
+		goto err_put_device;
+	}
+
+	sram_pbase = gen_pool_virt_to_phys(sram_pool, sram_vbase);
+	memcpy((void *)sram_pbase, dram_start, dram_size);
+	flush_icache_range((unsigned long)sram_pbase, (unsigned long)(sram_pbase + dram_size));
+
+	switch (rtcl_ccu->soc) {
+	case SOC_RTL838X:
+		RTCL_SRAM_FUNC(838x, sram_pbase, set_rate);
+		break;
+	case SOC_RTL839X:
+		RTCL_SRAM_FUNC(839x, sram_pbase, set_rate);
+		break;
+	}
+
+	rtcl_ccu->sram.pmark = (int *)((void *)sram_pbase + (dram_size - 4));
+	rtcl_ccu->sram.vbase = sram_vbase;
+
+	return 0;
+
+err_put_device:
+	put_device(&pdev->dev);
+
+	return -ENXIO;
+}

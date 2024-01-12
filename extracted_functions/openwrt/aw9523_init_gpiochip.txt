@@ -1,0 +1,26 @@
+static int aw9523_init_gpiochip(struct aw9523 *awi, unsigned int npins)
+{
+	struct device *dev = awi->dev;
+	struct gpio_chip *gpiochip = &awi->gpio;
+
+	gpiochip->label = devm_kstrdup(dev, dev_name(dev), GFP_KERNEL);
+	if (!gpiochip->label)
+		return -ENOMEM;
+
+	gpiochip->base = -1;
+	gpiochip->ngpio = npins;
+	gpiochip->get_direction = aw9523_gpio_get_direction;
+	gpiochip->direction_input = aw9523_direction_input;
+	gpiochip->direction_output = aw9523_direction_output;
+	gpiochip->get = aw9523_gpio_get;
+	gpiochip->get_multiple = aw9523_gpio_get_multiple;
+	gpiochip->set = aw9523_gpio_set;
+	gpiochip->set_multiple = aw9523_gpio_set_multiple;
+	gpiochip->set_config = gpiochip_generic_config;
+	gpiochip->parent = dev;
+	gpiochip->of_node = dev->of_node;
+	gpiochip->owner = THIS_MODULE;
+	gpiochip->can_sleep = true;
+
+	return 0;
+}

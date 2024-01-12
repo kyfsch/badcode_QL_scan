@@ -1,0 +1,13 @@
+int dc_ep_reset_device(struct dc_ep_priv *priv, u32 bits)
+{
+	int retry = EP_TIMEOUT;
+
+	wr32(bits, RCU_REQ);
+	do { } while (retry-- && (!(rd32(RCU_STAT) & bits)));
+
+	if (retry == 0) {
+		dev_err(priv->dev, "%s failed to reset\n", __func__);
+		return -ETIME;
+	}
+	return 0;
+}

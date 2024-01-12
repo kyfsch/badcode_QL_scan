@@ -1,0 +1,16 @@
+static void rtl838x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
+{
+	pr_info("Setting up EEE, state: %d\n", enable);
+	sw_w32_mask(0x4, 0, RTL838X_SMI_GLB_CTRL);
+
+	/* Set timers for EEE */
+	sw_w32(0x5001411, RTL838X_EEE_TX_TIMER_GIGA_CTRL);
+	sw_w32(0x5001417, RTL838X_EEE_TX_TIMER_GELITE_CTRL);
+
+	/* Enable EEE MAC support on ports */
+	for (int i = 0; i < priv->cpu_port; i++) {
+		if (priv->ports[i].phy)
+			rtl838x_port_eee_set(priv, i, enable);
+	}
+	priv->eee_enabled = enable;
+}

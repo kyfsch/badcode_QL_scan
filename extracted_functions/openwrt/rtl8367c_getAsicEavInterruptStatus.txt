@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicEavInterruptStatus(rtk_uint32* pIms)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_PTP_INTERRUPT_CFG, RTL8367C_PTP_PORT_MASK, pIms);
+}

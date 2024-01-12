@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsicPortBasedFidEn(rtk_uint32 port, rtk_uint32* pEnabled)
+{
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_PORT_PBFIDEN,port, pEnabled);
+}

@@ -1,0 +1,6 @@
+static int aes_cbcmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int keylen)
+{
+    return aes_set_key(crypto_shash_tfm(tfm), key, keylen);
+
+    return 0;
+}

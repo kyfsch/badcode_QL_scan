@@ -1,0 +1,16 @@
+uc_bpf_module_get_programs(uc_vm_t *vm, size_t nargs)
+{
+	struct bpf_object *obj = uc_fn_thisval("bpf.module");
+	struct bpf_program *prog = NULL;
+	uc_value_t *rv;
+	int i = 0;
+
+	if (!obj)
+		err_return(EINVAL, NULL);
+
+	rv = ucv_array_new(vm);
+	bpf_object__for_each_program(prog, obj)
+		ucv_array_set(rv, i++, ucv_string_new(bpf_program__name(prog)));
+
+	return rv;
+}

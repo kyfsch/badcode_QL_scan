@@ -1,0 +1,74 @@
+hostapd_bss_get_status(struct ubus_context *ctx, struct ubus_object *obj,
+		       struct ubus_request_data *req, const char *method,
+		       struct blob_attr *msg)
+{
+	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+	void *airtime_table, *dfs_table, *rrm_table, *wnm_table;
+	struct os_reltime now;
+	char ssid[SSID_MAX_LEN + 1];
+	char phy_name[17];
+	size_t ssid_len = SSID_MAX_LEN;
+	u8 channel = 0, op_class = 0;
+
+	if (hapd->conf->ssid.ssid_len < SSID_MAX_LEN)
+		ssid_len = hapd->conf->ssid.ssid_len;
+	
+	ieee80211_freq_to_channel_ext(hapd->iface->freq,
+				      hapd->iconf->secondary_channel,
+				      hostapd_get_oper_chwidth(hapd->iconf),
+				      &op_class, &channel);
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_string(&b, "status", hostapd_state_text(hapd->iface->state));
+	blobmsg_printf(&b, "bssid", MACSTR, MAC2STR(hapd->conf->bssid));
+
+	memset(ssid, 0, SSID_MAX_LEN + 1);
+	memcpy(ssid, hapd->conf->ssid.ssid, ssid_len);
+	blobmsg_add_string(&b, "ssid", ssid);
+
+	blobmsg_add_u32(&b, "freq", hapd->iface->freq);
+	blobmsg_add_u32(&b, "channel", channel);
+	blobmsg_add_u32(&b, "op_class", op_class);
+	blobmsg_add_u32(&b, "beacon_interval", hapd->iconf->beacon_int);
+#ifdef CONFIG_IEEE80211AX
+	blobmsg_add_u32(&b, "bss_color", hapd->iface->conf->he_op.he_bss_color_disabled ? -1 :
+					 hapd->iface->conf->he_op.he_bss_color);
+#else
+	blobmsg_add_u32(&b, "bss_color", -1);
+#endif
+
+	snprintf(phy_name, 17, "%s", hapd->iface->phy);
+	blobmsg_add_string(&b, "phy", phy_name);
+
+	/* RRM */
+	rrm_table = blobmsg_open_table(&b, "rrm");
+	blobmsg_add_u64(&b, "neighbor_report_tx", hapd->openwrt_stats.rrm.neighbor_report_tx);
+	blobmsg_close_table(&b, rrm_table);
+
+	/* WNM */
+	wnm_table = blobmsg_open_table(&b, "wnm");
+	blobmsg_add_u64(&b, "bss_transition_query_rx", hapd->openwrt_stats.wnm.bss_transition_query_rx);
+	blobmsg_add_u64(&b, "bss_transition_request_tx", hapd->openwrt_stats.wnm.bss_transition_request_tx);
+	blobmsg_add_u64(&b, "bss_transition_response_rx", hapd->openwrt_stats.wnm.bss_transition_response_rx);
+	blobmsg_close_table(&b, wnm_table);
+
+	/* Airtime */
+	airtime_table = blobmsg_open_table(&b, "airtime");
+	blobmsg_add_u64(&b, "time", hapd->iface->last_channel_time);
+	blobmsg_add_u64(&b, "time_busy", hapd->iface->last_channel_time_busy);
+	blobmsg_add_u16(&b, "utilization", hapd->iface->channel_utilization);
+	blobmsg_close_table(&b, airtime_table);
+
+	/* DFS */
+	dfs_table = blobmsg_open_table(&b, "dfs");
+	blobmsg_add_u32(&b, "cac_seconds", hapd->iface->dfs_cac_ms / 1000);
+	blobmsg_add_u8(&b, "cac_active", !!(hapd->iface->cac_started));
+	os_reltime_age(&hapd->iface->dfs_cac_start, &now);
+	blobmsg_add_u32(&b, "cac_seconds_left",
+			hapd->iface->cac_started ? hapd->iface->dfs_cac_ms / 1000 - now.sec : 0);
+	blobmsg_close_table(&b, dfs_table);
+
+	ubus_send_reply(ctx, req, b.head);
+
+	return 0;
+}

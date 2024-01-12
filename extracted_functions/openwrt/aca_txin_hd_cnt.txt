@@ -1,0 +1,9 @@
+static inline u32 aca_txin_hd_cnt(struct dc_ep_dev *dev)
+{
+	if (WARN_ON(!dev))
+		return -EINVAL;
+	if (WARN_ON(!dev->priv))
+		return -EINVAL;
+
+	return dc_aca_txin_hd_cnt(dev->priv);
+}

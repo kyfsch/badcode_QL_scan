@@ -1,0 +1,10 @@
+static void gpio_latch_lock(struct gpio_latch_chip *glc, bool enable)
+{
+	mutex_lock(&glc->mutex);
+
+	if (enable)
+		glc->latch_enabled = true;
+
+	if (glc->latch_enabled)
+		mutex_lock(&glc->latch_mutex);
+}

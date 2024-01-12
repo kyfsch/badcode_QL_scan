@@ -1,0 +1,21 @@
+void col2pixel (struct pixel *pix, const struct pixelformat *pixf, const struct colour *col){
+	switch (pixf->pixenum){
+		case RGB565:
+			pix->byte[0]=(col->r&0xf8)|(col->g&0xfc)>>5;
+			pix->byte[1]=(col->g&0xfc)<<3|(col->b&0xf8)>>3;
+			break;
+		case ARGB1555:
+			pix->byte[0]=(col->a&0x80)|(col->r&0xf8)>>1|(col->g&0xf8)>>6;
+			pix->byte[1]=(col->g&0xf8)<<2|(col->b&0xf8)>>3;
+			break;
+		case ARGB:
+			pix->byte[0]=col->a;
+			pix->byte[1]=col->r;
+			pix->byte[2]=col->g;
+			pix->byte[3]=col->b;
+			break;
+		default:
+			printf ("unknown pixelformat\n");
+			exit(1);
+	}
+}

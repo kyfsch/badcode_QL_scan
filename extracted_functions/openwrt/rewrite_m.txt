@@ -1,0 +1,24 @@
+static struct expr *rewrite_m(struct expr *e)
+{
+	if (!e)
+		return e;
+
+	switch (e->type) {
+	case E_NOT:
+		e->left.expr = rewrite_m(e->left.expr);
+		break;
+	case E_OR:
+	case E_AND:
+		e->left.expr = rewrite_m(e->left.expr);
+		e->right.expr = rewrite_m(e->right.expr);
+		break;
+	case E_SYMBOL:
+		/* change 'm' into 'm' && MODULES */
+		if (e->left.sym == &symbol_mod)
+			return expr_alloc_and(e, expr_alloc_symbol(modules_sym));
+		break;
+	default:
+		break;
+	}
+	return e;
+}

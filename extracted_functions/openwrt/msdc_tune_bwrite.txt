@@ -1,0 +1,87 @@
+static int msdc_tune_bwrite(struct mmc_host *mmc, struct mmc_request *mrq)
+{
+	struct msdc_host *host = mmc_priv(mmc);
+	void __iomem *base = host->base;
+
+	u32 wrrdly, cur_wrrdly = 0xffffffff, orig_wrrdly;
+	u32 dsmpl,  cur_dsmpl,  orig_dsmpl;
+	u32 rxdly,  cur_rxdly0;
+	u32 orig_dat0, orig_dat1, orig_dat2, orig_dat3;
+	u32 cur_dat0,  cur_dat1,  cur_dat2,  cur_dat3;
+	int result = -1;
+	u32 skip = 1;
+
+	// MSDC_IOCON_DDR50CKD need to check. [Fix me]
+
+	sdr_get_field(MSDC_PAD_TUNE, MSDC_PAD_TUNE_DATWRDLY, &orig_wrrdly);
+	sdr_get_field(MSDC_IOCON,    MSDC_IOCON_DSPL,        &orig_dsmpl);
+
+	/* Tune Method 2. just DAT0 */
+	sdr_set_field(MSDC_IOCON, MSDC_IOCON_DDLSEL, 1);
+	cur_rxdly0 = sdr_read32(MSDC_DAT_RDDLY0);
+
+	/* E1 ECO. YD: Reverse */
+	if (sdr_read32(MSDC_ECO_VER) >= 4) {
+		orig_dat0 = (cur_rxdly0 >> 24) & 0x1F;
+		orig_dat1 = (cur_rxdly0 >> 16) & 0x1F;
+		orig_dat2 = (cur_rxdly0 >>  8) & 0x1F;
+		orig_dat3 = (cur_rxdly0 >>  0) & 0x1F;
+	} else {
+		orig_dat0 = (cur_rxdly0 >>  0) & 0x1F;
+		orig_dat1 = (cur_rxdly0 >>  8) & 0x1F;
+		orig_dat2 = (cur_rxdly0 >> 16) & 0x1F;
+		orig_dat3 = (cur_rxdly0 >> 24) & 0x1F;
+	}
+
+	rxdly = 0;
+	do {
+		wrrdly = 0;
+		do {
+			for (dsmpl = 0; dsmpl < 2; dsmpl++) {
+				cur_dsmpl = (orig_dsmpl + dsmpl) % 2;
+				if (skip == 1) {
+					skip = 0;
+					continue;
+				}
+				sdr_set_field(MSDC_IOCON, MSDC_IOCON_DSPL, cur_dsmpl);
+
+				if (host->app_cmd) {
+					result = msdc_app_cmd(host->mmc, host);
+					if (result) {
+						ERR_MSG("TUNE_BWRITE app_cmd<%d> failed", host->mrq->cmd->opcode);
+						continue;
+					}
+				}
+				result = msdc_do_request(mmc, mrq);
+
+				ERR_MSG("TUNE_BWRITE<%s> DSPL<%d> DATWRDLY<%d> MSDC_DAT_RDDLY0<0x%x>",
+					result == 0 ? "PASS" : "FAIL",
+					cur_dsmpl, cur_wrrdly, cur_rxdly0);
+
+				if (result == 0) {
+					goto done;
+				} else {
+					/* there is a case: command timeout, and data phase not processed */
+					if (mrq->data->error != -EIO) {
+						ERR_MSG("TUNE_READ: result<0x%x> cmd_error<%d> data_error<%d>",
+							result, mrq->cmd->error, mrq->data->error);
+						goto done;
+					}
+				}
+			}
+			cur_wrrdly = (orig_wrrdly + wrrdly + 1) % 32;
+			sdr_set_field(MSDC_PAD_TUNE, MSDC_PAD_TUNE_DATWRDLY, cur_wrrdly);
+		} while (++wrrdly < 32);
+
+		cur_dat0 = (orig_dat0 + rxdly) % 32; /* only adjust bit-1 for crc */
+		cur_dat1 = orig_dat1;
+		cur_dat2 = orig_dat2;
+		cur_dat3 = orig_dat3;
+
+		cur_rxdly0 = (cur_dat0 << 24) | (cur_dat1 << 16) | (cur_dat2 << 8) | (cur_dat3 << 0);
+		sdr_write32(MSDC_DAT_RDDLY0, cur_rxdly0);
+	} while (++rxdly < 32);
+
+done:
+	return result;
+}

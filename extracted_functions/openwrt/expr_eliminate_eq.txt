@@ -1,0 +1,21 @@
+void expr_eliminate_eq(struct expr **ep1, struct expr **ep2)
+{
+	if (!e1 || !e2)
+		return;
+	switch (e1->type) {
+	case E_OR:
+	case E_AND:
+		__expr_eliminate_eq(e1->type, ep1, ep2);
+	default:
+		;
+	}
+	if (e1->type != e2->type) switch (e2->type) {
+	case E_OR:
+	case E_AND:
+		__expr_eliminate_eq(e2->type, ep1, ep2);
+	default:
+		;
+	}
+	e1 = expr_eliminate_yn(e1);
+	e2 = expr_eliminate_yn(e2);
+}

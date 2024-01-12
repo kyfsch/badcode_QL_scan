@@ -1,0 +1,18 @@
+static ssize_t bcm4908img_create_append_zeros(FILE *trx, size_t length) {
+	uint8_t *buf;
+
+	buf = malloc(length);
+	if (!buf)
+		return -ENOMEM;
+	memset(buf, 0, length);
+
+	if (fwrite(buf, 1, length, trx) != length) {
+		fprintf(stderr, "Failed to write %zu B to %s\n", length, pathname);
+		free(buf);
+		return -EIO;
+	}
+
+	free(buf);
+
+	return length;
+}

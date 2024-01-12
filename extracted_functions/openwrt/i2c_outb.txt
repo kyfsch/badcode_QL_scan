@@ -1,0 +1,33 @@
+static int i2c_outb(int c)
+{
+	int i;
+	int ack;
+
+	/* assert: scl is low */
+	for (i = 7; i >= 0; i--) {
+		if (c & ( 1 << i )) {
+			sdahi();
+		} else {
+			sdalo();
+		}
+		if (sclhi() < 0) { /* timed out */
+			sdahi(); /* we don't want to block the net */
+			return -ETIMEDOUT;
+		};
+		scllo();
+	}
+	sdahi();
+	if (sclhi() < 0) {
+		return -ETIMEDOUT;
+	};
+	/* read ack: SDA should be pulled down by slave */
+	ack = getsda() == 0;	/* ack: sda is pulled low ->success.	 */
+	scllo();
+
+	if (rtc_debug)
+		printk(KERN_DEBUG "i2c_outb(0x%02x) -> %s\n",
+		       c, ack ? "ACK": "NAK");
+
+	return ack;		/* return 1 if device acked	 */
+	/* assert: scl is low (sda undef) */
+}

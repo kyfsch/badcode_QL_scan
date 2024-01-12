@@ -1,0 +1,8 @@
+static ssize_t bcm4908img_create_align(FILE *trx, size_t cur_offset, size_t alignment) {
+	if (cur_offset & (alignment - 1)) {
+		size_t length = alignment - (cur_offset % alignment);
+		return bcm4908img_create_append_zeros(trx, length);
+	}
+
+	return 0;
+}

@@ -1,0 +1,4 @@
+static uint64_t ba2addr(struct nmbm_instance *ni, uint32_t ba)
+{
+	return (uint64_t)ba << bmtd.blk_shift;
+}

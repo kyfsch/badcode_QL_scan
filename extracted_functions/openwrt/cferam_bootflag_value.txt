@@ -1,0 +1,14 @@
+static int cferam_bootflag_value(const char *name, size_t name_len)
+{
+	int rc = -ENOENT;
+
+	if (name &&
+	    (name_len >= CFE_MAGIC_LEN) &&
+	    !memcmp(name, CFE_MAGIC_PFX, CFE_MAGIC_PFX_LEN)) {
+		rc = char_to_num(name[CFE_MAGIC_PFX_LEN + 0]) * 100;
+		rc += char_to_num(name[CFE_MAGIC_PFX_LEN + 1]) * 10;
+		rc += char_to_num(name[CFE_MAGIC_PFX_LEN + 2]) * 1;
+	}
+
+	return rc;
+}

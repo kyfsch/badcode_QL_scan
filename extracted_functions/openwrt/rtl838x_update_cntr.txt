@@ -1,0 +1,4 @@
+void rtl838x_update_cntr(int r, int released)
+{
+	/* This feature is not available on RTL838x SoCs */
+}

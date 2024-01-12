@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicPulbicPage(rtk_uint32 *pPageCount)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_FLOWCTRL_PUBLIC_PAGE_COUNTER, RTL8367C_FLOWCTRL_PUBLIC_PAGE_COUNTER_MASK, pPageCount);
+}

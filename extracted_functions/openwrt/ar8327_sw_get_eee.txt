@@ -1,0 +1,20 @@
+ar8327_sw_get_eee(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	const struct ar8327_data *data = priv->chip_data;
+	int port = val->port_vlan;
+	int phy;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+	if (port == 0 || port == 6)
+		return -EOPNOTSUPP;
+
+	phy = port - 1;
+
+	val->value.i = data->eee[phy];
+
+	return 0;
+}

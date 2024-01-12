@@ -1,0 +1,23 @@
+rtk_api_ret_t rtk_l2_agingEnable_get(rtk_port_t port, rtk_enable_t *pEnable)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* check port valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if(NULL == pEnable)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicLutDisableAging(rtk_switch_port_L2P_get(port), pEnable)) != RT_ERR_OK)
+        return retVal;
+
+    if(*pEnable == 1)
+        *pEnable = 0;
+    else
+        *pEnable = 1;
+
+    return RT_ERR_OK;
+}

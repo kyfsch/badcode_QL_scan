@@ -1,0 +1,64 @@
+static netdev_tx_t bcm6348_emac_start_xmit(struct sk_buff *skb,
+					   struct net_device *ndev)
+{
+	struct bcm6348_emac *emac = netdev_priv(ndev);
+	struct bcm6348_iudma *iudma = emac->iudma;
+	struct platform_device *pdev = emac->pdev;
+	struct device *dev = &pdev->dev;
+	struct bcm6348_iudma_desc *desc;
+	u32 len_stat;
+	netdev_tx_t ret;
+
+	/* lock against tx reclaim */
+	spin_lock(&emac->tx_lock);
+
+	/* make sure the tx hw queue is not full, should not happen
+	 * since we stop queue before it's the case */
+	if (unlikely(!emac->tx_desc_count)) {
+		netif_stop_queue(ndev);
+		dev_err(dev, "xmit called with no tx desc available?\n");
+		ret = NETDEV_TX_BUSY;
+		goto out_unlock;
+	}
+
+	/* point to the next available desc */
+	desc = &emac->tx_desc_cpu[emac->tx_curr_desc];
+	emac->tx_skb[emac->tx_curr_desc] = skb;
+
+	/* fill descriptor */
+	desc->address = dma_map_single(dev, skb->data, skb->len,
+				       DMA_TO_DEVICE);
+
+	len_stat = (skb->len << DMADESC_LENGTH_SHIFT) & DMADESC_LENGTH_MASK;
+	len_stat |= DMADESC_ESOP_MASK | DMADESC_APPEND_CRC |
+		    DMADESC_OWNER_MASK;
+
+	emac->tx_curr_desc++;
+	if (emac->tx_curr_desc == emac->tx_ring_size) {
+		emac->tx_curr_desc = 0;
+		len_stat |= DMADESC_WRAP_MASK;
+	}
+	emac->tx_desc_count--;
+
+	/* dma might be already polling, make sure we update desc
+	 * fields in correct order */
+	wmb();
+	desc->len_stat = len_stat;
+	wmb();
+
+	/* kick tx dma */
+	dmac_writel(iudma, DMAC_CHANCFG_EN_MASK, DMAC_CHANCFG_REG,
+		    emac->tx_chan);
+
+	/* stop queue if no more desc available */
+	if (!emac->tx_desc_count)
+		netif_stop_queue(ndev);
+
+	ndev->stats.tx_bytes += skb->len;
+	ndev->stats.tx_packets++;
+	ret = NETDEV_TX_OK;
+
+out_unlock:
+	spin_unlock(&emac->tx_lock);
+	return ret;
+}

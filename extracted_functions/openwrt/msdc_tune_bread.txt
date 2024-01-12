@@ -1,0 +1,113 @@
+static int msdc_tune_bread(struct mmc_host *mmc, struct mmc_request *mrq)
+{
+	struct msdc_host *host = mmc_priv(mmc);
+	void __iomem *base = host->base;
+	u32 ddr = 0;
+	u32 dcrc = 0;
+	u32 rxdly, cur_rxdly0, cur_rxdly1;
+	u32 dsmpl, cur_dsmpl,  orig_dsmpl;
+	u32 cur_dat0,  cur_dat1,  cur_dat2,  cur_dat3;
+	u32 cur_dat4,  cur_dat5,  cur_dat6,  cur_dat7;
+	u32 orig_dat0, orig_dat1, orig_dat2, orig_dat3;
+	u32 orig_dat4, orig_dat5, orig_dat6, orig_dat7;
+	int result = -1;
+	u32 skip = 1;
+
+	sdr_get_field(MSDC_IOCON, MSDC_IOCON_DSPL, &orig_dsmpl);
+
+	/* Tune Method 2. */
+	sdr_set_field(MSDC_IOCON, MSDC_IOCON_DDLSEL, 1);
+
+	rxdly = 0;
+	do {
+		for (dsmpl = 0; dsmpl < 2; dsmpl++) {
+			cur_dsmpl = (orig_dsmpl + dsmpl) % 2;
+			if (skip == 1) {
+				skip = 0;
+				continue;
+			}
+			sdr_set_field(MSDC_IOCON, MSDC_IOCON_DSPL, cur_dsmpl);
+
+			if (host->app_cmd) {
+				result = msdc_app_cmd(host->mmc, host);
+				if (result) {
+					ERR_MSG("TUNE_BREAD app_cmd<%d> failed", host->mrq->cmd->opcode);
+					continue;
+				}
+			}
+			result = msdc_do_request(mmc, mrq);
+
+			sdr_get_field(SDC_DCRC_STS,
+				      SDC_DCRC_STS_POS | SDC_DCRC_STS_NEG,
+				      &dcrc); /* RO */
+			if (!ddr)
+				dcrc &= ~SDC_DCRC_STS_NEG;
+			ERR_MSG("TUNE_BREAD<%s> dcrc<0x%x> DATRDDLY0/1<0x%x><0x%x> dsmpl<0x%x>",
+				(result == 0 && dcrc == 0) ? "PASS" : "FAIL", dcrc,
+				sdr_read32(MSDC_DAT_RDDLY0), sdr_read32(MSDC_DAT_RDDLY1), cur_dsmpl);
+
+			/* Fix me: result is 0, but dcrc is still exist */
+			if (result == 0 && dcrc == 0) {
+				goto done;
+			} else {
+				/* there is a case: command timeout, and data phase not processed */
+				if (mrq->data->error != 0 &&
+				    mrq->data->error != -EIO) {
+					ERR_MSG("TUNE_READ: result<0x%x> cmd_error<%d> data_error<%d>",
+						result, mrq->cmd->error, mrq->data->error);
+					goto done;
+				}
+			}
+		}
+
+		cur_rxdly0 = sdr_read32(MSDC_DAT_RDDLY0);
+		cur_rxdly1 = sdr_read32(MSDC_DAT_RDDLY1);
+
+		/* E1 ECO. YD: Reverse */
+		if (sdr_read32(MSDC_ECO_VER) >= 4) {
+			orig_dat0 = (cur_rxdly0 >> 24) & 0x1F;
+			orig_dat1 = (cur_rxdly0 >> 16) & 0x1F;
+			orig_dat2 = (cur_rxdly0 >>  8) & 0x1F;
+			orig_dat3 = (cur_rxdly0 >>  0) & 0x1F;
+			orig_dat4 = (cur_rxdly1 >> 24) & 0x1F;
+			orig_dat5 = (cur_rxdly1 >> 16) & 0x1F;
+			orig_dat6 = (cur_rxdly1 >>  8) & 0x1F;
+			orig_dat7 = (cur_rxdly1 >>  0) & 0x1F;
+		} else {
+			orig_dat0 = (cur_rxdly0 >>  0) & 0x1F;
+			orig_dat1 = (cur_rxdly0 >>  8) & 0x1F;
+			orig_dat2 = (cur_rxdly0 >> 16) & 0x1F;
+			orig_dat3 = (cur_rxdly0 >> 24) & 0x1F;
+			orig_dat4 = (cur_rxdly1 >>  0) & 0x1F;
+			orig_dat5 = (cur_rxdly1 >>  8) & 0x1F;
+			orig_dat6 = (cur_rxdly1 >> 16) & 0x1F;
+			orig_dat7 = (cur_rxdly1 >> 24) & 0x1F;
+		}
+
+		if (ddr) {
+			cur_dat0 = (dcrc & (1 << 0) || dcrc & (1 << 8))  ? ((orig_dat0 + 1) % 32) : orig_dat0;
+			cur_dat1 = (dcrc & (1 << 1) || dcrc & (1 << 9))  ? ((orig_dat1 + 1) % 32) : orig_dat1;
+			cur_dat2 = (dcrc & (1 << 2) || dcrc & (1 << 10)) ? ((orig_dat2 + 1) % 32) : orig_dat2;
+			cur_dat3 = (dcrc & (1 << 3) || dcrc & (1 << 11)) ? ((orig_dat3 + 1) % 32) : orig_dat3;
+		} else {
+			cur_dat0 = (dcrc & (1 << 0)) ? ((orig_dat0 + 1) % 32) : orig_dat0;
+			cur_dat1 = (dcrc & (1 << 1)) ? ((orig_dat1 + 1) % 32) : orig_dat1;
+			cur_dat2 = (dcrc & (1 << 2)) ? ((orig_dat2 + 1) % 32) : orig_dat2;
+			cur_dat3 = (dcrc & (1 << 3)) ? ((orig_dat3 + 1) % 32) : orig_dat3;
+		}
+		cur_dat4 = (dcrc & (1 << 4)) ? ((orig_dat4 + 1) % 32) : orig_dat4;
+		cur_dat5 = (dcrc & (1 << 5)) ? ((orig_dat5 + 1) % 32) : orig_dat5;
+		cur_dat6 = (dcrc & (1 << 6)) ? ((orig_dat6 + 1) % 32) : orig_dat6;
+		cur_dat7 = (dcrc & (1 << 7)) ? ((orig_dat7 + 1) % 32) : orig_dat7;
+
+		cur_rxdly0 = (cur_dat0 << 24) | (cur_dat1 << 16) | (cur_dat2 << 8) | (cur_dat3 << 0);
+		cur_rxdly1 = (cur_dat4 << 24) | (cur_dat5 << 16) | (cur_dat6 << 8) | (cur_dat7 << 0);
+
+		sdr_write32(MSDC_DAT_RDDLY0, cur_rxdly0);
+		sdr_write32(MSDC_DAT_RDDLY1, cur_rxdly1);
+
+	} while (++rxdly < 32);
+
+done:
+	return result;
+}

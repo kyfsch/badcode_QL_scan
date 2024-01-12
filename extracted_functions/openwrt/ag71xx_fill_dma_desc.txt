@@ -1,0 +1,48 @@
+static int ag71xx_fill_dma_desc(struct ag71xx_ring *ring, u32 addr, int len)
+{
+	int i;
+	struct ag71xx_desc *desc;
+	int ring_mask = BIT(ring->order) - 1;
+	int ndesc = 0;
+	int split = ring->desc_split;
+
+	if (!split)
+		split = len;
+
+	while (len > 0) {
+		unsigned int cur_len = len;
+
+		i = (ring->curr + ndesc) & ring_mask;
+		desc = ag71xx_ring_desc(ring, i);
+
+		if (!ag71xx_desc_empty(desc))
+			return -1;
+
+		if (cur_len > split) {
+			cur_len = split;
+
+			/*
+			 * TX will hang if DMA transfers <= 4 bytes,
+			 * make sure next segment is more than 4 bytes long.
+			 */
+			if (len <= split + 4)
+				cur_len -= 4;
+		}
+
+		desc->data = addr;
+		addr += cur_len;
+		len -= cur_len;
+
+		if (len > 0)
+			cur_len |= DESC_MORE;
+
+		/* prevent early tx attempt of this descriptor */
+		if (!ndesc)
+			cur_len |= DESC_EMPTY;
+
+		desc->ctrl = cur_len;
+		ndesc++;
+	}
+
+	return ndesc;
+}

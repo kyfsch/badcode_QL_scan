@@ -1,0 +1,5 @@
+static const char *aw9523_pmx_get_fname(struct pinctrl_dev *pctl,
+					unsigned int sel)
+{
+	return aw9523_pmx[sel].name;
+}

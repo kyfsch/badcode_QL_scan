@@ -1,0 +1,10 @@
+static void gsw_reset_ephy(struct mt7620_gsw *gsw)
+{
+	if (!gsw->rst_ephy)
+		return;
+
+	reset_control_assert(gsw->rst_ephy);
+	usleep_range(10, 20);
+	reset_control_deassert(gsw->rst_ephy);
+	usleep_range(10, 20);
+}

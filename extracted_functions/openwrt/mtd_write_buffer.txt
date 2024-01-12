@@ -1,0 +1,6 @@
+int mtd_write_buffer(int fd, const char *buf, int offset, int length)
+{
+	lseek(fd, offset, SEEK_SET);
+	write(fd, buf, length);
+	return 0;
+}

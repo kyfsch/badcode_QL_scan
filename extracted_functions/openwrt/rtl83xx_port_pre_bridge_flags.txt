@@ -1,0 +1,18 @@
+static int rtl83xx_port_pre_bridge_flags(struct dsa_switch *ds, int port, struct switchdev_brport_flags flags, struct netlink_ext_ack *extack)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	unsigned long features = 0;
+	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
+	if (priv->r->enable_learning)
+		features |= BR_LEARNING;
+	if (priv->r->enable_flood)
+		features |= BR_FLOOD;
+	if (priv->r->enable_mcast_flood)
+		features |= BR_MCAST_FLOOD;
+	if (priv->r->enable_bcast_flood)
+		features |= BR_BCAST_FLOOD;
+	if (flags.mask & ~(features))
+		return -EINVAL;
+
+	return 0;
+}

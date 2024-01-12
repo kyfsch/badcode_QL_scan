@@ -1,0 +1,13 @@
+uc_bpf_obj_pin(uc_vm_t *vm, size_t nargs, const char *type)
+{
+	struct uc_bpf_fd *f = uc_fn_thisval(type);
+	uc_value_t *path = uc_fn_arg(0);
+
+	if (ucv_type(path) != UC_STRING)
+		err_return(EINVAL, NULL);
+
+	if (bpf_obj_pin(f->fd, ucv_string_get(path)))
+		err_return(errno, NULL);
+
+	return TRUE;
+}

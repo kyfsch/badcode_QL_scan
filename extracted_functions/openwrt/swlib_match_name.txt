@@ -1,0 +1,5 @@
+static bool swlib_match_name(struct switch_dev *dev, const char *name)
+{
+	return (strcmp(name, dev->dev_name) == 0 ||
+		strcmp(name, dev->alias) == 0);
+}

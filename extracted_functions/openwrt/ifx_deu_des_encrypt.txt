@@ -1,0 +1,7 @@
+void ifx_deu_des_encrypt (struct crypto_tfm *tfm, uint8_t * out, const uint8_t * in)
+{
+     struct ifx_deu_des_ctx *ctx = crypto_tfm_ctx(tfm);
+     ifx_deu_des (ctx, out, in, NULL, DES_BLOCK_SIZE,
+                    CRYPTO_DIR_ENCRYPT, 0);
+
+}

@@ -1,0 +1,36 @@
+rtk_api_ret_t rtk_switch_greenEthernet_get(rtk_enable_t *pEnable)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 port;
+    rtk_uint32 state;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    RTK_SCAN_ALL_LOG_PORT(port)
+    {
+        if(rtk_switch_isUtpPort(port) == RT_ERR_OK)
+        {
+            if ((retVal = rtl8367c_getAsicPowerSaving(rtk_switch_port_L2P_get(port), &state))!=RT_ERR_OK)
+                return retVal;
+
+            if(state == DISABLED)
+            {
+                *pEnable = DISABLED;
+                return RT_ERR_OK;
+            }
+
+            if ((retVal = rtl8367c_getAsicGreenEthernet(rtk_switch_port_L2P_get(port), &state))!=RT_ERR_OK)
+                return retVal;
+
+            if(state == DISABLED)
+            {
+                *pEnable = DISABLED;
+                return RT_ERR_OK;
+            }
+        }
+    }
+
+    *pEnable = ENABLED;
+    return RT_ERR_OK;
+}

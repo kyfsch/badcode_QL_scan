@@ -1,0 +1,9 @@
+static inline int clk_get(struct dc_ep_dev *dev, u32 *sysclk, u32 *ppeclk)
+{
+	if (WARN_ON(!dev || !sysclk || !ppeclk))
+		return -EINVAL;
+	if (WARN_ON(!dev->priv))
+		return -EINVAL;
+
+	return dc_ep_clk_get(dev->priv, sysclk, ppeclk);
+}

@@ -1,0 +1,20 @@
+rtk_api_ret_t rtk_led_enable_get(rtk_led_group_t group, rtk_portmask_t *pPortmask)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 pmask;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (group >= LED_GROUP_END)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_getAsicLedGroupEnable(group, &pmask)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtk_switch_portmask_P2L_get(pmask, pPortmask)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+
+}

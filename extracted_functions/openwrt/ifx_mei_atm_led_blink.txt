@@ -1,0 +1,4 @@
+int ifx_mei_atm_led_blink(void)
+{
+    return g_adsl_ledcallback();
+}

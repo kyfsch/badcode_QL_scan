@@ -1,0 +1,4 @@
+int rtl931x_l3_setup(struct rtl838x_switch_priv *priv)
+{
+	return 0;
+}

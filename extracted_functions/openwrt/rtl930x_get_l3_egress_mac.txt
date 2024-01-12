@@ -1,0 +1,15 @@
+static u64 rtl930x_get_l3_egress_mac(u32 idx)
+{
+	u64 mac;
+	/* Read L3_EGR_INTF_MAC table (2) via register RTL9300_TBL_2 */
+	struct table_reg *r = rtl_table_get(RTL9300_TBL_2, 2);
+
+	rtl_table_read(r, idx);
+	/* The table has a size of 2 registers */
+	mac = sw_r32(rtl_table_data(r, 0));
+	mac <<= 32;
+	mac |= sw_r32(rtl_table_data(r, 1));
+	rtl_table_release(r);
+
+	return mac;
+}

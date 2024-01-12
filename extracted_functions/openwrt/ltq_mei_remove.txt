@@ -1,0 +1,16 @@
+static int ltq_mei_remove(struct platform_device *pdev)
+{
+	int i = 0;
+	int num;
+
+	for (num = 0; num < BSP_MAX_DEVICES; num++) {
+		IFX_MEI_CleanUpDevNode (num);
+	}
+
+	for (i = 0; i < BSP_MAX_DEVICES; i++) {
+		for (i = 0; i < BSP_MAX_DEVICES; i++) {
+			IFX_MEI_ExitDevice (i);
+		}
+	}
+	return 0;
+}

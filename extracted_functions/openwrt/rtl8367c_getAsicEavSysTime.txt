@@ -1,0 +1,38 @@
+ret_t rtl8367c_getAsicEavSysTime(rtk_uint32* pSecond, rtk_uint32* pNanoSecond)
+{
+    ret_t retVal;
+    rtk_uint32 sec_h, sec_l, nsec8_h, nsec8_l;
+    rtk_uint32 nano_second_8;
+    rtk_uint32 regData, busyFlag, count;
+
+    regData = 0;
+    regData = (PTP_TIME_READ<<RTL8367C_PTP_TIME_NSEC_H_CMD_OFFSET) | RTL8367C_PTP_TIME_NSEC_H_EXEC_MASK;
+
+    if((retVal = rtl8367c_setAsicReg(RTL8367C_REG_PTP_TIME_NSEC_H_NSEC, regData)) != RT_ERR_OK)
+        return retVal;
+
+    count = 0;
+    do {
+        if((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_PTP_TIME_NSEC_H_NSEC, RTL8367C_PTP_TIME_NSEC_H_EXEC_OFFSET, &busyFlag)) != RT_ERR_OK)
+            return retVal;
+        count++;
+    } while ((busyFlag != 0)&&(count<5));
+
+    if (busyFlag != 0)
+        return RT_ERR_BUSYWAIT_TIMEOUT;
+
+    if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_PTP_TIME_SEC_H_SEC_RD, &sec_h)) != RT_ERR_OK)
+        return retVal;
+    if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_PTP_TIME_SEC_L_SEC_RD, &sec_l)) != RT_ERR_OK)
+        return retVal;
+    if((retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_PTP_TIME_NSEC_H_NSEC_RD, RTL8367C_PTP_TIME_NSEC_H_NSEC_RD_MASK,&nsec8_h)) != RT_ERR_OK)
+        return retVal;
+    if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_PTP_TIME_NSEC_L_NSEC_RD, &nsec8_l)) != RT_ERR_OK)
+        return retVal;
+
+    *pSecond = (sec_h<<16) | sec_l;
+    nano_second_8 = (nsec8_h<<16) | nsec8_l;
+    *pNanoSecond = nano_second_8<<3;
+
+    return RT_ERR_OK;
+}

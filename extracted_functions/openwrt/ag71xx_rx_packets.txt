@@ -1,0 +1,78 @@
+static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
+{
+	struct net_device *dev = ag->dev;
+	struct ag71xx_ring *ring = &ag->rx_ring;
+	unsigned int pktlen_mask = ag->desc_pktlen_mask;
+	unsigned int offset = ag->rx_buf_offset;
+	int ring_mask = BIT(ring->order) - 1;
+	int ring_size = BIT(ring->order);
+	struct list_head rx_list;
+	struct sk_buff *next;
+	struct sk_buff *skb;
+	int done = 0;
+
+	DBG("%s: rx packets, limit=%d, curr=%u, dirty=%u\n",
+			dev->name, limit, ring->curr, ring->dirty);
+	INIT_LIST_HEAD(&rx_list);
+
+	while (done < limit) {
+		unsigned int i = ring->curr & ring_mask;
+		struct ag71xx_desc *desc = ag71xx_ring_desc(ring, i);
+		int pktlen;
+		int err = 0;
+
+		if (ag71xx_desc_empty(desc))
+			break;
+
+		if ((ring->dirty + ring_size) == ring->curr) {
+			ag71xx_assert(0);
+			break;
+		}
+
+		ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_PR);
+
+		pktlen = desc->ctrl & pktlen_mask;
+		pktlen -= ETH_FCS_LEN;
+
+		dma_unmap_single(&ag->pdev->dev, ring->buf[i].dma_addr,
+				 ag->rx_buf_size, DMA_FROM_DEVICE);
+
+		dev->stats.rx_packets++;
+		dev->stats.rx_bytes += pktlen;
+
+		skb = napi_build_skb(ring->buf[i].rx_buf, ag71xx_buffer_size(ag));
+		if (!skb) {
+			skb_free_frag(ring->buf[i].rx_buf);
+			goto next;
+		}
+
+		skb_reserve(skb, offset);
+		skb_put(skb, pktlen);
+
+		if (err) {
+			dev->stats.rx_dropped++;
+			kfree_skb(skb);
+		} else {
+			skb->dev = dev;
+			skb->ip_summed = CHECKSUM_NONE;
+			list_add_tail(&skb->list, &rx_list);
+		}
+
+next:
+		ring->buf[i].rx_buf = NULL;
+		done++;
+
+		ring->curr++;
+	}
+
+	ag71xx_ring_rx_refill(ag);
+
+	list_for_each_entry_safe(skb, next, &rx_list, list)
+		skb->protocol = eth_type_trans(skb, dev);
+	netif_receive_skb_list(&rx_list);
+
+	DBG("%s: rx finish, curr=%u, dirty=%u, done=%d\n",
+		dev->name, ring->curr, ring->dirty, done);
+
+	return done;
+}

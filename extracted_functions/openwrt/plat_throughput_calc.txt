@@ -1,0 +1,4 @@
+static u32 plat_throughput_calc(u32 payload, int cycles)
+{
+	return (u32)((payload * 300) / cycles);
+}

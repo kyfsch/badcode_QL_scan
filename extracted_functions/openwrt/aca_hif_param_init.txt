@@ -1,0 +1,11 @@
+static int aca_hif_param_init(struct dc_ep_priv *priv)
+{
+	struct dc_aca *aca  = to_aca(priv);
+
+	aca->hif_params = kzalloc(sizeof(struct aca_hif_params), GFP_KERNEL);
+	if (!aca->hif_params)
+		return -ENOMEM;
+	aca->hif_params->task_mask = 0x0000000F;
+	dev_dbg(priv->dev, "%s\n", __func__);
+	return 0;
+}

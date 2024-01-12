@@ -1,0 +1,16 @@
+hostapd_remove_iface_bss_conf(struct hostapd_config *iconf,
+			      struct hostapd_bss_config *conf)
+{
+	int i;
+
+	for (i = 0; i < iconf->num_bss; i++)
+		if (iconf->bss[i] == conf)
+			break;
+
+	if (i == iconf->num_bss)
+		return;
+
+	for (i++; i < iconf->num_bss; i++)
+		iconf->bss[i - 1] = iconf->bss[i];
+	iconf->num_bss--;
+}

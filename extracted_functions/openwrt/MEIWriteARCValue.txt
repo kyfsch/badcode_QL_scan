@@ -1,0 +1,20 @@
+MEIWriteARCValue (u32 address, u32 value)
+{
+	u32 i, check = 0;
+
+	/* Write address register */
+	IFX_MEI_WRITE_REGISTER_L (address,  ME_DBG_WR_AD + LTQ_MEI_BASE_ADDR);
+
+	/* Write data register */
+	IFX_MEI_WRITE_REGISTER_L (value, ME_DBG_DATA + LTQ_MEI_BASE_ADDR);
+
+	/* wait until complete - timeout at 40 */
+	for (i = 0; i < 40; i++) {
+		check = IFX_MEI_READ_REGISTER_L (ME_ARC2ME_STAT + LTQ_MEI_BASE_ADDR);
+
+		if ((check & ARC_TO_MEI_DBG_DONE))
+			break;
+	}
+	/* clear the flag */
+	IFX_MEI_WRITE_REGISTER_L (ARC_TO_MEI_DBG_DONE, ME_ARC2ME_STAT + LTQ_MEI_BASE_ADDR);
+}

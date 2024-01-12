@@ -1,0 +1,10 @@
+static void g997_line_inventory(int fd) {
+	IOCTL_DIR(DSL_G997_LineInventory_t, DSL_FIO_G997_LINE_INVENTORY_GET, DSL_DOWNSTREAM)
+
+	m_array("vendor_id", out.data.G994VendorID, DSL_G997_LI_MAXLEN_VENDOR_ID);
+	m_vendor("vendor", out.data.G994VendorID);
+	m_array("system_vendor_id", out.data.SystemVendorID, DSL_G997_LI_MAXLEN_VENDOR_ID);
+	m_vendor("system_vendor", out.data.SystemVendorID);
+	m_array("version", out.data.VersionNumber, DSL_G997_LI_MAXLEN_VERSION);
+	m_array("serial", out.data.SerialNumber, DSL_G997_LI_MAXLEN_SERIAL);
+}

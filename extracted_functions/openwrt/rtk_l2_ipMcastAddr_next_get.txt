@@ -1,0 +1,44 @@
+rtk_api_ret_t rtk_l2_ipMcastAddr_next_get(rtk_uint32 *pAddress, rtk_l2_ipMcastAddr_t *pIpMcastAddr)
+{
+    rtk_api_ret_t   retVal;
+    rtl8367c_luttb  l2Table;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Error Checking */
+    if ((pAddress == NULL) || (pIpMcastAddr == NULL) )
+        return RT_ERR_INPUT;
+
+    if(*pAddress > RTK_MAX_LUT_ADDR_ID )
+        return RT_ERR_L2_L2UNI_PARAM;
+
+    memset(&l2Table, 0, sizeof(rtl8367c_luttb));
+    l2Table.address = *pAddress;
+
+    do
+    {
+        if ((retVal = rtl8367c_getAsicL2LookupTb(LUTREADMETHOD_NEXT_L3MC, &l2Table)) != RT_ERR_OK)
+            return retVal;
+
+        if(l2Table.address < *pAddress)
+            return RT_ERR_L2_ENTRY_NOTFOUND;
+
+    }while(l2Table.l3vidlookup == 1);
+
+    pIpMcastAddr->sip = l2Table.sip;
+    pIpMcastAddr->dip = l2Table.dip;
+
+    /* Get Logical port mask */
+    if ((retVal = rtk_switch_portmask_P2L_get(l2Table.mbr, &pIpMcastAddr->portmask)) != RT_ERR_OK)
+        return retVal;
+
+    pIpMcastAddr->priority      = l2Table.lut_pri;
+    pIpMcastAddr->fwd_pri_en    = l2Table.fwd_en;
+    pIpMcastAddr->igmp_asic     = l2Table.igmp_asic;
+    pIpMcastAddr->igmp_index    = l2Table.igmpidx;
+    pIpMcastAddr->address       = l2Table.address;
+    *pAddress = l2Table.address;
+
+    return RT_ERR_OK;
+}

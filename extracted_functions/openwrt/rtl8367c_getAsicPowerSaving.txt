@@ -1,0 +1,18 @@
+ret_t rtl8367c_getAsicPowerSaving(rtk_uint32 phy, rtk_uint32* enable)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 phyData;
+
+    if(NULL == enable)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicPHYReg(phy,PHY_POWERSAVING_REG,&phyData))!=RT_ERR_OK)
+        return retVal;
+
+    if ((phyData & 0x0004) > 0)
+        *enable = 1;
+    else
+        *enable = 0;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,4 @@
+static struct mtd_info *ar934x_nfc_to_mtd(struct ar934x_nfc *nfc)
+{
+	return nand_to_mtd(&nfc->nand_chip);
+}

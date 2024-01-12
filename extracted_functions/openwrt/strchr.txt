@@ -1,0 +1,12 @@
+    loc = strchr(b64table, src[i]);
+    if(loc == (char *) 0)
+      break;
+    else
+      a[i] = loc - b64table;
+    ++i;
+  }
+  size = i;
+
+  i = size - 1;
+  j = size;
+  while(1) {

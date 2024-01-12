@@ -1,0 +1,4 @@
+static int switch_count_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, esw_cnt_read, 0);
+}

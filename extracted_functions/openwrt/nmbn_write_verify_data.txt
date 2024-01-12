@@ -1,0 +1,39 @@
+static bool nmbn_write_verify_data(struct nmbm_instance *ni, uint64_t addr,
+				   const void *data, uint32_t size)
+{
+	uint64_t off = addr;
+	const uint8_t *ptr = data;
+	uint32_t sizeremain = size, chunksize, leading;
+	bool success;
+	int ret;
+
+	while (sizeremain) {
+		leading = off & (bmtd.pg_size - 1);
+		chunksize = bmtd.pg_size - leading;
+		if (chunksize > sizeremain)
+			chunksize = sizeremain;
+
+		/* Prepare page data. fill 0xff to unused region */
+		memset(ni->page_cache, 0xff, ni->rawpage_size);
+		memcpy(ni->page_cache + leading, ptr, chunksize);
+
+		success = nmbm_write_phys_page(ni, off - leading,
+					       ni->page_cache, NULL);
+		if (!success)
+			return false;
+
+		/* Verify the data just written. ECC error indicates failure */
+		ret = nmbm_read_phys_page(ni, off - leading, ni->page_cache, NULL);
+		if (ret < 0)
+			return false;
+
+		if (memcmp(ni->page_cache + leading, ptr, chunksize))
+			return false;
+
+		off += chunksize;
+		ptr += chunksize;
+		sizeremain -= chunksize;
+	}
+
+	return true;
+}

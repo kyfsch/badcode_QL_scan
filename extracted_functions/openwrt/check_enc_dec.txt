@@ -1,0 +1,7 @@
+static void check_enc_dec(const int enc)
+{
+    if (enc == -1)
+	return;
+    fprintf(stderr, "Error: both -d and -e were specified.\n");
+    exit(EXIT_FAILURE);
+}

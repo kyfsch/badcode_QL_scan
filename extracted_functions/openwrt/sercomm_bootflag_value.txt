@@ -1,0 +1,23 @@
+static int sercomm_bootflag_value(struct mtd_info *mtd, uint8_t *buf)
+{
+	size_t retlen;
+	loff_t offs;
+	int rc;
+
+	for (offs = 0; offs < mtd->size; offs += mtd->erasesize) {
+		rc = mtd_read(mtd, offs, SERCOMM_MAGIC_LEN, &retlen, buf);
+		if (rc || retlen != SERCOMM_MAGIC_LEN)
+			continue;
+
+		if (memcmp(buf, SERCOMM_MAGIC_PFX, SERCOMM_MAGIC_PFX_LEN))
+			continue;
+
+		rc = char_to_num(buf[SERCOMM_MAGIC_PFX_LEN + 0]) * 100;
+		rc += char_to_num(buf[SERCOMM_MAGIC_PFX_LEN + 1]) * 10;
+		rc += char_to_num(buf[SERCOMM_MAGIC_PFX_LEN + 2]) * 1;
+
+		return rc;
+	}
+
+	return -ENOENT;
+}

@@ -1,0 +1,4 @@
+static int igmp_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, igmp_show, 0);
+}

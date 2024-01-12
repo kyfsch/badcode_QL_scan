@@ -1,0 +1,34 @@
+mtk_bmt_mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
+{
+	struct erase_info mapped_instr = {
+		.len = bmtd.blk_size,
+	};
+	int retry_count = 0;
+	u64 start_addr, end_addr;
+	int ret;
+	u16 orig_block;
+	int block;
+
+	start_addr = instr->addr & (~mtd->erasesize_mask);
+	end_addr = instr->addr + instr->len;
+
+	while (start_addr < end_addr) {
+		orig_block = start_addr >> bmtd.blk_shift;
+		block = bmtd.ops->get_mapping_block(orig_block);
+		if (block < 0)
+			return -EIO;
+		mapped_instr.addr = (loff_t)block << bmtd.blk_shift;
+		ret = bmtd._erase(mtd, &mapped_instr);
+		if (ret) {
+			if (mtk_bmt_remap_block(orig_block, block, 0) &&
+			    retry_count++ < 10)
+				continue;
+			instr->fail_addr = start_addr;
+			break;
+		}
+		start_addr += mtd->erasesize;
+		retry_count = 0;
+	}
+
+	return ret;
+}

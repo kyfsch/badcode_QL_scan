@@ -1,0 +1,4 @@
+ar8xxx_mib_flush(struct ar8xxx_priv *priv)
+{
+	return ar8xxx_mib_op(priv, AR8216_MIB_FUNC_FLUSH);
+}

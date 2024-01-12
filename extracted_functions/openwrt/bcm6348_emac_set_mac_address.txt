@@ -1,0 +1,19 @@
+static int bcm6348_emac_set_mac_address(struct net_device *ndev, void *p)
+{
+	struct bcm6348_emac *emac = netdev_priv(ndev);
+	struct sockaddr *addr = p;
+	u32 val;
+
+	eth_hw_addr_set(ndev, addr->sa_data);
+
+	/* use perfect match register 0 to store my emac address */
+	val = (ndev->dev_addr[2] << 24) | (ndev->dev_addr[3] << 16) |
+		(ndev->dev_addr[4] << 8) | ndev->dev_addr[5];
+	emac_writel(emac, val, ENET_PML_REG(0));
+
+	val = (ndev->dev_addr[0] << 8 | ndev->dev_addr[1]);
+	val |= ENET_PMH_DATAVALID_MASK;
+	emac_writel(emac, val, ENET_PMH_REG(0));
+
+	return 0;
+}

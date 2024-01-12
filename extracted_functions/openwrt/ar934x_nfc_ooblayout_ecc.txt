@@ -1,0 +1,11 @@
+static int ar934x_nfc_ooblayout_ecc(struct mtd_info *mtd, int section,
+				    struct mtd_oob_region *oobregion)
+{
+	if (section)
+		return -ERANGE;
+
+	oobregion->offset = 20;
+	oobregion->length = 28;
+
+	return 0;
+}

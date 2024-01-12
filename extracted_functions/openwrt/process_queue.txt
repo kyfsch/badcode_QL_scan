@@ -1,0 +1,6 @@
+static void process_queue(unsigned long data)
+{
+
+    DEU_WAKEUP_EVENT(deu_dma_priv.deu_thread_wait, AES_ASYNC_EVENT,
+                deu_dma_priv.aes_event_flags);
+}

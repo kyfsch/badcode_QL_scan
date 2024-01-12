@@ -1,0 +1,5 @@
+ar8327_led_destroy(struct ar8327_led *aled)
+{
+	ar8327_led_unregister(aled);
+	kfree(aled);
+}

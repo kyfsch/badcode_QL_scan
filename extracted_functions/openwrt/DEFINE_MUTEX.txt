@@ -1,0 +1,30 @@
+DEFINE_MUTEX(miim_lock);
+
+static u32 rtl8231_read(struct rtl8231_gpios *gpios, u32 reg)
+{
+	u32 t = 0, n = 0;
+
+	reg &= 0x1f;
+
+	/* Calculate read register address */
+	t = (gpios->smi_bus_id << 2) | (reg << 7);
+
+	/* Set execution bit: cleared when operation completed */
+	t |= 1;
+
+	/* Start execution */
+	sw_w32(t, gpios->ext_gpio_indrt_access);
+	do {
+		udelay(1);
+		t = sw_r32(gpios->ext_gpio_indrt_access);
+		n++;
+	} while ((t & 1) && (n < USEC_TIMEOUT));
+
+	if (n >= USEC_TIMEOUT)
+		return 0x80000000;
+
+	pr_debug("%s: %x, %x, %x\n", __func__, gpios->smi_bus_id,
+		reg, (t & 0xffff0000) >> 16);
+
+	return (t & 0xffff0000) >> 16;
+}

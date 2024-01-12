@@ -1,0 +1,8 @@
+static int airoha_get_dir(struct gpio_chip *gc, unsigned int gpio)
+{
+	struct airoha_gpio_ctrl *ctrl = gc_to_ctrl(gc);
+	u32 dir = ioread32(ctrl->dir[gpio / 16]);
+	u32 mask = BIT((gpio % 16) * 2);
+
+	return (dir & mask) ? GPIO_LINE_DIRECTION_OUT : GPIO_LINE_DIRECTION_IN;
+}

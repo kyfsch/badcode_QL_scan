@@ -1,0 +1,24 @@
+static int rtl8393_read_status(struct phy_device *phydev)
+{
+	int offset = 0;
+	int err;
+	int phy_addr = phydev->mdio.addr;
+	u32 v;
+
+	err = genphy_read_status(phydev);
+	if (phy_addr == 49)
+		offset = 0x100;
+
+	if (phydev->link) {
+		phydev->speed = SPEED_100;
+		/* Read SPD_RD_00 (bit 13) and SPD_RD_01 (bit 6) out of the internal
+		 * PHY registers
+		 */
+		v = sw_r32(RTL839X_SDS12_13_XSG0 + offset + 0x80);
+		if (!(v & (1 << 13)) && (v & (1 << 6)))
+			phydev->speed = SPEED_1000;
+		phydev->duplex = DUPLEX_FULL;
+	}
+
+	return err;
+}

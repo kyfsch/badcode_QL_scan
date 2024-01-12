@@ -1,0 +1,3 @@
+extern void ifx_push_oam(unsigned char *);
+#else
+static inline void ifx_push_oam(unsigned char *dummy) {}

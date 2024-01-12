@@ -1,0 +1,48 @@
+static int mt7621_nfc_init_chip(struct mt7621_nfc *nfc)
+{
+	struct nand_chip *nand = &nfc->nand;
+	struct mtd_info *mtd;
+	int ret;
+
+	nand->controller = &nfc->controller;
+	nand_set_controller_data(nand, (void *)nfc);
+	nand_set_flash_node(nand, nfc->dev->of_node);
+
+	nand->options |= NAND_USES_DMA | NAND_NO_SUBPAGE_WRITE | NAND_SKIP_BBTSCAN;
+	if (!nfc->nfi_clk)
+		nand->options |= NAND_KEEP_TIMINGS;
+
+	nand->ecc.engine_type = NAND_ECC_ENGINE_TYPE_ON_HOST;
+	nand->ecc.read_page = mt7621_nfc_read_page_hwecc;
+	nand->ecc.read_page_raw = mt7621_nfc_read_page_raw;
+	nand->ecc.write_page = mt7621_nfc_write_page_hwecc;
+	nand->ecc.write_page_raw = mt7621_nfc_write_page_raw;
+	nand->ecc.read_oob = mt7621_nfc_read_oob_hwecc;
+	nand->ecc.read_oob_raw = mt7621_nfc_read_oob_raw;
+	nand->ecc.write_oob = mt7621_nfc_write_oob_hwecc;
+	nand->ecc.write_oob_raw = mt7621_nfc_write_oob_raw;
+
+	mtd = nand_to_mtd(nand);
+	mtd->owner = THIS_MODULE;
+	mtd->dev.parent = nfc->dev;
+	mtd->name = MT7621_NFC_NAME;
+	mtd_set_ooblayout(mtd, &mt7621_nfc_ooblayout_ops);
+
+	mt7621_nfc_hw_init(nfc);
+
+	ret = nand_scan(nand, 1);
+	if (ret)
+		return ret;
+
+	mtk_bmt_attach(mtd);
+
+	ret = mtd_device_register(mtd, NULL, 0);
+	if (ret) {
+		dev_err(nfc->dev, "Failed to register MTD: %d\n", ret);
+		mtk_bmt_detach(mtd);
+		nand_cleanup(nand);
+		return ret;
+	}
+
+	return 0;
+}

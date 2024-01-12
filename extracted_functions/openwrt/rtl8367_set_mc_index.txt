@@ -1,0 +1,11 @@
+static int rtl8367_set_mc_index(struct rtl8366_smi *smi, int port, int index)
+{
+	if (port >= RTL8367_NUM_PORTS || index >= RTL8367_NUM_VLANS)
+		return -EINVAL;
+
+	return rtl8366_smi_rmwr(smi, RTL8367_VLAN_PVID_CTRL_REG(port),
+				RTL8367_VLAN_PVID_CTRL_MASK <<
+					RTL8367_VLAN_PVID_CTRL_SHIFT(port),
+				(index & RTL8367_VLAN_PVID_CTRL_MASK) <<
+					RTL8367_VLAN_PVID_CTRL_SHIFT(port));
+}

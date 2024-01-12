@@ -1,0 +1,161 @@
+static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
+{
+	struct device *dev = priv->dev;
+	struct device_node *dn, *phy_node, *led_node, *mii_np = dev->of_node;
+	struct mii_bus *bus;
+	int ret;
+	u32 pn;
+
+	pr_debug("In %s\n", __func__);
+	mii_np = of_find_compatible_node(NULL, NULL, "realtek,rtl838x-mdio");
+	if (mii_np) {
+		pr_debug("Found compatible MDIO node!\n");
+	} else {
+		dev_err(priv->dev, "no %s child node found", "mdio-bus");
+		return -ENODEV;
+	}
+
+	priv->mii_bus = of_mdio_find_bus(mii_np);
+	if (!priv->mii_bus) {
+		pr_debug("Deferring probe of mdio bus\n");
+		return -EPROBE_DEFER;
+	}
+	if (!of_device_is_available(mii_np))
+		ret = -ENODEV;
+
+	bus = devm_mdiobus_alloc(priv->ds->dev);
+	if (!bus)
+		return -ENOMEM;
+
+	bus->name = "rtl838x slave mii";
+
+	/* Since the NIC driver is loaded first, we can use the mdio rw functions
+	 * assigned there.
+	 */
+	bus->read = priv->mii_bus->read;
+	bus->write = priv->mii_bus->write;
+	bus->read_paged = priv->mii_bus->read_paged;
+	bus->write_paged = priv->mii_bus->write_paged;
+	snprintf(bus->id, MII_BUS_ID_SIZE, "%s-%d", bus->name, dev->id);
+
+	bus->parent = dev;
+	priv->ds->slave_mii_bus = bus;
+	priv->ds->slave_mii_bus->priv = priv->mii_bus->priv;
+	priv->ds->slave_mii_bus->access_capabilities = priv->mii_bus->access_capabilities;
+
+	ret = mdiobus_register(priv->ds->slave_mii_bus);
+	if (ret && mii_np) {
+		of_node_put(dn);
+		return ret;
+	}
+
+	dn = of_find_compatible_node(NULL, NULL, "realtek,rtl83xx-switch");
+	if (!dn) {
+		dev_err(priv->dev, "No RTL switch node in DTS\n");
+		return -ENODEV;
+	}
+
+	led_node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
+
+	for_each_node_by_name(dn, "port") {
+		phy_interface_t interface;
+		u32 led_set;
+		char led_set_str[16] = {0};
+
+		if (!of_device_is_available(dn))
+			continue;
+
+		if (of_property_read_u32(dn, "reg", &pn))
+			continue;
+
+		phy_node = of_parse_phandle(dn, "phy-handle", 0);
+		if (!phy_node) {
+			if (pn != priv->cpu_port)
+				dev_err(priv->dev, "Port node %d misses phy-handle\n", pn);
+			continue;
+		}
+
+		if (of_property_read_u32(phy_node, "sds", &priv->ports[pn].sds_num))
+			priv->ports[pn].sds_num = -1;
+		pr_debug("%s port %d has SDS %d\n", __func__, pn, priv->ports[pn].sds_num);
+
+		if (of_get_phy_mode(dn, &interface))
+			interface = PHY_INTERFACE_MODE_NA;
+		if (interface == PHY_INTERFACE_MODE_HSGMII)
+			priv->ports[pn].is2G5 = true;
+		if (interface == PHY_INTERFACE_MODE_USXGMII)
+			priv->ports[pn].is2G5 = priv->ports[pn].is10G = true;
+		if (interface == PHY_INTERFACE_MODE_10GBASER)
+			priv->ports[pn].is10G = true;
+
+		priv->ports[pn].leds_on_this_port = 0;
+		if (led_node) {
+			if (of_property_read_u32(dn, "led-set", &led_set))
+				led_set = 0;
+			priv->ports[pn].led_set = led_set;
+			sprintf(led_set_str, "led_set%d", led_set);
+			priv->ports[pn].leds_on_this_port = of_property_count_u32_elems(led_node, led_set_str);
+			if (priv->ports[pn].leds_on_this_port > 4) {
+				dev_err(priv->dev, "led_set %d for port %d configuration is invalid\n", led_set, pn);
+				return -ENODEV;
+			}
+		}
+
+		/* Check for the integrated SerDes of the RTL8380M first */
+		if (of_property_read_bool(phy_node, "phy-is-integrated")
+		    && priv->id == 0x8380 && pn >= 24) {
+			pr_debug("----> FÓUND A SERDES\n");
+			priv->ports[pn].phy = PHY_RTL838X_SDS;
+			continue;
+		}
+
+		if (priv->id >= 0x9300) {
+			priv->ports[pn].phy_is_integrated = false;
+			if (of_property_read_bool(phy_node, "phy-is-integrated")) {
+				priv->ports[pn].phy_is_integrated = true;
+				priv->ports[pn].phy = PHY_RTL930X_SDS;
+			}
+		} else {
+			if (of_property_read_bool(phy_node, "phy-is-integrated") &&
+			    !of_property_read_bool(phy_node, "sfp")) {
+				priv->ports[pn].phy = PHY_RTL8218B_INT;
+				continue;
+			}
+		}
+
+		if (!of_property_read_bool(phy_node, "phy-is-integrated") &&
+		    of_property_read_bool(phy_node, "sfp")) {
+			priv->ports[pn].phy = PHY_RTL8214FC;
+			continue;
+		}
+
+		if (!of_property_read_bool(phy_node, "phy-is-integrated") &&
+		    !of_property_read_bool(phy_node, "sfp")) {
+			priv->ports[pn].phy = PHY_RTL8218B_EXT;
+			continue;
+		}
+	}
+
+	/* Disable MAC polling the PHY so that we can start configuration */
+	priv->r->set_port_reg_le(0ULL, priv->r->smi_poll_ctrl);
+
+	/* Enable PHY control via SoC */
+	if (priv->family_id == RTL8380_FAMILY_ID) {
+		/* Enable SerDes NWAY and PHY control via SoC */
+		sw_w32_mask(BIT(7), BIT(15), RTL838X_SMI_GLB_CTRL);
+	} else if (priv->family_id == RTL8390_FAMILY_ID) {
+		/* Disable PHY polling via SoC */
+		sw_w32_mask(BIT(7), 0, RTL839X_SMI_GLB_CTRL);
+	}
+
+	/* Power on fibre ports and reset them if necessary */
+	if (priv->ports[24].phy == PHY_RTL838X_SDS) {
+		pr_debug("Powering on fibre ports & reset\n");
+		rtl8380_sds_power(24, 1);
+		rtl8380_sds_power(26, 1);
+	}
+
+	pr_debug("%s done\n", __func__);
+
+	return 0;
+}

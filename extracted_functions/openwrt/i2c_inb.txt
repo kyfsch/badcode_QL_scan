@@ -1,0 +1,36 @@
+static int i2c_inb(int ack)
+{
+	int i;
+	unsigned int indata = 0;
+
+	/* assert: scl is low */
+
+	sdahi();
+	for (i = 0; i < 8; i++) {
+		if (sclhi() < 0) {
+			return -ETIMEDOUT;
+		};
+		indata *= 2;
+		if (getsda())
+			indata |= 0x01;
+		scllo();
+	}
+	if (ack) {
+		sdalo();
+	} else {
+		sdahi();
+	}
+
+	if (sclhi() < 0) {
+		sdahi();
+		return -ETIMEDOUT;
+	}
+	scllo();
+	sdahi();
+
+	if (rtc_debug)
+		printk(KERN_DEBUG "i2c_inb() -> 0x%02x\n", indata);
+
+	/* assert: scl is low */
+	return indata & 0xff;
+}

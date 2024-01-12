@@ -1,0 +1,8 @@
+static int ubootenv_remove(struct platform_device *pdev)
+{
+	struct ubootenv_drvdata *data = platform_get_drvdata(pdev);
+
+	data->env = NULL;
+	misc_deregister(&data->misc);
+	return 0;
+}

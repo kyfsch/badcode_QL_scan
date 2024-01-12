@@ -1,0 +1,5 @@
+static void rb91x_nand_release(struct rb91x_nand_drvdata *drvdata)
+{
+	mtd_device_unregister(nand_to_mtd(&drvdata->chip));
+	nand_cleanup(&drvdata->chip);
+}

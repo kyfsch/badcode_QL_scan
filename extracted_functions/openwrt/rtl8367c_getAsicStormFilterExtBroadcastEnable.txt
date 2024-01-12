@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsicStormFilterExtBroadcastEnable(rtk_uint32 *pEnabled)
+{
+    if(NULL == pEnabled)
+        return RT_ERR_NULL_POINTER;
+
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_STORM_EXT_CFG, RTL8367C_STORM_BCAST_EXT_EN_OFFSET, pEnabled);
+}

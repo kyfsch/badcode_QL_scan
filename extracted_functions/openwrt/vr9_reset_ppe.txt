@@ -1,0 +1,39 @@
+static inline void vr9_reset_ppe(struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
+	struct reset_control *dsp;
+	struct reset_control *dfe;
+	struct reset_control *tc;
+
+	dsp = devm_reset_control_get(dev, "dsp");
+	if (IS_ERR(dsp)) {
+		if (PTR_ERR(dsp) != -EPROBE_DEFER)
+			dev_err(dev, "Failed to lookup dsp reset\n");
+// 		return PTR_ERR(dsp);
+	}
+
+	dfe = devm_reset_control_get(dev, "dfe");
+	if (IS_ERR(dfe)) {
+		if (PTR_ERR(dfe) != -EPROBE_DEFER)
+			dev_err(dev, "Failed to lookup dfe reset\n");
+// 		return PTR_ERR(dfe);
+	}
+
+	tc = devm_reset_control_get(dev, "tc");
+	if (IS_ERR(tc)) {
+		if (PTR_ERR(tc) != -EPROBE_DEFER)
+			dev_err(dev, "Failed to lookup tc reset\n");
+// 		return PTR_ERR(tc);
+	}
+
+	reset_control_assert(dsp);
+	udelay(1000);
+	reset_control_assert(dfe);
+	udelay(1000);
+	reset_control_assert(tc);
+	udelay(1000);
+	*PP32_SRST &= ~0x000303CF;
+	udelay(1000);
+	*PP32_SRST |= 0x000303CF;
+	udelay(1000);
+}

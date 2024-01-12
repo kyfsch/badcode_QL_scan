@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicSvlanLookupType(rtk_uint32* pType)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_SVLAN_LOOKUP_TYPE, RTL8367C_SVLAN_LOOKUP_TYPE_OFFSET, pType);
+}

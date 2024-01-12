@@ -1,0 +1,13 @@
+static void _rtl8367c_VlanMCStUser2Smi(rtl8367c_vlanconfiguser *pVlanCg, rtk_uint16 *pSmiVlanCfg)
+{
+    pSmiVlanCfg[0] |= pVlanCg->mbr & 0x07FF;
+
+    pSmiVlanCfg[1] |= pVlanCg->fid_msti & 0x000F;
+
+    pSmiVlanCfg[2] |= pVlanCg->vbpen & 0x0001;
+    pSmiVlanCfg[2] |= (pVlanCg->vbpri & 0x0007) << 1;
+    pSmiVlanCfg[2] |= (pVlanCg->envlanpol & 0x0001) << 4;
+    pSmiVlanCfg[2] |= (pVlanCg->meteridx & 0x003F) << 5;
+
+    pSmiVlanCfg[3] |= pVlanCg->evid & 0x1FFF;
+}

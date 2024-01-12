@@ -1,0 +1,8 @@
+static void *hash_buf(FILE *f, int *len)
+{
+	static char buf[1024];
+
+	*len = fread(buf, 1, sizeof(buf), f);
+
+	return *len > 0 ? buf : NULL;
+}

@@ -1,0 +1,13 @@
+rtl_rmw(struct switch_dev *dev, unsigned int page, unsigned int phy, unsigned int reg, u16 mask, u16 val)
+{
+	struct rtl_priv *priv = to_rtl(dev);
+	struct mii_bus *bus = priv->bus;
+	u16 r;
+
+	rtl_set_page(priv, page);
+	r = bus->read(bus, phy, reg);
+	r &= ~mask;
+	r |= val;
+	bus->write(bus, phy, reg, r);
+	return bus->read(bus, phy, reg); /* flush */
+}

@@ -1,0 +1,10 @@
+static void wait_xfered(void)
+{
+        unsigned int val;
+
+        do {
+                val = READREG(UART_BASE + UART_IR_REG);
+                if (val & (1 << 5))
+                        break;
+        } while (1);
+}

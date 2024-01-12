@@ -1,0 +1,40 @@
+int __init lqdeu_async_aes_init (void)
+{
+    int i, j, ret = -EINVAL; 
+
+#define IFX_DEU_DRV_VERSION  "2.0.0"
+    printk(KERN_INFO "Lantiq Technologies DEU Driver version %s\n", IFX_DEU_DRV_VERSION);
+
+    for (i = 0; i < ARRAY_SIZE(aes_drivers_alg); i++) {
+        ret = crypto_register_alg(&aes_drivers_alg[i].alg);
+	printk("driver: %s\n", aes_drivers_alg[i].alg.cra_name);
+        if (ret)
+            goto aes_err;
+    }
+
+    aes_chip_init();
+
+    CRTCL_SECT_INIT;
+
+
+    printk (KERN_NOTICE "Lantiq DEU AES initialized %s %s.\n", 
+           disable_multiblock ? "" : " (multiblock)", disable_deudma ? "" : " (DMA)");
+    
+    return ret;
+
+aes_err:
+    
+    for (j = 0; j < i; j++) 
+        crypto_unregister_alg(&aes_drivers_alg[j].alg);
+    
+    printk(KERN_ERR "Lantiq %s driver initialization failed!\n", (char *)&aes_drivers_alg[i].alg.cra_driver_name);
+    return ret;
+
+ctr_rfc3686_aes_err:
+    for (i = 0; i < ARRAY_SIZE(aes_drivers_alg); i++) {
+        if (!strcmp((char *)&aes_drivers_alg[i].alg.cra_name, "rfc3686(ctr(aes))"))
+            crypto_unregister_alg(&aes_drivers_alg[j].alg);
+    }
+    printk (KERN_ERR "Lantiq ctr_rfc3686_aes initialization failed!\n");
+    return ret;
+}

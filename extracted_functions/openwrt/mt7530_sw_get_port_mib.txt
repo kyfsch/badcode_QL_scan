@@ -1,0 +1,27 @@
+static int mt7530_sw_get_port_mib(struct switch_dev *dev,
+				  const struct switch_attr *attr,
+				  struct switch_val *val)
+{
+	static char buf[4096];
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+	int i, len = 0;
+
+	if (val->port_vlan >= MT7530_NUM_PORTS)
+		return -EINVAL;
+
+	len += snprintf(buf + len, sizeof(buf) - len,
+			"Port %d MIB counters\n", val->port_vlan);
+
+	for (i = 0; i < ARRAY_SIZE(mt7620_port_mibs); ++i) {
+		u64 counter;
+		len += snprintf(buf + len, sizeof(buf) - len,
+				"%-11s: ", mt7620_port_mibs[i].name);
+		counter = get_mib_counter_port_7620(priv, i, val->port_vlan);
+		len += snprintf(buf + len, sizeof(buf) - len, "%llu\n",
+				counter);
+	}
+
+	val->value.s = buf;
+	val->len = len;
+	return 0;
+}

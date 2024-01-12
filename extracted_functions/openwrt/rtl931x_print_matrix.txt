@@ -1,0 +1,9 @@
+void rtl931x_print_matrix(void)
+{
+	volatile u64 *ptr = RTL838X_SW_BASE + RTL839X_PORT_ISO_CTRL(0);
+
+	for (int i = 0; i < 52; i += 4)
+		pr_info("> %16llx %16llx %16llx %16llx\n",
+			ptr[i + 0], ptr[i + 1], ptr[i + 2], ptr[i + 3]);
+	pr_info("CPU_PORT> %16llx\n", ptr[52]);
+}

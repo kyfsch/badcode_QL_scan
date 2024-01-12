@@ -1,0 +1,21 @@
+static void mt7621_nfc_hw_reset(struct mt7621_nfc *nfc)
+{
+	u32 val;
+	int ret;
+
+	/* reset all registers and force the NFI master to terminate */
+	nfi_write16(nfc, NFI_CON, CON_FIFO_FLUSH | CON_NFI_RST);
+
+	/* wait for the master to finish the last transaction */
+	ret = readw_poll_timeout(nfc->nfi_regs + NFI_MASTER_STA, val,
+				 !(val & MASTER_STA_MASK), 50,
+				 NFI_RESET_TIMEOUT);
+	if (ret) {
+		dev_warn(nfc->dev, "Failed to reset NFI master in %dms\n",
+			 NFI_RESET_TIMEOUT);
+	}
+
+	/* ensure any status register affected by the NFI master is reset */
+	nfi_write16(nfc, NFI_CON, CON_FIFO_FLUSH | CON_NFI_RST);
+	nfi_write16(nfc, NFI_STRDATA, 0);
+}

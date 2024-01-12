@@ -1,0 +1,6 @@
+void	LED_set(unsigned int led)
+{
+	AT91PS_PIO	PIOB	= AT91C_BASE_PIOB;
+	PIOB->PIO_SODR		= (led ^ 0x7) & 0x7;		// All 0's => Set PIO high => OFF
+	PIOB->PIO_CODR		=  led & 0x7;			// All 1's => Set PIO low   => ON
+}

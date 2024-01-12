@@ -1,0 +1,4 @@
+static int rtl8367c_reset_mibs(void)
+{
+	return rtk_stat_global_reset();
+}

@@ -1,0 +1,8 @@
+void rtk_hal_qos_set_port2pri(struct ra_switch_ioctl_data *data)
+{
+	rtk_api_ret_t ret;
+
+	ret = rtk_qos_portPri_set(data->port, data->qos_pri);
+	if (ret != 0)
+		printk("rtk_qos_portPri_set failed\n");
+}

@@ -1,0 +1,28 @@
+fis_open(void)
+{
+	struct fis_image_desc *desc;
+
+	if (fis_fd >= 0)
+		fis_close();
+
+	fis_fd = mtd_check_open("FIS directory");
+	if (fis_fd < 0)
+		goto error;
+
+	close(fis_fd);
+	fis_fd = mtd_open("FIS directory", true);
+	if (fis_fd < 0)
+		goto error;
+
+	fis_erasesize = erasesize;
+	desc = mmap(NULL, erasesize, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_LOCKED, fis_fd, 0);
+	if (desc == MAP_FAILED)
+		goto error;
+
+	fis_desc = desc;
+	return desc;
+
+error:
+	fis_close();
+	return NULL;
+}

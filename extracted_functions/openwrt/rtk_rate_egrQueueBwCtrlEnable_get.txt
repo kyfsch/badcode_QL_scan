@@ -1,0 +1,22 @@
+rtk_api_ret_t rtk_rate_egrQueueBwCtrlEnable_get(rtk_port_t port, rtk_qid_t queue, rtk_enable_t *pEnable)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    /*for whole port function, the queue value should be 0xFF*/
+    if (queue != RTK_WHOLE_SYSTEM)
+        return RT_ERR_QUEUE_ID;
+
+    if(NULL == pEnable)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicAprEnable(rtk_switch_port_L2P_get(port),pEnable))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

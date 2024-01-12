@@ -1,0 +1,15 @@
+static int rtl8367b_mii_write(struct mii_bus *bus, int addr, int reg, u16 val)
+{
+	struct rtl8366_smi *smi = bus->priv;
+	u32 t;
+	int err;
+
+	err = rtl8367b_write_phy_reg(smi, addr, reg, val);
+	if (err)
+		return err;
+
+	/* flush write */
+	(void) rtl8367b_read_phy_reg(smi, addr, reg, &t);
+
+	return err;
+}

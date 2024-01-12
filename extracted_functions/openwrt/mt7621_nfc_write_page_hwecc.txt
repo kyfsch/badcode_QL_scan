@@ -1,0 +1,45 @@
+static int mt7621_nfc_write_page_hwecc(struct nand_chip *nand,
+				       const uint8_t *buf, int oob_required,
+				       int page)
+{
+	struct mt7621_nfc *nfc = nand_get_controller_data(nand);
+	struct mtd_info *mtd = nand_to_mtd(nand);
+
+	if (mt7621_nfc_check_empty_page(nand, buf)) {
+		/*
+		 * MT7621 ECC engine always generates parity code for input
+		 * pages, even for empty pages. Doing so will write back ECC
+		 * parity code to the oob region, which means such pages will
+		 * no longer be empty pages.
+		 *
+		 * To avoid this, stop write operation if current page is an
+		 * empty page.
+		 */
+		return 0;
+	}
+
+	nand_prog_page_begin_op(nand, page, 0, NULL, 0);
+
+	nfi_write16(nfc, NFI_CNFG, (CNFG_OP_CUSTOM << CNFG_OP_MODE_S) |
+		   CNFG_AUTO_FMT_EN | CNFG_HW_ECC_EN);
+
+	mt7621_ecc_encoder_op(nfc, true);
+
+	mt7621_nfc_write_fdm(nfc);
+
+	nfi_write16(nfc, NFI_CON,
+		    CON_NFI_BWR | (nand->ecc.steps << CON_NFI_SEC_S));
+
+	if (buf)
+		mt7621_nfc_write_data(nfc, buf, mtd->writesize);
+	else
+		mt7621_nfc_write_data_empty(nfc, mtd->writesize);
+
+	mt7621_nfc_wait_write_completion(nfc, nand);
+
+	mt7621_ecc_encoder_op(nfc, false);
+
+	nfi_write16(nfc, NFI_CON, 0);
+
+	return nand_prog_page_end_op(nand);
+}

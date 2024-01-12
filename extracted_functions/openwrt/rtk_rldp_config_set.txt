@@ -1,0 +1,63 @@
+rtk_api_ret_t rtk_rldp_config_set(rtk_rldp_config_t *pConfig)
+{
+    rtk_api_ret_t retVal;
+    ether_addr_t magic;
+    rtk_uint32 pmsk;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (pConfig->rldp_enable >= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if (pConfig->trigger_mode >= RTK_RLDP_TRIGGER_END)
+        return RT_ERR_INPUT;
+
+    if (pConfig->compare_type >= RTK_RLDP_CMPTYPE_END)
+        return RT_ERR_INPUT;
+
+    if (pConfig->num_check >= RTK_RLDP_NUM_MAX)
+        return RT_ERR_INPUT;
+
+    if (pConfig->interval_check >= RTK_RLDP_INTERVAL_MAX)
+        return RT_ERR_INPUT;
+
+    if (pConfig->num_loop >= RTK_RLDP_NUM_MAX)
+        return RT_ERR_INPUT;
+
+    if (pConfig->interval_loop >= RTK_RLDP_INTERVAL_MAX)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_getAsicRldpTxPortmask(&pmsk))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicRldpTxPortmask(0x00))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicRldpTxPortmask(pmsk))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicRldp(pConfig->rldp_enable))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicRldpTriggerMode(pConfig->trigger_mode))!=RT_ERR_OK)
+        return retVal;
+
+    memcpy(&magic, &pConfig->magic, sizeof(ether_addr_t));
+    if ((retVal = rtl8367c_setAsicRldpMagicNum(magic))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicRldpCompareRandomNumber(pConfig->compare_type))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicRldpCompareRandomNumber(pConfig->compare_type))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicRldpCheckingStatePara(pConfig->num_check, pConfig->interval_check))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicRldpLoopStatePara(pConfig->num_loop, pConfig->interval_loop))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,45 @@
+rtk_api_ret_t rtk_igmp_portRxPktEnable_set(rtk_port_t port, rtk_igmp_rxPktEnable_t *pRxCfg)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check port valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if(NULL == pRxCfg)
+        return RT_ERR_NULL_POINTER;
+
+    if(pRxCfg->rxQuery >= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if(pRxCfg->rxReport >= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if(pRxCfg->rxLeave >= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if(pRxCfg->rxMRP >= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if(pRxCfg->rxMcast >= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicIGMPQueryRX(rtk_switch_port_L2P_get(port), (rtk_uint32)pRxCfg->rxQuery))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicIGMPReportRX(rtk_switch_port_L2P_get(port), (rtk_uint32)pRxCfg->rxReport))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicIGMPLeaveRX(rtk_switch_port_L2P_get(port), (rtk_uint32)pRxCfg->rxLeave))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicIGMPMRPRX(rtk_switch_port_L2P_get(port), (rtk_uint32)pRxCfg->rxMRP))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicIGMPMcDataRX(rtk_switch_port_L2P_get(port), (rtk_uint32)pRxCfg->rxMcast))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

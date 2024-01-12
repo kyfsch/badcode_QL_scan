@@ -1,0 +1,7 @@
+IFX_MEI_LongWordWriteOffset (DSL_DEV_Device_t * pDev, u32 ul_address,
+				   u32 ul_data)
+{
+	IFX_MEI_WRITE_REGISTER_L (ul_data, pDev->base_address + ul_address);
+	wmb();
+	return;
+}

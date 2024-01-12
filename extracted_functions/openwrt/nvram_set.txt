@@ -1,0 +1,33 @@
+int nvram_set(nvram_handle_t *h, const char *name, const char *value)
+{
+	uint32_t i;
+	nvram_tuple_t *t, *u, **prev;
+
+	/* Hash the name */
+	i = hash(name) % NVRAM_ARRAYSIZE(h->nvram_hash);
+
+	/* Find the associated tuple in the hash table */
+	for (prev = &h->nvram_hash[i], t = *prev;
+		 t && strcmp(t->name, name); prev = &t->next, t = *prev);
+
+	/* (Re)allocate tuple */
+	if (!(u = _nvram_realloc(h, t, name, value)))
+		return -12; /* -ENOMEM */
+
+	/* Value reallocated */
+	if (t && t == u)
+		return 0;
+
+	/* Move old tuple to the dead table */
+	if (t) {
+		*prev = t->next;
+		t->next = h->nvram_dead;
+		h->nvram_dead = t;
+	}
+
+	/* Add new tuple to the hash table */
+	u->next = h->nvram_hash[i];
+	h->nvram_hash[i] = u;
+
+	return 0;
+}

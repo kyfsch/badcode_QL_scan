@@ -1,0 +1,17 @@
+int aes_set_key_aead (struct crypto_aead *aead, const u8 *in_key, unsigned int key_len)
+{
+    struct aes_ctx *ctx = crypto_aead_ctx(aead);
+    int err;
+
+    err = aes_set_key(&aead->base, in_key, key_len);
+    if (err) return err;
+
+    memset(ctx->block, 0, sizeof(ctx->block));
+    memset(ctx->lastbuffer, 0, AES_BLOCK_SIZE);
+    ifx_deu_aes_ctr(ctx, ctx->block, ctx->block,
+                       ctx->lastbuffer, AES_BLOCK_SIZE, CRYPTO_DIR_ENCRYPT, 0);
+    if (ctx->gf128) gf128mul_free_4k(ctx->gf128);
+    ctx->gf128 = gf128mul_init_4k_lle((be128 *)ctx->block);
+
+    return err;
+}

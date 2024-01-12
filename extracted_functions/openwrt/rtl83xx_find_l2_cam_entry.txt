@@ -1,0 +1,21 @@
+static int rtl83xx_find_l2_cam_entry(struct rtl838x_switch_priv *priv, u64 seed,
+				     bool must_exist, struct rtl838x_l2_entry *e)
+{
+	int idx = -1;
+	u64 entry;
+
+	for (int i = 0; i < 64; i++) {
+		entry = priv->r->read_cam(i, e);
+		if (!must_exist && !e->valid) {
+			if (idx < 0) /* First empty entry? */
+				idx = i;
+			break;
+		} else if ((entry & 0x0fffffffffffffffULL) == seed) {
+			pr_debug("Found entry in CAM\n");
+			idx = i;
+			break;
+		}
+	}
+
+	return idx;
+}

@@ -1,0 +1,11 @@
+static inline unsigned long sb_addr_to_fpi_addr_convert(unsigned long sb_addr)
+{
+#define PP32_SB_ADDR_END        0xFFFF
+
+    if ( sb_addr < PP32_SB_ADDR_END) {
+        return (unsigned long ) SB_BUFFER(sb_addr);
+    }
+    else {
+        return sb_addr;
+    }
+}

@@ -1,0 +1,27 @@
+int rtl930x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
+{
+	int err = 0;
+	u32 v;
+
+	mutex_lock(&smi_lock);
+
+	/* Set PHY to access */
+	sw_w32(BIT(port), RTL930X_SMI_ACCESS_PHY_CTRL_0);
+
+	/* Set data to write */
+	sw_w32_mask(0xffff << 16, val << 16, RTL930X_SMI_ACCESS_PHY_CTRL_2);
+
+	/* Set MMD device number and register to write to */
+	sw_w32(devnum << 16 | (regnum & 0xffff), RTL930X_SMI_ACCESS_PHY_CTRL_3);
+
+	v = BIT(2) | BIT(1) | BIT(0); /* WRITE | MMD-access | EXEC */
+	sw_w32(v, RTL930X_SMI_ACCESS_PHY_CTRL_1);
+
+	do {
+		v = sw_r32(RTL930X_SMI_ACCESS_PHY_CTRL_1);
+	} while (v & BIT(0));
+
+	pr_debug("%s: port %d, regnum: %x, val: %x (err %d)\n", __func__, port, regnum, val, err);
+	mutex_unlock(&smi_lock);
+	return err;
+}

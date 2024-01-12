@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicSystemLutLearnLimitNo(rtk_uint32 number)
+{
+    if(number > RTL8367C_LUT_LEARNLIMITMAX)
+        return RT_ERR_LIMITED_L2ENTRY_NUM;
+
+    return rtl8367c_setAsicReg(RTL8367C_REG_LUT_SYS_LEARN_LIMITNO, number);
+}

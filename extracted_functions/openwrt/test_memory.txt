@@ -1,0 +1,25 @@
+static int test_memory(u32 memory)
+{
+	volatile u32 *read;
+	volatile u32 *write;
+	const u32 INIT_PATTERN = 0xAA55AA55;
+	const u32 INC_PATTERN = 0x01030507;
+	u32 pattern;
+	int check;
+	int i;
+
+	check = 0;
+	read = write = (volatile u32 *) memory;
+	pattern = INIT_PATTERN;
+	for (i = 0; i < DILIGENCE; i++) {
+		*write++ = pattern;
+		pattern += INC_PATTERN;
+	}
+	puts("testing\n");
+	pattern = INIT_PATTERN;
+	for (i = 0; i < DILIGENCE; i++) {
+		check += (pattern == *read++) ? 1 : 0;
+		pattern += INC_PATTERN;
+	}
+	return (check == DILIGENCE) ? 0 : -1;
+}

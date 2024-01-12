@@ -1,0 +1,19 @@
+ret_t rtl8367c_setAsicEavSysTimeCtrl(rtk_uint32 control)
+{
+    ret_t  retVal;
+    rtk_uint32 regData;
+
+    if (control>=PTP_TIME_CTRL_END)
+         return RT_ERR_INPUT;
+
+    regData = 0;
+    if (PTP_TIME_CTRL_START == control)
+            regData = RTL8367C_CFG_TIMER_EN_FRC_MASK | RTL8367C_CFG_TIMER_1588_EN_MASK;
+    else
+        regData = 0;
+
+    if((retVal = rtl8367c_setAsicReg(RTL8367C_REG_PTP_TIME_CFG, regData)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

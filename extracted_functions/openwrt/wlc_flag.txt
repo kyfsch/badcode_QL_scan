@@ -1,0 +1,8 @@
+static int wlc_flag(wlc_param param, void *data, void *value)
+{
+	int *var = *((int **) data);
+
+	*var = 1;
+
+	return 0;
+}

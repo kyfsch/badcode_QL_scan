@@ -1,0 +1,6 @@
+print_usage(void)
+{
+	printf("swconfig list\n");
+	printf("swconfig dev <dev> [port <port>|vlan <vlan>] (help|set <key> <value>|get <key>|load <config>|show)\n");
+	exit(1);
+}

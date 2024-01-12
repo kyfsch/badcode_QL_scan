@@ -1,0 +1,39 @@
+static int esw_get_port_link(struct switch_dev *dev,
+			 int port,
+			 struct switch_port_link *link)
+{
+	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
+	u32 speed, poa;
+
+	if (port < 0 || port >= RT305X_ESW_NUM_PORTS)
+		return -EINVAL;
+
+	poa = esw_r32(esw, RT305X_ESW_REG_POA) >> port;
+
+	link->link = (poa >> RT305X_ESW_LINK_S) & 1;
+	link->duplex = (poa >> RT305X_ESW_DUPLEX_S) & 1;
+	if (port < RT305X_ESW_NUM_LEDS) {
+		speed = (poa >> RT305X_ESW_SPD_S) & 1;
+	} else {
+		if (port == RT305X_ESW_NUM_PORTS - 1)
+			poa >>= 1;
+		speed = (poa >> RT305X_ESW_SPD_S) & 3;
+	}
+	switch (speed) {
+	case 0:
+		link->speed = SWITCH_PORT_SPEED_10;
+		break;
+	case 1:
+		link->speed = SWITCH_PORT_SPEED_100;
+		break;
+	case 2:
+	case 3: /* forced gige speed can be 2 or 3 */
+		link->speed = SWITCH_PORT_SPEED_1000;
+		break;
+	default:
+		link->speed = SWITCH_PORT_SPEED_UNKNOWN;
+		break;
+	}
+
+	return 0;
+}

@@ -1,0 +1,21 @@
+static int oxnas_pcie_setup(int nr, struct pci_sys_data *sys)
+{
+	struct oxnas_pcie *pcie = sys_to_pcie(sys);
+
+	pci_add_resource_offset(&sys->resources, &pcie->non_mem, sys->mem_offset);
+	pci_add_resource_offset(&sys->resources, &pcie->pre_mem, sys->mem_offset);
+	pci_add_resource_offset(&sys->resources, &pcie->io, sys->io_offset);
+	pci_add_resource(&sys->resources, &pcie->busn);
+	if (sys->busnr == 0) { /* default one */
+		sys->busnr = pcie->busn.start;
+	}
+	/* do not use devm_ioremap_resource, it does not like cfg resource */
+	pcie->cfgbase = devm_ioremap(&pcie->pdev->dev, pcie->cfg.start,
+				     resource_size(&pcie->cfg));
+	if (!pcie->cfgbase)
+		return -ENOMEM;
+
+	oxnas_pcie_setup_hw(pcie);
+
+	return 1;
+}

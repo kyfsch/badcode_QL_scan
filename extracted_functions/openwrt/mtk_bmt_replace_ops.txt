@@ -1,0 +1,14 @@
+mtk_bmt_replace_ops(struct mtd_info *mtd)
+{
+	bmtd._read_oob = mtd->_read_oob;
+	bmtd._write_oob = mtd->_write_oob;
+	bmtd._erase = mtd->_erase;
+	bmtd._block_isbad = mtd->_block_isbad;
+	bmtd._block_markbad = mtd->_block_markbad;
+
+	mtd->_read_oob = mtk_bmt_read;
+	mtd->_write_oob = mtk_bmt_write;
+	mtd->_erase = mtk_bmt_mtd_erase;
+	mtd->_block_isbad = mtk_bmt_block_isbad;
+	mtd->_block_markbad = mtk_bmt_block_markbad;
+}

@@ -1,0 +1,22 @@
+static int mtk_bmt_debug_repair(void *data, u64 val)
+{
+	int block = val >> bmtd.blk_shift;
+	int prev_block, new_block;
+
+	prev_block = bmtd.ops->get_mapping_block(block);
+	if (prev_block < 0)
+		return -EIO;
+
+	bmtd.ops->unmap_block(block);
+	new_block = bmtd.ops->get_mapping_block(block);
+	if (new_block < 0)
+		return -EIO;
+
+	if (prev_block == new_block)
+		return 0;
+
+	bbt_nand_erase(new_block);
+	bbt_nand_copy(new_block, prev_block, bmtd.blk_size);
+
+	return 0;
+}

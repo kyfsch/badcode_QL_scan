@@ -1,0 +1,4 @@
+static void expr_print_file_helper(void *data, struct symbol *sym, const char *str)
+{
+	xfwrite(str, strlen(str), 1, data);
+}

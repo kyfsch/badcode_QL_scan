@@ -1,0 +1,7 @@
+static void ag71xx_hw_stop(struct ag71xx *ag)
+{
+	/* disable all interrupts and stop the rx/tx engine */
+	ag71xx_wr(ag, AG71XX_REG_INT_ENABLE, 0);
+	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, 0);
+	ag71xx_wr(ag, AG71XX_REG_TX_CTRL, 0);
+}

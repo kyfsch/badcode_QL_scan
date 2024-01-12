@@ -1,0 +1,34 @@
+static int nmbn_read_data(struct nmbm_instance *ni, uint64_t addr, void *data,
+			  uint32_t size)
+{
+	uint64_t off = addr;
+	uint8_t *ptr = data;
+	uint32_t sizeremain = size, chunksize, leading;
+	int ret;
+
+	while (sizeremain) {
+		leading = off & (bmtd.pg_size - 1);
+		chunksize = bmtd.pg_size - leading;
+		if (chunksize > sizeremain)
+			chunksize = sizeremain;
+
+		if (chunksize == bmtd.pg_size) {
+			ret = nmbm_read_phys_page(ni, off - leading, ptr, NULL);
+			if (ret < 0)
+				return ret;
+		} else {
+			ret = nmbm_read_phys_page(ni, off - leading,
+						  ni->page_cache, NULL);
+			if (ret < 0)
+				return ret;
+
+			memcpy(ptr, ni->page_cache + leading, chunksize);
+		}
+
+		off += chunksize;
+		ptr += chunksize;
+		sizeremain -= chunksize;
+	}
+
+	return 0;
+}

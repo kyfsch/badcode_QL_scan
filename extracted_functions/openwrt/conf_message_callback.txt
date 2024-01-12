@@ -1,0 +1,9 @@
+static void conf_message_callback(const char *s)
+{
+	if (save_and_exit) {
+		if (!silent)
+			printf("%s", s);
+	} else {
+		show_textbox(NULL, s, 6, 60);
+	}
+}

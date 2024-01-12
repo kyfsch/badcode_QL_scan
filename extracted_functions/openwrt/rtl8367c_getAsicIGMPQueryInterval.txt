@@ -1,0 +1,14 @@
+ret_t rtl8367c_getAsicIGMPQueryInterval(rtk_uint32 *pinterval)
+{
+    ret_t   retVal;
+    rtk_uint32  value;
+
+    /* Query Interval */
+    retVal = rtl8367c_getAsicReg(RTL8367C_REG_IGMP_MLD_CFG2, &value);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    *pinterval = value;
+
+    return RT_ERR_OK;
+}

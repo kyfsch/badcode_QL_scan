@@ -1,0 +1,6 @@
+rtl_set_cpuport(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	dev->cpu_port = val->value.i;
+	rtl_hw_init(dev);
+	return 0;
+}

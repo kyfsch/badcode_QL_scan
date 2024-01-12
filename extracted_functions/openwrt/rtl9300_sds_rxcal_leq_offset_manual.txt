@@ -1,0 +1,9 @@
+void rtl9300_sds_rxcal_leq_offset_manual(u32 sds_num, bool manual, u32 offset)
+{
+	if (manual) {
+		rtl9300_sds_field_w(sds_num, 0x2e, 0x17, 6, 2, offset);
+	} else {
+		rtl9300_sds_field_w(sds_num, 0x2e, 0x17, 6, 2, offset);
+		mdelay(1);
+	}
+}

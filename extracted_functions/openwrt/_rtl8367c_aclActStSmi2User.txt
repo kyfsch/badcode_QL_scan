@@ -1,0 +1,24 @@
+static void _rtl8367c_aclActStSmi2User(rtl8367c_acl_act_t *pAclUser, rtk_uint16 *pAclSmi)
+{
+    pAclUser->cact = (pAclSmi[0] & 0x00C0) >> 6;
+    pAclUser->cvidx_cact = (pAclSmi[0] & 0x003F) | (((pAclSmi[3] & 0x0008) >> 3) << 6);
+
+    pAclUser->sact = (pAclSmi[0] & 0xC000) >> 14;
+    pAclUser->svidx_sact = ((pAclSmi[0] & 0x3F00) >> 8) | (((pAclSmi[3] & 0x0010) >> 4) << 6);
+
+    pAclUser->aclmeteridx = (pAclSmi[1] & 0x003F) | (((pAclSmi[3] & 0x0020) >> 5) << 6);
+
+    pAclUser->fwdact = (pAclSmi[1] & 0xC000) >> 14;
+    pAclUser->fwdpmask = ((pAclSmi[1] & 0x3FC0) >> 6) | (((pAclSmi[3] & 0x01C0) >> 6) << 8);
+
+    pAclUser->priact = (pAclSmi[2] & 0x00C0) >> 6;
+    pAclUser->pridx = (pAclSmi[2] & 0x003F) | (((pAclSmi[3] & 0x0200) >> 9) << 6);
+
+    pAclUser->aclint = (pAclSmi[2] & 0x2000) >> 13;
+    pAclUser->gpio_en = (pAclSmi[2] & 0x1000) >> 12;
+    pAclUser->gpio_pin = (pAclSmi[2] & 0x0F00) >> 8;
+
+    pAclUser->cact_ext = (pAclSmi[2] & 0xC000) >> 14;
+    pAclUser->tag_fmt = (pAclSmi[3] & 0x0003);
+    pAclUser->fwdact_ext = (pAclSmi[3] & 0x0004) >> 2;
+}

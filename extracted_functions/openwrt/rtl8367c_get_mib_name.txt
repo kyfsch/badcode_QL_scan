@@ -1,0 +1,5 @@
+static const char *rtl8367c_get_mib_name(int idx)
+{
+	
+	return rtl8367c_mib_counters[idx].name;
+}

@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicFlowControlJumboMode(rtk_uint32* pEnabled)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_FLOWCTRL_JUMBO_SIZE, RTL8367C_JUMBO_MODE_OFFSET, pEnabled);
+}

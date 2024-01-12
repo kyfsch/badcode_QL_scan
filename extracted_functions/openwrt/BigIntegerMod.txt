@@ -1,0 +1,7 @@
+BigIntegerMod(result, d, m)
+     BigInteger result, d, m;
+{
+  BN_CTX * ctx = BN_CTX_new();
+  BN_mod(result, d, m, ctx);
+  BN_CTX_free(ctx);
+}

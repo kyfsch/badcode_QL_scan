@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_dot1x_unauthPacketOper_set(rtk_port_t port, rtk_dot1x_unauth_action_t unauth_action)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if (unauth_action >= DOT1X_ACTION_END)
+        return RT_ERR_DOT1X_PROC;
+
+    if ((retVal = rtl8367c_setAsic1xProcConfig(rtk_switch_port_L2P_get(port), unauth_action)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,7 @@
+extern u64 uevent_next_seqnum(void);
+
+#define BH_MAP(_code, _name)		\
+	{				\
+		.code = (_code),	\
+		.name = (_name),	\
+	}

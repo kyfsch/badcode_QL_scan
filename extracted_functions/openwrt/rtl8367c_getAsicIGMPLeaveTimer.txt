@@ -1,0 +1,14 @@
+ret_t rtl8367c_getAsicIGMPLeaveTimer(rtk_uint32 *pleave_timer)
+{
+    ret_t   retVal;
+    rtk_uint32  value;
+
+    /* Leave timer */
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_IGMP_MLD_CFG0, RTL8367C_LEAVE_TIMER_MASK, &value);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    *pleave_timer = value;
+
+    return RT_ERR_OK;
+}

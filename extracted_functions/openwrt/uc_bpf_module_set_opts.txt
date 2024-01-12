@@ -1,0 +1,51 @@
+uc_bpf_module_set_opts(struct bpf_object *obj, uc_value_t *opts)
+{
+	uc_value_t *val;
+
+	if (!opts)
+		return 0;
+
+	if (ucv_type(opts) != UC_OBJECT)
+		err_return_int(EINVAL, "options argument");
+
+	if ((val = ucv_object_get(opts, "rodata", NULL)) != NULL) {
+		struct bpf_map *map = NULL;
+
+		if (ucv_type(val) != UC_STRING)
+			err_return_int(EINVAL, "rodata type");
+
+		while ((map = bpf_object__next_map(obj, map)) != NULL) {
+			if (!strstr(bpf_map__name(map), ".rodata"))
+				continue;
+
+			break;
+		}
+
+		if (!map)
+			err_return_int(errno, "rodata map");
+
+		if (bpf_map__set_initial_value(map, ucv_string_get(val),
+					       ucv_string_length(val)))
+			err_return_int(errno, "rodata");
+	}
+
+	if ((val = ucv_object_get(opts, "program-type", NULL)) != NULL) {
+		if (ucv_type(val) != UC_OBJECT)
+			err_return_int(EINVAL, "prog_types argument");
+
+		ucv_object_foreach(val, name, type) {
+			struct bpf_program *prog;
+
+			if (ucv_type(type) != UC_INTEGER)
+				err_return_int(EINVAL, "program %s type", name);
+
+			prog = bpf_object__find_program_by_name(obj, name);
+			if (!prog)
+				err_return_int(-1, "program %s not found", name);
+
+			bpf_program__set_type(prog, ucv_int64_get(type));
+		}
+	}
+
+	return 0;
+}

@@ -1,0 +1,5 @@
+int serial_console_getc(void)
+{
+	while ((in_8(reg_base + (UART_LSR << reg_shift)) & UART_LSR_DR) == 0);
+	return in_8(reg_base);
+}

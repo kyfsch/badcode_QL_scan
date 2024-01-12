@@ -1,0 +1,7 @@
+static int rtl8214fc_suspend(struct phy_device *phydev)
+{
+	rtl8214fc_power_set(phydev, PORT_MII, false);
+	rtl8214fc_power_set(phydev, PORT_FIBRE, false);
+
+	return 0;
+}

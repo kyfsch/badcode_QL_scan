@@ -1,0 +1,12 @@
+static u64 rtl838x_read_mcast_pmask(int idx)
+{
+	u32 portmask;
+	/* Read MC_PMSK (2) via register RTL8380_TBL_L2 */
+	struct table_reg *q = rtl_table_get(RTL8380_TBL_L2, 2);
+
+	rtl_table_read(q, idx);
+	portmask = sw_r32(rtl_table_data(q, 0));
+	rtl_table_release(q);
+
+	return portmask;
+}

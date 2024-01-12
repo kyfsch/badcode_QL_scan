@@ -1,0 +1,57 @@
+void rtl839x_set_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port,
+				      enum scheduler_type sched)
+{
+	enum scheduler_type t = rtl839x_get_scheduling_algorithm(priv, port);
+	u32 v, oam_state, oam_port_state;
+	u32 count;
+	int i, egress_rate;
+
+	mutex_lock(&priv->reg_mutex);
+	/* Check whether we need to empty the egress queue of that port due to Errata E0014503 */
+	if (sched == WEIGHTED_FAIR_QUEUE && t == WEIGHTED_ROUND_ROBIN && port != priv->cpu_port) {
+		/* Read Operations, Adminstatrion and Management control register */
+		oam_state = sw_r32(RTL839X_OAM_CTRL);
+
+		/* Get current OAM state */
+		oam_port_state = sw_r32(RTL839X_OAM_PORT_ACT_CTRL(port));
+
+		/* Disable OAM to block traffice */
+		v = sw_r32(RTL839X_OAM_CTRL);
+		sw_w32_mask(0, 1, RTL839X_OAM_CTRL);
+		v = sw_r32(RTL839X_OAM_CTRL);
+
+		/* Set to trap action OAM forward (bits 1, 2) and OAM Mux Action Drop (bit 0) */
+		sw_w32(0x2, RTL839X_OAM_PORT_ACT_CTRL(port));
+
+		/* Set port egress rate to unlimited */
+		egress_rate = rtl839x_set_egress_rate(priv, port, 0xFFFFF);
+
+		/* Wait until the egress used page count of that port is 0 */
+		i = 0;
+		do {
+			usleep_range(100, 200);
+			rtl839x_read_out_q_table(port);
+			count = sw_r32(RTL839X_TBL_ACCESS_DATA_2(6));
+			count >>= 20;
+			i++;
+		} while (i < 3500 && count > 0);
+	}
+
+	/* Actually set the scheduling algorithm */
+	rtl839x_read_scheduling_table(port);
+	sw_w32_mask(BIT(19), sched ? BIT(19) : 0, RTL839X_TBL_ACCESS_DATA_2(8));
+	rtl839x_write_scheduling_table(port);
+
+	if (sched == WEIGHTED_FAIR_QUEUE && t == WEIGHTED_ROUND_ROBIN && port != priv->cpu_port) {
+		/* Restore OAM state to control register */
+		sw_w32(oam_state, RTL839X_OAM_CTRL);
+
+		/* Restore trap action state */
+		sw_w32(oam_port_state, RTL839X_OAM_PORT_ACT_CTRL(port));
+
+		/* Restore port egress rate */
+		rtl839x_set_egress_rate(priv, port, egress_rate);
+	}
+
+	mutex_unlock(&priv->reg_mutex);
+}

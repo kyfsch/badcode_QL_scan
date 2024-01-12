@@ -1,0 +1,18 @@
+static int rtl8367_switch_init(struct rtl8366_smi *smi)
+{
+	struct switch_dev *dev = &smi->sw_dev;
+	int err;
+
+	dev->name = "RTL8367";
+	dev->cpu_port = RTL8367_CPU_PORT_NUM;
+	dev->ports = RTL8367_NUM_PORTS;
+	dev->vlans = RTL8367_NUM_VIDS;
+	dev->ops = &rtl8367_sw_ops;
+	dev->alias = dev_name(smi->parent);
+
+	err = register_switch(dev, NULL);
+	if (err)
+		dev_err(smi->parent, "switch registration failed\n");
+
+	return err;
+}

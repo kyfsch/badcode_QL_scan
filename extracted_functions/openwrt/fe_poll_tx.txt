@@ -1,0 +1,52 @@
+static int fe_poll_tx(struct fe_priv *priv, int budget, u32 tx_intr,
+		      int *tx_again)
+{
+	struct net_device *netdev = priv->netdev;
+	unsigned int bytes_compl = 0;
+	struct sk_buff *skb;
+	struct fe_tx_buf *tx_buf;
+	int done = 0;
+	u32 idx, hwidx;
+	struct fe_tx_ring *ring = &priv->tx_ring;
+
+	idx = ring->tx_free_idx;
+	hwidx = fe_reg_r32(FE_REG_TX_DTX_IDX0);
+
+	while ((idx != hwidx) && budget) {
+		tx_buf = &ring->tx_buf[idx];
+		skb = tx_buf->skb;
+
+		if (!skb)
+			break;
+
+		if (skb != (struct sk_buff *)DMA_DUMMY_DESC) {
+			bytes_compl += skb->len;
+			done++;
+			budget--;
+		}
+		fe_txd_unmap(priv->dev, tx_buf);
+		idx = NEXT_TX_DESP_IDX(idx);
+	}
+	ring->tx_free_idx = idx;
+
+	if (idx == hwidx) {
+		/* read hw index again make sure no new tx packet */
+		hwidx = fe_reg_r32(FE_REG_TX_DTX_IDX0);
+		if (idx == hwidx)
+			fe_reg_w32(tx_intr, FE_REG_FE_INT_STATUS);
+		else
+			*tx_again = 1;
+	} else {
+		*tx_again = 1;
+	}
+
+	if (done) {
+		netdev_completed_queue(netdev, done, bytes_compl);
+		smp_mb();
+		if (unlikely(netif_queue_stopped(netdev) &&
+			     (fe_empty_txd(ring) > ring->tx_thresh)))
+			netif_wake_queue(netdev);
+	}
+
+	return done;
+}

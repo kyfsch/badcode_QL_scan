@@ -1,0 +1,12 @@
+static void msdc_deinit_hw(struct msdc_host *host)
+{
+	void __iomem *base = host->base;
+
+	/* Disable and clear all interrupts */
+	sdr_clr_bits(MSDC_INTEN, sdr_read32(MSDC_INTEN));
+	sdr_write32(MSDC_INT, sdr_read32(MSDC_INT));
+
+	/* Disable card detection */
+	msdc_enable_cd_irq(host, 0);
+	// msdc_set_power_mode(host, MMC_POWER_OFF);   /* make sure power down */ /* --- by chhung */
+}

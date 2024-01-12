@@ -1,0 +1,5 @@
+static inline void rb91x_nand_latch_lock(struct rb91x_nand_drvdata *drvdata,
+					 int lock)
+{
+	gpiod_set_value_cansleep(drvdata->gpio[RB91X_NAND_NLE], lock);
+}

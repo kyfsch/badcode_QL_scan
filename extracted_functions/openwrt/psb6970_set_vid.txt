@@ -1,0 +1,7 @@
+psb6970_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
+		struct switch_val *val)
+{
+	struct psb6970_priv *priv = to_psb6970(dev);
+	priv->vlan_id[val->port_vlan] = val->value.i;
+	return 0;
+}

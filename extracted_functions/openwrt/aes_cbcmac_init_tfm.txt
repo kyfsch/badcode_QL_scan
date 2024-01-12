@@ -1,0 +1,8 @@
+static int aes_cbcmac_init_tfm(struct crypto_tfm *tfm)
+{
+    struct aes_ctx *mctx = crypto_tfm_ctx(tfm);
+    mctx->temp = kzalloc(AES_BLOCK_SIZE * AES_CBCMAC_DBN_TEMP_SIZE, GFP_KERNEL);
+    if (IS_ERR(mctx->temp)) return PTR_ERR(mctx->temp);
+
+    return 0;
+}

@@ -1,0 +1,51 @@
+static int adm6996_switch_init(struct adm6996_priv *priv, const char *alias, struct net_device *netdev)
+{
+	struct switch_dev *swdev;
+	u16 test, old;
+
+	if (!priv->model) {
+		/* Detect type of chip */
+		old = r16(priv, ADM_VID_CHECK);
+		test = old ^ (1 << 12);
+		w16(priv, ADM_VID_CHECK, test);
+		test ^= r16(priv, ADM_VID_CHECK);
+		if (test & (1 << 12)) {
+			/* 
+			 * Bit 12 of this register is read-only. 
+			 * This is the FC model. 
+			 */
+			priv->model = ADM6996FC;
+		} else {
+			/* Bit 12 is read-write. This is the M model. */
+			priv->model = ADM6996M;
+			w16(priv, ADM_VID_CHECK, old);
+		}
+	}
+
+	swdev = &priv->dev;
+	swdev->name = (adm6996_model_name[priv->model]);
+	swdev->cpu_port = ADM_CPU_PORT;
+	swdev->ports = ADM_NUM_PORTS;
+	swdev->vlans = ADM_NUM_VLANS;
+	swdev->ops = &adm6996_ops;
+	swdev->alias = alias;
+
+	/* The ADM6996L connected through GPIOs does not support any switch
+	   status calls */
+	if (priv->model == ADM6996L) {
+		adm6996_ops.attr_port.n_attr = 0;
+		adm6996_ops.get_port_link = NULL;
+	}
+
+	pr_info ("%s: %s model PHY found.\n", alias, swdev->name);
+
+	mutex_lock(&priv->reg_mutex);
+	adm6996_perform_reset (priv);
+	mutex_unlock(&priv->reg_mutex);
+
+	if (priv->model == ADM6996M || priv->model == ADM6996L) {
+		return register_switch(swdev, netdev);
+	}
+
+	return -ENODEV;
+}

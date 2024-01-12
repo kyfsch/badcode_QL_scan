@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_qos_portPri_set(rtk_port_t port, rtk_pri_t int_pri)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if (int_pri > RTL8367C_PRIMAX )
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    if ((retVal = rtl8367c_setAsicPriorityPortBased(rtk_switch_port_L2P_get(port), int_pri)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

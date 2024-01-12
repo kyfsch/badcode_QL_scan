@@ -1,0 +1,18 @@
+static int rtl839x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_from, int index_to)
+{
+	u32 v = (index_from << 1)| (index_to << 13 ) | BIT(0);
+
+	pr_debug("%s: from %d to %d\n", __func__, index_from, index_to);
+	mutex_lock(&priv->reg_mutex);
+
+	/* Write from-to and execute bit into control register */
+	sw_w32(v, RTL839X_ACL_CLR_CTRL);
+
+	/* Wait until command has completed */
+	do {
+	} while (sw_r32(RTL839X_ACL_CLR_CTRL) & BIT(0));
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}

@@ -1,0 +1,26 @@
+struct device * wl_glue_get_dmadev(void *dev)
+{
+	struct device *dma_dev;
+
+	switch (active_bus_type)
+	{
+#ifdef CONFIG_SSB
+	case WL_GLUE_BUS_TYPE_SSB:
+		dma_dev = ((struct ssb_device *)dev)->dma_dev;
+		break;
+#endif /* CONFIG_SSB */
+
+#ifdef CONFIG_BCMA
+	case WL_GLUE_BUS_TYPE_BCMA:
+		dma_dev = ((struct bcma_device *)dev)->dma_dev;
+		break;
+#endif /* CONFIG_BCMA */
+
+	default:
+		BUG();
+		dma_dev = NULL;
+		break;
+	}
+
+	return dma_dev;
+}

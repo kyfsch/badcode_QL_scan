@@ -1,0 +1,12 @@
+rtk_api_ret_t rtk_qos_1pRemarkSrcSel_get(rtk_qos_1pRmkSrc_t *pType)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if ((retVal = rtl8367c_getAsicRemarkingDot1pSrc(pType)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

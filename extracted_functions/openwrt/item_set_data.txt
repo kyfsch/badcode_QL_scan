@@ -1,0 +1,4 @@
+void item_set_data(void *ptr)
+{
+	item_cur->node.data = ptr;
+}

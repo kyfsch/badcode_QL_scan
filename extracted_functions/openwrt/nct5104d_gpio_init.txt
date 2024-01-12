@@ -1,0 +1,19 @@
+static int __init nct5104d_gpio_init(void)
+{
+	int err;
+	struct nct5104d_sio sio;
+
+	if (nct5104d_find(0x2e, &sio) &&
+	    nct5104d_find(0x4e, &sio))
+		return -ENODEV;
+
+	err = platform_driver_register(&nct5104d_gpio_driver);
+	if (!err) {
+		pr_info(DRVNAME ": platform_driver_register\n");
+		err = nct5104d_gpio_device_add(&sio);
+		if (err)
+			platform_driver_unregister(&nct5104d_gpio_driver);
+	}
+
+	return err;
+}

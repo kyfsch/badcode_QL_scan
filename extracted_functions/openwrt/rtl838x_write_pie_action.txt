@@ -1,0 +1,116 @@
+static int rtl838x_write_pie_action(u32 r[],  struct pie_rule *pr)
+{
+	u16 *aif = (u16 *)&r[17];
+	u16 data;
+	int fields_used = 0;
+
+	aif--;
+
+	pr_debug("%s, at %08x\n", __func__, (u32)aif);
+	/* Multiple actions can be linked to a match of a PIE rule,
+	 * they have different precedence depending on their type and this precedence
+	 * defines which Action Information Field (0-4) in the IACL table stores
+	 * the additional data of the action (like e.g. the port number a packet is
+	 * forwarded to) */
+	/* TODO: count bits in selectors to limit to a maximum number of actions */
+	if (pr->fwd_sel) { /* Forwarding action */
+		data = pr->fwd_act << 13;
+		data |= pr->fwd_data;
+		data |= pr->bypass_all ? BIT(12) : 0;
+		data |= pr->bypass_ibc_sc ? BIT(11) : 0;
+		data |= pr->bypass_igr_stp ? BIT(10) : 0;
+		*aif-- = data;
+		fields_used++;
+	}
+
+	if (pr->ovid_sel) { /* Outer VID action */
+		data = (pr->ovid_act & 0x3) << 12;
+		data |= pr->ovid_data;
+		*aif-- = data;
+		fields_used++;
+	}
+
+	if (pr->ivid_sel) { /* Inner VID action */
+		data = (pr->ivid_act & 0x3) << 12;
+		data |= pr->ivid_data;
+		*aif-- = data;
+		fields_used++;
+	}
+
+	if (pr->flt_sel) { /* Filter action */
+		*aif-- = pr->flt_data;
+		fields_used++;
+	}
+
+	if (pr->log_sel) { /* Log action */
+		if (fields_used >= 4)
+			return -1;
+		*aif-- = pr->log_data;
+		fields_used++;
+	}
+
+	if (pr->rmk_sel) { /* Remark action */
+		if (fields_used >= 4)
+			return -1;
+		*aif-- = pr->rmk_data;
+		fields_used++;
+	}
+
+	if (pr->meter_sel) { /* Meter action */
+		if (fields_used >= 4)
+			return -1;
+		*aif-- = pr->meter_data;
+		fields_used++;
+	}
+
+	if (pr->tagst_sel) { /* Egress Tag Status action */
+		if (fields_used >= 4)
+			return -1;
+		*aif-- = pr->tagst_data;
+		fields_used++;
+	}
+
+	if (pr->mir_sel) { /* Mirror action */
+		if (fields_used >= 4)
+			return -1;
+		*aif-- = pr->mir_data;
+		fields_used++;
+	}
+
+	if (pr->nopri_sel) { /* Normal Priority action */
+		if (fields_used >= 4)
+			return -1;
+		*aif-- = pr->nopri_data;
+		fields_used++;
+	}
+
+	if (pr->cpupri_sel) { /* CPU Priority action */
+		if (fields_used >= 4)
+			return -1;
+		*aif-- = pr->nopri_data;
+		fields_used++;
+	}
+
+	if (pr->otpid_sel) { /* OTPID action */
+		if (fields_used >= 4)
+			return -1;
+		*aif-- = pr->otpid_data;
+		fields_used++;
+	}
+
+	if (pr->itpid_sel) { /* ITPID action */
+		if (fields_used >= 4)
+			return -1;
+		*aif-- = pr->itpid_data;
+		fields_used++;
+	}
+
+	if (pr->shaper_sel) { /* Traffic shaper action */
+		if (fields_used >= 4)
+			return -1;
+		*aif-- = pr->shaper_data;
+		fields_used++;
+	}
+
+	return 0;
+}

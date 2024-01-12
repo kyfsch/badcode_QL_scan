@@ -1,0 +1,11 @@
+void rtk_hal_qos_get_dscp2pri(struct ra_switch_ioctl_data *data)
+{
+	rtk_api_ret_t ret;
+	rtk_pri_t Int_pri;
+
+	ret = rtk_qos_dscpPriRemap_get(data->qos_dscp, &Int_pri);
+	if (ret != 0)
+		printk("rtk_qos_dscpPriRemap_set failed\n");
+	else
+		printk("dscp%d priority is %d\n", data->qos_dscp, Int_pri);
+}

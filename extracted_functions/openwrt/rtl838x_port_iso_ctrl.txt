@@ -1,0 +1,4 @@
+static inline int rtl838x_port_iso_ctrl(int p)
+{
+	return RTL838X_PORT_ISO_CTRL(p);
+}

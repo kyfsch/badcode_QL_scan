@@ -1,0 +1,18 @@
+static int wlc_vif_enabled(wlc_param param, void *data, void *value)
+{
+	int *val = (int *) value;
+	int buf[3];
+	int ret = 0;
+	
+	sprintf((char *) buf, "bss");
+	buf[1] = vif;
+	if (param & SET) {
+		buf[2] = (*val ? 1 : 0);
+		ret = wl_ioctl(interface, WLC_SET_VAR, buf, sizeof(buf));
+	} else if (param & GET) {
+		ret = wl_ioctl(interface, WLC_GET_VAR, buf, sizeof(buf));
+		*val = buf[0];
+	}
+
+	return ret;
+}

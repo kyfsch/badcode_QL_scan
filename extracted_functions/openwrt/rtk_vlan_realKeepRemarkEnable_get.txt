@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_vlan_realKeepRemarkEnable_get(rtk_enable_t *pEnabled)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pEnabled)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getRealKeepRemarkEn((rtk_uint32 *)pEnabled)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

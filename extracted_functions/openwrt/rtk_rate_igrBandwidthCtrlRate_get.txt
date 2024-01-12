@@ -1,0 +1,24 @@
+rtk_api_ret_t rtk_rate_igrBandwidthCtrlRate_get(rtk_port_t port, rtk_rate_t *pRate, rtk_enable_t *pIfg_include, rtk_enable_t *pFc_enable)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 regData;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if(NULL == pIfg_include)
+        return RT_ERR_NULL_POINTER;
+
+    if(NULL == pFc_enable)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicPortIngressBandwidth(rtk_switch_port_L2P_get(port), &regData, pIfg_include, pFc_enable)) != RT_ERR_OK)
+        return retVal;
+
+    *pRate = regData<<3;
+
+    return RT_ERR_OK;
+}

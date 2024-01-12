@@ -1,0 +1,30 @@
+void rtl9300_sds_rxcal_vth_get(u32  sds_num, u32 vth_list[])
+{
+	u32 vth_manual;
+
+	/* ##Page0x1F, Reg0x02[15 0], REG_DBGO_SEL=[0x002F]; */ /* Lane0 */
+	/* ##Page0x1F, Reg0x02[15 0], REG_DBGO_SEL=[0x0031]; */ /* Lane1 */
+	if (!(sds_num % 2))
+		rtl930x_write_sds_phy(sds_num, 0x1f, 0x2, 0x2f);
+	else
+		rtl930x_write_sds_phy(sds_num - 1, 0x1f, 0x2, 0x31);
+
+	/* ##Page0x2E, Reg0x15[9], REG0_RX_EN_TEST=[1] */
+	rtl9300_sds_field_w(sds_num, 0x2e, 0x15, 9, 9, 0x1);
+	/* ##Page0x21, Reg0x06[11 6], REG0_RX_DEBUG_SEL=[1 0 x x x x] */
+	rtl9300_sds_field_w(sds_num, 0x21, 0x06, 11, 6, 0x20);
+	/* ##Page0x2F, Reg0x0C[5 0], REG0_COEF_SEL=[0 0 1 1 0 0] */
+	rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0xc);
+
+	mdelay(1);
+
+	/* ##VthP & VthN Read Out */
+	vth_list[0] = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 2, 0); /* v_thp set bin */
+	vth_list[1] = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 5, 3); /* v_thn set bin */
+
+	pr_info("vth_set_bin = %d", vth_list[0]);
+	pr_info("vth_set_bin = %d", vth_list[1]);
+
+	vth_manual = !!rtl9300_sds_field_r(sds_num, 0x2e, 0x0f, 13, 13);
+	pr_info("Vth Maunal = %d", vth_manual);
+}

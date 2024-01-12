@@ -1,0 +1,61 @@
+rtk_api_ret_t rtk_vlan_protoAndPortBasedVlan_del(rtk_port_t port, rtk_vlan_proto_type_t proto_type, rtk_vlan_protoVlan_frameType_t frame_type)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 i, bUsed;
+    rtk_uint32 ppb_idx;
+    rtl8367c_protocolgdatacfg ppb_data_cfg;
+    rtl8367c_protocolvlancfg ppb_vlan_cfg;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if (proto_type > RTK_MAX_NUM_OF_PROTO_TYPE)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if (frame_type >= FRAME_TYPE_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+   ppb_idx = 0;
+
+    for (i = 0; i<= RTL8367C_PROTOVLAN_GIDX_MAX; i++)
+    {
+        if ((retVal = rtl8367c_getAsicVlanProtocolBasedGroupData(i, &ppb_data_cfg)) != RT_ERR_OK)
+            return retVal;
+
+        if ( (ppb_data_cfg.frameType == (rtl8367c_provlan_frametype)frame_type) && (ppb_data_cfg.etherType == proto_type) )
+        {
+            ppb_idx = i;
+            ppb_vlan_cfg.valid = FALSE;
+            ppb_vlan_cfg.vlan_idx = 0;
+            ppb_vlan_cfg.priority = 0;
+            if ((retVal = rtl8367c_setAsicVlanPortAndProtocolBased(rtk_switch_port_L2P_get(port), ppb_idx, &ppb_vlan_cfg)) != RT_ERR_OK)
+                return retVal;
+        }
+    }
+
+    bUsed = FALSE;
+    RTK_SCAN_ALL_PHY_PORTMASK(i)
+    {
+        if ((retVal = rtl8367c_getAsicVlanPortAndProtocolBased(i, ppb_idx, &ppb_vlan_cfg)) != RT_ERR_OK)
+            return retVal;
+
+        if (TRUE == ppb_vlan_cfg.valid)
+        {
+            bUsed = TRUE;
+                break;
+        }
+    }
+
+    if (FALSE == bUsed) /*No Port use this PPB Index, Delete it*/
+    {
+        ppb_data_cfg.etherType=0;
+        ppb_data_cfg.frameType=0;
+        if ((retVal = rtl8367c_setAsicVlanProtocolBasedGroupData(ppb_idx, &ppb_data_cfg)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    return RT_ERR_OK;
+}

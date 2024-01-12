@@ -1,0 +1,44 @@
+static int mt7621_ecc_correct_check(struct mt7621_nfc *nfc, u8 *sector_buf,
+				   u8 *fdm_buf, u32 sect)
+{
+	struct nand_chip *nand = &nfc->nand;
+	u32 decnum, num_error_bits, fdm_end_bits;
+	u32 error_locations, error_bit_loc;
+	u32 error_byte_pos, error_bit_pos;
+	int bitflips = 0;
+	u32 i;
+
+	decnum = ecc_read32(nfc, ECC_DECENUM);
+	num_error_bits = (decnum >> (sect << ERRNUM_S)) & ERRNUM_M;
+	fdm_end_bits = (nand->ecc.size + NFI_FDM_SIZE) << 3;
+
+	if (!num_error_bits)
+		return 0;
+
+	if (num_error_bits == ERRNUM_M)
+		return -1;
+
+	for (i = 0; i < num_error_bits; i++) {
+		error_locations = ecc_read32(nfc, ECC_DECEL(i / 2));
+		error_bit_loc = (error_locations >> ((i % 2) * DEC_EL_ODD_S)) &
+				DEC_EL_M;
+		error_byte_pos = error_bit_loc >> DEC_EL_BYTE_POS_S;
+		error_bit_pos = error_bit_loc & DEC_EL_BIT_POS_M;
+
+		if (error_bit_loc < (nand->ecc.size << 3)) {
+			if (sector_buf) {
+				sector_buf[error_byte_pos] ^=
+					(1 << error_bit_pos);
+			}
+		} else if (error_bit_loc < fdm_end_bits) {
+			if (fdm_buf) {
+				fdm_buf[error_byte_pos - nand->ecc.size] ^=
+					(1 << error_bit_pos);
+			}
+		}
+
+		bitflips++;
+	}
+
+	return bitflips;
+}

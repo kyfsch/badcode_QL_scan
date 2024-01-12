@@ -1,0 +1,51 @@
+rtk_api_ret_t rtk_svlan_sp2c_get(rtk_vlan_t svid, rtk_port_t dst_port, rtk_vlan_t *pCvid)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 i, svidx;
+    rtl8367c_svlan_memconf_t svlanMemConf;
+    rtl8367c_svlan_s2c_t svlanSP2CConf;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pCvid)
+        return RT_ERR_NULL_POINTER;
+
+    if (svid > RTL8367C_VIDMAX)
+        return RT_ERR_SVLAN_VID;
+
+    /* Check port Valid */
+    RTK_CHK_PORT_VALID(dst_port);
+    dst_port = rtk_switch_port_L2P_get(dst_port);
+
+    svidx = 0xFFFF;
+
+    for (i = 0; i < RTL8367C_SVIDXNO; i++)
+    {
+        if ((retVal = rtl8367c_getAsicSvlanMemberConfiguration(i, &svlanMemConf)) != RT_ERR_OK)
+            return retVal;
+
+        if (svid == svlanMemConf.vs_svid)
+        {
+            svidx = i;
+            break;
+        }
+    }
+
+    if (0xFFFF == svidx)
+        return RT_ERR_SVLAN_ENTRY_NOT_FOUND;
+
+    for (i = 0; i <= RTL8367C_SP2CMAX; i++)
+    {
+        if ((retVal = rtl8367c_getAsicSvlanSP2CConf(i, &svlanSP2CConf)) != RT_ERR_OK)
+            return retVal;
+
+        if ( (svlanSP2CConf.svidx == svidx) && (svlanSP2CConf.dstport == dst_port) && (svlanSP2CConf.valid == 1) )
+        {
+            *pCvid = svlanSP2CConf.vid;
+            return RT_ERR_OK;
+        }
+    }
+
+    return RT_ERR_OUT_OF_RANGE;
+}

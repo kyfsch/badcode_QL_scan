@@ -1,0 +1,8 @@
+void BN_MONT_CTX_init(BN_MONT_CTX *ctx)
+	{
+	ctx->ri=0;
+	BN_init(&(ctx->RR));
+	BN_init(&(ctx->N));
+	BN_init(&(ctx->Ni));
+	ctx->flags=0;
+	}

@@ -1,0 +1,15 @@
+speed_str(int speed)
+{
+	switch (speed) {
+	case 10:
+		return "10baseT";
+	case 100:
+		return "100baseT";
+	case 1000:
+		return "1000baseT";
+	default:
+		break;
+	}
+
+	return "unknown";
+}

@@ -1,0 +1,10 @@
+rt305x_esw_set_bc_status(struct switch_dev *dev,
+			const struct switch_attr *attr,
+			struct switch_val *val)
+{
+	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
+
+	esw->bc_storm_protect = val->value.i & RT305X_ESW_GSC_BC_STROM_MASK;
+
+	return 0;
+}

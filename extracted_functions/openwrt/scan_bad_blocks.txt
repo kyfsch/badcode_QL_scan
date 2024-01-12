@@ -1,0 +1,85 @@
+static int scan_bad_blocks(struct bbbt *bbt)
+{
+	int i;
+	u16 block = 0;
+
+	/* First time download, the block0 MUST NOT be a bad block,
+	 * this is guaranteed by vendor
+	 */
+	bbt->bb_tbl[0] = 0;
+
+	/*
+	 * Construct the mapping table of Normal data area(non-PMT/BMTPOOL)
+	 * G - Good block; B - Bad block
+	 *			---------------------------
+	 * physical |G|G|B|G|B|B|G|G|G|G|B|G|B|
+	 *			---------------------------
+	 * What bb_tbl[i] looks like:
+	 *   physical block(i):
+	 *			 0 1 2 3 4 5 6 7 8 9 a b c
+	 *   mapped block(bb_tbl[i]):
+	 *			 0 1 3 6 7 8 9 b ......
+	 * ATTENTION:
+	 *		If new bad block ocurred(n), search bmt_tbl to find
+	 *		a available block(x), and fill in the bb_tbl[n] = x;
+	 */
+	for (i = 1; i < bmtd.pool_lba; i++) {
+		bbt->bb_tbl[i] = find_valid_block(bbt->bb_tbl[i - 1] + 1);
+		BBT_LOG("bb_tbl[0x%x] = 0x%x", i, bbt->bb_tbl[i]);
+		if (bbt->bb_tbl[i] == 0)
+			return -1;
+	}
+
+	/* Physical Block start Address of BMT pool */
+	bmtd.pool_pba = bbt->bb_tbl[i - 1] + 1;
+	if (bmtd.pool_pba >= bmtd.total_blks - 2) {
+		pr_info("nand: FATAL ERR: Too many bad blocks!!\n");
+		return -1;
+	}
+
+	BBT_LOG("pool_pba=0x%x", bmtd.pool_pba);
+	i = 0;
+	block = bmtd.pool_pba;
+	/*
+	 * The bmt table is used for runtime bad block mapping
+	 * G - Good block; B - Bad block
+	 *			---------------------------
+	 * physical |G|G|B|G|B|B|G|G|G|G|B|G|B|
+	 *			---------------------------
+	 *   block:	 0 1 2 3 4 5 6 7 8 9 a b c
+	 * What bmt_tbl[i] looks like in initial state:
+	 *   i:
+	 *			 0 1 2 3 4 5 6 7
+	 *   bmt_tbl[i].block:
+	 *			 0 1 3 6 7 8 9 b
+	 *   bmt_tbl[i].mapped:
+	 *			 N N N N N N N B
+	 *		N - Not mapped(Available)
+	 *		M - Mapped
+	 *		B - BMT
+	 * ATTENTION:
+	 *		BMT always in the last valid block in pool
+	 */
+	while ((block = find_valid_block(block)) != 0) {
+		bmt_tbl(bbt)[i].block = block;
+		bmt_tbl(bbt)[i].mapped = NO_MAPPED;
+		BBT_LOG("bmt_tbl[%d].block = 0x%x", i, block);
+		block++;
+		i++;
+	}
+
+	/* i - How many available blocks in pool, which is the length of bmt_tbl[]
+	 * bmtd.bmt_blk_idx - bmt_tbl[bmtd.bmt_blk_idx].block => the BMT block
+	 */
+	bmtd.bmt_blk_idx = i - 1;
+	bmt_tbl(bbt)[bmtd.bmt_blk_idx].mapped = BMT_MAPPED;
+
+	if (i < 1) {
+		pr_info("nand: FATAL ERR: no space to store BMT!!\n");
+		return -1;
+	}
+
+	pr_info("[BBT] %d available blocks in BMT pool\n", i);
+
+	return 0;
+}

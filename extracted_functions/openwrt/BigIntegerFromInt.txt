@@ -1,0 +1,7 @@
+BigIntegerFromInt(n)
+     unsigned int n;
+{
+  BIGNUM * a = BN_new();
+  BN_set_word(a, n);
+  return a;
+}

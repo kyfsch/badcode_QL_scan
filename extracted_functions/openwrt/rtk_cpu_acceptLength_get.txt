@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_cpu_acceptLength_get(rtk_cpu_rx_length_t *pLength)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pLength)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicCputagRxMinLength(pLength)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

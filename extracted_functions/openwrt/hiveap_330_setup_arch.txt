@@ -1,0 +1,11 @@
+static void __init hiveap_330_setup_arch(void)
+{
+	if (ppc_md.progress)
+		ppc_md.progress("hiveap_330_setup_arch()", 0);
+
+	mpc85xx_smp_init();
+
+	fsl_pci_assign_primary();
+
+	printk(KERN_INFO "HiveAP-330 board from Aerohive\n");
+}

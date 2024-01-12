@@ -1,0 +1,23 @@
+int rtl83xx_l2_nexthop_rm(struct rtl838x_switch_priv *priv, struct rtl83xx_nexthop *nh)
+{
+	struct rtl838x_l2_entry e;
+	u32 key = nh->l2_id >> 2;
+	int i = nh->l2_id & 0x3;
+	u64 entry = entry = priv->r->read_l2_entry_using_hash(key, i, &e);
+
+	pr_debug("%s: id %d, key %d, index %d\n", __func__, nh->l2_id, key, i);
+	if (!e.valid) {
+		dev_err(priv->dev, "unknown nexthop, id %x\n", nh->l2_id);
+		return -1;
+	}
+
+	if (e.is_static)
+		e.valid = false;
+	e.next_hop = false;
+	e.vid = nh->vid;		/* Restore VID */
+	e.rvid = nh->rvid;
+
+	priv->r->write_l2_entry_using_hash(key, i, &e);
+
+	return 0;
+}

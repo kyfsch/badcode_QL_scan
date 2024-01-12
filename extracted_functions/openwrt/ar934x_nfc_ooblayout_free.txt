@@ -1,0 +1,16 @@
+static int ar934x_nfc_ooblayout_free(struct mtd_info *mtd, int section,
+				     struct mtd_oob_region *oobregion)
+{
+	switch (section) {
+	case 0:
+		oobregion->offset = 4;
+		oobregion->length = 16;
+		return 0;
+	case 1:
+		oobregion->offset = 48;
+		oobregion->length = 16;
+		return 0;
+	default:
+		return -ERANGE;
+	}
+}

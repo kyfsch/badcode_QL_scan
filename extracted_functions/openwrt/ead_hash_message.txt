@@ -1,0 +1,13 @@
+ead_hash_message(struct ead_msg_encrypted *enc, uint32_t *hash, int len)
+{
+	unsigned char *data = (unsigned char *) enc;
+
+	/* hash the packet with the stored hash part initialized to zero */
+	sha_init(hash);
+	memset(enc->hash, 0, sizeof(enc->hash));
+	while (len > 0) {
+		sha_transform(hash, data, W);
+		len -= 64;
+		data += 64;
+	}
+}

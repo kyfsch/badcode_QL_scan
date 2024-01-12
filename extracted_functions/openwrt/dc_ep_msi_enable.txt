@@ -1,0 +1,24 @@
+static int dc_ep_msi_enable(struct pci_dev *pdev, int nvec)
+{
+	int err;
+	struct dc_ep_priv *priv = pci_get_drvdata(pdev);
+
+	/* NB, ICU initailize first */
+	dc_ep_icu_init(priv);
+
+	err = pci_msi_vec_set(pdev, nvec);
+	if (err) {
+		dev_err(&pdev->dev, "%s: Failed to set maximum MSI vector\n",
+			__func__);
+		return -EIO;
+	}
+
+	err = pci_enable_msi_exact(pdev, nvec);
+	if (err) {
+		dev_err(&pdev->dev,
+			"%s: Failed to enable MSI interrupts error code: %d\n",
+			__func__, err);
+		return -EIO;
+	}
+	return 0;
+}

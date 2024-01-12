@@ -1,0 +1,6 @@
+rtl_phy_save(struct switch_dev *dev, int port, struct rtl_phyregs *regs)
+{
+	regs->nway = rtl_get(dev, RTL_PORT_REG(port, NWAY));
+	regs->speed = rtl_get(dev, RTL_PORT_REG(port, SPEED));
+	regs->duplex = rtl_get(dev, RTL_PORT_REG(port, DUPLEX));
+}

@@ -1,0 +1,73 @@
+static int aw9523_pconf_set(struct pinctrl_dev *pctldev, unsigned int pin,
+			    unsigned long *configs, unsigned int num_configs)
+{
+	struct aw9523 *awi = pinctrl_dev_get_drvdata(pctldev);
+	enum pin_config_param param;
+	int regbit = pin % AW9523_PINS_PER_PORT;
+	u32 arg;
+	u8 reg;
+	unsigned int mask, val;
+	int i, rc;
+
+	mutex_lock(&awi->i2c_lock);
+	for (i = 0; i < num_configs; i++) {
+		param = pinconf_to_config_param(configs[i]);
+		arg = pinconf_to_config_argument(configs[i]);
+
+		rc = aw9523_pcfg_param_to_reg(param, pin, &reg);
+		if (rc)
+			goto end;
+
+		switch (param) {
+		case PIN_CONFIG_OUTPUT:
+			/* First, enable pin output */
+			rc = regmap_update_bits(awi->regmap,
+						AW9523_REG_CONF_STATE(pin),
+						BIT(regbit), 0);
+			if (rc)
+				goto end;
+
+			/* Then, fall through to config output level */
+			fallthrough;
+		case PIN_CONFIG_OUTPUT_ENABLE:
+			arg = !arg;
+			fallthrough;
+		case PIN_CONFIG_BIAS_PULL_PIN_DEFAULT:
+		case PIN_CONFIG_BIAS_PULL_DOWN:
+		case PIN_CONFIG_BIAS_PULL_UP:
+		case PIN_CONFIG_INPUT_ENABLE:
+			mask = BIT(regbit);
+			val = arg ? BIT(regbit) : 0;
+			break;
+		case PIN_CONFIG_DRIVE_OPEN_DRAIN:
+			/* Open-Drain is supported only on port 0 */
+			if (pin >= AW9523_PINS_PER_PORT) {
+				rc = -ENOTSUPP;
+				goto end;
+			}
+			mask = AW9523_GCR_GPOMD_MASK;
+			val = 0;
+			break;
+		case PIN_CONFIG_DRIVE_PUSH_PULL:
+			/* Port 1 is always Push-Pull */
+			if (pin >= AW9523_PINS_PER_PORT) {
+				mask = 0;
+				val = 0;
+				continue;
+			}
+			mask = AW9523_GCR_GPOMD_MASK;
+			val = AW9523_GCR_GPOMD_MASK;
+			break;
+		default:
+			rc = -ENOTSUPP;
+			goto end;
+		}
+
+		rc = regmap_update_bits(awi->regmap, reg, mask, val);
+		if (rc)
+			goto end;
+	}
+end:
+	mutex_unlock(&awi->i2c_lock);
+	return rc;
+}

@@ -1,0 +1,10 @@
+ret_t rtl8367c_setAsicUnknownIPv6MulticastBehavior(rtk_uint32 port, rtk_uint32 behave)
+{
+    if(port >  RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(behave >= L3_UNKOWN_MULTICAST_END)
+        return RT_ERR_NOT_ALLOWED;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_UNKNOWN_IPV6_MULTICAST_REG(port), RTL8367C_UNKNOWN_IPV6_MULTICAST_MASK(port), behave);
+}

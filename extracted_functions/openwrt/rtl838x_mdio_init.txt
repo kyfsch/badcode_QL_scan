@@ -1,0 +1,122 @@
+static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
+{
+	struct device_node *mii_np, *dn;
+	u32 pn;
+	int ret;
+
+	pr_debug("%s called\n", __func__);
+	mii_np = of_get_child_by_name(priv->pdev->dev.of_node, "mdio-bus");
+
+	if (!mii_np) {
+		dev_err(&priv->pdev->dev, "no %s child node found", "mdio-bus");
+		return -ENODEV;
+	}
+
+	if (!of_device_is_available(mii_np)) {
+		ret = -ENODEV;
+		goto err_put_node;
+	}
+
+	priv->mii_bus = devm_mdiobus_alloc(&priv->pdev->dev);
+	if (!priv->mii_bus) {
+		ret = -ENOMEM;
+		goto err_put_node;
+	}
+
+	switch(priv->family_id) {
+	case RTL8380_FAMILY_ID:
+		priv->mii_bus->name = "rtl838x-eth-mdio";
+		priv->mii_bus->read = rtl838x_mdio_read;
+		priv->mii_bus->read_paged = rtl838x_mdio_read_paged;
+		priv->mii_bus->write = rtl838x_mdio_write;
+		priv->mii_bus->write_paged = rtl838x_mdio_write_paged;
+		priv->mii_bus->reset = rtl838x_mdio_reset;
+		break;
+	case RTL8390_FAMILY_ID:
+		priv->mii_bus->name = "rtl839x-eth-mdio";
+		priv->mii_bus->read = rtl839x_mdio_read;
+		priv->mii_bus->read_paged = rtl839x_mdio_read_paged;
+		priv->mii_bus->write = rtl839x_mdio_write;
+		priv->mii_bus->write_paged = rtl839x_mdio_write_paged;
+		priv->mii_bus->reset = rtl839x_mdio_reset;
+		break;
+	case RTL9300_FAMILY_ID:
+		priv->mii_bus->name = "rtl930x-eth-mdio";
+		priv->mii_bus->read = rtl930x_mdio_read;
+		priv->mii_bus->read_paged = rtl930x_mdio_read_paged;
+		priv->mii_bus->write = rtl930x_mdio_write;
+		priv->mii_bus->write_paged = rtl930x_mdio_write_paged;
+		priv->mii_bus->reset = rtl930x_mdio_reset;
+		priv->mii_bus->probe_capabilities = MDIOBUS_C22_C45;
+		break;
+	case RTL9310_FAMILY_ID:
+		priv->mii_bus->name = "rtl931x-eth-mdio";
+		priv->mii_bus->read = rtl931x_mdio_read;
+		priv->mii_bus->read_paged = rtl931x_mdio_read_paged;
+		priv->mii_bus->write = rtl931x_mdio_write;
+		priv->mii_bus->write_paged = rtl931x_mdio_write_paged;
+		priv->mii_bus->reset = rtl931x_mdio_reset;
+		priv->mii_bus->probe_capabilities = MDIOBUS_C22_C45;
+		break;
+	}
+	priv->mii_bus->access_capabilities = MDIOBUS_ACCESS_C22_MMD;
+	priv->mii_bus->priv = priv;
+	priv->mii_bus->parent = &priv->pdev->dev;
+
+	for_each_node_by_name(dn, "ethernet-phy") {
+		u32 smi_addr[2];
+
+		if (of_property_read_u32(dn, "reg", &pn))
+			continue;
+
+		if (of_property_read_u32_array(dn, "rtl9300,smi-address", &smi_addr[0], 2)) {
+			smi_addr[0] = 0;
+			smi_addr[1] = pn;
+		}
+
+		if (of_property_read_u32(dn, "sds", &priv->sds_id[pn]))
+			priv->sds_id[pn] = -1;
+		else {
+			pr_info("set sds port %d to %d\n", pn, priv->sds_id[pn]);
+		}
+
+		if (pn < MAX_PORTS) {
+			priv->smi_bus[pn] = smi_addr[0];
+			priv->smi_addr[pn] = smi_addr[1];
+		} else {
+			pr_err("%s: illegal port number %d\n", __func__, pn);
+		}
+
+		if (of_device_is_compatible(dn, "ethernet-phy-ieee802.3-c45"))
+			priv->smi_bus_isc45[smi_addr[0]] = true;
+
+		if (of_property_read_bool(dn, "phy-is-integrated")) {
+			priv->phy_is_internal[pn] = true;
+		}
+	}
+
+	dn = of_find_compatible_node(NULL, NULL, "realtek,rtl83xx-switch");
+	if (!dn) {
+		dev_err(&priv->pdev->dev, "No RTL switch node in DTS\n");
+		return -ENODEV;
+	}
+
+	for_each_node_by_name(dn, "port") {
+		if (of_property_read_u32(dn, "reg", &pn))
+			continue;
+		pr_debug("%s Looking at port %d\n", __func__, pn);
+		if (pn > priv->cpu_port)
+			continue;
+		if (of_get_phy_mode(dn, &priv->interfaces[pn]))
+			priv->interfaces[pn] = PHY_INTERFACE_MODE_NA;
+		pr_debug("%s phy mode of port %d is %s\n", __func__, pn, phy_modes(priv->interfaces[pn]));
+	}
+
+	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%pOFn", mii_np);
+	ret = of_mdiobus_register(priv->mii_bus, mii_np);
+
+err_put_node:
+	of_node_put(mii_np);
+
+	return ret;
+}

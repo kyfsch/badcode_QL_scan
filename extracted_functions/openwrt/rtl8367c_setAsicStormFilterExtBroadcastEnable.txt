@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicStormFilterExtBroadcastEnable(rtk_uint32 enabled)
+{
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_STORM_EXT_CFG, RTL8367C_STORM_BCAST_EXT_EN_OFFSET, enabled);
+}

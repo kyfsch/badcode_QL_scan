@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_filter_igrAcl_state_get(rtk_port_t port, rtk_filter_state_t* pState)
+{
+    rtk_api_ret_t ret;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pState)
+        return RT_ERR_NULL_POINTER;
+
+    /* Check port valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if((ret = rtl8367c_getAsicAcl(rtk_switch_port_L2P_get(port), pState)) != RT_ERR_OK)
+       return ret;
+
+    return RT_ERR_OK;
+}

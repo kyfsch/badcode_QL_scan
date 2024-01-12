@@ -1,0 +1,4 @@
+static inline int startswith (char *source, char *cmp)
+{
+	return !strncmp(source, cmp, strlen(cmp));
+}

@@ -1,0 +1,7 @@
+struct expr *expr_alloc_one(enum expr_type type, struct expr *ce)
+{
+	struct expr *e = xcalloc(1, sizeof(*e));
+	e->type = type;
+	e->left.expr = ce;
+	return e;
+}

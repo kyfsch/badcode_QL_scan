@@ -1,0 +1,15 @@
+static inline int ifx_ptm_version(char *buf)
+{
+    int len = 0;
+    unsigned int major, mid, minor;
+
+    ifx_ptm_get_fw_ver(&major, &mid, &minor);
+
+    len += ifx_drv_ver(buf + len, "PTM", IFX_PTM_VER_MAJOR, IFX_PTM_VER_MID, IFX_PTM_VER_MINOR);
+    if ( mid == ~0 )
+        len += sprintf(buf + len, "    PTM (E1) firmware version %u.%u\n", major, minor);
+    else
+        len += sprintf(buf + len, "    PTM (E1) firmware version %u.%u.%u\n", major, mid, minor);
+
+    return len;
+}

@@ -1,0 +1,24 @@
+static const char *sec_id_to_str(u32 sec_id)
+{
+	switch (sec_id) {
+	case ACA_SEC_HIF:
+	case ACA_SEC_GNR:
+	case ACA_SEC_MAC_HT:
+	case ACA_SEC_MEM_TXIN:
+	case ACA_SEC_MEM_TXIN_PDRING:
+	case ACA_SEC_MEM_TXOUT:
+	case ACA_SEC_MEM_TXOUT_PDRING:
+	case ACA_SEC_MEM_RXIN:
+	case ACA_SEC_MEM_RXIN_PDRING:
+	case ACA_SEC_MEM_RXOUT:
+	case ACA_SEC_MEM_RXOUT_PDRING:
+	case ACA_SEC_DMA:
+	case ACA_SEC_FW_INIT:
+		return sec_id_str[sec_id];
+	case ACA_SEC_FW:
+		return "ACA FW";
+
+	default:
+		return "unknown";
+	}
+}

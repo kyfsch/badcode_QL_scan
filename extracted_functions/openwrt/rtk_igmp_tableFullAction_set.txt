@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_igmp_tableFullAction_set(rtk_igmp_tableFullAction_t action)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(action >= IGMP_TABLE_FULL_OP_END)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicIGMPTableFullOP((rtk_uint32)action))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

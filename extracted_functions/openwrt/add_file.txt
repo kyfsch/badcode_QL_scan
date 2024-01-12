@@ -1,0 +1,75 @@
+static void add_file(const char *name, int parent)
+{
+	int inode, f_offset = 0, fd;
+	struct jffs2_raw_inode ri;
+	struct stat st;
+	char wbuf[4096];
+	const char *fname;
+
+	if (stat(name, &st)) {
+		fprintf(stderr, "File %s does not exist\n", name);
+		return;
+	}
+
+	fname = strrchr(name, '/');
+	if (fname)
+		fname++;
+	else
+		fname = name;
+
+	inode = add_dirent(fname, IFTODT(S_IFREG), parent);
+	memset(&ri, 0, sizeof(ri));
+	ri.magic = JFFS2_MAGIC_BITMASK;
+	ri.nodetype = JFFS2_NODETYPE_INODE;
+
+	ri.ino = inode;
+	ri.mode = st.st_mode;
+	ri.uid = ri.gid = 0;
+	ri.atime = st.st_atime;
+	ri.ctime = st.st_ctime;
+	ri.mtime = st.st_mtime;
+	ri.isize = st.st_size;
+	ri.compr = 0;
+	ri.usercompr = 0;
+
+	fd = open(name, 0);
+	if (fd < 0) {
+		fprintf(stderr, "File %s does not exist\n", name);
+		return;
+	}
+
+	for (;;) {
+		int len = 0;
+
+		for (;;) {
+			len = rbytes() - sizeof(ri);
+			if (len > 128)
+				break;
+
+			pad(erasesize);
+			prep_eraseblock();
+		}
+
+		if (len > sizeof(wbuf))
+			len = sizeof(wbuf);
+
+		len = read(fd, wbuf, len);
+		if (len <= 0)
+			break;
+
+		ri.totlen = sizeof(ri) + len;
+		ri.hdr_crc = crc32(0, &ri, sizeof(struct jffs2_unknown_node) - 4);
+		ri.version = ++last_version;
+		ri.offset = f_offset;
+		ri.csize = ri.dsize = len;
+		ri.node_crc = crc32(0, &ri, sizeof(ri) - 8);
+		ri.data_crc = crc32(0, wbuf, len);
+		f_offset += len;
+		add_data((char *) &ri, sizeof(ri));
+		add_data(wbuf, len);
+		pad(4);
+		prep_eraseblock();
+	}
+
+	close(fd);
+}

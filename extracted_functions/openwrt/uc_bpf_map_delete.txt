@@ -1,0 +1,27 @@
+uc_bpf_map_delete(uc_vm_t *vm, size_t nargs)
+{
+	struct uc_bpf_map *map = uc_fn_thisval("bpf.map");
+	uc_value_t *a_key = uc_fn_arg(0);
+	uc_value_t *a_return = uc_fn_arg(1);
+	void *key, *val = NULL;
+	int ret;
+
+	if (!map)
+		err_return(EINVAL, NULL);
+
+	key = uc_bpf_map_arg(a_key, "key", map->key_size);
+	if (!key)
+		return NULL;
+
+	if (!ucv_is_truish(a_return)) {
+		ret = bpf_map_delete_elem(map->fd.fd, key);
+
+		return ucv_boolean_new(ret == 0);
+	}
+
+	val = alloca(map->val_size);
+	if (bpf_map_lookup_and_delete_elem(map->fd.fd, key, val))
+		return NULL;
+
+	return ucv_string_new_length(val, map->val_size);
+}

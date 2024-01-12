@@ -1,0 +1,9 @@
+static void _rtl8367c_svlanMc2sStSmi2User(rtl8367c_svlan_mc2s_t *pUserSt, rtk_uint16 *pSmiSt)
+{
+    pUserSt->svidx = (pSmiSt[0] & 0x003F);
+    pUserSt->format = (pSmiSt[0] & 0x0040) >> 6;
+    pUserSt->valid = (pSmiSt[0] & 0x0080) >> 7;
+
+    pUserSt->smask = pSmiSt[1] | (pSmiSt[2] << 16);
+    pUserSt->sdata = pSmiSt[3] | (pSmiSt[4] << 16);
+}

@@ -1,0 +1,8 @@
+static inline uint32_t read_uint32(void *buf, ptrdiff_t off)
+{
+	uint32_t tmp = *(uint32_t *)(buf + off);
+	if (swap_bytes) {
+		tmp = be32toh(tmp);
+	}
+	return tmp;
+}

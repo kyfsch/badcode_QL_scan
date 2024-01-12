@@ -1,0 +1,15 @@
+static int __init mt_msdc_init(void)
+{
+	int ret;
+
+	ret = platform_driver_register(&mt_msdc_driver);
+	if (ret) {
+		printk(KERN_ERR DRV_NAME ": Can't register driver");
+		return ret;
+	}
+
+#if defined(MT6575_SD_DEBUG)
+	msdc_debug_proc_init();
+#endif
+	return 0;
+}

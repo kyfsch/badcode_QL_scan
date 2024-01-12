@@ -1,0 +1,26 @@
+swlib_scan(struct switch_dev *dev)
+{
+	struct attrlist_arg arg;
+
+	if (dev->ops || dev->port_ops || dev->vlan_ops)
+		return 0;
+
+	arg.atype = SWLIB_ATTR_GROUP_GLOBAL;
+	arg.dev = dev;
+	arg.id = dev->id;
+	arg.prev = NULL;
+	arg.head = &dev->ops;
+	swlib_call(SWITCH_CMD_LIST_GLOBAL, add_attr, add_id, &arg);
+
+	arg.atype = SWLIB_ATTR_GROUP_PORT;
+	arg.prev = NULL;
+	arg.head = &dev->port_ops;
+	swlib_call(SWITCH_CMD_LIST_PORT, add_attr, add_id, &arg);
+
+	arg.atype = SWLIB_ATTR_GROUP_VLAN;
+	arg.prev = NULL;
+	arg.head = &dev->vlan_ops;
+	swlib_call(SWITCH_CMD_LIST_VLAN, add_attr, add_id, &arg);
+
+	return 0;
+}

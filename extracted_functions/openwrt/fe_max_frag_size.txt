@@ -1,0 +1,9 @@
+static inline int fe_max_frag_size(int mtu)
+{
+	/* make sure buf_size will be at least MAX_RX_LENGTH */
+	if (mtu + FE_RX_ETH_HLEN < MAX_RX_LENGTH)
+		mtu = MAX_RX_LENGTH - FE_RX_ETH_HLEN;
+
+	return SKB_DATA_ALIGN(FE_RX_HLEN + mtu) +
+		SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+}

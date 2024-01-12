@@ -1,0 +1,14 @@
+static int __init queue_gamma_map_setup(char *line)
+{
+    char *p;
+    int i;
+
+    for ( i = 0, p = line; i < ARRAY_SIZE(queue_gamma_map) && isxdigit(*p); i++ )
+    {
+        queue_gamma_map[i] = simple_strtoul(p, &p, 0);
+        if ( *p == ',' || *p == ';' || *p == ':' )
+            p++;
+    }
+
+    return 0;
+}

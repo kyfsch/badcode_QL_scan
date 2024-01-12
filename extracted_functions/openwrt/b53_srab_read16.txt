@@ -1,0 +1,20 @@
+static int b53_srab_read16(struct b53_device *dev, u8 page, u8 reg, u16 *val)
+{
+	u8 __iomem *regs = dev->priv;
+	int ret = 0;
+
+	ret = b53_srab_request_grant(dev);
+	if (ret)
+		goto err;
+
+	ret = b53_srab_op(dev, page, reg, 0);
+	if (ret)
+		goto err;
+
+	*val = readl(regs + B53_SRAB_RD_L) & 0xffff;
+
+err:
+	b53_srab_release_grant(dev);
+
+	return ret;
+}

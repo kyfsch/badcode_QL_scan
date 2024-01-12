@@ -1,0 +1,17 @@
+ret_t rtl8367c_setAsicI2CcheckRxAck(void)
+{
+    rtk_uint32 regData;
+    ret_t retVal;
+    rtk_uint32 count = 0;
+
+    do{
+         count++;
+         if ((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_M_I2C_CTL_STA_REG, RTL8367C_SLV_ACK_FLAG_OFFSET, &regData)) != RT_ERR_OK)
+            return retVal;
+    }while( (regData != 0x1) && (count < TIMEROUT_FOR_MICROSEMI) );
+
+    if(regData != 0x1)
+        return RT_ERR_FAILED;
+    else
+        return RT_ERR_OK;
+}

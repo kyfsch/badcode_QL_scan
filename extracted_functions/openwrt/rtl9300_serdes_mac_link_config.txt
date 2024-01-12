@@ -1,0 +1,24 @@
+void rtl9300_serdes_mac_link_config(int sds, bool tx_normal, bool rx_normal)
+{
+	u32 v10, v1;
+
+	v10 = rtl930x_read_sds_phy(sds, 6, 2); /* 10GBit, page 6, reg 2 */
+	v1 = rtl930x_read_sds_phy(sds, 0, 0); /* 1GBit, page 0, reg 0 */
+	pr_info("%s: registers before %08x %08x\n", __func__, v10, v1);
+
+	v10 &= ~(BIT(13) | BIT(14));
+	v1 &= ~(BIT(8) | BIT(9));
+
+	v10 |= rx_normal ? 0 : BIT(13);
+	v1 |= rx_normal ? 0 : BIT(9);
+
+	v10 |= tx_normal ? 0 : BIT(14);
+	v1 |= tx_normal ? 0 : BIT(8);
+
+	rtl930x_write_sds_phy(sds, 6, 2, v10);
+	rtl930x_write_sds_phy(sds, 0, 0, v1);
+
+	v10 = rtl930x_read_sds_phy(sds, 6, 2);
+	v1 = rtl930x_read_sds_phy(sds, 0, 0);
+	pr_info("%s: registers after %08x %08x\n", __func__, v10, v1);
+}

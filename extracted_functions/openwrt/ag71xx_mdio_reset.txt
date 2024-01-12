@@ -1,0 +1,26 @@
+static int ag71xx_mdio_reset(struct mii_bus *bus)
+{
+	struct device_node *np = bus->dev.of_node;
+	struct ag71xx_mdio *am = bus->priv;
+	bool builtin_switch;
+	u32 t;
+
+	builtin_switch = of_property_read_bool(np, "builtin-switch");
+
+	if (ag71xx_mdio_get_divider(np, &t)) {
+		if (of_device_is_compatible(np, "qca,ar9340-mdio"))
+			t = MII_CFG_CLK_DIV_58;
+		else if (builtin_switch)
+			t = MII_CFG_CLK_DIV_10;
+		else
+			t = MII_CFG_CLK_DIV_28;
+	}
+
+	regmap_write(am->mii_regmap, AG71XX_REG_MII_CFG, t | MII_CFG_RESET);
+	udelay(100);
+
+	regmap_write(am->mii_regmap, AG71XX_REG_MII_CFG, t);
+	udelay(100);
+
+	return 0;
+}

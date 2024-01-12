@@ -1,0 +1,31 @@
+static int mt7621_nfc_exec_instr(struct nand_chip *nand,
+				 const struct nand_op_instr *instr)
+{
+	struct mt7621_nfc *nfc = nand_get_controller_data(nand);
+
+	switch (instr->type) {
+	case NAND_OP_CMD_INSTR:
+		mt7621_nfc_hw_reset(nfc);
+		nfi_write16(nfc, NFI_CNFG, CNFG_OP_CUSTOM << CNFG_OP_MODE_S);
+		return mt7621_nfc_send_command(nfc, instr->ctx.cmd.opcode);
+	case NAND_OP_ADDR_INSTR:
+		return mt7621_nfc_send_address(nfc, instr->ctx.addr.addrs,
+					       instr->ctx.addr.naddrs);
+	case NAND_OP_DATA_IN_INSTR:
+		mt7621_nfc_read_data(nfc, instr->ctx.data.buf.in,
+				     instr->ctx.data.len);
+		return 0;
+	case NAND_OP_DATA_OUT_INSTR:
+		mt7621_nfc_write_data(nfc, instr->ctx.data.buf.out,
+				      instr->ctx.data.len);
+		return 0;
+	case NAND_OP_WAITRDY_INSTR:
+		return mt7621_nfc_dev_ready(nfc,
+					    instr->ctx.waitrdy.timeout_ms);
+	default:
+		WARN_ONCE(1, "unsupported NAND instruction type: %d\n",
+			  instr->type);
+
+		return -EINVAL;
+	}
+}

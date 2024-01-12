@@ -1,0 +1,9 @@
+static void refresh_text_box(WINDOW *dialog, WINDOW *box, int boxh, int boxw,
+			     int cur_y, int cur_x, update_text_fn update_text,
+			     void *data)
+{
+	print_page(box, boxh, boxw, update_text, data);
+	print_position(dialog);
+	wmove(dialog, cur_y, cur_x);	/* Restore cursor position */
+	wrefresh(dialog);
+}

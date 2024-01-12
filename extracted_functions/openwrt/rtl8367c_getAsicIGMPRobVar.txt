@@ -1,0 +1,14 @@
+ret_t rtl8367c_getAsicIGMPRobVar(rtk_uint32 *prob_var)
+{
+    ret_t   retVal;
+    rtk_uint32  value;
+
+    /* Bourstness variable */
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_IGMP_MLD_CFG0, RTL8367C_ROBURSTNESS_VAR_MASK, &value);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    *prob_var = value;
+
+    return RT_ERR_OK;
+}

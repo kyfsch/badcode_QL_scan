@@ -1,0 +1,8 @@
+ret_t rtl8367c_setAsicRemarkingDscpSrc(rtk_uint32 type)
+{
+
+    if(type >= DSCP_PRISEL_END )
+        return RT_ERR_QOS_SEL_PRI_SOURCE;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_RMK_CFG_SEL_CTRL, RTL8367C_RMK_DSCP_CFG_SEL_MASK, type);
+}

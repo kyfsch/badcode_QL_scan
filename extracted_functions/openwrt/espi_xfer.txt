@@ -1,0 +1,56 @@
+static int espi_xfer(struct fsl_spi *fsl, const struct spi_transfer *msg, int n)
+{
+	ccsr_espi_t *espi = fsl->espi;
+	size_t len = spi_message_len(msg, n);
+
+	if (len > ESPI_MAX_DATA_TRANSFER_LEN)
+		return -1;
+
+	/* clear the RXCNT and TXCNT */
+	out_be32(&espi->mode, in_be32(&espi->mode) & (~ESPI_MODE_EN));
+	out_be32(&espi->mode, in_be32(&espi->mode) | ESPI_MODE_EN);
+	out_be32(&espi->com, ESPI_COM_CS(fsl->cs) | ESPI_COM_TRANLEN(len - 1));
+
+	int last_msg = n - 1;
+	int tx_msg = -1, rx_msg = -1;
+	size_t tx_len = 0, rx_len = 0, tx_pos = 0, rx_pos = 0;
+
+	while (true) {
+		if (tx_pos == tx_len && tx_msg < last_msg) {
+			tx_msg++;
+			tx_pos = 0;
+			tx_len = msg[tx_msg].len;
+		}
+		if (rx_pos == rx_len && rx_msg < last_msg) {
+			rx_msg++;
+			rx_pos = 0;
+			rx_len = msg[rx_msg].len;
+		}
+		if (rx_pos == rx_len)
+			break;
+
+		const uint8_t *tx_buf = msg[tx_msg].tx_buf;
+		uint8_t *rx_buf = msg[rx_msg].rx_buf;
+
+		uint32_t event = in_be32(&espi->event);
+
+		/* TX */
+		if ((event & ESPI_EV_TNF) && tx_len > 0) {
+			uint8_t v = 0;
+			if (tx_buf)
+				v = tx_buf[tx_pos];
+			out_8((uint8_t *)&espi->tx, v);
+			tx_pos++;
+		}
+
+		/* RX */
+		if (event & ESPI_EV_RNE) {
+			uint8_t v = in_8((uint8_t *)&espi->rx);
+			if (rx_buf)
+				rx_buf[rx_pos] = v;
+			rx_pos++;
+		}
+	}
+
+	return 0;
+}

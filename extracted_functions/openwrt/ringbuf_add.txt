@@ -1,0 +1,17 @@
+struct ringbuf_entry * ringbuf_add(struct ringbuf *r)
+{
+	struct timeval t;
+	struct ringbuf_entry *e;
+
+	gettimeofday(&t, NULL);
+
+	e = r->buf + (r->fill++ * r->slen);
+	r->fill %= r->len;
+
+	memset(e, 0, r->slen);
+
+	e->sec = t.tv_sec;
+	e->usec = t.tv_usec;
+
+	return e;
+}

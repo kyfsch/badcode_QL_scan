@@ -1,0 +1,25 @@
+radius_userdata_load(struct radius_user_data *u, struct blob_attr *data)
+{
+	enum {
+		USERSTATE_USERS,
+		USERSTATE_WILDCARD,
+		__USERSTATE_MAX,
+	};
+	static const struct blobmsg_policy policy[__USERSTATE_MAX] = {
+		[USERSTATE_USERS] = { "users", BLOBMSG_TYPE_TABLE },
+		[USERSTATE_WILDCARD] = { "wildcard", BLOBMSG_TYPE_ARRAY },
+	};
+	struct blob_attr *tb[__USERSTATE_MAX], *cur;
+	int rem;
+
+	if (!data)
+		return;
+
+	blobmsg_parse(policy, __USERSTATE_MAX, tb, blobmsg_data(data), blobmsg_len(data));
+
+	blobmsg_for_each_attr(cur, tb[USERSTATE_USERS], rem)
+		kvlist_set(&u->users, blobmsg_name(cur), cur);
+
+	if (tb[USERSTATE_WILDCARD])
+		u->wildcard = blob_memdup(tb[USERSTATE_WILDCARD]);
+}

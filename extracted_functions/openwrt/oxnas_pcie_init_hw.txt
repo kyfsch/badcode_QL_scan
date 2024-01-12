@@ -1,0 +1,56 @@
+static void oxnas_pcie_init_hw(struct platform_device *pdev,
+			       struct oxnas_pcie *pcie)
+{
+	u32 version_id;
+	int ret;
+
+	clk_prepare_enable(pcie->busclk);
+
+	/* reset PCIe cards use hard-wired gpio pin */
+	if (pcie->card_reset >= 0 &&
+	    !gpio_direction_output(pcie->card_reset, 0)) {
+		wmb();
+		mdelay(10);
+		/* must tri-state the pin to pull it up */
+		gpio_direction_input(pcie->card_reset);
+		wmb();
+		mdelay(100);
+	}
+
+	/* ToDo: use phy power-on port... */
+	regmap_update_bits(pcie->sys_ctrl, SYS_CTRL_HCSL_CTRL_REGOFFSET,
+	                   BIT(pcie->hcsl_en), BIT(pcie->hcsl_en));
+
+	/* core */
+	ret = device_reset(&pdev->dev);
+	if (ret) {
+		dev_err(&pdev->dev, "core reset failed %d\n", ret);
+		return;
+	}
+
+	/* Start PCIe core clocks */
+	clk_prepare_enable(pcie->clk);
+
+	version_id = readl_relaxed(pcie->base + PCI_CONFIG_VERSION_DEVICEID);
+	dev_info(&pdev->dev, "PCIe version/deviceID 0x%x\n", version_id);
+
+	if (version_id != VERSION_ID_MAGIC) {
+		dev_info(&pdev->dev, "PCIe controller not found\n");
+		pcie->haslink = 0;
+		return;
+	}
+
+	/* allow entry to L23 state */
+	regmap_write_bits(pcie->sys_ctrl, pcie->pcie_ctrl_offset,
+	                  PCIE_READY_ENTR_L23, PCIE_READY_ENTR_L23);
+
+	/* Set PCIe core into RootCore mode */
+	regmap_write_bits(pcie->sys_ctrl, pcie->pcie_ctrl_offset,
+	                  PCIE_DEVICE_TYPE_MASK, PCIE_DEVICE_TYPE_ROOT);
+	wmb();
+
+	/* Bring up the PCI core */
+	regmap_write_bits(pcie->sys_ctrl, pcie->pcie_ctrl_offset,
+	                  PCIE_LTSSM, PCIE_LTSSM);
+	wmb();
+}

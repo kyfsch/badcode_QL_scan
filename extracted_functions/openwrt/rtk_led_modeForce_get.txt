@@ -1,0 +1,25 @@
+rtk_api_ret_t rtk_led_modeForce_get(rtk_port_t port, rtk_led_group_t group, rtk_led_force_mode_t *pMode)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    /* No LED for CPU port */
+    if(rtk_switch_isCPUPort(port) == RT_ERR_OK)
+        return RT_ERR_PORT_ID;
+
+    if (group >= LED_GROUP_END)
+        return RT_ERR_INPUT;
+
+    if (NULL == pMode)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicForceLed(rtk_switch_port_L2P_get(port), group, pMode)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,4 @@
+unsigned long long get_ticks(void)
+{
+	return get_timer(0);
+}

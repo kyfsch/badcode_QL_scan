@@ -1,0 +1,4 @@
+static int __init rtl8366rb_module_init(void)
+{
+	return platform_driver_register(&rtl8366rb_driver);
+}

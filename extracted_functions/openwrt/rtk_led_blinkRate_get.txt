@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_led_blinkRate_get(rtk_led_blink_rate_t *pBlinkRate)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pBlinkRate)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicLedBlinkRate(pBlinkRate)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

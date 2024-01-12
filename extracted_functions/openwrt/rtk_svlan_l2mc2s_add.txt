@@ -1,0 +1,76 @@
+rtk_api_ret_t rtk_svlan_l2mc2s_add(rtk_mac_t mac, rtk_mac_t macMsk, rtk_vlan_t svid)
+{
+    rtk_api_ret_t retVal, i;
+    rtk_uint32 empty_idx;
+    rtk_uint32 svidx, l2add, l2Mask;
+    rtl8367c_svlan_memconf_t svlanMemConf;
+    rtl8367c_svlan_mc2s_t svlanMC2SConf;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (svid > RTL8367C_VIDMAX)
+        return RT_ERR_SVLAN_VID;
+
+    if (mac.octet[0]!= 1&&mac.octet[1]!=0)
+        return RT_ERR_INPUT;
+
+    l2add = (mac.octet[2] << 24) | (mac.octet[3] << 16) | (mac.octet[4] << 8) | mac.octet[5];
+    l2Mask = (macMsk.octet[2] << 24) | (macMsk.octet[3] << 16) | (macMsk.octet[4] << 8) | macMsk.octet[5];
+
+    svidx = 0xFFFF;
+
+    for (i = 0; i < RTL8367C_SVIDXNO; i++)
+    {
+        if ((retVal = rtl8367c_getAsicSvlanMemberConfiguration(i, &svlanMemConf)) != RT_ERR_OK)
+            return retVal;
+
+        if (svid == svlanMemConf.vs_svid)
+        {
+            svidx = i;
+            break;
+        }
+    }
+
+    if (0xFFFF == svidx)
+        return RT_ERR_SVLAN_ENTRY_NOT_FOUND;
+
+    empty_idx = 0xFFFF;
+
+    for (i = RTL8367C_MC2SIDXMAX; i >=0; i--)
+    {
+        if ((retVal = rtl8367c_getAsicSvlanMC2SConf(i, &svlanMC2SConf)) != RT_ERR_OK)
+            return retVal;
+
+        if (TRUE == svlanMC2SConf.valid)
+        {
+            if (svlanMC2SConf.format == SVLAN_MC2S_MODE_MAC &&
+                svlanMC2SConf.sdata==l2add&&
+                svlanMC2SConf.smask==l2Mask)
+            {
+                svlanMC2SConf.svidx = svidx;
+                if ((retVal = rtl8367c_setAsicSvlanMC2SConf(i, &svlanMC2SConf)) != RT_ERR_OK)
+                    return retVal;
+            }
+        }
+        else
+        {
+            empty_idx = i;
+        }
+    }
+
+    if (empty_idx!=0xFFFF)
+    {
+        svlanMC2SConf.valid = TRUE;
+        svlanMC2SConf.svidx = svidx;
+        svlanMC2SConf.format = SVLAN_MC2S_MODE_MAC;
+        svlanMC2SConf.sdata = l2add;
+        svlanMC2SConf.smask = l2Mask;
+
+        if ((retVal = rtl8367c_setAsicSvlanMC2SConf(empty_idx, &svlanMC2SConf)) != RT_ERR_OK)
+            return retVal;
+        return RT_ERR_OK;
+    }
+
+    return RT_ERR_OUT_OF_RANGE;
+}

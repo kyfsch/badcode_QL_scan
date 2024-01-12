@@ -1,0 +1,61 @@
+rtk_api_ret_t rtk_led_groupAbility_set(rtk_led_group_t group, rtk_led_ability_t *pAbility)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 regData;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (LED_GROUP_END <= group)
+        return RT_ERR_FAILED;
+
+    if(pAbility == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    if( (pAbility->link_10m >= RTK_ENABLE_END) || (pAbility->link_100m >= RTK_ENABLE_END)||
+        (pAbility->link_500m >= RTK_ENABLE_END) || (pAbility->link_1000m >= RTK_ENABLE_END)||
+        (pAbility->act_rx >= RTK_ENABLE_END) || (pAbility->act_tx >= RTK_ENABLE_END) )
+    {
+        return RT_ERR_INPUT;
+    }
+
+    if ((retVal = rtl8367c_getAsicReg(RTL8367C_REG_LED0_DATA_CTRL + (rtk_uint32)group, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    if(pAbility->link_10m == ENABLED)
+        regData |= 0x0001;
+    else
+        regData &= ~0x0001;
+
+    if(pAbility->link_100m == ENABLED)
+        regData |= 0x0002;
+    else
+        regData &= ~0x0002;
+
+    if(pAbility->link_500m == ENABLED)
+        regData |= 0x0004;
+    else
+        regData &= ~0x0004;
+
+    if(pAbility->link_1000m == ENABLED)
+        regData |= 0x0008;
+    else
+        regData &= ~0x0008;
+
+    if(pAbility->act_rx == ENABLED)
+        regData |= 0x0010;
+    else
+        regData &= ~0x0010;
+
+    if(pAbility->act_tx == ENABLED)
+        regData |= 0x0020;
+    else
+        regData &= ~0x0020;
+
+    regData |= (0x0001 << 6);
+
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_LED0_DATA_CTRL + (rtk_uint32)group, regData)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

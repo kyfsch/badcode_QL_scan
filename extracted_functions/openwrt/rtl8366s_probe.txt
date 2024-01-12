@@ -1,0 +1,43 @@
+static int rtl8366s_probe(struct platform_device *pdev)
+{
+	static int rtl8366_smi_version_printed;
+	struct rtl8366_smi *smi;
+	int err;
+
+	if (!rtl8366_smi_version_printed++)
+		printk(KERN_NOTICE RTL8366S_DRIVER_DESC
+		       " version " RTL8366S_DRIVER_VER"\n");
+
+	smi = rtl8366_smi_probe(pdev);
+	if (IS_ERR(smi))
+		return PTR_ERR(smi);
+
+	smi->clk_delay = 10;
+	smi->cmd_read = 0xa9;
+	smi->cmd_write = 0xa8;
+	smi->ops = &rtl8366s_smi_ops;
+	smi->cpu_port = RTL8366S_PORT_NUM_CPU;
+	smi->num_ports = RTL8366S_NUM_PORTS;
+	smi->num_vlan_mc = RTL8366S_NUM_VLANS;
+	smi->mib_counters = rtl8366s_mib_counters;
+	smi->num_mib_counters = ARRAY_SIZE(rtl8366s_mib_counters);
+
+	err = rtl8366_smi_init(smi);
+	if (err)
+		goto err_free_smi;
+
+	platform_set_drvdata(pdev, smi);
+
+	err = rtl8366s_switch_init(smi);
+	if (err)
+		goto err_clear_drvdata;
+
+	return 0;
+
+ err_clear_drvdata:
+	platform_set_drvdata(pdev, NULL);
+	rtl8366_smi_cleanup(smi);
+ err_free_smi:
+	kfree(smi);
+	return err;
+}

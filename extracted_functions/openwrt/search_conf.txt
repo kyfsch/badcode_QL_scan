@@ -1,0 +1,74 @@
+static void search_conf(void)
+{
+	struct symbol **sym_arr;
+	struct gstr res;
+	struct gstr title;
+	char *dialog_input;
+	int dres, vscroll = 0, hscroll = 0;
+	bool again;
+	struct gstr sttext;
+	struct subtitle_part stpart;
+
+	title = str_new();
+	str_printf( &title, "Enter (sub)string or regexp to search for "
+			      "(with or without \"%s\")", CONFIG_);
+
+again:
+	dialog_clear();
+	dres = dialog_inputbox("Search Configuration Parameter",
+			      str_get(&title),
+			      10, 75, "");
+	switch (dres) {
+	case 0:
+		break;
+	case 1:
+		show_helptext("Search Configuration", search_help);
+		goto again;
+	default:
+		str_free(&title);
+		return;
+	}
+
+	/* strip the prefix if necessary */
+	dialog_input = dialog_input_result;
+	if (strncasecmp(dialog_input_result, CONFIG_, strlen(CONFIG_)) == 0)
+		dialog_input += strlen(CONFIG_);
+
+	sttext = str_new();
+	str_printf(&sttext, "Search (%s)", dialog_input_result);
+	stpart.text = str_get(&sttext);
+	list_add_tail(&stpart.entries, &trail);
+
+	sym_arr = sym_re_search(dialog_input);
+	do {
+		LIST_HEAD(head);
+		struct menu *targets[JUMP_NB];
+		int keys[JUMP_NB + 1], i;
+		struct search_data data = {
+			.head = &head,
+			.targets = targets,
+			.keys = keys,
+		};
+		struct jump_key *pos, *tmp;
+
+		res = get_relations_str(sym_arr, &head);
+		set_subtitle();
+		dres = show_textbox_ext("Search Results", (char *)
+					str_get(&res), 0, 0, keys, &vscroll,
+					&hscroll, &update_text, (void *)
+					&data);
+		again = false;
+		for (i = 0; i < JUMP_NB && keys[i]; i++)
+			if (dres == keys[i]) {
+				conf(targets[i]->parent, targets[i]);
+				again = true;
+			}
+		str_free(&res);
+		list_for_each_entry_safe(pos, tmp, &head, entries)
+			free(pos);
+	} while (again);
+	free(sym_arr);
+	str_free(&title);
+	list_del(trail.prev);
+	str_free(&sttext);
+}

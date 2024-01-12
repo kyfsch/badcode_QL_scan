@@ -1,0 +1,34 @@
+void rtl8218d_eee_set(struct phy_device *phydev, bool enable)
+{
+	u32 val;
+	bool an_enabled;
+
+	pr_debug("In %s %d, enable %d\n", __func__, phydev->mdio.addr, enable);
+	/* Set GPHY page to copper */
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
+
+	val = phy_read(phydev, MII_BMCR);
+	an_enabled = val & BMCR_ANENABLE;
+
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV);
+	val |= MDIO_EEE_1000T | MDIO_EEE_100TX;
+	phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, enable ? (MDIO_EEE_100TX | MDIO_EEE_1000T) : 0);
+
+	/* 500M EEE ability */
+	val = phy_read_paged(phydev, RTL821X_PAGE_GPHY, 20);
+	if (enable)
+		val |= BIT(7);
+	else
+		val &= ~BIT(7);
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, 20, val);
+
+	/* Restart AN if enabled */
+	if (an_enabled) {
+		val = phy_read(phydev, MII_BMCR);
+		val |= BMCR_ANRESTART;
+		phy_write(phydev, MII_BMCR, val);
+	}
+
+	/* GPHY page back to auto */
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+}

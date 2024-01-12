@@ -1,0 +1,6 @@
+static int __init mtdsplit_wrgg_init(void)
+{
+	register_mtd_parser(&mtdsplit_wrgg_parser);
+
+	return 0;
+}

@@ -1,0 +1,49 @@
+int xts_aes_encrypt(struct skcipher_request *req)
+{
+    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
+    struct skcipher_walk walk;
+    int err;
+    unsigned int enc_bytes, nbytes, processed;
+
+    err = skcipher_walk_virt(&walk, req, false);
+
+    if (req->cryptlen < XTS_BLOCK_SIZE)
+            return -EINVAL;
+
+    ctx->use_tweak = 1;
+    aes_encrypt(req->base.tfm, walk.iv, walk.iv);
+    ctx->use_tweak = 0;
+    processed = 0;
+
+    while ((nbytes = walk.nbytes) && (walk.nbytes >= (XTS_BLOCK_SIZE * 2)) ) {
+        u8 *iv = walk.iv;
+        if (nbytes == walk.total) {
+            enc_bytes = nbytes;
+        } else {
+            enc_bytes = nbytes & ~(XTS_BLOCK_SIZE - 1);
+            if ((req->cryptlen - processed - enc_bytes) < (XTS_BLOCK_SIZE)) {
+                if (enc_bytes > (2 * XTS_BLOCK_SIZE)) {
+                    enc_bytes -= XTS_BLOCK_SIZE;
+                } else {
+                    break;
+                }
+            }
+        }
+        ifx_deu_aes_xts(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                   iv, enc_bytes, CRYPTO_DIR_ENCRYPT);
+        err = skcipher_walk_done(&walk, nbytes - enc_bytes);
+        processed += enc_bytes;
+    }
+
+    if ((walk.nbytes)) {
+        u8 *iv = walk.iv;
+        nbytes = req->cryptlen - processed;
+        scatterwalk_map_and_copy(ctx->lastbuffer, req->src, (req->cryptlen - nbytes), nbytes, 0);
+        ifx_deu_aes_xts(ctx, ctx->lastbuffer, ctx->lastbuffer, 
+                   iv, nbytes, CRYPTO_DIR_ENCRYPT);
+        scatterwalk_map_and_copy(ctx->lastbuffer, req->dst, (req->cryptlen - nbytes), nbytes, 1);
+        skcipher_request_complete(req, 0);
+    }
+
+    return err;
+}

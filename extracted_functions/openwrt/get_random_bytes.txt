@@ -1,0 +1,12 @@
+get_random_bytes(void *ptr, int len)
+{
+	int fd;
+
+	fd = open("/dev/urandom", O_RDONLY);
+	if (fd < 0) {
+		perror("open");
+		exit(1);
+	}
+	read(fd, ptr, len);
+	close(fd);
+}

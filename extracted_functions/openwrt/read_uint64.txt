@@ -1,0 +1,8 @@
+static inline uint64_t read_uint64(void *buf, ptrdiff_t off)
+{
+	uint64_t tmp = *(uint64_t *)(buf + off);
+	if (swap_bytes) {
+		tmp = be64toh(tmp);
+	}
+	return tmp;
+}

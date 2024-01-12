@@ -1,0 +1,28 @@
+static int aw9523_pcfg_param_to_reg(enum pin_config_param pcp, int pin, u8 *r)
+{
+	u8 reg;
+
+	switch (pcp) {
+	case PIN_CONFIG_BIAS_PULL_PIN_DEFAULT:
+	case PIN_CONFIG_BIAS_PULL_DOWN:
+	case PIN_CONFIG_BIAS_PULL_UP:
+		reg = AW9523_REG_IN_STATE(pin);
+		break;
+	case PIN_CONFIG_DRIVE_OPEN_DRAIN:
+	case PIN_CONFIG_DRIVE_PUSH_PULL:
+		reg = AW9523_REG_GCR;
+		break;
+	case PIN_CONFIG_INPUT_ENABLE:
+	case PIN_CONFIG_OUTPUT_ENABLE:
+		reg = AW9523_REG_CONF_STATE(pin);
+		break;
+	case PIN_CONFIG_OUTPUT:
+		reg = AW9523_REG_OUT_STATE(pin);
+		break;
+	default:
+		return -ENOTSUPP;
+	}
+	*r = reg;
+
+	return 0;
+}

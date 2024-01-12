@@ -1,0 +1,8 @@
+static u8 rb91x_nand_read_byte(struct nand_chip *chip)
+{
+	u8 data = 0xff;
+
+	rb91x_nand_read(chip->priv, &data, 1);
+
+	return data;
+}

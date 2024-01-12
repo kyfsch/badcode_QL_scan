@@ -1,0 +1,40 @@
+static void aca_txout_init(struct dc_ep_priv *priv,
+	struct aca_cfg_param *aca_txout)
+{
+	u32 val = 0;
+	struct aca_mem_layout *mem_layout = to_mem_layout(priv);
+	struct aca_hif_params *hif_params = to_hif_params(priv);
+	struct aca_hif_param *txout_param = &hif_params->txout;
+
+	if (aca_txout->byteswap)
+		val = BYTE_SWAP_EN;
+
+	val |= (aca_txout->hd_size_in_dw - 1)
+		| SM((aca_txout->pd_size_in_dw - 1), PD_DESC_IN_DW);
+	wr32(val, TXOUT_CONV_CFG);
+
+	/* SoC Ring size */
+	val = aca_txout->soc_desc_num;
+	wr32(val, TXOUT_RING_CFG);
+
+	/* SoC cumulative counter address */
+	wr32(aca_txout->soc_cmlt_cnt_addr, GNRC_TXOUT_CMLT_CNT_ADDR);
+	/* SoC descriptors */
+	txout_param->soc_desc_base = aca_txout->soc_desc_base;
+	txout_param->soc_desc_num = aca_txout->soc_desc_num;
+
+	/* Ping/pong buffer */
+	txout_param->pp_buf_base = priv->phymem
+		+mem_layout->txout_host_desc_base;
+
+	txout_param->pp_buf_num = mem_layout->txout_host_dnum;
+
+	/* PD ring */
+	txout_param->pd_desc_base = priv->phymem
+		+ aca_txout->pd_desc_base;
+	txout_param->pd_desc_num = aca_txout->pd_desc_num;
+
+	txout_param->pd_desc_threshold = aca_txout->pp_buf_desc_num;
+
+	dev_dbg(priv->dev, "aca txout init done\n");
+}

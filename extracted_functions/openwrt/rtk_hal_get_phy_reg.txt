@@ -1,0 +1,11 @@
+static void rtk_hal_get_phy_reg(unsigned int port ,unsigned int reg_addr )
+{
+        ret_t retVal;
+        rtk_port_phy_data_t Data;
+
+        retVal = rtk_port_phyReg_get(port, reg_addr, &Data);
+        if (retVal == RT_ERR_OK)
+                printk("Get: phy[%d].reg[%d] = 0x%04x\n", port, reg_addr, Data);
+        else
+                printk("read phy reg failed\n");
+}

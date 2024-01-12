@@ -1,0 +1,4 @@
+int zconf_lineno(void)
+{
+	return current_pos.lineno;
+}

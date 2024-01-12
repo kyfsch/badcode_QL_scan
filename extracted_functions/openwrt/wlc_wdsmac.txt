@@ -1,0 +1,11 @@
+static int wlc_wdsmac(wlc_param param, void *data, void *value)
+{
+	unsigned char mac[6];
+	int ret = 0;
+	
+	ret = wl_ioctl(interface, WLC_WDS_GET_REMOTE_HWADDR, &mac, 6);
+	if (ret == 0)
+		my_ether_ntoa(mac, value);
+
+	return ret;
+}

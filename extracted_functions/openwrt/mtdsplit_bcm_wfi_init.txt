@@ -1,0 +1,8 @@
+static int __init mtdsplit_bcm_wfi_init(void)
+{
+	register_mtd_parser(&mtdsplit_bcm_wfi_parser);
+	register_mtd_parser(&mtdsplit_bcm_wfi_split_parser);
+	register_mtd_parser(&mtdsplit_ser_wfi_parser);
+
+	return 0;
+}

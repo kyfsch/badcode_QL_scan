@@ -1,0 +1,7 @@
+static void pm_retx_counters_total(int fd, DSL_XTUDir_t direction) {
+#ifdef INCLUDE_DSL_CPE_PM_RETX_COUNTERS
+	IOCTL_DIR(DSL_PM_ReTxCountersTotal_t, DSL_FIO_PM_RETX_COUNTERS_TOTAL_GET, direction);
+
+	m_u32("leftrs", out.data.nLeftr);
+#endif
+}

@@ -1,0 +1,8 @@
+ar8327_led_schedule_change(struct ar8327_led *aled, u8 pattern)
+{
+	if (aled->pattern == pattern)
+		return;
+
+	aled->pattern = pattern;
+	schedule_work(&aled->led_work);
+}

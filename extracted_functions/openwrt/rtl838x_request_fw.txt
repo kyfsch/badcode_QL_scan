@@ -1,0 +1,42 @@
+static struct fw_header *rtl838x_request_fw(struct phy_device *phydev,
+					    const struct firmware *fw,
+					    const char *name)
+{
+	struct device *dev = &phydev->mdio.dev;
+	int err;
+	struct fw_header *h;
+	uint32_t checksum, my_checksum;
+
+	err = request_firmware(&fw, name, dev);
+	if (err < 0)
+		goto out;
+
+	if (fw->size < sizeof(struct fw_header)) {
+		pr_err("Firmware size too small.\n");
+		err = -EINVAL;
+		goto out;
+	}
+
+	h = (struct fw_header *) fw->data;
+	pr_info("Firmware loaded. Size %d, magic: %08x\n", fw->size, h->magic);
+
+	if (h->magic != 0x83808380) {
+		pr_err("Wrong firmware file: MAGIC mismatch.\n");
+		goto out;
+	}
+
+	checksum = h->checksum;
+	h->checksum = 0;
+	my_checksum = ~crc32(0xFFFFFFFFU, fw->data, fw->size);
+	if (checksum != my_checksum) {
+		pr_err("Firmware checksum mismatch.\n");
+		err = -EINVAL;
+		goto out;
+	}
+	h->checksum = checksum;
+
+	return h;
+out:
+	dev_err(dev, "Unable to load firmware %s (%d)\n", name, err);
+	return NULL;
+}

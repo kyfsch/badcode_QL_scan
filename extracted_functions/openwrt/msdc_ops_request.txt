@@ -1,0 +1,65 @@
+static void msdc_ops_request(struct mmc_host *mmc, struct mmc_request *mrq)
+{
+	struct msdc_host *host = mmc_priv(mmc);
+
+	//=== for sdio profile ===
+#if 0 /* --- by chhung */
+	u32 old_H32, old_L32, new_H32, new_L32;
+	u32 ticks = 0, opcode = 0, sizes = 0, bRx = 0;
+#endif /* end of --- */
+
+	WARN_ON(host->mrq);
+
+	/* start to process */
+	spin_lock(&host->lock);
+#if 0 /* --- by chhung */
+	if (sdio_pro_enable) {  //=== for sdio profile ===
+		if (mrq->cmd->opcode == 52 || mrq->cmd->opcode == 53)
+			GPT_GetCounter64(&old_L32, &old_H32);
+	}
+#endif /* end of --- */
+
+	host->mrq = mrq;
+
+	if (msdc_do_request(mmc, mrq)) {
+		if (host->hw->flags & MSDC_REMOVABLE && ralink_soc == MT762X_SOC_MT7621AT && mrq->data && mrq->data->error)
+			msdc_tune_request(mmc, mrq);
+	}
+
+	/* ==== when request done, check if app_cmd ==== */
+	if (mrq->cmd->opcode == MMC_APP_CMD) {
+		host->app_cmd = 1;
+		host->app_cmd_arg = mrq->cmd->arg;  /* save the RCA */
+	} else {
+		host->app_cmd = 0;
+		//host->app_cmd_arg = 0;
+	}
+
+	host->mrq = NULL;
+
+#if 0 /* --- by chhung */
+	//=== for sdio profile ===
+	if (sdio_pro_enable) {
+		if (mrq->cmd->opcode == 52 || mrq->cmd->opcode == 53) {
+			GPT_GetCounter64(&new_L32, &new_H32);
+			ticks = msdc_time_calc(old_L32, old_H32, new_L32, new_H32);
+
+			opcode = mrq->cmd->opcode;
+			if (mrq->cmd->data) {
+				sizes = mrq->cmd->data->blocks * mrq->cmd->data->blksz;
+				bRx = mrq->cmd->data->flags & MMC_DATA_READ ? 1 : 0;
+			} else {
+				bRx = mrq->cmd->arg	& 0x80000000 ? 1 : 0;
+			}
+
+			if (!mrq->cmd->error)
+				msdc_performance(opcode, sizes, bRx, ticks);
+		}
+	}
+#endif /* end of --- */
+	spin_unlock(&host->lock);
+
+	mmc_request_done(mmc, mrq);
+
+	return;
+}

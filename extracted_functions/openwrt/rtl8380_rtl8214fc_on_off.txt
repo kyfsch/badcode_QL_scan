@@ -1,0 +1,10 @@
+static void rtl8380_rtl8214fc_on_off(struct phy_device *phydev, bool on)
+{
+	/* fiber ports */
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_FIBRE);
+	phy_modify(phydev, 0x10, BMCR_PDOWN, on ? 0 : BMCR_PDOWN);
+
+	/* copper ports */
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
+	phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, BMCR_PDOWN, on ? 0 : BMCR_PDOWN);
+}

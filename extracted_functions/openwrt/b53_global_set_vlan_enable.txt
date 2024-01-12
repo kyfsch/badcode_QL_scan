@@ -1,0 +1,10 @@
+static int b53_global_set_vlan_enable(struct switch_dev *dev,
+				      const struct switch_attr *attr,
+				      struct switch_val *val)
+{
+	struct b53_device *priv = sw_to_b53(dev);
+
+	priv->enable_vlan = val->value.i;
+
+	return 0;
+}

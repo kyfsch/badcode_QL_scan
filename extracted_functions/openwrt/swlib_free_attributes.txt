@@ -1,0 +1,14 @@
+swlib_free_attributes(struct switch_attr **head)
+{
+	struct switch_attr *a = *head;
+	struct switch_attr *next;
+
+	while (a) {
+		next = a->next;
+		free(a->name);
+		free(a->description);
+		free(a);
+		a = next;
+	}
+	*head = NULL;
+}

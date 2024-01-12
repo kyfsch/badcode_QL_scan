@@ -1,0 +1,18 @@
+hostapd_rrm_print_nr(struct hostapd_neighbor_entry *nr)
+{
+	const u8 *data;
+	char *str;
+	int len;
+
+	blobmsg_printf(&b, "", MACSTR, MAC2STR(nr->bssid));
+
+	str = blobmsg_alloc_string_buffer(&b, "", nr->ssid.ssid_len + 1);
+	memcpy(str, nr->ssid.ssid, nr->ssid.ssid_len);
+	str[nr->ssid.ssid_len] = 0;
+	blobmsg_add_string_buffer(&b);
+
+	len = wpabuf_len(nr->nr);
+	str = blobmsg_alloc_string_buffer(&b, "", 2 * len + 1);
+	wpa_snprintf_hex(str, 2 * len + 1, wpabuf_head_u8(nr->nr), len);
+	blobmsg_add_string_buffer(&b);
+}

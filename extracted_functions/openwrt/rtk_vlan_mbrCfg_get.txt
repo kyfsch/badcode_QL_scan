@@ -1,0 +1,33 @@
+rtk_api_ret_t rtk_vlan_mbrCfg_get(rtk_uint32 idx, rtk_vlan_mbrcfg_t *pMbrcfg)
+{
+    rtk_api_ret_t           retVal;
+    rtk_uint32              phyMbrPmask;
+    rtl8367c_vlanconfiguser mbrCfg;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Error check */
+    if(pMbrcfg == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    if(idx > RTL8367C_CVIDXMAX)
+        return RT_ERR_INPUT;
+
+    memset(&mbrCfg, 0x00, sizeof(rtl8367c_vlanconfiguser));
+    if ((retVal = rtl8367c_getAsicVlanMemberConfig(idx, &mbrCfg)) != RT_ERR_OK)
+        return retVal;
+
+    pMbrcfg->evid       = mbrCfg.evid;
+    pMbrcfg->fid_msti   = mbrCfg.fid_msti;
+    pMbrcfg->envlanpol  = mbrCfg.envlanpol;
+    pMbrcfg->meteridx   = mbrCfg.meteridx;
+    pMbrcfg->vbpen      = mbrCfg.vbpen;
+    pMbrcfg->vbpri      = mbrCfg.vbpri;
+
+    phyMbrPmask = mbrCfg.mbr;
+    if(rtk_switch_portmask_P2L_get(phyMbrPmask, &(pMbrcfg->mbr)) != RT_ERR_OK)
+        return RT_ERR_FAILED;
+
+    return RT_ERR_OK;
+}

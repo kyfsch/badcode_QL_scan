@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicLedBlinkRate(rtk_uint32 blinkRate)
+{
+    if(blinkRate >= LEDBLINKRATE_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_LED_MODE, RTL8367C_SEL_LEDRATE_MASK, blinkRate);
+}

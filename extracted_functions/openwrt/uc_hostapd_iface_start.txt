@@ -1,0 +1,100 @@
+uc_hostapd_iface_start(uc_vm_t *vm, size_t nargs)
+{
+	struct hostapd_iface *iface = uc_fn_thisval("hostapd.iface");
+	uc_value_t *info = uc_fn_arg(0);
+	struct hostapd_config *conf;
+	bool changed = false;
+	uint64_t intval;
+	int i;
+
+	if (!iface)
+		return NULL;
+
+	if (!info) {
+		iface->freq = 0;
+		goto out;
+	}
+
+	if (ucv_type(info) != UC_OBJECT)
+		return NULL;
+
+#define UPDATE_VAL(field, name)							\
+	if ((intval = ucv_int64_get(ucv_object_get(info, name, NULL))) &&	\
+		!errno && intval != conf->field) do {				\
+		conf->field = intval;						\
+		changed = true;							\
+	} while(0)
+
+	conf = iface->conf;
+	UPDATE_VAL(op_class, "op_class");
+	UPDATE_VAL(hw_mode, "hw_mode");
+	UPDATE_VAL(channel, "channel");
+	UPDATE_VAL(secondary_channel, "sec_channel");
+	if (!changed &&
+	    (iface->bss[0]->beacon_set_done ||
+	     iface->state == HAPD_IFACE_DFS))
+		return ucv_boolean_new(true);
+
+	intval = ucv_int64_get(ucv_object_get(info, "center_seg0_idx", NULL));
+	if (!errno)
+		hostapd_set_oper_centr_freq_seg0_idx(conf, intval);
+
+	intval = ucv_int64_get(ucv_object_get(info, "center_seg1_idx", NULL));
+	if (!errno)
+		hostapd_set_oper_centr_freq_seg1_idx(conf, intval);
+
+	intval = ucv_int64_get(ucv_object_get(info, "oper_chwidth", NULL));
+	if (!errno)
+		hostapd_set_oper_chwidth(conf, intval);
+
+	intval = ucv_int64_get(ucv_object_get(info, "frequency", NULL));
+	if (!errno)
+		iface->freq = intval;
+	else
+		iface->freq = 0;
+	conf->acs = 0;
+
+out:
+	switch (iface->state) {
+	case HAPD_IFACE_ENABLED:
+		if (!hostapd_is_dfs_required(iface) ||
+			hostapd_is_dfs_chan_available(iface))
+			break;
+		wpa_printf(MSG_INFO, "DFS CAC required on new channel, restart interface");
+		/* fallthrough */
+	default:
+		uc_hostapd_disable_iface(iface);
+		break;
+	}
+
+	if (conf->channel && !iface->freq)
+		iface->freq = hostapd_hw_get_freq(iface->bss[0], conf->channel);
+
+	if (iface->state != HAPD_IFACE_ENABLED) {
+		hostapd_enable_iface(iface);
+		return ucv_boolean_new(true);
+	}
+
+	for (i = 0; i < iface->num_bss; i++) {
+		struct hostapd_data *hapd = iface->bss[i];
+		int ret;
+
+		hapd->conf->start_disabled = 0;
+		hostapd_set_freq(hapd, conf->hw_mode, iface->freq,
+				 conf->channel,
+				 conf->enable_edmg,
+				 conf->edmg_channel,
+				 conf->ieee80211n,
+				 conf->ieee80211ac,
+				 conf->ieee80211ax,
+				 conf->ieee80211be,
+				 conf->secondary_channel,
+				 hostapd_get_oper_chwidth(conf),
+				 hostapd_get_oper_centr_freq_seg0_idx(conf),
+				 hostapd_get_oper_centr_freq_seg1_idx(conf));
+
+		ieee802_11_set_beacon(hapd);
+	}
+
+	return ucv_boolean_new(true);
+}

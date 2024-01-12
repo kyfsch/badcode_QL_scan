@@ -1,0 +1,10 @@
+static inline int aca_init(struct dc_ep_dev *dev, struct aca_param *aca,
+	struct aca_modem_param *mdm)
+{
+	if (WARN_ON(!dev || !aca))
+		return -EINVAL;
+	if (WARN_ON(!dev->priv))
+		return -EINVAL;
+
+	return dc_aca_init(dev->priv, aca, mdm);
+}

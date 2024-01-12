@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_l2_limitSystemLearningCnt_get(rtk_mac_cnt_t *pMac_cnt)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pMac_cnt)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicSystemLutLearnLimitNo(pMac_cnt)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,17 @@
+Byte RangeDecoderReadByte(CRangeDecoder *rd)
+{
+  if (rd->Buffer == rd->BufferLim)
+  {
+    #ifdef _LZMA_IN_CB
+    UInt32 size;
+    rd->Result = rd->InCallback->Read(rd->InCallback, &rd->Buffer, &size);
+    rd->BufferLim = rd->Buffer + size;
+    if (size == 0)
+    #endif
+    {
+      rd->ExtraBytes = 1;
+      return 0xFF;
+    }
+  }
+  return (*rd->Buffer++);
+}

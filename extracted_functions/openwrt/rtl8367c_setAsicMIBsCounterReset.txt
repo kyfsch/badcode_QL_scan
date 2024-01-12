@@ -1,0 +1,20 @@
+ret_t rtl8367c_setAsicMIBsCounterReset(rtk_uint32 greset, rtk_uint32 qmreset, rtk_uint32 portmask)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+    rtk_uint32 regBits;
+
+    regBits = RTL8367C_GLOBAL_RESET_MASK |
+                RTL8367C_QM_RESET_MASK |
+                    RTL8367C_MIB_PORT07_MASK |
+                    ((rtk_uint32)0x7 << 13);
+    regData = ((greset << RTL8367C_GLOBAL_RESET_OFFSET) & RTL8367C_GLOBAL_RESET_MASK) |
+                ((qmreset << RTL8367C_QM_RESET_OFFSET) & RTL8367C_QM_RESET_MASK) |
+                (((portmask & 0xFF) << RTL8367C_PORT0_RESET_OFFSET) & RTL8367C_MIB_PORT07_MASK) |
+                (((portmask >> 8)&0x7) << 13);
+
+
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_MIB_CTRL0, regBits, (regData >> RTL8367C_PORT0_RESET_OFFSET));
+
+    return retVal;
+}

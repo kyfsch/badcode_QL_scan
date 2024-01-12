@@ -1,0 +1,16 @@
+rtk_api_ret_t rtk_led_serialMode_get(rtk_led_active_t *pActive)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 regData;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pActive)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicLedSerialModeConfig(pActive,&regData))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

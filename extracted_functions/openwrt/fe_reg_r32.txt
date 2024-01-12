@@ -1,0 +1,4 @@
+u32 fe_reg_r32(enum fe_reg reg)
+{
+	return fe_r32(fe_reg_table[reg]);
+}

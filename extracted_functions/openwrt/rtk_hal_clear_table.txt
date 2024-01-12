@@ -1,0 +1,8 @@
+static void rtk_hal_clear_table(void)
+{
+        rtk_api_ret_t ret;
+
+        ret = rtk_l2_table_clear();
+        if (ret != RT_ERR_OK)
+                printk("rtk_l2_table_clear failed\n");
+}

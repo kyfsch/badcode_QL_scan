@@ -1,0 +1,6 @@
+IFX_MEI_LongWordRead (u32 ul_address, u32 * pul_data)
+{
+	*pul_data = IFX_MEI_READ_REGISTER_L (ul_address);
+	rmb();
+	return;
+}

@@ -1,0 +1,27 @@
+static bool nmbm_check_header(const void *data, uint32_t size)
+{
+	const struct nmbm_header *header = data;
+	struct nmbm_header nhdr;
+	uint32_t new_checksum;
+
+	/*
+	 * Make sure expected structure size is equal or smaller than
+	 * buffer size.
+	 */
+	if (header->size > size)
+		return false;
+
+	memcpy(&nhdr, data, sizeof(nhdr));
+
+	nhdr.checksum = 0;
+	new_checksum = nmbm_crc32(0, &nhdr, sizeof(nhdr));
+	if (header->size > sizeof(nhdr))
+		new_checksum = nmbm_crc32(new_checksum,
+			(const uint8_t *)data + sizeof(nhdr),
+			header->size - sizeof(nhdr));
+
+	if (header->checksum != new_checksum)
+		return false;
+
+	return true;
+}

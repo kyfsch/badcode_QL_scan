@@ -1,0 +1,5 @@
+static inline void scllo(void)
+{
+   gpio_direction_output(scl_index, 1);
+	udelay(ADAP_DELAY);
+}

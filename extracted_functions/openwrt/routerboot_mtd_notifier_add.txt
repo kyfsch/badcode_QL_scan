@@ -1,0 +1,18 @@
+static void routerboot_mtd_notifier_add(struct mtd_info *mtd)
+{
+	/* Currently routerboot is only known to live on NOR flash */
+	if (mtd->type != MTD_NORFLASH)
+		return;
+
+	/*
+	 * We ignore the following return values and always register.
+	 * These init() routines are designed so that their failed state is
+	 * always manageable by the corresponding exit() calls.
+	 * Notifier is called with MTD mutex held: use __get/__put variants.
+	 * TODO: allow partition names override
+	 */
+	if (!strcmp(mtd->name, RB_MTD_HARD_CONFIG))
+		rb_hardconfig_init(rb_kobj, mtd);
+	else if (!strcmp(mtd->name, RB_MTD_SOFT_CONFIG))
+		rb_softconfig_init(rb_kobj, mtd);
+}

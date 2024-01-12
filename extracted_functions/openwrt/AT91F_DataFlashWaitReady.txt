@@ -1,0 +1,16 @@
+static AT91S_DataFlashStatus AT91F_DataFlashWaitReady(
+	AT91PS_DataflashDesc pDataFlashDesc,
+	unsigned int timeout)
+{
+	pDataFlashDesc->DataFlash_state = IDLE;
+        do {
+                AT91F_DataFlashGetStatus(pDataFlashDesc);
+                timeout--;
+        }
+        while(((pDataFlashDesc->DataFlash_state & 0x80) != 0x80) && (timeout > 0));
+
+        if((pDataFlashDesc->DataFlash_state & 0x80) != 0x80)
+                return AT91C_DATAFLASH_ERROR;
+
+        return AT91C_DATAFLASH_OK;
+}

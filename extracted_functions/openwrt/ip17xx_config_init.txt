@@ -1,0 +1,14 @@
+static int ip17xx_config_init(struct phy_device *pdev)
+{
+	struct ip17xx_state *state = pdev->priv;
+	struct net_device *dev = pdev->attached_dev;
+	int err;
+
+	err = register_switch(&state->dev, dev);
+	if (err < 0)
+		return err;
+
+	state->registered = true;
+	ip17xx_reset(&state->dev);
+	return 0;
+}

@@ -1,0 +1,14 @@
+static bool check_image_header(const image_header_t *header)
+{
+	if (header->ih_magic != cpu_to_be32(IH_MAGIC_OKLI)) {
+		puts("Invalid image magic\n");
+		return false;
+	}
+
+	if (header->ih_comp != cpu_to_be32(IH_COMP_NONE)) {
+		puts("Unsupported compressed image\n");
+		return false;
+	}
+
+	return true;
+}

@@ -1,0 +1,14 @@
+interrupt()
+{
+	if (count) {
+#ifdef OLD_TRUERAND
+		longjmp(env, 1);
+#else
+		++done;
+		return;
+#endif
+	}
+
+	(void) signal(SIGALRM, interrupt);
+	tick();
+}

@@ -1,0 +1,20 @@
+rtk_api_ret_t rtk_ptp_portTimestamp_get( rtk_port_t port, rtk_ptp_msgType_t type, rtk_ptp_info_t *pInfo)
+{
+    rtk_api_ret_t retVal;
+    rtl8367c_ptp_time_stamp_t time;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check port is PTP port */
+    RTK_CHK_PORT_IS_PTP(port);
+
+    if ((retVal = rtl8367c_getAsicEavPortTimeStamp(rtk_switch_port_L2P_get(port), type, &time)) != RT_ERR_OK)
+        return retVal;
+
+    pInfo->sequenceId = time.sequence_id;
+    pInfo->timeStamp.sec = time.second;
+    pInfo->timeStamp.nsec = time.nano_second;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,9 @@
+static u64 rtl930x_l2_hash_seed(u64 mac, u32 vid)
+{
+	u64 v = vid;
+
+	v <<= 48;
+	v |= mac;
+
+	return v;
+}

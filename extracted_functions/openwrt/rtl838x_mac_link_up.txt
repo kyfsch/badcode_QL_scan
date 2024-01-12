@@ -1,0 +1,12 @@
+static void rtl838x_mac_link_up(struct phylink_config *config,
+			    struct phy_device *phy, unsigned int mode,
+			    phy_interface_t interface, int speed, int duplex,
+			    bool tx_pause, bool rx_pause)
+{
+	struct net_device *dev = container_of(config->dev, struct net_device, dev);
+	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+
+	pr_debug("In %s\n", __func__);
+	/* Restart TX/RX to port */
+	sw_w32_mask(0, 0x03, priv->r->mac_port_ctrl(priv->cpu_port));
+}

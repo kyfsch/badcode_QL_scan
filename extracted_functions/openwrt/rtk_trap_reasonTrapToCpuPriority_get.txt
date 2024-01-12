@@ -1,0 +1,49 @@
+rtk_api_ret_t rtk_trap_reasonTrapToCpuPriority_get(rtk_trap_reason_type_t type, rtk_pri_t *pPriority)
+{
+    rtk_api_ret_t retVal;
+    rtl8367c_rma_t rmacfg;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (type >= TRAP_REASON_END)
+        return RT_ERR_INPUT;
+
+    if(NULL == pPriority)
+        return RT_ERR_NULL_POINTER;
+
+    switch (type)
+    {
+        case TRAP_REASON_RMA:
+            if ((retVal = rtl8367c_getAsicRma(0, &rmacfg)) != RT_ERR_OK)
+                return retVal;
+            *pPriority = rmacfg.trap_priority;
+
+            break;
+        case TRAP_REASON_OAM:
+            if ((retVal = rtl8367c_getAsicOamCpuPri(pPriority)) != RT_ERR_OK)
+                return retVal;
+
+            break;
+        case TRAP_REASON_1XUNAUTH:
+            if ((retVal = rtl8367c_getAsic1xTrapPriority(pPriority)) != RT_ERR_OK)
+                return retVal;
+
+            break;
+        case TRAP_REASON_VLANSTACK:
+            if ((retVal = rtl8367c_getAsicSvlanTrapPriority(pPriority)) != RT_ERR_OK)
+                return retVal;
+
+            break;
+        case TRAP_REASON_UNKNOWNMC:
+            if ((retVal = rtl8367c_getAsicUnknownMulticastTrapPriority(pPriority)) != RT_ERR_OK)
+                return retVal;
+
+            break;
+        default:
+            return RT_ERR_CHIP_NOT_SUPPORTED;
+
+    }
+
+    return RT_ERR_OK;
+}

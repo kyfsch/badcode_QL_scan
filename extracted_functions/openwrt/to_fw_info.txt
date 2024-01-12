@@ -1,0 +1,4 @@
+static inline struct aca_fw_info *to_fw_info(struct dc_ep_priv *priv)
+{
+	return &priv->aca.fw_info;
+}

@@ -1,0 +1,8 @@
+const char *menu_get_prompt(struct menu *menu)
+{
+	if (menu->prompt)
+		return menu->prompt->text;
+	else if (menu->sym)
+		return menu->sym->name;
+	return NULL;
+}

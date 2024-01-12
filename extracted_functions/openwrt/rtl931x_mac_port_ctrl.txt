@@ -1,0 +1,4 @@
+static inline int rtl931x_mac_port_ctrl(int p)
+{
+	return RTL931X_MAC_L2_PORT_CTRL + (p << 7);
+}

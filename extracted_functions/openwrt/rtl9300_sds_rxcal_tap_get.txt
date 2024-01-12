@@ -1,0 +1,77 @@
+void rtl9300_sds_rxcal_tap_get(u32 sds_num, u32 tap_id, u32 tap_list[])
+{
+	u32 tap0_sign_out;
+	u32 tap0_coef_bin;
+	u32 tap_sign_out_even;
+	u32 tap_coef_bin_even;
+	u32 tap_sign_out_odd;
+	u32 tap_coef_bin_odd;
+	bool tap_manual;
+
+	if (!(sds_num % 2))
+		rtl930x_write_sds_phy(sds_num, 0x1f, 0x2, 0x2f);
+	else
+		rtl930x_write_sds_phy(sds_num - 1, 0x1f, 0x2, 0x31);
+
+	/* ##Page0x2E, Reg0x15[9], REG0_RX_EN_TEST=[1] */
+	rtl9300_sds_field_w(sds_num, 0x2e, 0x15, 9, 9, 0x1);
+	/* ##Page0x21, Reg0x06[11 6], REG0_RX_DEBUG_SEL=[1 0 x x x x] */
+	rtl9300_sds_field_w(sds_num, 0x21, 0x06, 11, 6, 0x20);
+
+	if (!tap_id) {
+		/* ##Page0x2F, Reg0x0C[5 0], REG0_COEF_SEL=[0 0 0 0 0 1] */
+		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0);
+		/* ##Tap1 Even Read Out */
+		mdelay(1);
+		tap0_sign_out = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 5, 5);
+		tap0_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 4, 0);
+
+		if (tap0_sign_out == 1)
+			pr_info("Tap0 Sign : -");
+		else
+			pr_info("Tap0 Sign : +");
+
+		pr_info("tap0_coef_bin = %d", tap0_coef_bin);
+
+		tap_list[0] = tap0_sign_out;
+		tap_list[1] = tap0_coef_bin;
+
+		tap_manual = !!rtl9300_sds_field_r(sds_num, 0x2e, 0x0f, 7, 7);
+		pr_info("tap0 manual = %u",tap_manual);
+	} else {
+		/* ##Page0x2F, Reg0x0C[5 0], REG0_COEF_SEL=[0 0 0 0 0 1] */
+		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, tap_id);
+		mdelay(1);
+		/* ##Tap1 Even Read Out */
+		tap_sign_out_even = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 5, 5);
+		tap_coef_bin_even = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 4, 0);
+
+		/* ##Page0x2F, Reg0x0C[5 0], REG0_COEF_SEL=[0 0 0 1 1 0] */
+		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, (tap_id + 5));
+		/* ##Tap1 Odd Read Out */
+		tap_sign_out_odd = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 5, 5);
+		tap_coef_bin_odd = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 4, 0);
+
+		if (tap_sign_out_even == 1)
+			pr_info("Tap %u even sign: -", tap_id);
+		else
+			pr_info("Tap %u even sign: +", tap_id);
+
+		pr_info("Tap %u even coefficient = %u", tap_id, tap_coef_bin_even);
+
+		if (tap_sign_out_odd == 1)
+			pr_info("Tap %u odd sign: -", tap_id);
+		else
+			pr_info("Tap %u odd sign: +", tap_id);
+
+		pr_info("Tap %u odd coefficient = %u", tap_id,tap_coef_bin_odd);
+
+		tap_list[0] = tap_sign_out_even;
+		tap_list[1] = tap_coef_bin_even;
+		tap_list[2] = tap_sign_out_odd;
+		tap_list[3] = tap_coef_bin_odd;
+
+		tap_manual = rtl9300_sds_field_r(sds_num, 0x2e, 0x0f, tap_id + 7, tap_id + 7);
+		pr_info("tap %u manual = %d",tap_id, tap_manual);
+	}
+}

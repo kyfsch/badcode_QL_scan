@@ -1,0 +1,16 @@
+static int b53_mmap_write64(struct b53_device *dev, u8 page, u8 reg,
+			     u64 value)
+{
+	u32 hi, lo;
+
+	hi = (u32)(value >> 32);
+	lo = (u32)value;
+
+	if (WARN_ON(reg % 4))
+		return -EINVAL;
+
+	b53_mmap_write32(dev, page, reg, lo);
+	b53_mmap_write32(dev, page, reg + 4, hi);
+
+	return 0;
+}

@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_qos_1pPriRemap_set(rtk_pri_t dot1p_pri, rtk_pri_t int_pri)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (dot1p_pri > RTL8367C_PRIMAX || int_pri > RTL8367C_PRIMAX)
+        return  RT_ERR_VLAN_PRIORITY;
+
+    if ((retVal = rtl8367c_setAsicPriorityDot1qRemapping(dot1p_pri, int_pri)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

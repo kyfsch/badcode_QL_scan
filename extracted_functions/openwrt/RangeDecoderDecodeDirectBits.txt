@@ -1,0 +1,27 @@
+UInt32 RangeDecoderDecodeDirectBits(CRangeDecoder *rd, int numTotalBits)
+{
+  RC_INIT_VAR
+  UInt32 result = 0;
+  int i;
+  for (i = numTotalBits; i > 0; i--)
+  {
+    /* UInt32 t; */
+    range >>= 1;
+
+    result <<= 1;
+    if (code >= range)
+    {
+      code -= range;
+      result |= 1;
+    }
+    /*
+    t = (code - range) >> 31;
+    t &= 1;
+    code -= range & (t - 1);
+    result = (result + result) | (1 - t);
+    */
+    RC_NORMALIZE
+  }
+  RC_FLUSH_VAR
+  return result;
+}

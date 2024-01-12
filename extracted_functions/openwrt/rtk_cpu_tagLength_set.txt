@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_cpu_tagLength_set(rtk_cpu_tag_length_t length)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (length >= CPU_LEN_END)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicCputagMode(length)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

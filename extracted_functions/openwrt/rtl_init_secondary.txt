@@ -1,0 +1,23 @@
+static void rtl_init_secondary(void)
+{
+#ifndef CONFIG_CEVT_R4K
+/*
+ * These devices are low on resources. There might be the chance that CEVT_R4K
+ * is not enabled in kernel build. Nevertheless the timer and interrupt 7 might
+ * be active by default after startup of secondary VPE. With no registered
+ * handler that leads to continuous unhandeled interrupts. In this case disable
+ * counting (DC) in the core and confirm a pending interrupt.
+ */
+	write_c0_cause(read_c0_cause() | CAUSEF_DC);
+	write_c0_compare(0);
+#endif /* CONFIG_CEVT_R4K */
+/*
+ * Enable all CPU interrupts, as everything is managed by the external
+ * controller. TODO: Standard vsmp_init_secondary() has special treatment for
+ * Malta if external GIC is available. Maybe we need this too.
+ */
+	if (mips_gic_present())
+		pr_warn("%s: GIC present. Maybe interrupt enabling required.\n", __func__);
+	else
+		set_c0_status(ST0_IM);
+}

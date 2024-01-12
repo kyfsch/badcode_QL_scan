@@ -1,0 +1,10 @@
+static inline int b53_spi_read_reg(struct spi_device *spi, u8 reg, u8 *val,
+				     unsigned len)
+{
+	u8 txbuf[2];
+
+	txbuf[0] = B53_SPI_CMD_NORMAL | B53_SPI_CMD_READ;
+	txbuf[1] = reg;
+
+	return spi_write_then_read(spi, txbuf, 2, val, len);
+}

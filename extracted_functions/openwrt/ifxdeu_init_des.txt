@@ -1,0 +1,63 @@
+int ifxdeu_init_des (void)
+{
+    int ret = -ENOSYS;
+
+        des_chip_init();
+
+        ret = crypto_register_alg(&ifxdeu_des_alg);
+        if (ret < 0)
+                goto des_err;
+
+        ret = crypto_register_skcipher(&ifxdeu_ecb_des_alg);
+        if (ret < 0)
+                goto ecb_des_err;
+
+        ret = crypto_register_skcipher(&ifxdeu_cbc_des_alg);
+        if (ret < 0)
+                goto cbc_des_err;
+
+        ret = crypto_register_alg(&ifxdeu_des3_ede_alg);
+        if (ret < 0)
+                goto des3_ede_err;
+
+        ret = crypto_register_skcipher(&ifxdeu_ecb_des3_ede_alg);
+        if (ret < 0)
+                goto ecb_des3_ede_err;
+
+        ret = crypto_register_skcipher(&ifxdeu_cbc_des3_ede_alg);
+        if (ret < 0)
+                goto cbc_des3_ede_err;
+
+        CRTCL_SECT_INIT;
+
+
+
+         printk (KERN_NOTICE "IFX DEU DES initialized%s%s.\n", disable_multiblock ? "" : " (multiblock)", disable_deudma ? "" : " (DMA)");
+        return ret;
+
+des_err:
+        crypto_unregister_alg(&ifxdeu_des_alg);
+        printk(KERN_ERR "IFX des initialization failed!\n");
+        return ret;
+ecb_des_err:
+        crypto_unregister_skcipher(&ifxdeu_ecb_des_alg);
+        printk (KERN_ERR "IFX ecb_des initialization failed!\n");
+        return ret;
+cbc_des_err:
+        crypto_unregister_skcipher(&ifxdeu_cbc_des_alg);
+        printk (KERN_ERR "IFX cbc_des initialization failed!\n");
+        return ret;
+des3_ede_err:
+        crypto_unregister_alg(&ifxdeu_des3_ede_alg);
+        printk(KERN_ERR "IFX des3_ede initialization failed!\n");
+        return ret;
+ecb_des3_ede_err:
+        crypto_unregister_skcipher(&ifxdeu_ecb_des3_ede_alg);
+        printk (KERN_ERR "IFX ecb_des3_ede initialization failed!\n");
+        return ret;
+cbc_des3_ede_err:
+        crypto_unregister_skcipher(&ifxdeu_cbc_des3_ede_alg);
+        printk (KERN_ERR "IFX cbc_des3_ede initialization failed!\n");
+        return ret;
+
+}

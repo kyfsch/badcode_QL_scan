@@ -1,0 +1,290 @@
+rtk_api_ret_t rtk_filter_igrAcl_cfg_get(rtk_filter_id_t filter_id, rtk_filter_cfg_raw_t *pFilter_cfg, rtk_filter_action_t *pAction)
+{
+    rtk_api_ret_t               retVal;
+    rtk_uint32                  i, tmp;
+    rtl8367c_aclrule            aclRule;
+    rtl8367c_acl_act_t          aclAct;
+    rtk_uint32                  cpuPort;
+    rtl8367c_acltemplate_t      type;
+    rtl8367c_svlan_memconf_t    svlan_cfg;
+    rtl8367c_vlanconfiguser     vlanMC;
+    rtk_uint32                  phyPmask;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pFilter_cfg || NULL == pAction)
+        return RT_ERR_NULL_POINTER;
+
+    if(filter_id > RTL8367C_ACLRULEMAX)
+        return RT_ERR_ENTRY_INDEX;
+
+    if ((retVal = rtl8367c_getAsicAclRule(filter_id, &aclRule)) != RT_ERR_OK)
+        return retVal;
+
+    /* Check valid */
+    if(aclRule.valid == 0)
+    {
+        pFilter_cfg->valid = DISABLED;
+        return RT_ERR_OK;
+    }
+
+    phyPmask = aclRule.data_bits.active_portmsk;
+    if(rtk_switch_portmask_P2L_get(phyPmask,&(pFilter_cfg->activeport.value)) != RT_ERR_OK)
+        return RT_ERR_FAILED;
+
+    phyPmask = aclRule.care_bits.active_portmsk;
+    if(rtk_switch_portmask_P2L_get(phyPmask,&(pFilter_cfg->activeport.mask)) != RT_ERR_OK)
+        return RT_ERR_FAILED;
+
+    for(i = 0; i <= CARE_TAG_IPV6; i++)
+    {
+        if(aclRule.data_bits.tag_exist & (1 << i))
+            pFilter_cfg->careTag.tagType[i].value = 1;
+        else
+            pFilter_cfg->careTag.tagType[i].value = 0;
+
+        if (aclRule.care_bits.tag_exist & (1 << i))
+            pFilter_cfg->careTag.tagType[i].mask = 1;
+        else
+            pFilter_cfg->careTag.tagType[i].mask = 0;
+    }
+
+    if(filter_advanceCaretagField[aclRule.data_bits.type][0] == TRUE)
+    {
+        /* Advanced Care tag setting */
+        for(i = CARE_TAG_TCP; i < CARE_TAG_END; i++)
+        {
+            if(aclRule.data_bits.field[filter_advanceCaretagField[aclRule.data_bits.type][1]] & (0x0001 << (i-CARE_TAG_TCP)) )
+                pFilter_cfg->careTag.tagType[i].value = 1;
+            else
+                pFilter_cfg->careTag.tagType[i].value = 0;
+
+            if(aclRule.care_bits.field[filter_advanceCaretagField[aclRule.care_bits.type][1]] & (0x0001 << (i-CARE_TAG_TCP)) )
+                pFilter_cfg->careTag.tagType[i].mask = 1;
+            else
+                pFilter_cfg->careTag.tagType[i].mask = 0;
+        }
+    }
+
+    for(i = 0; i < RTL8367C_ACLRULEFIELDNO; i++)
+    {
+        pFilter_cfg->careFieldRaw[i] = aclRule.care_bits.field[i];
+        pFilter_cfg->dataFieldRaw[i] = aclRule.data_bits.field[i];
+    }
+
+    if ((retVal = rtl8367c_getAsicAclNot(filter_id, &tmp))!= RT_ERR_OK)
+        return retVal;
+
+    pFilter_cfg->invert = tmp;
+
+    pFilter_cfg->valid = aclRule.valid;
+
+    memset(pAction, 0, sizeof(rtk_filter_action_t));
+
+    if ((retVal = rtl8367c_getAsicAclActCtrl(filter_id, &tmp))!= RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicAclAct(filter_id, &aclAct)) != RT_ERR_OK)
+        return retVal;
+
+    if(tmp & FILTER_ENACT_FWD_MASK)
+    {
+        if(TRUE == aclAct.fwdact_ext)
+        {
+            pAction->actEnable[FILTER_ENACT_ISOLATION] = TRUE;
+
+            phyPmask = aclAct.fwdpmask;
+            if(rtk_switch_portmask_P2L_get(phyPmask,&(pAction->filterPortmask)) != RT_ERR_OK)
+                return RT_ERR_FAILED;
+        }
+        else if(aclAct.fwdact == RTL8367C_ACL_FWD_TRAP)
+        {
+            pAction->actEnable[FILTER_ENACT_TRAP_CPU] = TRUE;
+        }
+        else if (aclAct.fwdact == RTL8367C_ACL_FWD_MIRRORFUNTION )
+        {
+            pAction->actEnable[FILTER_ENACT_MIRROR] = TRUE;
+
+            phyPmask = aclAct.fwdpmask;
+            if(rtk_switch_portmask_P2L_get(phyPmask,&(pAction->filterPortmask)) != RT_ERR_OK)
+                return RT_ERR_FAILED;
+        }
+        else if (aclAct.fwdact == RTL8367C_ACL_FWD_REDIRECT)
+        {
+            if(aclAct.fwdpmask == 0 )
+                pAction->actEnable[FILTER_ENACT_DROP] = TRUE;
+            else
+            {
+                pAction->actEnable[FILTER_ENACT_REDIRECT] = TRUE;
+
+                phyPmask = aclAct.fwdpmask;
+                if(rtk_switch_portmask_P2L_get(phyPmask,&(pAction->filterPortmask)) != RT_ERR_OK)
+                    return RT_ERR_FAILED;
+            }
+        }
+        else if (aclAct.fwdact == RTL8367C_ACL_FWD_MIRROR)
+        {
+            if((retVal = rtl8367c_getAsicCputagTrapPort(&cpuPort)) != RT_ERR_OK)
+                return retVal;
+            if (aclAct.fwdpmask == (1 << cpuPort))
+            {
+                pAction->actEnable[FILTER_ENACT_COPY_CPU] = TRUE;
+            }
+            else
+            {
+                pAction->actEnable[FILTER_ENACT_ADD_DSTPORT] = TRUE;
+
+                phyPmask = aclAct.fwdpmask;
+                if(rtk_switch_portmask_P2L_get(phyPmask,&(pAction->filterPortmask)) != RT_ERR_OK)
+                    return RT_ERR_FAILED;
+            }
+        }
+        else
+        {
+            return RT_ERR_FAILED;
+        }
+    }
+
+    if(tmp & FILTER_ENACT_POLICING_MASK)
+    {
+        pAction->actEnable[FILTER_ENACT_POLICING_0] = TRUE;
+        pAction->filterPolicingIdx[0] = aclAct.aclmeteridx;
+    }
+
+    if(tmp & FILTER_ENACT_PRIORITY_MASK)
+    {
+        if(aclAct.priact == FILTER_ENACT_PRI_TYPE(FILTER_ENACT_PRIORITY))
+        {
+            pAction->actEnable[FILTER_ENACT_PRIORITY] = TRUE;
+            pAction->filterPriority = aclAct.pridx;
+        }
+        else if(aclAct.priact == FILTER_ENACT_PRI_TYPE(FILTER_ENACT_1P_REMARK))
+        {
+            pAction->actEnable[FILTER_ENACT_1P_REMARK] = TRUE;
+            pAction->filterPriority = aclAct.pridx;
+        }
+        else if(aclAct.priact == FILTER_ENACT_PRI_TYPE(FILTER_ENACT_DSCP_REMARK))
+        {
+            pAction->actEnable[FILTER_ENACT_DSCP_REMARK] = TRUE;
+            pAction->filterPriority = aclAct.pridx;
+        }
+        else if(aclAct.priact == FILTER_ENACT_PRI_TYPE(FILTER_ENACT_POLICING_3))
+        {
+            pAction->actEnable[FILTER_ENACT_POLICING_3] = TRUE;
+            pAction->filterPolicingIdx[3]  = aclAct.pridx;
+        }
+    }
+
+    if(tmp & FILTER_ENACT_SVLAN_MASK)
+    {
+        if(aclAct.sact == FILTER_ENACT_SVLAN_TYPE(FILTER_ENACT_SVLAN_INGRESS))
+        {
+            if((retVal = rtl8367c_getAsicSvlanMemberConfiguration(aclAct.svidx_sact, &svlan_cfg)) != RT_ERR_OK)
+                return retVal;
+
+            pAction->actEnable[FILTER_ENACT_SVLAN_INGRESS] = TRUE;
+            pAction->filterSvlanIdx = aclAct.svidx_sact;
+            pAction->filterSvlanVid = svlan_cfg.vs_svid;
+        }
+        else if(aclAct.sact == FILTER_ENACT_SVLAN_TYPE(FILTER_ENACT_SVLAN_EGRESS))
+        {
+            if((retVal = rtl8367c_getAsicSvlanMemberConfiguration(aclAct.svidx_sact, &svlan_cfg)) != RT_ERR_OK)
+                return retVal;
+
+            pAction->actEnable[FILTER_ENACT_SVLAN_EGRESS] = TRUE;
+            pAction->filterSvlanIdx = aclAct.svidx_sact;
+            pAction->filterSvlanVid = svlan_cfg.vs_svid;
+        }
+        else if(aclAct.sact == FILTER_ENACT_SVLAN_TYPE(FILTER_ENACT_SVLAN_CVID))
+            pAction->actEnable[FILTER_ENACT_SVLAN_CVID] = TRUE;
+        else if(aclAct.sact == FILTER_ENACT_SVLAN_TYPE(FILTER_ENACT_POLICING_2))
+        {
+            pAction->actEnable[FILTER_ENACT_POLICING_2] = TRUE;
+            pAction->filterPolicingIdx[2]  = aclAct.svidx_sact;
+        }
+    }
+
+
+    if(tmp & FILTER_ENACT_CVLAN_MASK)
+    {
+        if(FILTER_ENACT_CACTEXT_TAGONLY == aclAct.cact_ext ||
+            FILTER_ENACT_CACTEXT_BOTHVLANTAG == aclAct.cact_ext )
+        {
+            if(FILTER_CTAGFMT_UNTAG == aclAct.tag_fmt)
+            {
+                pAction->actEnable[FILTER_ENACT_EGRESSCTAG_UNTAG] = TRUE;
+            }
+            else if(FILTER_CTAGFMT_TAG == aclAct.tag_fmt)
+            {
+                pAction->actEnable[FILTER_ENACT_EGRESSCTAG_TAG] = TRUE;
+            }
+            else if(FILTER_CTAGFMT_KEEP == aclAct.tag_fmt)
+            {
+                pAction->actEnable[FILTER_ENACT_EGRESSCTAG_KEEP] = TRUE;
+            }
+             else if(FILTER_CTAGFMT_KEEP1PRMK== aclAct.tag_fmt)
+            {
+                pAction->actEnable[FILTER_ENACT_EGRESSCTAG_KEEPAND1PRMK] = TRUE;
+            }
+
+        }
+
+        if(FILTER_ENACT_CACTEXT_VLANONLY == aclAct.cact_ext ||
+            FILTER_ENACT_CACTEXT_BOTHVLANTAG == aclAct.cact_ext )
+        {
+            if(aclAct.cact == FILTER_ENACT_CVLAN_TYPE(FILTER_ENACT_CVLAN_INGRESS))
+            {
+                if((retVal = rtl8367c_getAsicVlanMemberConfig(aclAct.cvidx_cact, &vlanMC)) != RT_ERR_OK)
+                    return retVal;
+
+                pAction->actEnable[FILTER_ENACT_CVLAN_INGRESS] = TRUE;
+                pAction->filterCvlanIdx  = aclAct.cvidx_cact;
+                pAction->filterCvlanVid  = vlanMC.evid;
+            }
+            else if(aclAct.cact == FILTER_ENACT_CVLAN_TYPE(FILTER_ENACT_CVLAN_EGRESS))
+            {
+                if((retVal = rtl8367c_getAsicVlanMemberConfig(aclAct.cvidx_cact, &vlanMC)) != RT_ERR_OK)
+                    return retVal;
+
+                pAction->actEnable[FILTER_ENACT_CVLAN_EGRESS] = TRUE;
+                pAction->filterCvlanIdx  = aclAct.cvidx_cact;
+                pAction->filterCvlanVid  = vlanMC.evid;
+            }
+            else if(aclAct.cact == FILTER_ENACT_CVLAN_TYPE(FILTER_ENACT_CVLAN_SVID))
+            {
+                pAction->actEnable[FILTER_ENACT_CVLAN_SVID] = TRUE;
+            }
+            else if(aclAct.cact == FILTER_ENACT_CVLAN_TYPE(FILTER_ENACT_POLICING_1))
+            {
+                pAction->actEnable[FILTER_ENACT_POLICING_1] = TRUE;
+                pAction->filterPolicingIdx[1]  = aclAct.cvidx_cact;
+            }
+        }
+    }
+
+    if(tmp & FILTER_ENACT_INTGPIO_MASK)
+    {
+        if(TRUE == aclAct.aclint)
+        {
+            pAction->actEnable[FILTER_ENACT_INTERRUPT] = TRUE;
+        }
+
+        if(TRUE == aclAct.gpio_en)
+        {
+            pAction->actEnable[FILTER_ENACT_GPO] = TRUE;
+            pAction->filterPin = aclAct.gpio_pin;
+        }
+    }
+
+    /* Get field type of RAW data */
+    if ((retVal = rtl8367c_getAsicAclTemplate(aclRule.data_bits.type, &type))!= RT_ERR_OK)
+        return retVal;
+
+    for(i = 0; i < RTL8367C_ACLRULEFIELDNO; i++)
+    {
+        pFilter_cfg->fieldRawType[i] = type.field[i];
+    }/* end of for(i...) */
+
+    return RT_ERR_OK;
+}

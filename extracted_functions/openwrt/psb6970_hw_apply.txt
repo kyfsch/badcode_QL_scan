@@ -1,0 +1,49 @@
+static int psb6970_hw_apply(struct switch_dev *dev)
+{
+	struct psb6970_priv *priv = to_psb6970(dev);
+	int i, j;
+
+	mutex_lock(&priv->reg_mutex);
+
+	if (priv->vlan) {
+		/* into the vlan translation unit */
+		for (j = 0; j < PSB6970_MAX_VLANS; j++) {
+			u8 vp = priv->vlan_table[j];
+
+			if (vp) {
+				priv->write(priv->phy, PSB6970_VFxL(j),
+					    PSB6970_VFxL_VV | priv->vlan_id[j]);
+				priv->write(priv->phy, PSB6970_VFxH(j),
+					    ((vp & priv->
+					      vlan_tagged) <<
+					     PSB6970_VFxH_TM_SHIFT) | vp);
+			} else	/* clear VLAN Valid flag for unused vlans */
+				priv->write(priv->phy, PSB6970_VFxL(j), 0);
+
+		}
+	}
+
+	/* update the port destination mask registers and tag settings */
+	for (i = 0; i < PSB6970_NUM_PORTS; i++) {
+		int dvid = 1, pbvm = 0x7f | PSB6970_PBVM_VSD, ec = 0;
+
+		if (priv->vlan) {
+			ec = PSB6970_EC_IFNTE;
+			dvid = priv->vlan_id[priv->pvid[i]];
+			pbvm |= PSB6970_PBVM_TBVE | PSB6970_PBVM_VMCE;
+
+			if ((i << 1) & priv->vlan_tagged)
+				pbvm |= PSB6970_PBVM_AOVTP | PSB6970_PBVM_VC;
+		}
+
+		priv->write(priv->phy, PSB6970_PBVM(i), pbvm);
+
+		if (!PSB6970_IS_CPU_PORT(i)) {
+			priv->write(priv->phy, PSB6970_EC(i), ec);
+			priv->write(priv->phy, PSB6970_DVID(i), dvid);
+		}
+	}
+
+	mutex_unlock(&priv->reg_mutex);
+	return 0;
+}

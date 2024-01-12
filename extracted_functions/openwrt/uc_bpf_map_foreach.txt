@@ -1,0 +1,37 @@
+uc_bpf_map_foreach(uc_vm_t *vm, size_t nargs)
+{
+	struct uc_bpf_map *map = uc_fn_thisval("bpf.map");
+	uc_value_t *func = uc_fn_arg(0);
+	bool has_next;
+	void *key, *next;
+	bool ret = false;
+
+	key = alloca(map->key_size);
+	next = alloca(map->key_size);
+	has_next = !bpf_map_get_next_key(map->fd.fd, NULL, next);
+
+	while (has_next) {
+		uc_value_t *rv;
+		bool stop;
+
+		memcpy(key, next, map->key_size);
+		has_next = !bpf_map_get_next_key(map->fd.fd, next, next);
+
+		uc_value_push(ucv_get(func));
+		uc_value_push(ucv_string_new_length((const char *)key, map->key_size));
+
+		if (uc_call(1) != EXCEPTION_NONE)
+			break;
+
+		rv = uc_vm_stack_pop(vm);
+		stop = (ucv_type(rv) == UC_BOOLEAN && !ucv_boolean_get(rv));
+		ucv_put(rv);
+
+		if (stop)
+			break;
+
+		ret = true;
+	}
+
+	return ucv_boolean_new(ret);
+}

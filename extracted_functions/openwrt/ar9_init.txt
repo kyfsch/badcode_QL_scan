@@ -1,0 +1,8 @@
+void ar9_init(struct platform_device *pdev)
+{
+	init_pmu();
+	reset_ppe(pdev);
+	init_ema();
+	init_mailbox();
+	clear_share_buffer();
+}

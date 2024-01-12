@@ -1,0 +1,16 @@
+static bool is_valid_bmt(unsigned char *buf, unsigned char *fdm)
+{
+	struct bbbt *bbt = (struct bbbt *)buf;
+	u8 *sig = (u8*)bbt->signature + MAIN_SIGNATURE_OFFSET;
+
+
+	if (memcmp(bbt->signature + MAIN_SIGNATURE_OFFSET, "BMT", 3) == 0 &&
+		memcmp(fdm + OOB_SIGNATURE_OFFSET, "bmt", 3) == 0) {
+		if (bbt->version == BBMT_VERSION)
+			return true;
+	}
+	BBT_LOG("[BBT] BMT Version not match,upgrage preloader and uboot please! sig=%02x%02x%02x, fdm=%02x%02x%02x",
+		sig[0], sig[1], sig[2],
+		fdm[1], fdm[2], fdm[3]);
+	return false;
+}

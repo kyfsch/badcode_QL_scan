@@ -1,0 +1,19 @@
+static void mt7620_auto_poll(struct mt7620_gsw *gsw, int port)
+{
+	int phy;
+	int lsb = -1, msb = 0;
+
+	for_each_set_bit(phy, &gsw->autopoll, 32) {
+		if (lsb < 0)
+			lsb = phy;
+		msb = phy;
+	}
+
+	if (lsb == msb && port ==  4)
+		msb++;
+	else if (lsb == msb && port ==  5)
+		lsb--;
+
+	mtk_switch_w32(gsw, PHY_AN_EN | PHY_PRE_EN | PMY_MDC_CONF(5) |
+		(msb << 8) | lsb, ESW_PHY_POLLING);
+}

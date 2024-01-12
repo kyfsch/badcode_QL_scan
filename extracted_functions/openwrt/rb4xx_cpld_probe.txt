@@ -1,0 +1,28 @@
+static int rb4xx_cpld_probe(struct spi_device *spi)
+{
+	struct device *dev = &spi->dev;
+	struct rb4xx_cpld *cpld;
+	int ret;
+
+	cpld = devm_kzalloc(dev, sizeof(*cpld), GFP_KERNEL);
+	if (!cpld)
+		return -ENOMEM;
+
+	dev_set_drvdata(dev, cpld);
+
+	cpld->spi		= spi;
+	cpld->write_nand	= rb4xx_cpld_write_nand;
+	cpld->read_nand		= rb4xx_cpld_read_nand;
+	cpld->gpio_set_0_7	= rb4xx_cpld_gpio_set_0_7;
+	cpld->gpio_set_8	= rb4xx_cpld_gpio_set_8;
+
+	spi->mode = SPI_MODE_0 | SPI_TX_DUAL;
+	ret = spi_setup(spi);
+	if (ret)
+		return ret;
+
+	return devm_mfd_add_devices(dev, PLATFORM_DEVID_NONE,
+				    rb4xx_cpld_cells,
+				    ARRAY_SIZE(rb4xx_cpld_cells),
+				    NULL, 0, NULL);
+}

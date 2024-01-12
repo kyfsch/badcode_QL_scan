@@ -1,0 +1,10 @@
+void	LED_blink(unsigned int led)
+{
+	volatile int i,j;
+	for(i = 0; i < 5; i++) {
+		LED_set((1 << led)&0x7);
+		for(j= 0; j < 200000; j++);
+		LED_set(0);
+		for(j= 0; j < 200000; j++);
+	}		
+}

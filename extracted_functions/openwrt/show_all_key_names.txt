@@ -1,0 +1,5 @@
+static void show_all_key_names(struct tffs_key_name_table *key_names)
+{
+	for (uint32_t i = 0; i < key_names->size; i++)
+		printf("%s\n", key_names->entries[i].val);
+}

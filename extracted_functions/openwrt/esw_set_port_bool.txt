@@ -1,0 +1,27 @@
+static int esw_set_port_bool(struct switch_dev *dev,
+			 const struct switch_attr *attr,
+			 struct switch_val *val)
+{
+	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
+	int idx = val->port_vlan;
+
+	if (idx < 0 || idx >= RT305X_ESW_NUM_PORTS ||
+	    val->value.i < 0 || val->value.i > 1)
+		return -EINVAL;
+
+	switch (attr->id) {
+	case RT305X_ESW_ATTR_PORT_DISABLE:
+		esw->ports[idx].disable = val->value.i;
+		break;
+	case RT305X_ESW_ATTR_PORT_DOUBLETAG:
+		esw->ports[idx].doubletag = val->value.i;
+		break;
+	case RT305X_ESW_ATTR_PORT_UNTAG:
+		esw->ports[idx].untag = val->value.i;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}

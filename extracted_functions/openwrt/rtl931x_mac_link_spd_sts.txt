@@ -1,0 +1,4 @@
+static inline int rtl931x_mac_link_spd_sts(int p)
+{
+	return RTL931X_MAC_LINK_SPD_STS + (((p >> 3) << 2));
+}

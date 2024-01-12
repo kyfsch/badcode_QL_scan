@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicLutFlushMode(rtk_uint32* pMode)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_L2_FLUSH_CTRL2, RTL8367C_LUT_FLUSH_MODE_MASK, pMode);
+}

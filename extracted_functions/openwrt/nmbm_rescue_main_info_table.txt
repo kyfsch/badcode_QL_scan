@@ -1,0 +1,130 @@
+static bool nmbm_rescue_main_info_table(struct nmbm_instance *ni)
+{
+	uint32_t tmp_table_start_ba, tmp_table_end_ba, main_table_start_ba;
+	uint32_t main_table_end_ba, write_ba;
+	uint32_t info_table_erasesize = size2blk(ni, ni->info_table_size);
+	bool success;
+
+	/* Try to reserve spare blocks for existing backup info table */
+	success = nmbm_try_reserve_blocks(ni, ni->mapping_blocks_ba, &write_ba,
+					  ni->info_table_spare_blocks, 0,
+					  ni->mapping_blocks_top_ba -
+					  info_table_erasesize);
+	if (!success) {
+		/* There is no spare block. Backup info table becomes the main table. */
+		nlog_err(ni, "No room for temporary info table\n");
+		ni->main_table_ba = ni->backup_table_ba;
+		ni->backup_table_ba = 0;
+		return true;
+	}
+
+	/* Try to write temporary info table into spare unmapped blocks */
+	while (write_ba >= ni->mapping_blocks_ba) {
+		success = nmbm_write_info_table(ni, write_ba,
+						ni->mapping_blocks_top_ba,
+						&tmp_table_start_ba,
+						&tmp_table_end_ba);
+		if (success)
+			break;
+
+		write_ba--;
+	}
+
+	if (!success) {
+		/* Backup info table becomes the main table */
+		nlog_err(ni, "Failed to update main info table\n");
+		ni->main_table_ba = ni->backup_table_ba;
+		ni->backup_table_ba = 0;
+		return true;
+	}
+
+	/* Adjust mapping_blocks_off */
+	ni->mapping_blocks_ba = tmp_table_end_ba;
+
+	/*
+	 * Now write main info table at the beginning of management area.
+	 * This operation will generally destroy the original backup info
+	 * table.
+	 */
+	success = nmbm_write_info_table(ni, ni->mgmt_start_ba,
+					tmp_table_start_ba,
+					&main_table_start_ba,
+					&main_table_end_ba);
+	if (!success) {
+		/* Temporary info table becomes the main table */
+		ni->main_table_ba = tmp_table_start_ba;
+		ni->backup_table_ba = 0;
+
+		nmbm_mark_tables_clean(ni);
+
+		nlog_err(ni, "Failed to update main info table\n");
+
+		return true;
+	}
+
+	/* Main info table has been successfully written, record its offset */
+	ni->main_table_ba = main_table_start_ba;
+
+	nmbm_mark_tables_clean(ni);
+
+	nlog_table_creation(ni, true, main_table_start_ba, main_table_end_ba);
+
+	/*
+	 * Temporary info table becomes the new backup info table if it's
+	 * not overwritten.
+	 */
+	if (main_table_end_ba <= tmp_table_start_ba) {
+		ni->backup_table_ba = tmp_table_start_ba;
+
+		nlog_table_creation(ni, false, tmp_table_start_ba,
+				   tmp_table_end_ba);
+
+		return true;
+	}
+
+	/* Adjust mapping_blocks_off */
+	ni->mapping_blocks_ba = main_table_end_ba;
+
+	/* Try to reserve spare blocks for new main info table */
+	success = nmbm_try_reserve_blocks(ni, main_table_end_ba, &write_ba,
+					  ni->info_table_spare_blocks, 0,
+					  ni->mapping_blocks_top_ba -
+					  info_table_erasesize);
+	if (!success) {
+		/* There is no spare block. Only main table exists. */
+		nlog_err(ni, "No room for backup info table\n");
+		ni->backup_table_ba = 0;
+		return true;
+	}
+
+	/* Write new backup info table. */
+	while (write_ba >= main_table_end_ba) {
+		success = nmbm_write_info_table(ni, write_ba,
+						ni->mapping_blocks_top_ba,
+						&tmp_table_start_ba,
+						&tmp_table_end_ba);
+		if (success)
+			break;
+
+		write_ba--;
+	}
+
+	if (!success) {
+		nlog_err(ni, "No room for backup info table\n");
+		ni->backup_table_ba = 0;
+		return true;
+	}
+
+	/* Backup info table has been successfully written, record its offset */
+	ni->backup_table_ba = tmp_table_start_ba;
+
+	/* Adjust mapping_blocks_off */
+	ni->mapping_blocks_ba = tmp_table_end_ba;
+
+	/* Erase spare blocks of main table to clean possible interference data */
+	nmbm_erase_range(ni, main_table_end_ba, ni->backup_table_ba);
+
+	nlog_table_creation(ni, false, tmp_table_start_ba, tmp_table_end_ba);
+
+	return true;
+}

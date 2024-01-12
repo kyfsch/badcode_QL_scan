@@ -1,0 +1,11 @@
+swconfig_find_attr_by_name(const struct switch_attrlist *alist,
+				const char *name)
+{
+	int i;
+
+	for (i = 0; i < alist->n_attr; i++)
+		if (strcmp(name, alist->attr[i].name) == 0)
+			return &alist->attr[i];
+
+	return NULL;
+}

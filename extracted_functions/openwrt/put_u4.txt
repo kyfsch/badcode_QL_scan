@@ -1,0 +1,11 @@
+void put_u4(uint8_t v)
+{
+	v &= 0xf;
+	switch (v) {
+	case 0x0 ... 0x9:
+		putchar('0' + v);
+		break;
+	case 0xa ... 0xf:
+		putchar('a' + (v - 0xa));
+	}
+}

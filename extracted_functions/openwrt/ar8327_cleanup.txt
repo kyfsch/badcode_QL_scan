@@ -1,0 +1,4 @@
+ar8327_cleanup(struct ar8xxx_priv *priv)
+{
+	ar8327_leds_cleanup(priv);
+}

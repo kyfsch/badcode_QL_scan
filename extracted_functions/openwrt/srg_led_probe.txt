@@ -1,0 +1,24 @@
+srg_led_probe(struct i2c_client *client, const struct i2c_device_id *id)
+{
+	struct device_node *np = client->dev.of_node, *child;
+	struct srg_led_ctrl *sysled_ctrl;
+
+	sysled_ctrl = devm_kzalloc(&client->dev, sizeof(*sysled_ctrl), GFP_KERNEL);
+	if (!sysled_ctrl)
+		return -ENOMEM;
+
+	sysled_ctrl->client = client;
+
+	mutex_init(&sysled_ctrl->lock);
+
+	i2c_set_clientdata(client, sysled_ctrl);
+
+	for_each_child_of_node(np, child) {
+		if (srg_led_init_led(sysled_ctrl, child))
+			continue;
+
+		msleep(5);
+	}
+
+	return srg_led_control_sync(sysled_ctrl);;
+}

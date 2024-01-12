@@ -1,0 +1,47 @@
+ret_t rtl8367c_setAsicVlanMemberConfig(rtk_uint32 index, rtl8367c_vlanconfiguser *pVlanCg)
+{
+    ret_t  retVal;
+    rtk_uint32 regAddr;
+    rtk_uint32 regData;
+    rtk_uint16 *tableAddr;
+    rtk_uint32 page_idx;
+    rtk_uint16 smi_vlancfg[RTL8367C_VLAN_MBRCFG_LEN];
+
+    /* Error Checking  */
+    if(index > RTL8367C_CVIDXMAX)
+        return RT_ERR_VLAN_ENTRY_NOT_FOUND;
+
+    if(pVlanCg->evid > RTL8367C_EVIDMAX)
+        return RT_ERR_INPUT;
+
+
+    if(pVlanCg->mbr > RTL8367C_PORTMASK)
+        return RT_ERR_PORT_MASK;
+
+    if(pVlanCg->fid_msti > RTL8367C_FIDMAX)
+        return RT_ERR_L2_FID;
+
+    if(pVlanCg->meteridx > RTL8367C_METERMAX)
+        return RT_ERR_FILTER_METER_ID;
+
+    if(pVlanCg->vbpri > RTL8367C_PRIMAX)
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    memset(smi_vlancfg, 0x00, sizeof(rtk_uint16) * RTL8367C_VLAN_MBRCFG_LEN);
+    _rtl8367c_VlanMCStUser2Smi(pVlanCg, smi_vlancfg);
+    tableAddr = smi_vlancfg;
+
+    for(page_idx = 0; page_idx < 4; page_idx++)  /* 4 pages per VLAN Member Config */
+    {
+        regAddr = RTL8367C_VLAN_MEMBER_CONFIGURATION_BASE + (index * 4) + page_idx;
+        regData = *tableAddr;
+
+        retVal = rtl8367c_setAsicReg(regAddr, regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        tableAddr++;
+    }
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,4 @@
+static inline void m_db(const char *id, int value, int invalid) {
+	if (value != invalid)
+		m_double(id, (double)value / 10);
+}

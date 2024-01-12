@@ -1,0 +1,17 @@
+int dc_ep_clk_on(struct dc_ep_priv *priv, u32 bits)
+{
+	int retry = EP_TIMEOUT;
+	struct dc_aca *aca = to_aca(priv);
+
+	spin_lock(&aca->clk_lock);
+	wr32_mask(bits, 0, PMU_PWDCR);
+	spin_unlock(&aca->clk_lock);
+
+	do { } while (--retry && (rd32(PMU_SR) & bits));
+
+	if (!retry) {
+		dev_err(priv->dev, "%s failed\n", __func__);
+		return -ETIME;
+	}
+	return 0;
+}

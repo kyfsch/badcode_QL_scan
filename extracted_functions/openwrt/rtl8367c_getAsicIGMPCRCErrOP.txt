@@ -1,0 +1,14 @@
+ret_t rtl8367c_getAsicIGMPCRCErrOP(rtk_uint32 *poperation)
+{
+    ret_t   retVal;
+    rtk_uint32  value;
+
+    /* CRC Error Operation */
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_IGMP_MLD_CFG0, RTL8367C_CKS_ERR_OP_MASK, &value);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    *poperation = value;
+
+    return RT_ERR_OK;
+}

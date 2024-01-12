@@ -1,0 +1,10 @@
+static int _urandom(void *ctx, unsigned char *out, size_t len)
+{
+	ssize_t ret;
+
+	ret = getrandom(out, len, 0);
+	if (ret < 0 || (size_t)ret != len)
+		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
+
+	return 0;
+}

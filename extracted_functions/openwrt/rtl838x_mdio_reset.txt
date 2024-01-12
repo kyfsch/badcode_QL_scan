@@ -1,0 +1,12 @@
+static int rtl838x_mdio_reset(struct mii_bus *bus)
+{
+	pr_debug("%s called\n", __func__);
+	/* Disable MAC polling the PHY so that we can start configuration */
+	sw_w32(0x00000000, RTL838X_SMI_POLL_CTRL);
+
+	/* Enable PHY control via SoC */
+	sw_w32_mask(0, 1 << 15, RTL838X_SMI_GLB_CTRL);
+
+	/* Probably should reset all PHYs here... */
+	return 0;
+}

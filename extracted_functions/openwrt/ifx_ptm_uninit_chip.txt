@@ -1,0 +1,4 @@
+void ifx_ptm_uninit_chip(void)
+{
+    uninit_pmu();
+}

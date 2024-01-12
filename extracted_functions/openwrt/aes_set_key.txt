@@ -1,0 +1,19 @@
+int aes_set_key (struct crypto_tfm *tfm, const u8 *in_key, unsigned int key_len)
+{
+    struct aes_ctx *ctx = crypto_tfm_ctx(tfm);
+
+    //printk("set_key in %s\n", __FILE__);
+
+    //aes_chip_init();
+
+    if (key_len != 16 && key_len != 24 && key_len != 32) {
+        return -EINVAL;
+    }
+
+    ctx->key_length = key_len;
+    ctx->use_tweak = 0;
+    DPRINTF(0, "ctx @%p, key_len %d, ctx->key_length %d\n", ctx, key_len, ctx->key_length);
+    memcpy ((u8 *) (ctx->buf), in_key, key_len);
+
+    return 0;
+}

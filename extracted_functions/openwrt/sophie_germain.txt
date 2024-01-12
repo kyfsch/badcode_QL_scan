@@ -1,0 +1,29 @@
+  sophie_germain(k, t, u);
+
+  p = BigIntegerFromInt(0);
+  BigIntegerMulInt(p, j, 2);            /* p = 2 * j */
+  BigIntegerAddInt(p, p, 1);            /* p += 1 */
+
+  q = BigIntegerFromInt(0);
+  BigIntegerMulInt(q, k, 2);            /* q = 2 * k */
+  BigIntegerAddInt(q, q, 1);            /* q += 1 */
+
+  n = BigIntegerFromInt(0);
+  BigIntegerMul(n, p, q);               /* n = p * q */
+  BigIntegerMul(u, j, k);               /* u = j * k */
+
+  BigIntegerFree(p);
+  BigIntegerFree(q);
+  BigIntegerFree(j);
+  BigIntegerFree(k);
+
+  g = BigIntegerFromInt(2);             /* g = 2 */
+
+  /* Look for a generator mod n */
+  while(1) {
+    BigIntegerModExp(t, g, u, n);       /* t = g^u % n */
+    if(BigIntegerCmpInt(t, 1) == 0)
+      BigIntegerAddInt(g, g, 1);        /* ++g */
+    else
+      break;
+  }

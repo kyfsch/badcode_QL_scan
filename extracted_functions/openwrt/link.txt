@@ -1,0 +1,17 @@
+  link(bakfile2, pwname);
+  unlink(bakfile2);
+#endif
+  free(bakfile);
+  free(bakfile2);
+
+  return 0;
+}
+
+_TYPE( struct t_pwent * )
+t_makepwent(tpw, user, pass, salt, confent)
+     struct t_pw * tpw;
+     const char * user;
+     const char * pass;
+     const struct t_num * salt;
+     const struct t_confent * confent;
+{

@@ -1,0 +1,8 @@
+static void uc_bpf_fd_free(void *ptr)
+{
+	struct uc_bpf_fd *f = ptr;
+
+	if (f->close)
+		close(f->fd);
+	free(f);
+}

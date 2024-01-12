@@ -1,0 +1,22 @@
+static void g997_power_management_status(int fd) {
+	IOCTL(DSL_G997_PowerManagementStatus_t, DSL_FIO_G997_POWER_MANAGEMENT_STATUS_GET)
+
+	int map = PSTATE_MAP_UNKNOWN;
+	const char *str;
+	switch (out.data.nPowerManagementStatus) {
+	STR_CASE_MAP(DSL_G997_PMS_NA, "Power management state is not available", PSTATE_MAP_NA)
+	STR_CASE_MAP(DSL_G997_PMS_L0, "L0 - Synchronized", PSTATE_MAP_L0)
+	STR_CASE_MAP(DSL_G997_PMS_L1, "L1 - Power Down Data transmission (G.992.2)", PSTATE_MAP_L1)
+	STR_CASE_MAP(DSL_G997_PMS_L2, "L2 - Power Down Data transmission (G.992.3 and G.992.4)", PSTATE_MAP_L2)
+	STR_CASE_MAP(DSL_G997_PMS_L3, "L3 - No power", PSTATE_MAP_L3)
+	default:
+		str = NULL;
+		break;
+	};
+
+	if (str)
+		m_str("power_state", str);
+
+	if (map != PSTATE_MAP_UNKNOWN)
+		m_u32("power_state_num", map);
+}

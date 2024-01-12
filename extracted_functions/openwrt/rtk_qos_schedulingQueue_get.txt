@@ -1,0 +1,29 @@
+rtk_api_ret_t rtk_qos_schedulingQueue_get(rtk_port_t port, rtk_qos_queue_weights_t *pQweights)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 qid,qtype,qweight;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    for (qid = 0; qid < RTL8367C_QUEUENO; qid++)
+    {
+        if ((retVal = rtl8367c_getAsicQueueType(rtk_switch_port_L2P_get(port), qid, &qtype)) != RT_ERR_OK)
+            return retVal;
+
+        if (QTYPE_STRICT == qtype)
+        {
+            pQweights->weights[qid] = 0;
+        }
+        else if (QTYPE_WFQ == qtype)
+        {
+            if ((retVal = rtl8367c_getAsicWFQWeight(rtk_switch_port_L2P_get(port), qid, &qweight)) != RT_ERR_OK)
+                return retVal;
+            pQweights->weights[qid] = qweight;
+        }
+    }
+    return RT_ERR_OK;
+}

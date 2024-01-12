@@ -1,0 +1,38 @@
+static void bcm6348_emac_hw_preinit(struct bcm6348_emac *emac)
+{
+	u32 val;
+	int limit;
+
+	/* make sure emac is disabled */
+	bcm6348_emac_disable_mac(emac);
+
+	/* soft reset emac */
+	val = ENET_CTL_SRESET_MASK;
+	emac_writel(emac, val, ENET_CTL_REG);
+	wmb();
+
+	limit = 1000;
+	do {
+		val = emac_readl(emac, ENET_CTL_REG);
+		if (!(val & ENET_CTL_SRESET_MASK))
+			break;
+		udelay(1);
+	} while (limit--);
+
+	/* select correct mii interface */
+	val = emac_readl(emac, ENET_CTL_REG);
+	if (emac->ext_mii)
+		val |= ENET_CTL_EPHYSEL_MASK;
+	else
+		val &= ~ENET_CTL_EPHYSEL_MASK;
+	emac_writel(emac, val, ENET_CTL_REG);
+
+	/* turn on mdc clock */
+	emac_writel(emac, (0x1f << ENET_MIISC_MDCFREQDIV_SHIFT) |
+		    ENET_MIISC_PREAMBLEEN_MASK, ENET_MIISC_REG);
+
+	/* set mib counters to self-clear when read */
+	val = emac_readl(emac, ENET_MIBCTL_REG);
+	val |= ENET_MIBCTL_RDCLEAR_MASK;
+	emac_writel(emac, val, ENET_MIBCTL_REG);
+}

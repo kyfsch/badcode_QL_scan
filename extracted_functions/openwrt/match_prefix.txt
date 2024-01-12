@@ -1,0 +1,36 @@
+static void match_prefix(int *pdlen, struct in6_addr *pd, struct blob_attr *cur,
+		const struct in6_addr *ipv6prefix, int prefix6len, bool lw4o6)
+{
+	struct blob_attr *d;
+	unsigned drem;
+
+	if (!cur || blobmsg_type(cur) != BLOBMSG_TYPE_ARRAY || !blobmsg_check_attr(cur, false))
+		return;
+
+	blobmsg_for_each_attr(d, cur, drem) {
+		struct blob_attr *ptb[PREFIX_ATTR_MAX];
+		blobmsg_parse(prefix_attrs, PREFIX_ATTR_MAX, ptb,
+				blobmsg_data(d), blobmsg_data_len(d));
+
+		if (!ptb[PREFIX_ATTR_ADDRESS] || !ptb[PREFIX_ATTR_MASK])
+			continue;
+
+		struct in6_addr prefix = IN6ADDR_ANY_INIT;
+		int mask = blobmsg_get_u32(ptb[PREFIX_ATTR_MASK]);
+		inet_pton(AF_INET6, blobmsg_get_string(ptb[PREFIX_ATTR_ADDRESS]), &prefix);
+
+		// lw4over6 /128-address-as-PD matching madness workaround
+		if (lw4o6 && mask == 128)
+			mask = 64;
+
+		if (*pdlen < mask && mask >= prefix6len &&
+				!bmemcmp(&prefix, ipv6prefix, prefix6len)) {
+			bmemcpy(pd, &prefix, mask);
+			*pdlen = mask;
+		} else if (lw4o6 && *pdlen < prefix6len && mask < prefix6len &&
+				!bmemcmp(&prefix, ipv6prefix, mask)) {
+			bmemcpy(pd, ipv6prefix, prefix6len);
+			*pdlen = prefix6len;
+		}
+	}
+}

@@ -1,0 +1,23 @@
+ret_t rtl8367c_setAsicAprMeter(rtk_uint32 port, rtk_uint32 qid, rtk_uint32 apridx)
+{
+    ret_t retVal;
+    rtk_uint32 regAddr;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(qid > RTL8367C_QIDMAX)
+        return RT_ERR_QUEUE_ID;
+
+    if(apridx > RTL8367C_PORT_QUEUE_METER_INDEX_MAX)
+        return RT_ERR_FILTER_METER_ID;
+
+    if(port < 8)
+        retVal = rtl8367c_setAsicRegBits(RTL8367C_SCHEDULE_PORT_APR_METER_REG(port, qid), RTL8367C_SCHEDULE_PORT_APR_METER_MASK(qid), apridx);
+    else {
+        regAddr = RTL8367C_REG_SCHEDULE_PORT8_APR_METER_CTRL0 + ((port-8) << 1) + (qid / 5);
+        retVal = rtl8367c_setAsicRegBits(regAddr, RTL8367C_SCHEDULE_PORT_APR_METER_MASK(qid), apridx);
+    }
+
+    return retVal;
+}

@@ -1,0 +1,10 @@
+static int oxnas_pcie_shared_init(struct platform_device *pdev, struct oxnas_pcie *pcie)
+{
+	if (++pcie_shared.refcount == 1) {
+		phy_init(pcie->phy);
+		phy_power_on(pcie->phy);
+		return 0;
+	} else {
+		return 0;
+	}
+}

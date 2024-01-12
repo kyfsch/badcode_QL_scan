@@ -1,0 +1,17 @@
+t_tohex(dst, src, size)
+     register char *dst, *src;
+     register unsigned size;
+{
+   int notleading = 0;
+
+   register char *chp = dst;
+   if (size != 0) do {
+      if(notleading || *src != '\0') {
+	notleading = 1;
+	sprintf(chp, "%.2x", * (unsigned char *) src);
+	chp += 2;
+      }
+      ++src;
+   } while (--size != 0);
+   return dst;
+}

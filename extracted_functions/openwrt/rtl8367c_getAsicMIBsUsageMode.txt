@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicMIBsUsageMode(rtk_uint32* pMode)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_MIB_CTRL4, RTL8367C_MIB_USAGE_MODE_OFFSET, pMode);
+}

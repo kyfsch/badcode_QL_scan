@@ -1,0 +1,46 @@
+static int mt7621_nfc_ecc_init(struct mt7621_nfc *nfc)
+{
+	struct nand_chip *nand = &nfc->nand;
+	struct mtd_info *mtd = nand_to_mtd(nand);
+	u32 spare_per_sector, encode_block_size, decode_block_size;
+	u32 ecc_enccfg, ecc_deccfg;
+	int ecc_cap;
+
+	/* Only hardware ECC mode is supported */
+	if (nand->ecc.engine_type != NAND_ECC_ENGINE_TYPE_ON_HOST) {
+		dev_err(nfc->dev, "Only hardware ECC mode is supported\n");
+		return -EINVAL;
+	}
+
+	nand->ecc.size = ECC_SECTOR_SIZE;
+	nand->ecc.steps = mtd->writesize / nand->ecc.size;
+
+	spare_per_sector = mtd->oobsize / nand->ecc.steps;
+
+	ecc_cap = mt7621_nfc_calc_ecc_strength(nfc,
+		spare_per_sector - NFI_FDM_SIZE);
+	if (ecc_cap < 0)
+		return ecc_cap;
+
+	/* Sector + FDM */
+	encode_block_size = (nand->ecc.size + NFI_FDM_SIZE) * 8;
+	ecc_enccfg = ecc_cap | (ENC_MODE_NFI << ENC_MODE_S) |
+		     (encode_block_size << ENC_CNFG_MSG_S);
+
+	/* Sector + FDM + ECC parity bits */
+	decode_block_size = ((nand->ecc.size + NFI_FDM_SIZE) * 8) +
+			    nand->ecc.strength * ECC_PARITY_BITS;
+	ecc_deccfg = ecc_cap | (DEC_MODE_NFI << DEC_MODE_S) |
+		     (decode_block_size << DEC_CS_S) |
+		     (DEC_CON_EL << DEC_CON_S) | DEC_EMPTY_EN;
+
+	ecc_write32(nfc, ECC_FDMADDR, nfc->nfi_base + NFI_FDML(0));
+
+	mt7621_ecc_encoder_op(nfc, false);
+	ecc_write32(nfc, ECC_ENCCNFG, ecc_enccfg);
+
+	mt7621_ecc_decoder_op(nfc, false);
+	ecc_write32(nfc, ECC_DECCNFG, ecc_deccfg);
+
+	return 0;
+}

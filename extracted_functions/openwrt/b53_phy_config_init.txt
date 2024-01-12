@@ -1,0 +1,11 @@
+static int b53_phy_config_init(struct phy_device *phydev)
+{
+	struct b53_device *dev = phydev->priv;
+
+	/* we don't use page 0xff, so force a page set */
+	dev->current_page = 0xff;
+	/* force the ethX as alias */
+	dev->sw_dev.alias = phydev->attached_dev->name;
+
+	return 0;
+}

@@ -1,0 +1,66 @@
+static int aca_fetch_fw_api(struct dc_ep_priv *priv, const char *name)
+{
+	int ret;
+	size_t hdr_len;
+	const u8 *fw_data;
+	size_t fw_len;
+	char dir[8] = {0};
+	union fw_ver ver;
+	union img_soc_type type;
+	struct device *dev = priv->dev;
+	struct aca_fw_f_hdr *fw_f_hdr;
+	struct aca_fw_info *fw_info = to_fw_info(priv);
+
+	sprintf(dir, "%04x", priv->pdev->device);
+	fw_info->fw = aca_fetch_fw_file(priv, dir, name);
+	if (IS_ERR(fw_info->fw)) {
+		dev_err(dev, "Could not fetch firmware file '%s': %ld\n",
+			name, PTR_ERR(fw_info->fw));
+		return PTR_ERR(fw_info->fw);
+	}
+
+	fw_data = fw_info->fw->data;
+	fw_len = fw_info->fw->size;
+
+	/* Parse the fixed header part */
+	fw_f_hdr = (struct aca_fw_f_hdr *)fw_data;
+	ver.all = be32_to_cpu(fw_f_hdr->ver);
+
+	dev_info(dev, "ACA fw build %d branch %d major 0x%2x minor 0x%04x\n",
+		ver.field.build, ver.field.branch,
+		ver.field.major, ver.field.minor);
+
+	type.all = be32_to_cpu(fw_f_hdr->type);
+
+	if (type.field.img_type > (ACA_IMG_MAX - 1)
+		|| ((type.field.soc_type & ACA_SOC_MASK) == 0)) {
+		dev_err(dev, "Invalid aca fw img %d soc %d\n",
+			type.field.img_type, type.field.soc_type);
+		ret = -EINVAL;
+		goto err;
+	}
+
+	soc_type_to_str(type.field.soc_type);
+
+	dev_info(priv->dev, "ACA fw for %s supported SoC type %s\n",
+		aca_img_type_str[type.field.img_type], soc_str);
+
+	hdr_len = be32_to_cpu(fw_f_hdr->hdr_size);
+	/* Sanity Check */
+	if (fw_len < hdr_len) {
+		dev_err(dev, "Invalid aca fw hdr len %zd fw len %zd\n",
+			hdr_len, fw_len);
+		ret = -EINVAL;
+		goto err;
+	}
+	dev_dbg(dev, "Header size 0x%08x fw size 0x%08x\n",
+		hdr_len, be32_to_cpu(fw_f_hdr->fw_size));
+	dev_dbg(dev, "section number %d\n",
+		be32_to_cpu(fw_f_hdr->num_section));
+
+	aca_section_parse(priv, fw_data);
+	return 0;
+err:
+	dc_aca_free_fw_file(priv);
+	return ret;
+}

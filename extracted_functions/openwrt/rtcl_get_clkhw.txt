@@ -1,0 +1,11 @@
+static struct clk_hw *rtcl_get_clkhw(struct of_phandle_args *clkspec, void *prv)
+{
+	unsigned int idx = clkspec->args[0];
+
+	if (idx >= CLK_COUNT) {
+		pr_err("%s: Invalid index %u\n", __func__, idx);
+		return ERR_PTR(-EINVAL);
+	}
+
+	return &rtcl_ccu->clks[idx].hw;
+}

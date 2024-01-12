@@ -1,0 +1,4 @@
+IFX_MEI_IRQDisable (DSL_DEV_Device_t * pDev)
+{
+	IFX_MEI_LongWordWriteOffset (pDev, (u32) ME_ARC2ME_MASK,  0x0);
+}

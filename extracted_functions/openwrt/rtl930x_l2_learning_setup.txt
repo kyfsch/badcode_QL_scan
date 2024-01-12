@@ -1,0 +1,11 @@
+static void rtl930x_l2_learning_setup(void)
+{
+	/* Portmask for flooding broadcast traffic */
+	sw_w32(0x1fffffff, RTL930X_L2_BC_FLD_PMSK);
+
+	/* Portmask for flooding unicast traffic with unknown destination */
+	sw_w32(0x1fffffff, RTL930X_L2_UNKN_UC_FLD_PMSK);
+
+	/* Limit learning to maximum: 32k entries, after that just flood (bits 0-1) */
+	sw_w32((0x7fff << 2) | 0, RTL930X_L2_LRN_CONSTRT_CTRL);
+}

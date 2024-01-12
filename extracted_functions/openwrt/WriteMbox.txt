@@ -1,0 +1,6 @@
+WriteMbox (u32 * mboxarray, u32 size)
+{
+	IFX_MEI_DebugWrite (&dsl_devices[0], IMBOX_BASE, mboxarray, size);
+	IFX_MEI_DMSG("write to %X\n", IMBOX_BASE);
+	IFX_MEI_LongWordWriteOffset (&dsl_devices[0], (u32) ME_ME2ARC_INT, MEI_TO_ARC_MSGAV);
+}

@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_qos_dscpRemark_set(rtk_pri_t int_pri, rtk_dscp_t dscp)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (int_pri > RTK_PRIMAX )
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    if (dscp > RTK_DSCPMAX)
+        return RT_ERR_QOS_DSCP_VALUE;
+
+    if ((retVal = rtl8367c_setAsicRemarkingDscpParameter(int_pri, dscp)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

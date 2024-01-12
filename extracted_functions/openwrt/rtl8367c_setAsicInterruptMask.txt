@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicInterruptMask(rtk_uint32 imr)
+{
+    return rtl8367c_setAsicReg(RTL8367C_REG_INTR_IMR, imr);
+}

@@ -1,0 +1,32 @@
+mtk_bmt_read_bbt(void)
+{
+	u8 oob_buf[8];
+	int i;
+
+	for (i = bmtd.total_blks - 1; i >= bmtd.total_blks - 5; i--) {
+		u32 page = i << (bmtd.blk_shift - bmtd.pg_shift);
+
+		if (bbt_nand_read(page, bmtd.bbt_buf, bmtd.pg_size,
+				  oob_buf, sizeof(oob_buf))) {
+			pr_info("read_bbt: could not read block %d\n", i);
+			continue;
+		}
+
+		if (oob_buf[0] != 0xff) {
+			pr_info("read_bbt: bad block at %d\n", i);
+			continue;
+		}
+
+		if (memcmp(&oob_buf[1], "mtknand", 7) != 0) {
+			pr_info("read_bbt: signature mismatch in block %d\n", i);
+			print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 1, oob_buf, 8, 1);
+			continue;
+		}
+
+		pr_info("read_bbt: found bbt at block %d\n", i);
+		bmtd.bmt_blk_idx = i;
+		return 0;
+	}
+
+	return -EIO;
+}

@@ -1,0 +1,6 @@
+static inline int cw2ecw(int cw)
+{
+	int i;	
+	for (cw++, i = 0; cw; i++) cw >>=1;
+	return i - 1;
+}

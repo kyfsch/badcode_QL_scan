@@ -1,0 +1,14 @@
+static void init_env(void)
+{
+	static bool init_done = false;
+	struct rlimit limit = {
+		.rlim_cur = RLIM_INFINITY,
+		.rlim_max = RLIM_INFINITY,
+	};
+
+	if (init_done)
+		return;
+
+	setrlimit(RLIMIT_MEMLOCK, &limit);
+	init_done = true;
+}

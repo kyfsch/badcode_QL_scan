@@ -1,0 +1,20 @@
+static int b53_mdio_read48(struct b53_device *dev, u8 page, u8 reg, u64 *val)
+{
+	struct mii_bus *bus = dev->priv;
+	u64 temp = 0;
+	int i;
+	int ret;
+
+	ret = b53_mdio_op(dev, page, reg, REG_MII_ADDR_READ);
+	if (ret)
+		return ret;
+
+	for (i = 2; i >= 0; i--) {
+		temp <<= 16;
+		temp |= mdiobus_read(bus, B53_PSEUDO_PHY, REG_MII_DATA0 + i);
+	}
+
+	*val = temp;
+
+	return 0;
+}

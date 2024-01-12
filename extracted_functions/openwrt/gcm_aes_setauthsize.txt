@@ -1,0 +1,4 @@
+int gcm_aes_setauthsize (struct crypto_aead *aead, unsigned int authsize)
+{
+    return crypto_gcm_check_authsize(authsize);
+}

@@ -1,0 +1,20 @@
+static void zyxel_bootconfig_print_usage(char *programm)
+{
+	struct zyxel_image_status* s = image_status_codes;
+
+	printf("Usage: %s <mtd-device> <command> [args]\n", programm);
+	printf("Available commands:\n");
+	printf("	get-status\n");
+	printf("	set-image-status [0/1] [");
+
+	while (s->name) {
+		printf("%s", s->name);
+		s++;
+
+		if (s->name)
+			printf(",");
+	}
+
+	printf("]\n");
+	printf("	set-active-image [0/1]\n");
+}

@@ -1,0 +1,4 @@
+void ag71xx_link_adjust(struct ag71xx *ag)
+{
+	__ag71xx_link_adjust(ag, true);
+}

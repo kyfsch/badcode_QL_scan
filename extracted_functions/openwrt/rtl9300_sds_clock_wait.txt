@@ -1,0 +1,14 @@
+int rtl9300_sds_clock_wait(int timeout)
+{
+	u32 v;
+	unsigned long start = jiffies;
+
+	do {
+		rtl9300_sds_field_w(2, 0x1f, 0x2, 15, 0, 53);
+		v = rtl9300_sds_field_r(2, 0x1f, 20, 5, 4);
+		if (v == 3)
+			return 0;
+	} while (jiffies < start + (HZ / 1000) * timeout);
+
+	return 1;
+}

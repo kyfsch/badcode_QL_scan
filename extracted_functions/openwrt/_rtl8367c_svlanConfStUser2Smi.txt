@@ -1,0 +1,16 @@
+static void _rtl8367c_svlanConfStUser2Smi( rtl8367c_svlan_memconf_t *pUserSt, rtk_uint16 *pSmiSt)
+{
+    pSmiSt[0] |= (pUserSt->vs_member & 0x00FF);
+    pSmiSt[0] |= (pUserSt->vs_untag & 0x00FF) << 8;
+
+    pSmiSt[1] |= (pUserSt->vs_fid_msti & 0x000F);
+    pSmiSt[1] |= (pUserSt->vs_priority & 0x0007) << 4;
+    pSmiSt[1] |= (pUserSt->vs_force_fid & 0x0001) << 7;
+
+    pSmiSt[2] |= (pUserSt->vs_svid & 0x0FFF);
+    pSmiSt[2] |= (pUserSt->vs_efiden & 0x0001) << 12;
+    pSmiSt[2] |= (pUserSt->vs_efid & 0x0007) << 13;
+
+    pSmiSt[3] |= ((pUserSt->vs_member & 0x0700) >> 8);
+    pSmiSt[3] |= ((pUserSt->vs_untag & 0x0700) >> 8) << 3;
+}

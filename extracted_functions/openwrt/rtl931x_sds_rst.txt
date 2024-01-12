@@ -1,0 +1,18 @@
+static void rtl931x_sds_rst(u32 sds)
+{
+	u32 o, v, o_mode;
+	int shift = ((sds & 0x3) << 3);
+
+	/* TODO: We need to lock this! */
+
+	o = sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
+	v = o | BIT(sds);
+	sw_w32(v, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
+
+	o_mode = sw_r32(RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
+	v = BIT(7) | 0x1F;
+	sw_w32_mask(0xff << shift, v << shift, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
+	sw_w32(o_mode, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
+
+	sw_w32(o, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
+}

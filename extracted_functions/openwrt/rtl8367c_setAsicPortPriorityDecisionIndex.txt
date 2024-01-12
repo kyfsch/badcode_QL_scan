@@ -1,0 +1,10 @@
+ret_t rtl8367c_setAsicPortPriorityDecisionIndex(rtk_uint32 port, rtk_uint32 index )
+{
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(index >= PRIDEC_IDX_END)
+        return RT_ERR_ENTRY_INDEX;
+
+    return rtl8367c_setAsicRegBit(RTL8367C_QOS_INTERNAL_PRIORITY_DECISION_IDX_CTRL, port, index);
+}

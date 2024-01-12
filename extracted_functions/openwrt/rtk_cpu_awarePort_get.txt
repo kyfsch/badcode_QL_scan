@@ -1,0 +1,19 @@
+rtk_api_ret_t rtk_cpu_awarePort_get(rtk_portmask_t *pPortmask)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 pmsk;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pPortmask)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicCputagPortmask(&pmsk)) != RT_ERR_OK)
+        return retVal;
+
+    if(rtk_switch_portmask_P2L_get(pmsk, pPortmask) != RT_ERR_OK)
+        return RT_ERR_FAILED;
+
+    return RT_ERR_OK;
+}

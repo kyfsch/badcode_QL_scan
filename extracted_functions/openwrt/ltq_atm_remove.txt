@@ -1,0 +1,23 @@
+static int ltq_atm_remove(struct platform_device *pdev)
+{
+	int port_num;
+	struct ltq_atm_ops *ops = platform_get_drvdata(pdev);
+
+	ifx_mei_atm_showtime_enter = NULL;
+	ifx_mei_atm_showtime_exit  = NULL;
+
+	invalidate_oam_htu_entry();
+
+	ops->stop(0);
+
+	free_irq(PPE_MAILBOX_IGU1_INT, &g_atm_priv_data);
+
+	for ( port_num = 0; port_num < ATM_PORT_NUMBER; port_num++ )
+		atm_dev_deregister(g_atm_priv_data.port[port_num].dev);
+
+	ops->shutdown();
+
+	clear_priv_data();
+
+	return 0;
+}

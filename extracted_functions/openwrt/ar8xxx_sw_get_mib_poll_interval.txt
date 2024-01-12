@@ -1,0 +1,11 @@
+ar8xxx_sw_get_mib_poll_interval(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+
+	if (!ar8xxx_has_mib_counters(priv))
+		return -EOPNOTSUPP;
+	val->value.i = priv->mib_poll_interval;
+	return 0;
+}

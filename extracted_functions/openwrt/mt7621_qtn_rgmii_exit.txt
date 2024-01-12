@@ -1,0 +1,12 @@
+static void __exit mt7621_qtn_rgmii_exit(void)
+{
+	void __iomem *base = ioremap(RGMII_REG_BASE, RGMII_REG_SIZE);
+
+	if (!base)
+		return;
+	if (oldval != RGMII_REG_VALUE) {
+		iowrite32(oldval, base);
+		pr_info(MODULE_NAME ": reset register 0x%08x back to 0x%08x\n", RGMII_REG_BASE, oldval);
+	}
+	iounmap(base);
+}

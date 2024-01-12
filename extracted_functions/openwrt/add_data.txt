@@ -1,0 +1,9 @@
+static inline void add_data(char *ptr, int len)
+{
+	if (ofs + len > erasesize) {
+		pad(erasesize);
+		prep_eraseblock();
+	}
+	memcpy(buf + ofs, ptr, len);
+	ofs += len;
+}

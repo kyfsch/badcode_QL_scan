@@ -1,0 +1,15 @@
+ret_t rtl8367c_getAsicQueueType(rtk_uint32 port, rtk_uint32 qid, rtk_uint32 *queueType)
+{
+    ret_t retVal;
+
+    /* Invalid input parameter */
+    if(port  > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(qid > RTL8367C_QIDMAX)
+        return RT_ERR_QUEUE_ID;
+
+    retVal = rtl8367c_getAsicRegBit(RTL8367C_SCHEDULE_QUEUE_TYPE_REG(port), RTL8367C_SCHEDULE_QUEUE_TYPE_OFFSET(port, qid),queueType);
+
+    return retVal;
+}

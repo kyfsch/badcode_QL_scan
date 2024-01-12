@@ -1,0 +1,10 @@
+static int aw9523_get_pin_direction(struct regmap *regmap, u8 pin, u8 n)
+{
+	int val, ret;
+
+	ret = regmap_read(regmap, AW9523_REG_CONF_STATE(pin), &val);
+	if (ret < 0)
+		return ret;
+
+	return (val & BIT(n)) == BIT(n);
+}

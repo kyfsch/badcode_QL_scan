@@ -1,0 +1,9 @@
+static int b53_spi_read64(struct b53_device *dev, u8 page, u8 reg, u64 *val)
+{
+	int ret = b53_spi_read(dev, page, reg, (u8 *)val, 8);
+
+	if (!ret)
+		*val = le64_to_cpu(*val);
+
+	return ret;
+}

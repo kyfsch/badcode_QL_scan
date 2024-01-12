@@ -1,0 +1,20 @@
+static int mt7621_nfc_send_address_byte(struct mt7621_nfc *nfc, int addr)
+{
+	struct device *dev = nfc->dev;
+	u32 val;
+	int ret;
+
+	nfi_write32(nfc, NFI_COLADDR, addr);
+	nfi_write32(nfc, NFI_ROWADDR, 0);
+	nfi_write16(nfc, NFI_ADDRNOB, 1);
+
+	ret = readl_poll_timeout_atomic(nfc->nfi_regs + NFI_STA, val,
+					!(val & STA_ADDR), 10,
+					NFI_CORE_TIMEOUT);
+	if (ret) {
+		dev_warn(dev, "NFI core timed out entering address mode\n");
+		return -EIO;
+	}
+
+	return 0;
+}

@@ -1,0 +1,104 @@
+static int aca_section_parse(struct dc_ep_priv *priv, const char *fw_data)
+{
+	int ret = 0;
+	u32 fixed_hlen;
+	u32 var_hlen;
+	u32 ie_id;
+	size_t ie_len, ie_hlen, ie_dlen;
+	u32 fw_hlen;
+	struct aca_fw_f_hdr *fw_f_hdr;
+	struct aca_fw_ie *ie_hdr;
+	struct aca_int_hdr *aca_hdr;
+	const char *data = fw_data;
+	const char *aca_fw_data;
+	struct device *dev = priv->dev;
+
+	fw_f_hdr = (struct aca_fw_f_hdr *)data;
+
+	fw_hlen = be32_to_cpu(fw_f_hdr->hdr_size);
+	fixed_hlen = sizeof(*fw_f_hdr);
+	var_hlen = fw_hlen - fixed_hlen;
+	ie_hlen = sizeof(*ie_hdr);
+
+	/* Record actual ACA fw data pointer */
+	aca_fw_data = data + fw_hlen;
+
+	/* Point to variable header and parse them */
+	data += fixed_hlen;
+
+	while (var_hlen > ie_hlen) {
+		/* Variable header information element */
+		ie_hdr = (struct aca_fw_ie *)data;
+		ie_id = be32_to_cpu(ie_hdr->id);
+		ie_len = be32_to_cpu(ie_hdr->len);
+		dev_dbg(dev, "Section %s ie_len %zd\n", sec_id_to_str(ie_id),
+			ie_len);
+
+		/* Variable header data conents */
+		data += ie_hlen;
+		var_hlen -= ie_hlen;
+
+		switch (ie_id) {
+		case ACA_SEC_HIF:
+		case ACA_SEC_GNR:
+		case ACA_SEC_MAC_HT:
+			ie_dlen = ie_len * sizeof(struct aca_fw_reg);
+			data += ie_dlen;
+			var_hlen -= ie_dlen;
+
+			break;
+
+		case ACA_SEC_MEM_TXIN:
+		case ACA_SEC_MEM_TXOUT:
+		case ACA_SEC_MEM_RXIN:
+		case ACA_SEC_MEM_RXOUT:
+		case ACA_SEC_MEM_TXIN_PDRING:
+		case ACA_SEC_MEM_TXOUT_PDRING:
+		case ACA_SEC_MEM_RXIN_PDRING:
+		case ACA_SEC_MEM_RXOUT_PDRING:
+			aca_sram_desc_parse(priv, data, ie_id);
+			ie_dlen = ie_len * sizeof(struct aca_sram_desc);
+			data += ie_dlen;
+			var_hlen -= ie_dlen;
+			break;
+
+		case ACA_SEC_DMA:
+			if (ie_len > ACA_DMA_CHAN_MAX) {
+				dev_err(dev, "invalid dma channel %d\n",
+					ie_len);
+				ret = -EINVAL;
+				goto done;
+			}
+			aca_dma_parse(priv, data, ie_len);
+			ie_dlen = ie_len * sizeof(struct aca_fw_dma);
+			data += ie_dlen;
+			var_hlen -= ie_dlen;
+			break;
+
+		case ACA_SEC_FW_INIT:
+			aca_init_parse(priv, data, ie_id);
+			ie_dlen = ie_len * sizeof(struct aca_fw_param);
+			data += ie_dlen;
+			var_hlen -= ie_dlen;
+			break;
+
+		case ACA_SEC_FW:
+			if (ie_len > ACA_FW_MAX) {
+				dev_err(dev, "Too many aca fws %d\n", ie_len);
+				ret = -EINVAL;
+				goto done;
+			}
+			aca_fw_parse(priv, data, aca_fw_data, ie_len);
+			ie_dlen = ie_len * sizeof(*aca_hdr);
+			data += ie_dlen;
+			var_hlen -= ie_dlen;
+			break;
+
+		default:
+			dev_warn(dev, "Unknown Sec id: %u\n", ie_id);
+			break;
+		}
+	}
+done:
+	return ret;
+}

@@ -1,0 +1,4 @@
+static int phyreg_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, phyreg_show, 0);
+}

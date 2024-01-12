@@ -1,0 +1,6 @@
+send_ping(void)
+{
+	msg->type = htonl(EAD_TYPE_PING);
+	msg->len = 0;
+	return send_packet(EAD_TYPE_PONG, handle_pong, (nid == 0xffff ? 0 : 1));
+}

@@ -1,0 +1,83 @@
+static void b53_enable_vlan(struct b53_device *dev, int enable)
+{
+	u8 mgmt, vc0, vc1, vc4 = 0, vc5;
+
+	b53_read8(dev, B53_CTRL_PAGE, B53_SWITCH_MODE, &mgmt);
+	b53_read8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL0, &vc0);
+	b53_read8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL1, &vc1);
+
+	if (is5325(dev) || is5365(dev)) {
+		b53_read8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL4_25, &vc4);
+		b53_read8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL5_25, &vc5);
+	} else if (is63xx(dev)) {
+		b53_read8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL4_63XX, &vc4);
+		b53_read8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL5_63XX, &vc5);
+	} else {
+		b53_read8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL4, &vc4);
+		b53_read8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL5, &vc5);
+	}
+
+	mgmt &= ~SM_SW_FWD_MODE;
+
+	if (enable) {
+		vc0 |= VC0_VLAN_EN | VC0_VID_CHK_EN | VC0_VID_HASH_VID;
+		vc1 |= VC1_RX_MCST_UNTAG_EN | VC1_RX_MCST_FWD_EN;
+		vc4 &= ~VC4_ING_VID_CHECK_MASK;
+		vc4 |= VC4_ING_VID_VIO_DROP << VC4_ING_VID_CHECK_S;
+		vc5 |= VC5_DROP_VTABLE_MISS;
+
+		if (is5325(dev))
+			vc0 &= ~VC0_RESERVED_1;
+
+		if (is5325(dev) || is5365(dev))
+			vc1 |= VC1_RX_MCST_TAG_EN;
+
+		if (!is5325(dev) && !is5365(dev)) {
+			if (dev->allow_vid_4095)
+				vc5 |= VC5_VID_FFF_EN;
+			else
+				vc5 &= ~VC5_VID_FFF_EN;
+		}
+	} else {
+		vc0 &= ~(VC0_VLAN_EN | VC0_VID_CHK_EN | VC0_VID_HASH_VID);
+		vc1 &= ~(VC1_RX_MCST_UNTAG_EN | VC1_RX_MCST_FWD_EN);
+		vc4 &= ~VC4_ING_VID_CHECK_MASK;
+		vc5 &= ~VC5_DROP_VTABLE_MISS;
+
+		if (is5325(dev) || is5365(dev))
+			vc4 |= VC4_ING_VID_VIO_FWD << VC4_ING_VID_CHECK_S;
+		else
+			vc4 |= VC4_ING_VID_VIO_TO_IMP << VC4_ING_VID_CHECK_S;
+
+		if (is5325(dev) || is5365(dev))
+			vc1 &= ~VC1_RX_MCST_TAG_EN;
+
+		if (!is5325(dev) && !is5365(dev))
+			vc5 &= ~VC5_VID_FFF_EN;
+	}
+
+	b53_write8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL0, vc0);
+	b53_write8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL1, vc1);
+
+	if (is5325(dev) || is5365(dev)) {
+		/* enable the high 8 bit vid check on 5325 */
+		if (is5325(dev) && enable)
+			b53_write8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL3,
+				   VC3_HIGH_8BIT_EN);
+		else
+			b53_write8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL3, 0);
+
+		b53_write8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL4_25, vc4);
+		b53_write8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL5_25, vc5);
+	} else if (is63xx(dev)) {
+		b53_write16(dev, B53_VLAN_PAGE, B53_VLAN_CTRL3_63XX, 0);
+		b53_write8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL4_63XX, vc4);
+		b53_write8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL5_63XX, vc5);
+	} else {
+		b53_write16(dev, B53_VLAN_PAGE, B53_VLAN_CTRL3, 0);
+		b53_write8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL4, vc4);
+		b53_write8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL5, vc5);
+	}
+
+	b53_write8(dev, B53_CTRL_PAGE, B53_SWITCH_MODE, mgmt);
+}

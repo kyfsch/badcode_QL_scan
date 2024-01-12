@@ -1,0 +1,23 @@
+static int rtcl_ccu_create(struct device_node *np)
+{
+	int soc;
+
+	if (of_device_is_compatible(np, "realtek,rtl8380-clock"))
+		soc = SOC_RTL838X;
+	else if (of_device_is_compatible(np, "realtek,rtl8390-clock"))
+		soc = SOC_RTL839X;
+	else
+		return -ENXIO;
+
+	rtcl_ccu = kzalloc(sizeof(*rtcl_ccu), GFP_KERNEL);
+	if (IS_ERR(rtcl_ccu))
+		return -ENOMEM;
+
+	rtcl_ccu->np = np;
+	rtcl_ccu->soc = soc;
+	rtcl_ccu->dram.type = RTL_MC_MCR_DRAMTYPE(read_soc(RTL_MC_MCR));
+	rtcl_ccu->dram.buswidth = RTL_MC_DCR_BUSWIDTH(read_soc(RTL_MC_DCR));
+	spin_lock_init(&rtcl_ccu->lock);
+
+	return 0;
+}

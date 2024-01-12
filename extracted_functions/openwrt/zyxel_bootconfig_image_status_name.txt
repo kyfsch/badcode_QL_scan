@@ -1,0 +1,11 @@
+const char *zyxel_bootconfig_image_status_name(const enum zyxel_bootconfig_image_status bootconfig) {
+	struct zyxel_image_status* s;
+
+	for (s = image_status_codes; s->name; s++) {
+		if (bootconfig == s->code) {
+			return s->name;
+		}
+	}
+
+	return "N/A";
+}

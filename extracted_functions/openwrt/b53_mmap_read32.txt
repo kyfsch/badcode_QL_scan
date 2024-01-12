@@ -1,0 +1,14 @@
+static int b53_mmap_read32(struct b53_device *dev, u8 page, u8 reg, u32 *val)
+{
+	u8 __iomem *regs = dev->priv;
+
+	if (WARN_ON(reg % 4))
+		return -EINVAL;
+
+	if (dev->pdata && dev->pdata->big_endian)
+		*val = readl_be(regs + (page << 8) + reg);
+	else
+		*val = readl(regs + (page << 8) + reg);
+
+	return 0;
+}

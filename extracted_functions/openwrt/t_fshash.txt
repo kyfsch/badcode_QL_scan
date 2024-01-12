@@ -1,0 +1,37 @@
+t_fshash(out)
+     unsigned char * out;
+{
+  char dotpath[128];
+  struct stat st;
+  SHA1_CTX ctxt;
+  int i, pinode;
+  dev_t pdev;
+
+  SHA1Init(&ctxt);
+  if(stat(".", &st) >= 0) {
+    SHA1Update(&ctxt, (unsigned char *) &st, sizeof(st));
+    pinode = st.st_ino;
+    pdev = st.st_dev;
+    strcpy(dotpath, "..");
+    for(i = 0; i < 40; ++i) {
+      if(stat(dotpath, &st) < 0)
+	break;
+      if(st.st_ino == pinode && st.st_dev == pdev)
+	break;
+      SHA1Update(&ctxt, (unsigned char *) &st, sizeof(st));
+      pinode = st.st_ino;
+      pdev = st.st_dev;
+      strcat(dotpath, "/..");
+    }
+  }
+
+  if(fstat(0, &st) >= 0)
+    SHA1Update(&ctxt, (unsigned char *) &st, sizeof(st));
+
+  sprintf(dotpath, "/tmp/rnd.%d", getpid());
+  if(creat(dotpath, 0600) >= 0 && stat(dotpath, &st) >= 0)
+    SHA1Update(&ctxt, (unsigned char *) &st, sizeof(st));
+  unlink(dotpath);
+
+  SHA1Final(out, &ctxt);
+}

@@ -1,0 +1,35 @@
+rtk_api_ret_t rtk_filter_igrAcl_template_set(rtk_filter_template_t *aclTemplate)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 idxField;
+    rtl8367c_acltemplate_t aclType;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(aclTemplate->index >= RTK_MAX_NUM_OF_FILTER_TYPE)
+        return RT_ERR_INPUT;
+
+    for(idxField = 0; idxField < RTK_MAX_NUM_OF_FILTER_FIELD; idxField++)
+    {
+        if(aclTemplate->fieldType[idxField] < FILTER_FIELD_RAW_DMAC_15_0 ||
+            (aclTemplate->fieldType[idxField] > FILTER_FIELD_RAW_CTAG && aclTemplate->fieldType[idxField] < FILTER_FIELD_RAW_IPV4_SIP_15_0 ) ||
+            (aclTemplate->fieldType[idxField] > FILTER_FIELD_RAW_IPV4_DIP_31_16 && aclTemplate->fieldType[idxField] < FILTER_FIELD_RAW_IPV6_SIP_15_0 ) ||
+            (aclTemplate->fieldType[idxField] > FILTER_FIELD_RAW_IPV6_DIP_31_16 && aclTemplate->fieldType[idxField] < FILTER_FIELD_RAW_VIDRANGE ) ||
+            (aclTemplate->fieldType[idxField] > FILTER_FIELD_RAW_FIELD_VALID && aclTemplate->fieldType[idxField] < FILTER_FIELD_RAW_FIELD_SELECT00 ) ||
+            aclTemplate->fieldType[idxField] >= FILTER_FIELD_RAW_END)
+        {
+            return RT_ERR_INPUT;
+        }
+    }
+
+    for(idxField = 0; idxField < RTK_MAX_NUM_OF_FILTER_FIELD; idxField++)
+    {
+        aclType.field[idxField] = aclTemplate->fieldType[idxField];
+    }
+
+    if((retVal = rtl8367c_setAsicAclTemplate(aclTemplate->index, &aclType)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,36 @@
+static void rtl839x_write_pie_action(u32 r[],  struct pie_rule *pr)
+{
+	if (pr->drop) {
+		r[13] |= 0x9;	/* Set ACT_MASK_FWD & FWD_ACT = DROP */
+		r[13] |= BIT(3);
+	} else {
+		r[13] |= pr->fwd_sel ? BIT(3) : 0;
+		r[13] |= pr->fwd_act;
+	}
+	r[13] |= pr->bypass_sel ? BIT(11) : 0;
+	r[13] |= pr->mpls_sel ? BIT(10) : 0;
+	r[13] |= pr->nopri_sel ? BIT(9) : 0;
+	r[13] |= pr->ovid_sel ? BIT(8) : 0;
+	r[13] |= pr->ivid_sel ? BIT(7) : 0;
+	r[13] |= pr->meter_sel ? BIT(6) : 0;
+	r[13] |= pr->mir_sel ? BIT(5) : 0;
+	r[13] |= pr->log_sel ? BIT(4) : 0;
+
+	r[14] |= ((u32)(pr->fwd_data & 0x3fff)) << 18;
+	r[14] |= pr->log_octets ? BIT(17) : 0;
+	r[14] |= ((u32)(pr->log_data & 0x7ff)) << 4;
+	r[14] |= (pr->mir_data & 0x3) << 3;
+	r[14] |= ((u32)(pr->meter_data >> 7)) & 0x7;
+	r[15] |= (u32)(pr->meter_data) << 26;
+	r[15] |= ((u32)(pr->ivid_act) << 23) & 0x3;
+	r[15] |= ((u32)(pr->ivid_data) << 9) & 0xfff;
+	r[15] |= ((u32)(pr->ovid_act) << 6) & 0x3;
+	r[15] |= ((u32)(pr->ovid_data) >> 4) & 0xff;
+	r[16] |= ((u32)(pr->ovid_data) & 0xf) << 28;
+	r[16] |= ((u32)(pr->nopri_data) & 0x7) << 20;
+	r[16] |= ((u32)(pr->mpls_act) & 0x7) << 20;
+	r[16] |= ((u32)(pr->mpls_lib_idx) & 0x7) << 20;
+	r[16] |= pr->bypass_all ? BIT(9) : 0;
+	r[16] |= pr->bypass_igr_stp ? BIT(8) : 0;
+	r[16] |= pr->bypass_ibc_sc ? BIT(7) : 0;
+}

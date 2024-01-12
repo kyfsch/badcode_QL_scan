@@ -1,0 +1,13 @@
+wpas_bss_get_features(struct ubus_context *ctx, struct ubus_object *obj,
+			struct ubus_request_data *req, const char *method,
+			struct blob_attr *msg)
+{
+	struct wpa_supplicant *wpa_s = get_wpas_from_object(obj);
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_u8(&b, "ht_supported", ht_supported(wpa_s->hw.modes));
+	blobmsg_add_u8(&b, "vht_supported", vht_supported(wpa_s->hw.modes));
+	ubus_send_reply(ctx, req, b.head);
+
+	return 0;
+}

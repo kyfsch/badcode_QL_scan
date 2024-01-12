@@ -1,0 +1,6 @@
+be32dec(const void *buf)
+{
+	const uint8_t *p = buf;
+
+	return (((uint32_t) be16dec(p)) << 16) | be16dec(p + 2);
+}

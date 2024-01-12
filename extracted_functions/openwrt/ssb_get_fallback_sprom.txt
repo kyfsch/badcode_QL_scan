@@ -1,0 +1,30 @@
+int ssb_get_fallback_sprom(struct ssb_bus *bus, struct ssb_sprom *out)
+{
+	struct ssb_fbs *pos;
+	u32 pci_bus, pci_dev;
+
+	if (bus->bustype != SSB_BUSTYPE_PCI)
+		return -ENOENT;
+
+	pci_bus = bus->host_pci->bus->number;
+	pci_dev = PCI_SLOT(bus->host_pci->devfn);
+
+	list_for_each_entry(pos, &ssb_fbs_list, list) {
+		if (pos->pci_bus != pci_bus ||
+		    pos->pci_dev != pci_dev)
+		    	continue;
+
+		if (pos->devid_override)
+			bus->host_pci->device = pos->sprom.dev_id;
+
+		memcpy(out, &pos->sprom, sizeof(struct ssb_sprom));
+		dev_info(pos->dev, "requested by [%x:%x]",
+			 pos->pci_bus, pos->pci_dev);
+
+		return 0;
+	}
+
+	pr_err("unable to fill SPROM for [%x:%x]\n", pci_bus, pci_dev);
+
+	return -EINVAL;
+}

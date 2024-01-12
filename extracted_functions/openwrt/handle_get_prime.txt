@@ -1,0 +1,14 @@
+handle_get_prime(struct ead_packet *pkt, int len, int *nstate)
+{
+	struct ead_msg *msg = &pktbuf->msg;
+	struct ead_msg_salt *salt = EAD_DATA(msg, salt);
+
+	msg->len = htonl(sizeof(struct ead_msg_salt));
+	salt->prime = tce->index - 1;
+	salt->len = ts->s.len;
+	memcpy(salt->salt, ts->s.data, ts->s.len);
+	memcpy(salt->ext_salt, pw_saltbuf, MAXSALTLEN);
+
+	*nstate = EAD_TYPE_SEND_A;
+	return true;
+}

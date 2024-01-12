@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_dot1x_macBasedDirection_get(rtk_dot1x_direction_t *pMac_direction)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pMac_direction)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsic1xMBOpdirConfig(pMac_direction)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,13 @@
+	struct_group(psb6970_priv_volatile,
+		bool vlan;
+		u16 vlan_id[PSB6970_MAX_VLANS];
+		u8 vlan_table[PSB6970_MAX_VLANS];
+		u8 vlan_tagged;
+		u16 pvid[PSB6970_NUM_PORTS];
+	);
+};
+
+#define to_psb6970(_dev) container_of(_dev, struct psb6970_priv, dev)
+
+static u16 psb6970_mii_read(struct phy_device *phydev, int reg)
+{

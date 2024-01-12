@@ -1,0 +1,26 @@
+ar8xxx_sw_set_reset_mibs(struct switch_dev *dev,
+			 const struct switch_attr *attr,
+			 struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	unsigned int len;
+	int ret;
+
+	if (!ar8xxx_has_mib_counters(priv))
+		return -EOPNOTSUPP;
+
+	mutex_lock(&priv->mib_lock);
+
+	len = priv->dev.ports * priv->chip->num_mibs *
+	      sizeof(*priv->mib_stats);
+	memset(priv->mib_stats, '\0', len);
+	ret = ar8xxx_mib_flush(priv);
+	if (ret)
+		goto unlock;
+
+	ret = 0;
+
+unlock:
+	mutex_unlock(&priv->mib_lock);
+	return ret;
+}

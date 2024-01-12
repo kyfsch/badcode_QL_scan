@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicCputagPosition(rtk_uint32 postion)
+{
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_CPU_CTRL, RTL8367C_CPU_TAG_POSITION_OFFSET, postion);
+}

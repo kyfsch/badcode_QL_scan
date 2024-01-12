@@ -1,0 +1,18 @@
+static int bcm6328_pcie_read(struct pci_bus *bus, unsigned int devfn,
+			     int where, int size, u32 *val)
+{
+	struct bcm6328_pcie *priv = &bcm6328_pcie;
+	u32 data;
+	u32 reg = where & ~3;
+
+	if (!bcm6328_pcie_can_access(bus, devfn))
+		return PCIBIOS_DEVICE_NOT_FOUND;
+
+	if (bus->number == PCIE_BUS_DEVICE)
+		reg += PCIE_DEVICE_OFFSET;
+
+	data = __raw_readl(priv->base + reg);
+	*val = postprocess_read(data, where, size);
+
+	return PCIBIOS_SUCCESSFUL;
+}

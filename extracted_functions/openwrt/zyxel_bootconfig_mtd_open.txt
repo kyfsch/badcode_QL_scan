@@ -1,0 +1,20 @@
+static int zyxel_bootconfig_mtd_open(struct zyxel_bootconfig_mtd *mtd, const char *mtd_name) {
+	int ret = 0;
+
+	mtd->fd = open(mtd_name, O_RDWR | O_SYNC);
+	if (mtd->fd < 0) {
+		fprintf(stderr, "Could not open mtd device: %s\n", mtd_name);
+		ret = -1;
+		goto out;
+	}
+
+	if (ioctl(mtd->fd, MEMGETINFO, &mtd->mtd_info)) {
+		fprintf(stderr, "Could not get MTD device info from %s\n", mtd_name);
+		ret = -1;
+		zyxel_bootconfig_mtd_close(mtd);
+		goto out;
+	}
+
+out:
+	return ret;
+}

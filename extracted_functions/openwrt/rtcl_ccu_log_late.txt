@@ -1,0 +1,18 @@
+void rtcl_ccu_log_late(void)
+{
+	struct rtcl_clk *rclk;
+	bool overclock = false;
+	char clkinfo[80], msg[255] = "rate setting enabled";
+
+	for (int clk_idx = 0; clk_idx < CLK_COUNT; clk_idx++) {
+		rclk = &rtcl_ccu->clks[clk_idx];
+		overclock |= rclk->max > rclk->startup;
+		sprintf(clkinfo, ", %s %lu-%lu MHz", rtcl_clk_info[clk_idx].display_name,
+			rclk->min / 1000000, rclk->max / 1000000);
+		strcat(msg, clkinfo);
+	}
+	if (overclock)
+		strcat(msg, ", OVERCLOCK AT OWN RISK");
+
+	dev_info(&rtcl_ccu->pdev->dev, "%s\n", msg);
+}

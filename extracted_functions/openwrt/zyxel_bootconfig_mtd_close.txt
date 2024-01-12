@@ -1,0 +1,3 @@
+static void zyxel_bootconfig_mtd_close(struct zyxel_bootconfig_mtd *mtd) {
+	close(mtd->fd);
+}

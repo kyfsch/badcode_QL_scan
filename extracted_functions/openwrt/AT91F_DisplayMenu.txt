@@ -1,0 +1,11 @@
+static int AT91F_DisplayMenu(void)
+{
+	int i, mci_present = 0;
+	printf("\nDF LOADER %s %s %s\n",AT91C_VERSION,__DATE__,__TIME__);
+	AT91F_DataflashPrintInfo();
+	mci_present = AT91F_MCI_Init();
+	for(i = 0; i < MAXMENU; i++) {
+		puts(menu_dataflash[i]);
+	}
+	return mci_present;
+}	

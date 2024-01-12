@@ -1,0 +1,4 @@
+static void rtl8380_int_phy_on_off(struct phy_device *phydev, bool on)
+{
+	phy_modify(phydev, 0, BMCR_PDOWN, on ? 0 : BMCR_PDOWN);
+}

@@ -1,0 +1,6 @@
+static void fe_set_msglevel(struct net_device *dev, u32 value)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+
+	priv->msg_enable = value;
+}

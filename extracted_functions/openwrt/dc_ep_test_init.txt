@@ -1,0 +1,146 @@
+static int __init dc_ep_test_init(void)
+{
+	int i, j;
+	int dev_num;
+	struct dc_ep_dev dev;
+	int func = 0;
+	u32 sysclk = 0;
+	u32 ppeclk = 0;
+
+	if (dc_ep_dev_num_get(&dev_num)) {
+		pr_err("%s failed to get total device number\n", __func__);
+		return -EIO;
+	}
+
+	pr_info("%s: total %d EPs found\n", __func__, dev_num);
+
+	for (i = 0; i < dev_num; i++)
+		aca_soc_desc_alloc(i);
+
+	for (i = 0; i < dev_num; i++) {
+		struct aca_param aca_cfg = {
+			.aca_txin = {
+				.soc_desc_base
+					= aca_soc_hd_desc[i].txin.phy_base,
+				.soc_desc_num = TXIN_SOC_DES_NUM,
+				.pp_buf_desc_num = 32,
+				.pd_desc_base = TXIN_PD_DBASE,
+				.pd_desc_num = TXIN_PD_DES_NUM,
+				.hd_size_in_dw = TXIN_HD_DES_SIZE,
+				.pd_size_in_dw = TXIN_PD_DES_SIZE,
+				.byteswap = 1,
+			},
+			.aca_txout = {
+				.soc_desc_base
+					= aca_soc_hd_desc[i].txout.phy_base,
+				.soc_desc_num = TXOUT_SOC_DES_NUM,
+				.pp_buf_desc_num = 32,
+				.pd_desc_base = TXOUT_PD_DBASE,
+				.pd_desc_num = TXOUT_PD_DES_NUM,
+				.hd_size_in_dw = TXOUT_HD_DES_SIZE,
+				.pd_size_in_dw = TXOUT_PD_DES_SIZE,
+				.byteswap = 1,
+			},
+			.aca_rxout = {
+				.soc_desc_base
+					= aca_soc_hd_desc[i].rxout.phy_base,
+				.soc_desc_num = RXOUT_SOC_DES_NUM,
+				.pp_buf_desc_num = 32,
+				.pd_desc_base = RXOUT_PD_DBASE,
+				.pd_desc_num = RXOUT_PD_DES_NUM,
+				.hd_size_in_dw = RXOUT_HD_DES_SIZE,
+				.pd_size_in_dw = RXOUT_PD_DES_SIZE,
+				.byteswap = 1,
+			},
+		};
+		struct aca_modem_param modem_cfg = {
+			.mdm_txout = {
+				.stat = SB_XBAR_ADDR(__TX_OUT_ACA_ACCUM_STATUS),
+				.pd      = SB_XBAR_ADDR(__TX_OUT_QUEUE_PD_BASE_ADDR_OFFSET),
+				.acc_cnt = SB_XBAR_ADDR(__TX_OUT_ACA_ACCUM_COUNT),
+			},
+			.mdm_rxout = {
+				.stat    = SB_XBAR_ADDR(__RX_OUT_ACA_ACCUM_STATUS),
+				.pd      = SB_XBAR_ADDR(__RX_OUT_QUEUE_PD_BASE_ADDR_OFFSET),
+				.acc_cnt = SB_XBAR_ADDR(__RX_OUT_ACA_ACCUM_COUNT),
+			},
+			.mdm_rxin = {
+				.stat    = SB_XBAR_ADDR(__RX_IN_ACA_ACCUM_STATUS),
+				.pd      = SB_XBAR_ADDR(__RX_IN_QUEUE_PD_BASE_ADDR_OFFSET),
+				.acc_cnt = SB_XBAR_ADDR(__RX_IN_ACA_ACCUM_COUNT),
+			},
+		};
+		if (dc_ep_dev_info_req(i, DC_EP_INT_PPE, &dev))
+			pr_info("%s failed to get pcie ep %d information\n",
+			__func__, i);
+		pr_info("irq %d\n", dev.irq);
+		pr_info("phyiscal membase 0x%08x virtual membase 0x%p\n",
+			dev.phy_membase, dev.membase);
+		if (dev_num > 1) {
+			for (j = 0; j < dev.peer_num; j++) {
+				pr_info("phyiscal peer membase 0x%08x virtual peer membase 0x%p\n",
+					dev.peer_phy_membase[j], dev.peer_membase[j]);
+			}
+		}
+		/* For module unload perpose */
+		memcpy(&pcie_dev[i], &dev, sizeof(struct dc_ep_dev));
+		dc_ep_ppe_mbox_int_stress_test(&pcie_dev[i]);
+		dev.hw_ops->clk_on(&dev, PMU_CDMA | PMU_EMA | PMU_PPM2);
+		dev.hw_ops->clk_set(&dev, SYS_CLK_288MHZ, PPE_CLK_576MHZ);
+		dev.hw_ops->pinmux_set(&dev, 14, MUX_FUNC_ALT1);
+		dev.hw_ops->pinmux_set(&dev, 15, MUX_FUNC_ALT2);
+		dev.hw_ops->pinmux_get(&dev, 15, &func);
+		pr_info("gpio 15 func %d\n", func);
+		dev.hw_ops->pinmux_set(&dev, 13, MUX_FUNC_GPIO);
+		dev.hw_ops->gpio_dir(&dev, 13, GPIO_DIR_OUT);
+		dev.hw_ops->gpio_set(&dev, 13, 1);
+		dev.hw_ops->gpio_get(&dev, 13, &func);
+		pr_info("gpio 13 value %d\n", func);
+		dev.hw_ops->gpio_pupd_set(&dev, 14, GPIO_PULL_DOWN);
+		dev.hw_ops->gpio_od_set(&dev, 0, 1);
+		dev.hw_ops->gpio_src_set(&dev, 0, GPIO_SLEW_RATE_FAST);
+		dev.hw_ops->gpio_dcc_set(&dev, 0, GPIO_DRV_CUR_8MA);
+		dev.hw_ops->clk_get(&dev, &sysclk, &ppeclk);
+		pr_info("ppe clk %s sys clk %s\n", ppeclk_str[ppeclk],
+			sysclk_str[sysclk]);
+		dev.hw_ops->aca_init(&dev, &aca_cfg, &modem_cfg);
+		dev.hw_ops->aca_start(&dev, ACA_ALL_EN, 1);
+
+		pr_info("ACA test\n");
+		dc_aca_test_init(&dev, aca_soc_hd_desc[i].txin.base);
+
+		pr_info("DMA test\n");
+		dma_pkt_size = 64;
+		dma_test(&dev, dma_mode, 0, 1);
+#if 0
+		dma_pkt_size = 128;
+		dma_test(&dev, dma_mode, 0, 1);
+		dma_pkt_size = 256;
+		dma_test(&dev, dma_mode, 0, 1);
+		dma_pkt_size = 512;
+		dma_test(&dev, dma_mode, 0, 1);
+		dma_pkt_size = 1024;
+		dma_test(&dev, dma_mode, 0, 1);
+		dma_pkt_size = 2048;
+		dma_test(&dev, dma_mode, 0, 1);
+
+		dma_mode = EP_TO_SOC;
+		dma_pkt_size = 64;
+		dma_test(&dev, dma_mode, 0, 1);
+		dma_pkt_size = 128;
+		dma_test(&dev, dma_mode, 0, 1);
+		dma_pkt_size = 256;
+		dma_test(&dev, dma_mode, 0, 1);
+		dma_pkt_size = 512;
+		dma_test(&dev, dma_mode, 0, 1);
+		dma_pkt_size = 1024;
+		dma_test(&dev, dma_mode, 0, 1);
+		dma_pkt_size = 2048;
+		dma_test(&dev, dma_mode, 0, 1);
+#endif
+	}
+
+	pr_info("Intel(R) SmartPHY DSL(VRX518) PCIe EP Test Driver - %s\n",
+		ep_test_driver_version);
+	return 0;
+}

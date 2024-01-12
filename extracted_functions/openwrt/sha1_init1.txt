@@ -1,0 +1,8 @@
+static int sha1_init1(struct shash_desc *desc)
+{
+    struct sha1_ctx *sctx = shash_desc_ctx(desc);
+    
+    sctx->started = 0;
+    sctx->count = 0;
+    return 0;
+}

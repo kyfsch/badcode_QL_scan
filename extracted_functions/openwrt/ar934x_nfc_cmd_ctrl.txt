@@ -1,0 +1,5 @@
+static void ar934x_nfc_cmd_ctrl(struct nand_chip *chip, int dat,
+				unsigned int ctrl)
+{
+	WARN_ON(dat != NAND_CMD_NONE);
+}

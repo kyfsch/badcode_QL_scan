@@ -1,0 +1,14 @@
+void rtk_hal_qos_get_pri2queue(struct ra_switch_ioctl_data *data)
+{
+	int i;
+	rtk_api_ret_t ret;
+	rtk_qos_pri2queue_t pri2qid;
+
+	ret = rtk_qos_priMap_get(8, &pri2qid);
+	if (ret != 0)
+		printk("rtk_qos_priMap_get failed\n");
+	else {
+		for (i = 0; i < 8; i++)
+			printk("pri2qid.pri2queue[%d] = %d\n", i, pri2qid.pri2queue[i]);
+	}
+}

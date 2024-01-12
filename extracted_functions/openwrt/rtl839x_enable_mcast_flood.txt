@@ -1,0 +1,4 @@
+static void rtl839x_enable_mcast_flood(int port, bool enable)
+{
+
+}

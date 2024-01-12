@@ -1,0 +1,23 @@
+static void _smi_writeBit(rtk_uint16 signal, rtk_uint32 bitLen)
+{
+    for( ; bitLen > 0; bitLen--)
+    {
+        CLK_DURATION(DELAY);
+
+        /* prepare data */
+        if ( signal & (1<<(bitLen-1)) )
+        {
+            GPIO_DATA_SET(smi_SDA, 1);
+        }
+        else
+        {
+            GPIO_DATA_SET(smi_SDA, 0);
+        }
+        CLK_DURATION(DELAY);
+
+        /* clocking */
+        GPIO_DATA_SET(smi_SCK, 1);
+        CLK_DURATION(DELAY);
+        GPIO_DATA_SET(smi_SCK, 0);
+    }
+}

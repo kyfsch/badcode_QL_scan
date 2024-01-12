@@ -1,0 +1,5 @@
+    nisent = _yp_gettpent();
+    if(nisent != NULL) {
+      savepwent(tpw, &nisent->tp);
+      return &tpw->pebuf;
+    }

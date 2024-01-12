@@ -1,0 +1,4 @@
+static char *do_filename(int argc, char *argv[])
+{
+	return xstrdup(current_file->name);
+}

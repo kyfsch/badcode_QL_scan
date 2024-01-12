@@ -1,0 +1,40 @@
+static ssize_t rtl8366_read_debugfs_mibs(struct file *file,
+					 char __user *user_buf,
+					 size_t count, loff_t *ppos)
+{
+	struct rtl8366_smi *smi = file->private_data;
+	int i, j, len = 0;
+	char *buf = smi->buf;
+
+	len += snprintf(buf + len, sizeof(smi->buf) - len, "%-36s",
+			"Counter");
+
+	for (i = 0; i < smi->num_ports; i++) {
+		char port_buf[10];
+
+		snprintf(port_buf, sizeof(port_buf), "Port %d", i);
+		len += snprintf(buf + len, sizeof(smi->buf) - len, " %12s",
+				port_buf);
+	}
+	len += snprintf(buf + len, sizeof(smi->buf) - len, "\n");
+
+	for (i = 0; i < smi->num_mib_counters; i++) {
+		len += snprintf(buf + len, sizeof(smi->buf) - len, "%-36s ",
+				smi->mib_counters[i].name);
+		for (j = 0; j < smi->num_ports; j++) {
+			unsigned long long counter = 0;
+
+			if (!smi->ops->get_mib_counter(smi, i, j, &counter))
+				len += snprintf(buf + len,
+						sizeof(smi->buf) - len,
+						"%12llu ", counter);
+			else
+				len += snprintf(buf + len,
+						sizeof(smi->buf) - len,
+						"%12s ", "error");
+		}
+		len += snprintf(buf + len, sizeof(smi->buf) - len, "\n");
+	}
+
+	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+}

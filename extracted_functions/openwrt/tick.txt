@@ -1,0 +1,11 @@
+tick()
+{
+	struct itimerval it, oit;
+
+	it.it_interval.tv_sec = 0;
+	it.it_interval.tv_usec = 0;
+	it.it_value.tv_sec = 0;
+	it.it_value.tv_usec = 16665;
+	if (setitimer(ITIMER_REAL, &it, &oit) < 0)
+		perror("tick");
+}

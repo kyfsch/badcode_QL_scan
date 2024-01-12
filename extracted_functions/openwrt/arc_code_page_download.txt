@@ -1,0 +1,14 @@
+arc_code_page_download (uint32_t arc_code_length, uint32_t * start_address)
+{
+	int count;
+
+	IFX_MEI_DMSG("try to download pages,size=%d\n", arc_code_length);
+	IFX_MEI_ControlModeSet (&dsl_devices[0], MEI_MASTER_MODE);
+	IFX_MEI_HaltArc (&dsl_devices[0]);
+	IFX_MEI_LongWordWriteOffset (&dsl_devices[0], (u32) ME_DX_AD, 0);
+	for (count = 0; count < arc_code_length; count++) {
+		IFX_MEI_LongWordWriteOffset (&dsl_devices[0], (u32) ME_DX_DATA,
+						   *(start_address + count));
+	}
+	IFX_MEI_ControlModeSet (&dsl_devices[0], JTAG_MASTER_MODE);
+}

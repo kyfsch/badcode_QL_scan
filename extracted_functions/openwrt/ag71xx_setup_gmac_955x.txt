@@ -1,0 +1,13 @@
+static void ag71xx_setup_gmac_955x(struct device_node *np, void __iomem *base)
+{
+	u32 val = __raw_readl(base + QCA955X_GMAC_REG_ETH_CFG);
+
+	ag71xx_of_bit(np, "rgmii-enabled", &val, QCA955X_ETH_CFG_RGMII_EN);
+	ag71xx_of_bit(np, "ge0-sgmii", &val, QCA955X_ETH_CFG_GE0_SGMII);
+	ag71xx_of_set(np, "txen-delay", &val, QCA955X_ETH_CFG_TXE_DELAY_SHIFT, 0x3);
+	ag71xx_of_set(np, "txd-delay", &val, QCA955X_ETH_CFG_TXD_DELAY_SHIFT, 0x3);
+	ag71xx_of_set(np, "rxdv-delay", &val, QCA955X_ETH_CFG_RDV_DELAY_SHIFT, 0x3);
+	ag71xx_of_set(np, "rxd-delay", &val, QCA955X_ETH_CFG_RXD_DELAY_SHIFT, 0x3);
+
+	__raw_writel(val, base + QCA955X_GMAC_REG_ETH_CFG);
+}

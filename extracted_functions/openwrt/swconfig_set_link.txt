@@ -1,0 +1,8 @@
+swconfig_set_link(struct switch_dev *dev, const struct switch_attr *attr,
+			struct switch_val *val)
+{
+	if (!dev->ops->set_port_link)
+		return -EOPNOTSUPP;
+
+	return dev->ops->set_port_link(dev, val->port_vlan, val->value.link);
+}

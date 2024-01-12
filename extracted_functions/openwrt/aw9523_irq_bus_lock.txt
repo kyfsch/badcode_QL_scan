@@ -1,0 +1,7 @@
+static void aw9523_irq_bus_lock(struct irq_data *d)
+{
+	struct aw9523 *awi = gpiochip_get_data(irq_data_get_irq_chip_data(d));
+
+	mutex_lock(&awi->irq->lock);
+	regcache_cache_only(awi->regmap, true);
+}

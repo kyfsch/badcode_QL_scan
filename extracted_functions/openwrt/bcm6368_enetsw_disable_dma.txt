@@ -1,0 +1,16 @@
+static void bcm6368_enetsw_disable_dma(struct bcm6368_enetsw *priv, int chan)
+{
+	int limit = 1000;
+
+	dmac_writel(priv, 0, DMAC_CHANCFG_REG, chan);
+
+	do {
+		u32 val;
+
+		val = dma_readl(priv, DMAC_CHANCFG_REG, chan);
+		if (!(val & DMAC_CHANCFG_EN_MASK))
+			break;
+
+		udelay(1);
+	} while (limit--);
+}

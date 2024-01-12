@@ -1,0 +1,4 @@
+unmap_block_bbt(u16 block)
+{
+	bbt_set_block_state(block, false);
+}

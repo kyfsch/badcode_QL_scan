@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicVlanFilter(rtk_uint32* pEnabled)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_VLAN_CTRL, RTL8367C_VLAN_CTRL_OFFSET, pEnabled);
+}

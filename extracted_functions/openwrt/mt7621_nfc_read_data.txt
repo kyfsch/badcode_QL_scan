@@ -1,0 +1,20 @@
+static void mt7621_nfc_read_data(struct mt7621_nfc *nfc, u8 *buf, u32 len)
+{
+	while (((uintptr_t)buf & 3) && len) {
+		*buf = mt7621_nfc_pio_read(nfc, true);
+		buf++;
+		len--;
+	}
+
+	while (len >= 4) {
+		*(u32 *)buf = mt7621_nfc_pio_read(nfc, false);
+		buf += 4;
+		len -= 4;
+	}
+
+	while (len) {
+		*buf = mt7621_nfc_pio_read(nfc, true);
+		buf++;
+		len--;
+	}
+}

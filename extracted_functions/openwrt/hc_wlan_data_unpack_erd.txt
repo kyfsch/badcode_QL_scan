@@ -1,0 +1,26 @@
+static int hc_wlan_data_unpack_erd(const u16 tag_id, const u8 *inbuf, size_t inlen,
+				   void *outbuf, size_t *outlen)
+{
+	u16 lzo_ofs, lzo_len;
+	int ret;
+
+	/* Find embedded tag */
+	ret = routerboot_tag_find(inbuf, inlen, tag_id, &lzo_ofs, &lzo_len);
+	if (ret) {
+		pr_debug(RB_HC_PR_PFX "no ERD data for id 0x%04x\n", tag_id);
+		goto fail;
+	}
+
+	if (lzo_len > inlen) {
+		pr_debug(RB_HC_PR_PFX "Invalid ERD data length\n");
+		ret = -EINVAL;
+		goto fail;
+	}
+
+	ret = lzo1x_decompress_safe(inbuf+lzo_ofs, lzo_len, outbuf, outlen);
+	if (ret)
+		pr_debug(RB_HC_PR_PFX "LZO decompression error (%d)\n", ret);
+
+fail:
+	return ret;
+}

@@ -1,0 +1,6 @@
+static void espi_release_bus(struct fsl_spi *fsl)
+{
+	/* Disable the SPI hardware */
+	out_be32(&fsl->espi->mode,
+		in_be32(&fsl->espi->mode) & (~ESPI_MODE_EN));
+}

@@ -1,0 +1,6 @@
+int dram_init(void)
+{
+	gd->ram_size = dram_size((long int *)CONFIG_SYS_SDRAM_BASE,
+					CONFIG_MAX_SDRAM_SIZE);
+	return 0;
+}

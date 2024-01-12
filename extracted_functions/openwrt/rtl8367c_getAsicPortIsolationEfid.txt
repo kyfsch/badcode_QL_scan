@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsicPortIsolationEfid(rtk_uint32 port, rtk_uint32 *pEfid)
+{
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    return rtl8367c_getAsicRegBits(RTL8367C_PORT_EFID_REG(port), RTL8367C_PORT_EFID_MASK(port), pEfid);
+}

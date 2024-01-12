@@ -1,0 +1,10 @@
+static void __init rtcl_probe_early(struct device_node *np)
+{
+	if (rtcl_ccu_create(np))
+		return;
+
+	if (rtcl_ccu_register_clocks())
+		kfree(rtcl_ccu);
+	else
+		rtcl_ccu_log_early();
+}

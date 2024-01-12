@@ -1,0 +1,9 @@
+_IFX_MEI_DBGLongWordWrite (DSL_DEV_Device_t * pDev, u32 DEC_mode,
+				 u32 address, u32 data)
+{
+	IFX_MEI_LongWordWriteOffset (pDev, (u32) ME_DBG_DECODE, DEC_mode);
+	IFX_MEI_LongWordWriteOffset (pDev, (u32) ME_DBG_WR_AD, address);
+	IFX_MEI_LongWordWriteOffset (pDev, (u32) ME_DBG_DATA, data);
+	meiPollForDbgDone (pDev);
+	return DSL_DEV_MEI_ERR_SUCCESS;
+}

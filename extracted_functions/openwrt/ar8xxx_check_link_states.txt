@@ -1,0 +1,27 @@
+ar8xxx_check_link_states(struct ar8xxx_priv *priv)
+{
+	bool link_new, changed = false;
+	u32 status;
+	int i;
+
+	mutex_lock(&priv->reg_mutex);
+
+	for (i = 0; i < priv->dev.ports; i++) {
+		status = priv->chip->read_port_status(priv, i);
+		link_new = !!(status & AR8216_PORT_STATUS_LINK_UP);
+		if (link_new == priv->link_up[i])
+			continue;
+
+		priv->link_up[i] = link_new;
+		changed = true;
+		/* flush ARL entries for this port if it went down*/
+		if (!link_new)
+			priv->chip->atu_flush_port(priv, i);
+		dev_info(&priv->phy->mdio.dev, "Port %d is %s\n",
+			 i, link_new ? "up" : "down");
+	}
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return changed;
+}

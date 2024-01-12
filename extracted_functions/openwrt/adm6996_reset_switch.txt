@@ -1,0 +1,11 @@
+adm6996_reset_switch(struct switch_dev *dev)
+{
+	struct adm6996_priv *priv = to_adm(dev);
+
+	pr_devel("reset\n");
+
+	mutex_lock(&priv->reg_mutex);
+	adm6996_perform_reset (priv);
+	mutex_unlock(&priv->reg_mutex);
+	return 0;
+}

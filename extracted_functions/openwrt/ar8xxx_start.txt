@@ -1,0 +1,20 @@
+ar8xxx_start(struct ar8xxx_priv *priv)
+{
+	int ret;
+
+	priv->init = true;
+
+	ret = priv->chip->hw_init(priv);
+	if (ret)
+		return ret;
+
+	ret = ar8xxx_sw_reset_switch(&priv->dev);
+	if (ret)
+		return ret;
+
+	priv->init = false;
+
+	ar8xxx_mib_start(priv);
+
+	return 0;
+}

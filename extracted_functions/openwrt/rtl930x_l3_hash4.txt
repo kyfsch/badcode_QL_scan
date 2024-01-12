@@ -1,0 +1,25 @@
+static u32 rtl930x_l3_hash4(u32 ip, int algorithm, bool move_dip)
+{
+	u32 rows[4];
+	u32 hash;
+	u32 s0, s1, pH;
+
+	memset(rows, 0, sizeof(rows));
+
+	rows[0] = HASH_PICK(ip, 27, 5);
+	rows[1] = HASH_PICK(ip, 18, 9);
+	rows[2] = HASH_PICK(ip, 9, 9);
+
+	if (!move_dip)
+		rows[3] = HASH_PICK(ip, 0, 9);
+
+	if (!algorithm) {
+		hash = rows[0] ^ rows[1] ^ rows[2] ^ rows[3];
+	} else {
+		s0 = rows[0] + rows[1] + rows[2];
+		s1 = (s0 & 0x1ff) + ((s0 & (0x1ff << 9)) >> 9);
+		pH = (s1 & 0x1ff) + ((s1 & (0x1ff << 9)) >> 9);
+		hash = pH ^ rows[3];
+	}
+	return hash;
+}

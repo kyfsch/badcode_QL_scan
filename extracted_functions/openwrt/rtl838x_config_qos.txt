@@ -1,0 +1,44 @@
+void rtl838x_config_qos(void)
+{
+	u32 v;
+
+	pr_info("Setting up RTL838X QoS\n");
+	pr_info("RTL838X_PRI_SEL_TBL_CTRL(i): %08x\n", sw_r32(RTL838X_PRI_SEL_TBL_CTRL(0)));
+	rtl83xx_setup_default_prio2queue();
+
+	/* Enable inner (bit 12) and outer (bit 13) priority remapping from DSCP */
+	sw_w32_mask(0, BIT(12) | BIT(13), RTL838X_PRI_DSCP_INVLD_CTRL0);
+
+	/* Set default weight for calculating internal priority, in prio selection group 0
+	 * Port based (prio 3), Port outer-tag (4), DSCP (5), Inner Tag (6), Outer Tag (7)
+	 */
+	v = 3 | (4 << 3) | (5 << 6) | (6 << 9) | (7 << 12);
+	sw_w32(v, RTL838X_PRI_SEL_TBL_CTRL(0));
+
+	/* Set the inner and outer priority one-to-one to re-marked outer dot1p priority */
+	v = 0;
+	for (int p = 0; p < 8; p++)
+		v |= p << (3 * p);
+	sw_w32(v, RTL838X_RMK_OPRI_CTRL);
+	sw_w32(v, RTL838X_RMK_IPRI_CTRL);
+
+	v = 0;
+	for (int p = 0; p < 8; p++)
+		v |= (dot1p_priority_remapping[p] & 0x7) << (p * 3);
+	sw_w32(v, RTL838X_PRI_SEL_IPRI_REMAP);
+
+	/* On all ports set scheduler type to WFQ */
+	for (int i = 0; i <= soc_info.cpu_port; i++)
+		sw_w32(0, RTL838X_SCHED_P_TYPE_CTRL(i));
+
+	/* Enable egress scheduler for CPU-Port */
+	sw_w32_mask(0, BIT(8), RTL838X_SCHED_LB_CTRL(soc_info.cpu_port));
+
+	/* Enable egress drop allways on */
+	sw_w32_mask(0, BIT(11), RTL838X_FC_P_EGR_DROP_CTRL(soc_info.cpu_port));
+
+	/* Give special trap frames priority 7 (BPDUs) and routing exceptions: */
+	sw_w32_mask(0, 7 << 3 | 7, RTL838X_QM_PKT2CPU_INTPRI_2);
+	/* Give RMA frames priority 7: */
+	sw_w32_mask(0, 7, RTL838X_QM_PKT2CPU_INTPRI_1);
+}

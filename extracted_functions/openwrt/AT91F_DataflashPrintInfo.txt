@@ -1,0 +1,35 @@
+void AT91F_DataflashPrintInfo(void)
+{
+	int i;
+	for (i = 0; i < CFG_MAX_DATAFLASH_BANKS; i++) {
+		if (dataflash_info[i].id != 0) {
+			printf ("DF:AT45DB");
+			switch (dataflash_info[i].id) {
+			case AT45DB161:
+				printf ("161");
+				break;
+
+			case AT45DB321:
+				printf ("321");
+				break;
+
+			case AT45DB642:
+				printf ("642");
+				break;
+			case AT45DB128:				
+				printf ("128");
+				break;
+			}
+
+			printf ("\n# PG: %6d\n"
+				"PG SZ: %6d\n"
+				"SZ=%8d bytes\n"
+				"ADDR: %08X\n",
+				(unsigned int) dataflash_info[i].Device.pages_number,
+				(unsigned int) dataflash_info[i].Device.pages_size,
+				(unsigned int) dataflash_info[i].Device.pages_number *
+				dataflash_info[i].Device.pages_size,
+				(unsigned int) dataflash_info[i].logical_address);
+		}
+	}
+}

@@ -1,0 +1,21 @@
+rtk_api_ret_t rtk_stp_mstpState_set(rtk_stp_msti_id_t msti, rtk_port_t port, rtk_stp_state_t stp_state)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if (msti > RTK_MAX_NUM_OF_MSTI)
+        return RT_ERR_MSTI;
+
+    if (stp_state >= STP_STATE_END)
+        return RT_ERR_MSTP_STATE;
+
+    if ((retVal = rtl8367c_setAsicSpanningTreeStatus(rtk_switch_port_L2P_get(port), msti, stp_state)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

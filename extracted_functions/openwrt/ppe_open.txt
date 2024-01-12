@@ -1,0 +1,74 @@
+static int ppe_open(struct atm_vcc *);
+static void ppe_close(struct atm_vcc *);
+static int ppe_send(struct atm_vcc *, struct sk_buff *);
+static int ppe_send_oam(struct atm_vcc *, void *, int);
+static int ppe_change_qos(struct atm_vcc *, struct atm_qos *, int);
+
+/*
+ *  ADSL LED
+ */
+static inline void adsl_led_flash(void);
+
+/*
+ *  64-bit operation used by MIB calculation
+ */
+static inline void u64_add_u32(ppe_u64_t, unsigned int, ppe_u64_t *);
+
+/*
+ *  buffer manage functions
+ */
+static inline struct sk_buff* alloc_skb_rx(void);
+static inline struct sk_buff* alloc_skb_tx(unsigned int);
+static inline void atm_free_tx_skb_vcc(struct sk_buff *, struct atm_vcc *);
+static inline struct sk_buff *get_skb_rx_pointer(unsigned int);
+static inline int get_tx_desc(unsigned int);
+
+/*
+ *  mailbox handler and signal function
+ */
+static inline void mailbox_oam_rx_handler(void);
+static inline void mailbox_aal_rx_handler(void);
+static irqreturn_t mailbox_irq_handler(int, void *);
+static inline void mailbox_signal(unsigned int, int);
+static void do_ppe_tasklet(unsigned long);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,9,0)
+DECLARE_TASKLET(g_dma_tasklet, do_ppe_tasklet, 0);
+#else
+DECLARE_TASKLET_OLD(g_dma_tasklet, do_ppe_tasklet);
+#endif
+
+/*
+ *  QSB & HTU setting functions
+ */
+static void set_qsb(struct atm_vcc *, struct atm_qos *, unsigned int);
+static void qsb_global_set(void);
+static inline void set_htu_entry(unsigned int, unsigned int, unsigned int, int, int);
+static inline void clear_htu_entry(unsigned int);
+static void validate_oam_htu_entry(void);
+static void invalidate_oam_htu_entry(void);
+
+/*
+ *  look up for connection ID
+ */
+static inline int find_vpi(unsigned int);
+static inline int find_vpivci(unsigned int, unsigned int);
+static inline int find_vcc(struct atm_vcc *);
+
+static inline int ifx_atm_version(const struct ltq_atm_ops *ops, char *);
+
+/*
+ *  Init & clean-up functions
+ */
+static inline void check_parameters(void);
+static inline int init_priv_data(void);
+static inline void clear_priv_data(void);
+static inline void init_rx_tables(void);
+static inline void init_tx_tables(void);
+
+/*
+ *  Exteranl Function
+ */
+#if defined(CONFIG_IFX_OAM) || defined(CONFIG_IFX_OAM_MODULE)
+extern void ifx_push_oam(unsigned char *);
+#else
+static inline void ifx_push_oam(unsigned char *dummy) {}

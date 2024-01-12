@@ -1,0 +1,39 @@
+static struct rtl83xx_route *rtl83xx_route_alloc(struct rtl838x_switch_priv *priv, u32 ip)
+{
+	struct rtl83xx_route *r;
+	int idx = 0, err;
+
+	mutex_lock(&priv->reg_mutex);
+
+	idx = find_first_zero_bit(priv->route_use_bm, MAX_ROUTES);
+	pr_debug("%s id: %d, ip %pI4\n", __func__, idx, &ip);
+
+	r = kzalloc(sizeof(*r), GFP_KERNEL);
+	if (!r) {
+		mutex_unlock(&priv->reg_mutex);
+		return r;
+	}
+
+	r->id = idx;
+	r->gw_ip = ip;
+	r->pr.id = -1; /* We still need to allocate a rule in HW */
+	r->is_host_route = false;
+
+	err = rhltable_insert(&priv->routes, &r->linkage, route_ht_params);
+	if (err) {
+		pr_err("Could not insert new rule\n");
+		mutex_unlock(&priv->reg_mutex);
+		goto out_free;
+	}
+
+	set_bit(idx, priv->route_use_bm);
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return r;
+
+out_free:
+	kfree(r);
+
+	return NULL;
+}

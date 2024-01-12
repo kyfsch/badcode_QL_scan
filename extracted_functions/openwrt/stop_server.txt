@@ -1,0 +1,10 @@
+stop_server(struct ead_instance *in, bool do_free)
+{
+	if (in->pid > 0)
+		kill(in->pid, SIGKILL);
+	in->pid = 0;
+	if (do_free) {
+		list_del(&in->list);
+		free(in);
+	}
+}

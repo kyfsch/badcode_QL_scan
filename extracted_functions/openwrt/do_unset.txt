@@ -1,0 +1,4 @@
+static int do_unset(nvram_handle_t *nvram, const char *var)
+{
+	return nvram_unset(nvram, var);
+}

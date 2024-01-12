@@ -1,0 +1,4 @@
+void dc_ep_icu_en_intr(struct dc_ep_priv *priv, u32 bits)
+{
+	wr32_mask(0, bits, ICU_IMER);
+}

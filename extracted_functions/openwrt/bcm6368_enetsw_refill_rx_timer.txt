@@ -1,0 +1,9 @@
+static void bcm6368_enetsw_refill_rx_timer(struct timer_list *t)
+{
+	struct bcm6368_enetsw *priv = from_timer(priv, t, rx_timeout);
+	struct net_device *ndev = priv->net_dev;
+
+	spin_lock(&priv->rx_lock);
+	bcm6368_enetsw_refill_rx(ndev, false);
+	spin_unlock(&priv->rx_lock);
+}

@@ -1,0 +1,13 @@
+static int bcm6348_pci_read(struct pci_bus *bus, unsigned int devfn,
+			     int where, int size, u32 *val)
+{
+	int type;
+
+	type = bus->parent ? 1 : 0;
+
+	if (type == 0 && PCI_SLOT(devfn) == CARDBUS_PCI_IDSEL)
+		return PCIBIOS_DEVICE_NOT_FOUND;
+
+	return bcm6348_do_cfg_read(type, bus->number, devfn,
+				   where, size, val);
+}

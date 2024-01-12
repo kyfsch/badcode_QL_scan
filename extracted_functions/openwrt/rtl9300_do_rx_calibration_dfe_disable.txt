@@ -1,0 +1,14 @@
+void rtl9300_do_rx_calibration_dfe_disable(u32 sds_num)
+{
+	u32 tap1_list[4] = {0};
+	u32 tap2_list[4] = {0};
+	u32 tap3_list[4] = {0};
+	u32 tap4_list[4] = {0};
+
+	rtl9300_sds_rxcal_tap_manual(sds_num, 1, true, tap1_list);
+	rtl9300_sds_rxcal_tap_manual(sds_num, 2, true, tap2_list);
+	rtl9300_sds_rxcal_tap_manual(sds_num, 3, true, tap3_list);
+	rtl9300_sds_rxcal_tap_manual(sds_num, 4, true, tap4_list);
+
+	mdelay(10);
+}

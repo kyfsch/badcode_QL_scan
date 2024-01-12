@@ -1,0 +1,38 @@
+static int bcm6348_emac_mdio_init(struct bcm6348_emac *emac,
+				  struct device_node *np)
+{
+	struct platform_device *pdev = emac->pdev;
+	struct device *dev = &pdev->dev;
+	struct device_node *mnp;
+	struct mii_bus *mii_bus;
+	int ret;
+
+	mnp = of_get_child_by_name(np, "mdio");
+	if (!mnp)
+		return -ENODEV;
+
+	mii_bus = devm_mdiobus_alloc(dev);
+	if (!mii_bus) {
+		of_node_put(mnp);
+		return -ENOMEM;
+	}
+
+	mii_bus->priv = emac;
+	mii_bus->name = np->full_name;
+	snprintf(mii_bus->id, MII_BUS_ID_SIZE, "%s-mii", dev_name(dev));
+	mii_bus->parent = dev;
+	mii_bus->read = bcm6348_emac_mdio_read;
+	mii_bus->write = bcm6348_emac_mdio_write;
+	mii_bus->phy_mask = 0x3f;
+
+	ret = devm_of_mdiobus_register(dev, mii_bus, mnp);
+	of_node_put(mnp);
+	if (ret) {
+		dev_err(dev, "MDIO bus registration failed\n");
+		return ret;
+	}
+
+	dev_info(dev, "MDIO bus init\n");
+
+	return 0;
+}

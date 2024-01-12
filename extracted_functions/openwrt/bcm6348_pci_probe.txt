@@ -1,0 +1,73 @@
+static int bcm6348_pci_probe(struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
+	struct device_node *np = dev->of_node;
+	struct bcm6348_pci *priv = &bcm6348_pci;
+	struct resource *res;
+	LIST_HEAD(resources);
+
+	of_pci_check_probe_only();
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	priv->pci = devm_ioremap_resource(dev, res);
+	if (IS_ERR(priv->pci))
+		return PTR_ERR(priv->pci);
+
+	priv->pcmcia = priv->pci + PCMCIA_OFFSET;
+
+	priv->irq = platform_get_irq(pdev, 0);
+	if (!priv->irq)
+		return -ENODEV;
+
+	bmips_pci_irq = priv->irq;
+
+	priv->reset = devm_reset_control_get(dev, "pci");
+	if (IS_ERR(priv->reset))
+		return PTR_ERR(priv->reset);
+
+	priv->remap = of_property_read_bool(np, "brcm,remap");
+
+	reset_control_reset(priv->reset);
+
+	pci_load_of_ranges(&bcm6348_pci_controller, np);
+	if (!bcm6348_pci_mem_resource.start)
+		return -EINVAL;
+
+	of_pci_parse_bus_range(np, &bcm6348_pci_busn_resource);
+	pci_add_resource(&resources, &bcm6348_pci_busn_resource);
+
+#ifdef CONFIG_CARDBUS
+	bcm6348_cb_io_resource.start = bcm6348_pci_io_resource.start + (resource_size(&bcm6348_pci_io_resource) >> 1);
+	bcm6348_cb_io_resource.end = bcm6348_pci_io_resource.end;
+	bcm6348_pci_io_resource.end = bcm6348_pci_io_resource.end - (resource_size(&bcm6348_pci_io_resource) >> 1);
+#endif
+
+	/*
+	 * Configuration accesses are done through IO space, remap 4
+	 * first bytes to access it from CPU.
+	 *
+	 * This means that no IO access from CPU should happen while
+	 * we do a configuration cycle, but there's no way we can add
+	 * a spinlock for each io access, so this is currently kind of
+	 * broken on SMP.
+	 */
+	priv->io = ioremap(bcm6348_pci_io_resource.start, sizeof(u32));
+	if (!priv->io)
+		return -ENOMEM;
+
+	bcm6348_pci_setup(priv);
+
+	register_pci_controller(&bcm6348_pci_controller);
+
+#ifdef CONFIG_CARDBUS
+	priv->cb_bus = -1;
+	register_pci_controller(&bcm6348_cb_controller);
+#endif /* CONFIG_CARDBUS */
+
+	/* Mark memory space used for IO mapping as reserved */
+	request_mem_region(bcm6348_pci_io_resource.start,
+			   resource_size(&bcm6348_pci_io_resource),
+			   "BCM6348 PCI IO space");
+
+	return 0;
+}

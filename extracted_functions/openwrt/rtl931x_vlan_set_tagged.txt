@@ -1,0 +1,29 @@
+static void rtl931x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
+{
+	u32 v, w, x, y;
+	/* Access VLAN table (1) via register 0 */
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 3);
+
+	v = info->tagged_ports >> 25;
+	w = (info->tagged_ports & 0x1fffff) << 7;
+	w |= info->fid & 0x7f;
+	x = info->hash_uc_fid ? BIT(31) : 0;
+	x |= info->hash_mc_fid ? BIT(30) : 0;
+	x |= info->if_id & 0x3ff << 20;
+	x |= (info->profile_id & 0xf) << 16;
+	x |= info->multicast_grp_mask & 0xffff;
+	if (info->l2_tunnel_list_id >= 0) {
+		y = info->l2_tunnel_list_id << 18;
+		y |= BIT(31);
+	} else {
+		y = 0;
+	}
+
+	sw_w32(v, rtl_table_data(r, 0));
+	sw_w32(w, rtl_table_data(r, 1));
+	sw_w32(x, rtl_table_data(r, 2));
+	sw_w32(y, rtl_table_data(r, 3));
+
+	rtl_table_write(r, vlan);
+	rtl_table_release(r);
+}

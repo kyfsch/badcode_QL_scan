@@ -1,0 +1,41 @@
+static void __expr_eliminate_eq(enum expr_type type, struct expr **ep1, struct expr **ep2)
+{
+	/* Recurse down to leaves */
+
+	if (e1->type == type) {
+		__expr_eliminate_eq(type, &e1->left.expr, &e2);
+		__expr_eliminate_eq(type, &e1->right.expr, &e2);
+		return;
+	}
+	if (e2->type == type) {
+		__expr_eliminate_eq(type, &e1, &e2->left.expr);
+		__expr_eliminate_eq(type, &e1, &e2->right.expr);
+		return;
+	}
+
+	/* e1 and e2 are leaves. Compare them. */
+
+	if (e1->type == E_SYMBOL && e2->type == E_SYMBOL &&
+	    e1->left.sym == e2->left.sym &&
+	    (e1->left.sym == &symbol_yes || e1->left.sym == &symbol_no))
+		return;
+	if (!expr_eq(e1, e2))
+		return;
+
+	/* e1 and e2 are equal leaves. Prepare them for elimination. */
+
+	trans_count++;
+	expr_free(e1); expr_free(e2);
+	switch (type) {
+	case E_OR:
+		e1 = expr_alloc_symbol(&symbol_no);
+		e2 = expr_alloc_symbol(&symbol_no);
+		break;
+	case E_AND:
+		e1 = expr_alloc_symbol(&symbol_yes);
+		e2 = expr_alloc_symbol(&symbol_yes);
+		break;
+	default:
+		;
+	}
+}

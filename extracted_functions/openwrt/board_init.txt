@@ -1,0 +1,5 @@
+void board_init(void)
+{
+	tlwr1043nd_init();
+	mr18_init();
+}

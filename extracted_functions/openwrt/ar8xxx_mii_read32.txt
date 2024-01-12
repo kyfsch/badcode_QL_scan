@@ -1,0 +1,10 @@
+ar8xxx_mii_read32(struct ar8xxx_priv *priv, int phy_id, int regnum)
+{
+	struct mii_bus *bus = priv->mii_bus;
+	u16 lo, hi;
+
+	lo = bus->read(bus, phy_id, regnum);
+	hi = bus->read(bus, phy_id, regnum + 1);
+
+	return (hi << 16) | lo;
+}

@@ -1,0 +1,12 @@
+static void set_bluetitle_theme(void)
+{
+	set_classic_theme();
+	DLG_COLOR(title,               COLOR_BLUE,   COLOR_WHITE, true);
+	DLG_COLOR(button_key_active,   COLOR_YELLOW, COLOR_BLUE,  true);
+	DLG_COLOR(button_label_active, COLOR_WHITE,  COLOR_BLUE,  true);
+	DLG_COLOR(searchbox_title,     COLOR_BLUE,   COLOR_WHITE, true);
+	DLG_COLOR(position_indicator,  COLOR_BLUE,   COLOR_WHITE, true);
+	DLG_COLOR(tag,                 COLOR_BLUE,   COLOR_WHITE, true);
+	DLG_COLOR(tag_key,             COLOR_BLUE,   COLOR_WHITE, true);
+
+}

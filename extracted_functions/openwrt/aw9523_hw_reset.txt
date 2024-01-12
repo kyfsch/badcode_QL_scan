@@ -1,0 +1,14 @@
+static int aw9523_hw_reset(struct aw9523 *awi)
+{
+	int ret, max_retries = 2;
+
+	/* Sometimes the chip needs more than one reset cycle */
+	do {
+		ret = aw9523_drive_reset_gpio(awi);
+		if (ret == 0)
+			break;
+		max_retries--;
+	} while (max_retries);
+
+	return ret;
+}

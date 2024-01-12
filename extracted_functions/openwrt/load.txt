@@ -1,0 +1,24 @@
+static void load(void)
+{
+	uint32_t addr;
+	int ret;
+
+	ret = spi_init(0, CONFIG_SPI_MAX_HZ, SPI_MODE_0);
+	if (ret) {
+		puts("Failed to initialize SPI controller\n");
+		return;
+	}
+
+	ret = spi_claim_bus();
+	if (ret) {
+		puts("Failed to enable SPI controller\n");
+		return;
+	}
+
+	addr = do_load();
+
+	spi_release_bus();
+
+	if (addr != UINT32_MAX)
+		enter_image(addr);
+}

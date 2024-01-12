@@ -1,0 +1,216 @@
+static int __acquire_sata_core(
+	struct ata_host *ah,
+	int port_no,
+	oxnas_sata_isr_callback_t callback,
+	void                    *arg,
+	int                      may_sleep,
+	int                      timeout_jiffies,
+	int                      hw_access,
+	void                    *uid,
+	int                      locker_type)
+{
+	unsigned long end = jiffies + timeout_jiffies;
+	int           acquired = 0;
+	unsigned long flags;
+	int           timed_out = 0;
+	struct sata_oxnas_host_priv *hd;
+
+	DEFINE_WAIT(wait);
+
+	if (!ah)
+		return acquired;
+
+	hd = ah->private_data;
+
+	spin_lock_irqsave(&hd->core_lock, flags);
+
+	DPRINTK("Entered uid %p, port %d, h/w count %d, d count %d, "
+		    "callback %p, hw_access %d, core_locked %d, "
+		    "reentrant_port_no %d, isr_callback %p\n",
+		uid, port_no, hd->hw_lock_count, hd->direct_lock_count,
+		callback, hw_access, hd->core_locked, hd->reentrant_port_no,
+		hd->isr_callback);
+
+	while (!timed_out) {
+		if (hd->core_locked ||
+		    (!hw_access && hd->scsi_nonblocking_attempts)) {
+			/* Can only allow access if from SCSI/SATA stack and if
+			 * reentrant access is allowed and this access is to the
+			 * same port for which the lock is current held
+			 */
+			if (hw_access && (port_no == hd->reentrant_port_no)) {
+				BUG_ON(!hd->hw_lock_count);
+				++(hd->hw_lock_count);
+
+				DPRINTK("Allow SCSI/SATA re-entrant access to "
+					"uid %p port %d\n", uid, port_no);
+				acquired = 1;
+				break;
+			} else if (!hw_access) {
+				if ((locker_type == SATA_READER) &&
+				    (hd->current_locker_type == SATA_READER)) {
+					WARN(1,
+						"Already locked by reader, "
+						"uid %p, locker_uid %p, "
+						"port %d, h/w count %d, "
+						"d count %d, hw_access %d\n",
+						uid, hd->locker_uid, port_no,
+						hd->hw_lock_count,
+						hd->direct_lock_count,
+						hw_access);
+					goto check_uid;
+				}
+
+				if ((locker_type != SATA_READER) &&
+				    (locker_type != SATA_WRITER)) {
+					goto wait_for_lock;
+				}
+
+check_uid:
+				WARN(uid == hd->locker_uid, "Attempt to lock "
+					"by locker type %d uid %p, already "
+					"locked by locker type %d with "
+					"locker_uid %p, port %d, "
+					"h/w count %d, d count %d, "
+					"hw_access %d\n", locker_type, uid,
+					hd->current_locker_type,
+					hd->locker_uid, port_no,
+					hd->hw_lock_count,
+					hd->direct_lock_count, hw_access);
+			}
+		} else {
+			WARN(hd->hw_lock_count || hd->direct_lock_count,
+				"Core unlocked but counts non-zero: uid %p, "
+				"locker_uid %p, port %d, h/w count %d, "
+				"d count %d, hw_access %d\n", uid,
+				hd->locker_uid, port_no, hd->hw_lock_count,
+				hd->direct_lock_count, hw_access);
+
+			BUG_ON(hd->current_locker_type != SATA_UNLOCKED);
+
+			WARN(hd->locker_uid, "Attempt to lock uid %p when "
+				"locker_uid %p is non-zero,  port %d, "
+				"h/w count %d, d count %d, hw_access %d\n",
+				uid, hd->locker_uid, port_no, hd->hw_lock_count,
+				hd->direct_lock_count, hw_access);
+
+			if (!hw_access) {
+				/* Direct access attempting to acquire
+				 * non-contented lock
+				 */
+				/* Must have callback for direct access */
+				BUG_ON(!callback);
+				/* Sanity check lock state */
+				BUG_ON(hd->reentrant_port_no != -1);
+
+				hd->isr_callback = callback;
+				hd->isr_arg = arg;
+				++(hd->direct_lock_count);
+
+				hd->current_locker_type = locker_type;
+			} else {
+				/* SCSI/SATA attempting to acquire
+				 * non-contented lock
+				 */
+				/* No callbacks for SCSI/SATA access */
+				BUG_ON(callback);
+				/* No callback args for SCSI/SATA access */
+				BUG_ON(arg);
+
+				/* Sanity check lock state */
+				BUG_ON(hd->isr_callback);
+				BUG_ON(hd->isr_arg);
+
+				++(hd->hw_lock_count);
+				hd->reentrant_port_no = port_no;
+
+				hd->current_locker_type = SATA_SCSI_STACK;
+			}
+
+			hd->core_locked = 1;
+			hd->locker_uid = uid;
+			acquired = 1;
+			break;
+		}
+
+wait_for_lock:
+		if (!may_sleep) {
+			DPRINTK("Denying for uid %p locker_type %d, "
+			"hw_access %d, port %d, current_locker_type %d as "
+			"cannot sleep\n", uid, locker_type, hw_access, port_no,
+			hd->current_locker_type);
+
+			if (hw_access)
+				++(hd->scsi_nonblocking_attempts);
+
+			break;
+		}
+
+		/* Core is locked and we're allowed to sleep, so wait to be
+		 * awoken when the core is unlocked
+		 */
+		for (;;) {
+			prepare_to_wait(hw_access ? &hd->scsi_wait_queue :
+						    &hd->fast_wait_queue,
+					&wait, TASK_UNINTERRUPTIBLE);
+			if (!hd->core_locked &&
+			    !(!hw_access && hd->scsi_nonblocking_attempts)) {
+				/* We're going to use variables that will have
+				 * been changed by the waker prior to clearing
+				 * core_locked so we need to ensure we see
+				 * changes to all those variables
+				 */
+				smp_rmb();
+				break;
+			}
+			if (time_after(jiffies, end)) {
+				printk(KERN_WARNING "__acquire_sata_core() "
+					"uid %p failing for port %d timed out, "
+					"locker_uid %p, h/w count %d, "
+					"d count %d, callback %p, hw_access %d, "
+					"core_locked %d, reentrant_port_no %d, "
+					"isr_callback %p, isr_arg %p\n", uid,
+					port_no, hd->locker_uid,
+					hd->hw_lock_count,
+					hd->direct_lock_count, callback,
+					hw_access, hd->core_locked,
+					hd->reentrant_port_no, hd->isr_callback,
+					hd->isr_arg);
+				timed_out = 1;
+				break;
+			}
+			spin_unlock_irqrestore(&hd->core_lock, flags);
+			if (!schedule_timeout(4*HZ)) {
+				printk(KERN_INFO "__acquire_sata_core() uid %p, "
+					"locker_uid %p, timed-out of "
+					"schedule(), checking overall timeout\n",
+					uid, hd->locker_uid);
+			}
+			spin_lock_irqsave(&hd->core_lock, flags);
+		}
+		finish_wait(hw_access ? &hd->scsi_wait_queue :
+					&hd->fast_wait_queue, &wait);
+	}
+
+	if (hw_access && acquired) {
+		if (hd->scsi_nonblocking_attempts)
+			hd->scsi_nonblocking_attempts = 0;
+
+		/* Wake any other SCSI/SATA waiters so they can get reentrant
+		 * access to the same port if appropriate. This is because if
+		 * the SATA core is locked by fast access, or SCSI/SATA access
+		 * to other port, then can have >1 SCSI/SATA waiters on the wait
+		 * list so want to give reentrant accessors a chance to get
+		 * access ASAP
+		 */
+		if (!list_empty(&hd->scsi_wait_queue.head))
+			wake_up(&hd->scsi_wait_queue);
+	}
+
+	DPRINTK("Leaving uid %p with acquired = %d, port %d, callback %p\n",
+		uid, acquired, port_no, callback);
+
+	spin_unlock_irqrestore(&hd->core_lock, flags);
+
+	return acquired;
+}

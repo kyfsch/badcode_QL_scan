@@ -1,0 +1,13 @@
+rtk_api_ret_t rtk_switch_logicalPortCheck(rtk_port_t logicalPort)
+{
+    if(init_state != INIT_COMPLETED)
+        return RT_ERR_NOT_INIT;
+
+    if(logicalPort >= RTK_SWITCH_PORT_NUM)
+        return RT_ERR_FAILED;
+
+    if(halCtrl->l2p_port[logicalPort] == 0xFF)
+        return RT_ERR_FAILED;
+
+    return RT_ERR_OK;
+}

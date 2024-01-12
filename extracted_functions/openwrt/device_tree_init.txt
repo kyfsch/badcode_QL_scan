@@ -1,0 +1,9 @@
+void __init device_tree_init(void)
+{
+	if (!fdt_check_header(&__appended_dtb)) {
+		fdt = &__appended_dtb;
+		pr_info("Using appended Device Tree.\n");
+	}
+	initial_boot_params = (void *)fdt;
+	unflatten_and_copy_device_tree();
+}

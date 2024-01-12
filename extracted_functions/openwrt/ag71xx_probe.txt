@@ -1,0 +1,245 @@
+static int ag71xx_probe(struct platform_device *pdev)
+{
+	struct device_node *np = pdev->dev.of_node;
+	struct net_device *dev;
+	struct resource *res;
+	struct ag71xx *ag;
+	u32 max_frame_len;
+	int tx_size, err;
+
+	if (!np)
+		return -ENODEV;
+
+	dev = devm_alloc_etherdev(&pdev->dev, sizeof(*ag));
+	if (!dev)
+		return -ENOMEM;
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	if (!res)
+		return -EINVAL;
+
+	if (of_property_read_bool(np, "qca956x-serdes-fixup")) {
+		ag71xx_sgmii_serdes_init_qca956x(np);
+		ag71xx_sgmii_init_qca955x(np);
+	}
+
+	err = ag71xx_setup_gmac(np);
+	if (err)
+		return err;
+
+	SET_NETDEV_DEV(dev, &pdev->dev);
+
+	ag = netdev_priv(dev);
+	ag->pdev = pdev;
+	ag->dev = dev;
+	ag->msg_enable = netif_msg_init(ag71xx_msg_level,
+					AG71XX_DEFAULT_MSG_ENABLE);
+	spin_lock_init(&ag->lock);
+
+	ag->mac_reset = devm_reset_control_get_exclusive(&pdev->dev, "mac");
+	if (IS_ERR(ag->mac_reset)) {
+		dev_err(&pdev->dev, "missing mac reset\n");
+		return PTR_ERR(ag->mac_reset);
+	}
+
+	ag->mdio_reset = devm_reset_control_get_optional_exclusive(&pdev->dev, "mdio");
+
+	if (of_property_read_u32_array(np, "fifo-data", ag->fifodata, 3)) {
+		if (of_device_is_compatible(np, "qca,ar9130-eth") ||
+		    of_device_is_compatible(np, "qca,ar7100-eth")) {
+			ag->fifodata[0] = 0x0fff0000;
+			ag->fifodata[1] = 0x00001fff;
+		} else {
+			ag->fifodata[0] = 0x0010ffff;
+			ag->fifodata[1] = 0x015500aa;
+			ag->fifodata[2] = 0x01f00140;
+		}
+		if (of_device_is_compatible(np, "qca,ar9130-eth"))
+			ag->fifodata[2] = 0x00780fff;
+		else if (of_device_is_compatible(np, "qca,ar7100-eth"))
+			ag->fifodata[2] = 0x008001ff;
+	}
+
+	if (of_property_read_u32_array(np, "pll-data", ag->plldata, 3))
+		dev_dbg(&pdev->dev, "failed to read pll-data property\n");
+
+	if (of_property_read_u32_array(np, "pll-reg", ag->pllreg, 3))
+		dev_dbg(&pdev->dev, "failed to read pll-reg property\n");
+
+	ag->pllregmap = syscon_regmap_lookup_by_phandle(np, "pll-handle");
+	if (IS_ERR(ag->pllregmap)) {
+		dev_dbg(&pdev->dev, "failed to read pll-handle property\n");
+		ag->pllregmap = NULL;
+	}
+
+	ag->mac_base = devm_ioremap(&pdev->dev, res->start,
+				    res->end - res->start + 1);
+	if (!ag->mac_base)
+		return -ENOMEM;
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+	if (res) {
+		ag->mii_base = devm_ioremap(&pdev->dev, res->start,
+					    res->end - res->start + 1);
+		if (!ag->mii_base)
+			return -ENOMEM;
+	}
+
+	/* ensure that HW is in manual polling mode before interrupts are
+	 * activated. Otherwise ag71xx_interrupt might call napi_schedule
+	 * before it is initialized by netif_napi_add.
+	 */
+	ag71xx_int_disable(ag, AG71XX_INT_POLL);
+
+	dev->irq = platform_get_irq(pdev, 0);
+	err = devm_request_irq(&pdev->dev, dev->irq, ag71xx_interrupt,
+			       0x0, dev_name(&pdev->dev), dev);
+	if (err) {
+		dev_err(&pdev->dev, "unable to request IRQ %d\n", dev->irq);
+		return err;
+	}
+
+	dev->netdev_ops = &ag71xx_netdev_ops;
+	dev->ethtool_ops = &ag71xx_ethtool_ops;
+
+	INIT_DELAYED_WORK(&ag->restart_work, ag71xx_restart_work_func);
+
+	timer_setup(&ag->oom_timer, ag71xx_oom_timer_handler, 0);
+
+	tx_size = AG71XX_TX_RING_SIZE_DEFAULT;
+	ag->rx_ring.order = ag71xx_ring_size_order(AG71XX_RX_RING_SIZE_DEFAULT);
+
+	if (of_device_is_compatible(np, "qca,ar9340-eth") ||
+	    of_device_is_compatible(np, "qca,qca9530-eth") ||
+	    of_device_is_compatible(np, "qca,qca9550-eth") ||
+	    of_device_is_compatible(np, "qca,qca9560-eth"))
+		ag->desc_pktlen_mask = SZ_16K - 1;
+	else
+		ag->desc_pktlen_mask = SZ_4K - 1;
+
+	if (ag->desc_pktlen_mask == SZ_16K - 1 &&
+	    !of_device_is_compatible(np, "qca,qca9550-eth") &&
+	    !of_device_is_compatible(np, "qca,qca9560-eth"))
+		max_frame_len = ag->desc_pktlen_mask;
+	else
+		max_frame_len = 1540;
+
+	dev->min_mtu = 68;
+	dev->max_mtu = max_frame_len - ag71xx_max_frame_len(0);
+
+	if (of_device_is_compatible(np, "qca,ar7240-eth") ||
+	    of_device_is_compatible(np, "qca,ar7241-eth") ||
+	    of_device_is_compatible(np, "qca,ar7242-eth") ||
+	    of_device_is_compatible(np, "qca,ar9330-eth") ||
+	    of_device_is_compatible(np, "qca,ar9340-eth") ||
+	    of_device_is_compatible(np, "qca,qca9530-eth") ||
+	    of_device_is_compatible(np, "qca,qca9550-eth") ||
+	    of_device_is_compatible(np, "qca,qca9560-eth"))
+		ag->tx_hang_workaround = 1;
+
+	ag->rx_buf_offset = NET_SKB_PAD;
+	if (!of_device_is_compatible(np, "qca,ar7100-eth") &&
+	    !of_device_is_compatible(np, "qca,ar9130-eth"))
+		ag->rx_buf_offset += NET_IP_ALIGN;
+
+	if (of_device_is_compatible(np, "qca,ar7100-eth")) {
+		ag->tx_ring.desc_split = AG71XX_TX_RING_SPLIT;
+		tx_size *= AG71XX_TX_RING_DS_PER_PKT;
+	}
+	ag->tx_ring.order = ag71xx_ring_size_order(tx_size);
+
+	ag->stop_desc = dmam_alloc_coherent(&pdev->dev,
+					    sizeof(struct ag71xx_desc),
+					    &ag->stop_desc_dma, GFP_KERNEL);
+	if (!ag->stop_desc)
+		return -ENOMEM;
+
+	ag->stop_desc->data = 0;
+	ag->stop_desc->ctrl = 0;
+	ag->stop_desc->next = (u32) ag->stop_desc_dma;
+
+	if (of_get_ethdev_address(np, dev)) {
+		dev_err(&pdev->dev, "invalid MAC address, using random address\n");
+		eth_hw_addr_random(dev);
+	}
+
+	err = of_get_phy_mode(np, &ag->phy_if_mode);
+	if (err < 0) {
+		dev_err(&pdev->dev, "missing phy-mode property in DT\n");
+		return ag->phy_if_mode;
+	}
+
+	if (of_device_is_compatible(np, "qca,qca9560-eth") &&
+	    ag->phy_if_mode == PHY_INTERFACE_MODE_SGMII)
+		ag71xx_mux_select_sgmii_qca956x(np);
+
+	if (of_property_read_u32(np, "qca,mac-idx", &ag->mac_idx))
+		ag->mac_idx = -1;
+	if (ag->mii_base)
+		switch (ag->mac_idx) {
+		case 0:
+			ath79_mii0_ctrl_set_if(ag);
+			break;
+		case 1:
+			ath79_mii1_ctrl_set_if(ag);
+			break;
+		default:
+			break;
+		}
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,19,0)
+	netif_napi_add_weight(dev, &ag->napi, ag71xx_poll, AG71XX_NAPI_WEIGHT);
+#else
+	netif_napi_add(dev, &ag->napi, ag71xx_poll, AG71XX_NAPI_WEIGHT);
+#endif
+
+	ag71xx_dump_regs(ag);
+
+	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, 0);
+
+	ag71xx_hw_init(ag);
+
+	ag71xx_dump_regs(ag);
+
+	/*
+	 * populate current node to register mdio-bus as a subdevice.
+	 * the mdio bus works independently on ar7241 and later chips
+	 * and we need to load mdio1 before gmac0, which can be done
+	 * by adding a "simple-mfd" compatible to gmac node. The
+	 * following code checks OF_POPULATED_BUS flag before populating
+	 * to avoid duplicated population.
+	 */
+	if (!of_node_check_flag(np, OF_POPULATED_BUS)) {
+		err = of_platform_populate(np, NULL, NULL, &pdev->dev);
+		if (err)
+			return err;
+	}
+
+	err = ag71xx_phy_connect(ag);
+	if (err)
+		return err;
+
+	err = ag71xx_debugfs_init(ag);
+	if (err)
+		goto err_phy_disconnect;
+
+	platform_set_drvdata(pdev, dev);
+
+	err = register_netdev(dev);
+	if (err) {
+		dev_err(&pdev->dev, "unable to register net device\n");
+		platform_set_drvdata(pdev, NULL);
+		ag71xx_debugfs_exit(ag);
+		goto err_phy_disconnect;
+	}
+
+	pr_info("%s: Atheros AG71xx at 0x%08lx, irq %d, mode: %s\n",
+		dev->name, (unsigned long) ag->mac_base, dev->irq,
+		phy_modes(ag->phy_if_mode));
+
+	return 0;
+
+err_phy_disconnect:
+	ag71xx_phy_disconnect(ag);
+	return err;
+}

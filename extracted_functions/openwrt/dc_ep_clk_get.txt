@@ -1,0 +1,9 @@
+int dc_ep_clk_get(struct dc_ep_priv *priv, u32 *sysclk, u32 *ppeclk)
+{
+	u32 val;
+
+	val = rd32(PLL_OMCFG);
+	*sysclk = MS(val, SYS_CLK);
+	*ppeclk = MS(val, PPE_CLK);
+	return 0;
+}

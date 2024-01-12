@@ -1,0 +1,21 @@
+ar8216_wait_bit(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
+{
+	int timeout = 20;
+	u32 t = 0;
+
+	while (1) {
+		t = ar8xxx_read(priv, reg);
+		if ((t & mask) == val)
+			return 0;
+
+		if (timeout-- <= 0)
+			break;
+
+		udelay(10);
+		cond_resched();
+	}
+
+	pr_err("ar8216: timeout on reg %08x: %08x & %08x != %08x\n",
+	       (unsigned int) reg, t, mask, val);
+	return -ETIMEDOUT;
+}

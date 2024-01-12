@@ -1,0 +1,50 @@
+static int esw_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
+{
+	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
+	int ports;
+	int vlan_idx = -1;
+	int i;
+
+	if (val->port_vlan < 0 || val->port_vlan >= RT305X_ESW_NUM_VIDS ||
+	    val->len > RT305X_ESW_NUM_PORTS)
+		return -EINVAL;
+
+	/* one of the already defined vlans? */
+	for (i = 0; i < RT305X_ESW_NUM_VLANS; i++) {
+		if (esw->vlans[i].vid == val->port_vlan &&
+		    esw->vlans[i].ports != RT305X_ESW_PORTS_NONE) {
+			vlan_idx = i;
+			break;
+		}
+	}
+
+	/* select a free slot */
+	for (i = 0; vlan_idx == -1 && i < RT305X_ESW_NUM_VLANS; i++) {
+		if (esw->vlans[i].ports == RT305X_ESW_PORTS_NONE)
+			vlan_idx = i;
+	}
+
+	/* bail if all slots are in use */
+	if (vlan_idx == -1)
+		return -EINVAL;
+
+	ports = RT305X_ESW_PORTS_NONE;
+	for (i = 0; i < val->len; i++) {
+		struct switch_port *p = &val->value.ports[i];
+		int port_mask = 1 << p->id;
+		bool untagged = !(p->flags & (1 << SWITCH_PORT_FLAG_TAGGED));
+
+		if (p->id >= RT305X_ESW_NUM_PORTS)
+			return -EINVAL;
+
+		ports |= port_mask;
+		esw->ports[p->id].untag = untagged;
+	}
+	esw->vlans[vlan_idx].ports = ports;
+	if (ports == RT305X_ESW_PORTS_NONE)
+		esw->vlans[vlan_idx].vid = RT305X_ESW_VLAN_NONE;
+	else
+		esw->vlans[vlan_idx].vid = val->port_vlan;
+
+	return 0;
+}

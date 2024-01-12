@@ -1,0 +1,14 @@
+static int ip17xx_apply(struct switch_dev *dev)
+{
+	struct ip17xx_state *state = get_state(dev);
+
+	if (REG_SUPP(state->regs->MII_REGISTER_EN)) {
+		int val = getPhy(state, state->regs->MII_REGISTER_EN);
+		if (val < 0) {
+			return val;
+		}
+		val |= (1<<state->regs->MII_REGISTER_EN_BIT);
+		return setPhy(state, state->regs->MII_REGISTER_EN, val);
+	}
+	return 0;
+}

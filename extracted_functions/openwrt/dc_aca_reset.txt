@@ -1,0 +1,4 @@
+static void dc_aca_reset(struct dc_ep_priv *priv)
+{
+	dc_ep_reset_device(priv, RST_ACA_DMA | RST_ACA_HOSTIF);
+}

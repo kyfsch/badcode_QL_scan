@@ -1,0 +1,10 @@
+mt7530_get_vlan_enable(struct switch_dev *dev,
+			   const struct switch_attr *attr,
+			   struct switch_val *val)
+{
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+
+	val->value.i = priv->global_vlan_enable;
+
+	return 0;
+}

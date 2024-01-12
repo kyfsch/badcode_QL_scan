@@ -1,0 +1,34 @@
+static void m_vendor(const char *id, const uint8_t *value) {
+	// ITU-T T.35: U.S.
+	if (U16(value[0], value[1]) != 0xb500)
+		return;
+
+	const char *str = NULL;
+	switch (U32(value[2], value[3], value[4], value[5])) {
+	STR_CASE(0x414C4342, "Alcatel")
+	STR_CASE(0x414E4456, "Analog Devices")
+	STR_CASE(0x4244434D, "Broadcom")
+	STR_CASE(0x43454E54, "Centillium")
+	STR_CASE(0x4753504E, "Globespan")
+	STR_CASE(0x494B4E53, "Ikanos")
+	STR_CASE(0x4946544E, "Infineon")
+	STR_CASE(0x54535443, "Texas Instruments")
+	STR_CASE(0x544D4D42, "Thomson MultiMedia Broadband")
+	STR_CASE(0x5443544E, "Trend Chip Technologies")
+	STR_CASE(0x53544D49, "ST Micro")
+	};
+
+	if (!str)
+		return;
+
+	if ((value[6] == 0) && (value[7] == 0)) {
+		m_str(id, str);
+		return;
+	}
+
+	char buf[64];
+	sprintf(buf, "%s %d.%d", str, value[6], value[7]);
+	m_str(id, buf);
+
+	return;
+}

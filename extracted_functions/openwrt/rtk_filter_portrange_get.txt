@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_filter_portrange_get(rtk_uint32 index, rtk_filter_portrange_t *pType, rtk_uint32 *pUpperPort, rtk_uint32 *pLowerPort)
+{
+    rtk_api_ret_t ret;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if((NULL == pType) || (NULL == pUpperPort) || (NULL == pLowerPort))
+        return RT_ERR_NULL_POINTER;
+
+    if(index > RTL8367C_ACLRANGEMAX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if((ret = rtl8367c_getAsicAclPortRange(index, pType, pUpperPort, pLowerPort)) != RT_ERR_OK)
+       return ret;
+
+    return RT_ERR_OK;
+}

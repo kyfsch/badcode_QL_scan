@@ -1,0 +1,14 @@
+ret_t rtl8367c_getAsicIGMPSuppression(rtk_uint32 *report_supp_enabled, rtk_uint32 *leave_supp_enabled)
+{
+    ret_t   retVal;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_IGMP_MLD_CFG0, RTL8367C_REPORT_SUPPRESSION_MASK, report_supp_enabled);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_IGMP_MLD_CFG0, RTL8367C_LEAVE_SUPPRESSION_MASK, leave_supp_enabled);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

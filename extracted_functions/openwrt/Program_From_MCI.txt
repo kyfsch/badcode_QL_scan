@@ -1,0 +1,54 @@
+int Program_From_MCI(void)
+{
+  int i;
+  unsigned int Max_Read_DataBlock_Length;
+  int block = 0;
+  int buffer = AT91C_DOWNLOAD_BASE_ADDRESS;
+  int bufpos = AT91C_DOWNLOAD_BASE_ADDRESS;
+  int NbPage = 0;
+  struct trx_header *p;
+
+	p = (struct trx_header *)bufpos;
+
+	Max_Read_DataBlock_Length = MCI_Device.pMCI_DeviceFeatures->Max_Read_DataBlock_Length;
+
+	AT91F_MCIDeviceWaitReady(AT91C_MCI_TIMEOUT);
+
+  AT91F_MCI_ReadBlockSwab(&MCI_Device, block*Max_Read_DataBlock_Length, (unsigned int *)bufpos, Max_Read_DataBlock_Length);
+
+  if (p->magic != TRX_MAGIC) {
+		printf("Inv IMG 0x%08x\n", p->magic);
+		return FALSE;
+		}
+
+	printf("RDSD");
+	AT91C_BASE_PIOC->PIO_CODR = AT91C_PIO_PC7 | AT91C_PIO_PC15 | AT91C_PIO_PC8 | AT91C_PIO_PC14;
+	for (i=0; i<(p->len/512); i++) {
+		AT91F_MCI_ReadBlockSwab(&MCI_Device, block*Max_Read_DataBlock_Length, (unsigned int *)bufpos, Max_Read_DataBlock_Length);
+		block++;
+		bufpos += Max_Read_DataBlock_Length;
+		}
+
+	NbPage = 0;
+	i = dataflash_info[0].Device.pages_number;
+	while(i >>= 1)
+		NbPage++;
+	i = ((p->offsets[1] - p->offsets[0])/ 512) + 1 + (NbPage << 13) + (dataflash_info[0].Device.pages_size << 17);
+	*(int *)(buffer + p->offsets[0] + AT91C_OFFSET_VECT6) = i;
+
+	printf(" WDFB");
+	AT91C_BASE_PIOC->PIO_CODR = AT91C_PIO_PC7 | AT91C_PIO_PC15 | AT91C_PIO_PC14;
+	AT91C_BASE_PIOC->PIO_SODR = AT91C_PIO_PC8;
+	write_dataflash(0xc0000000, buffer + p->offsets[0], p->offsets[1] - p->offsets[0]);
+	printf(" WUB");
+	AT91C_BASE_PIOC->PIO_CODR = AT91C_PIO_PC7 | AT91C_PIO_PC15;
+	AT91C_BASE_PIOC->PIO_SODR = AT91C_PIO_PC8 | AT91C_PIO_PC14;
+	write_dataflash(0xc0008000, buffer + p->offsets[1], p->offsets[2] - p->offsets[1]);
+	printf(" WKRFS");
+	AT91C_BASE_PIOC->PIO_CODR = AT91C_PIO_PC8 | AT91C_PIO_PC15;
+	AT91C_BASE_PIOC->PIO_SODR = AT91C_PIO_PC7 | AT91C_PIO_PC14;
+	write_dataflash(0xc0042000, buffer + p->offsets[2], p->len - p->offsets[2]);
+	AT91C_BASE_PIOC->PIO_CODR = AT91C_PIO_PC8 | AT91C_PIO_PC14;
+	AT91C_BASE_PIOC->PIO_SODR = AT91C_PIO_PC7 | AT91C_PIO_PC15;
+	return TRUE;
+}

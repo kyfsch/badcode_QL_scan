@@ -1,0 +1,9 @@
+static void rtl838x_pie_lookup_enable(struct rtl838x_switch_priv *priv, int index)
+{
+	int block = index / PIE_BLOCK_SIZE;
+	u32 block_state = sw_r32(RTL838X_ACL_BLK_LOOKUP_CTRL);
+
+	/* Make sure rule-lookup is enabled in the block */
+	if (!(block_state & BIT(block)))
+		sw_w32(block_state | BIT(block), RTL838X_ACL_BLK_LOOKUP_CTRL);
+}

@@ -1,0 +1,8 @@
+static ssize_t trelay_remove_write(struct file *file, const char __user *ubuf,
+				   size_t count, loff_t *ppos)
+{
+	struct trelay *tr = file->private_data;
+	tr->to_remove = 1;
+
+	return count;
+}

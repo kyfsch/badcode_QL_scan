@@ -1,0 +1,26 @@
+adm6996_write_gpio_reg(struct adm6996_priv *priv, enum admreg reg, u16 val)
+{
+	/* cmd(27bits): sb(1) + opc(01) + addr(bbbbbbbb) + data(bbbbbbbbbbbbbbbb) */
+	u8 bits[4] = {
+		(0x05 << 5) | (reg >> 3),
+		(reg << 5) | (u8)(val >> 11),
+		(u8)(val >> 3),
+		(u8)(val << 5)
+	};
+
+	/* Enable GPIO outputs with all pins to 0 */
+	gpio_direction_output(priv->eecs, 0);
+	gpio_direction_output(priv->eesk, 0);
+	gpio_direction_output(priv->eedi, 0);
+
+	/* Write cmd. Total 27 bits */
+	adm6996_gpio_write(priv, 1, bits, 27);
+
+	/* Extra clock(s) required per datasheet */
+	adm6996_gpio_adclk(priv, 2);
+
+	/* Disable GPIO outputs */
+	gpio_direction_input(priv->eecs);
+	gpio_direction_input(priv->eesk);
+	gpio_direction_input(priv->eedi);
+}

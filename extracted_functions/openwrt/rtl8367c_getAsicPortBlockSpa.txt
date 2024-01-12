@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsicPortBlockSpa(rtk_uint32 port, rtk_uint32* pPermit)
+{
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    return rtl8367c_getAsicRegBit(RTL8367C_SOURCE_PORT_BLOCK_REG, port, pPermit);
+}

@@ -1,0 +1,30 @@
+nct5104d_gpio_device_add(const struct nct5104d_sio *sio)
+{
+	int err;
+
+	nct5104d_gpio_pdev = platform_device_alloc(DRVNAME, -1);
+	if (!nct5104d_gpio_pdev)
+		pr_err(DRVNAME ": Error platform_device_alloc\n");
+	if (!nct5104d_gpio_pdev)
+		return -ENOMEM;
+
+	err = platform_device_add_data(nct5104d_gpio_pdev,
+				       sio, sizeof(*sio));
+	if (err) {
+		pr_err(DRVNAME "Platform data allocation failed\n");
+		goto err;
+	}
+
+	err = platform_device_add(nct5104d_gpio_pdev);
+	if (err) {
+		pr_err(DRVNAME "Device addition failed\n");
+		goto err;
+	}
+	pr_info(DRVNAME ": Device added\n");
+	return 0;
+
+err:
+	platform_device_put(nct5104d_gpio_pdev);
+
+	return err;
+}

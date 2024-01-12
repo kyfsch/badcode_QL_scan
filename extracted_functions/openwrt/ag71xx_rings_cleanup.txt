@@ -1,0 +1,8 @@
+static void ag71xx_rings_cleanup(struct ag71xx *ag)
+{
+	ag71xx_ring_rx_clean(ag);
+	ag71xx_ring_tx_clean(ag);
+	ag71xx_rings_free(ag);
+
+	netdev_reset_queue(ag->dev);
+}

@@ -1,0 +1,6 @@
+static void i2c_stop(void)
+{
+	sdalo();
+	sclhi();
+	sdahi();
+}

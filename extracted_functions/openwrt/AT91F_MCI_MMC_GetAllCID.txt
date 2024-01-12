@@ -1,0 +1,28 @@
+int AT91F_MCI_MMC_GetAllCID (AT91PS_MciDevice pMCI_Device, unsigned int *response)
+{
+	int Nb_Cards_Found=-1;
+  
+	while(1)
+	{
+	 	if(AT91F_MCI_SendCommand(pMCI_Device,
+								AT91C_MMC_ALL_SEND_CID_CMD,
+								AT91C_NO_ARGUMENT) != AT91C_CMD_SEND_OK)
+			return Nb_Cards_Found;
+		else
+		{		
+			Nb_Cards_Found = 0;
+			//* Assignation of the relative address to the MMC CARD
+			pMCI_Device->pMCI_DeviceFeatures[Nb_Cards_Found].Relative_Card_Address = Nb_Cards_Found + AT91C_FIRST_RCA;
+			//* Set the insert flag
+			pMCI_Device->pMCI_DeviceFeatures[Nb_Cards_Found].Card_Inserted = AT91C_MMC_CARD_INSERTED;
+	
+			if (AT91F_MCI_SendCommand(pMCI_Device,
+									 AT91C_MMC_SET_RELATIVE_ADDR_CMD,
+									 (Nb_Cards_Found + AT91C_FIRST_RCA) << 16) != AT91C_CMD_SEND_OK)
+				return AT91C_CMD_SEND_ERROR;
+				 
+			//* If no error during assignation address ==> Increment Nb_cards_Found
+			Nb_Cards_Found++ ;
+		}
+	}
+}

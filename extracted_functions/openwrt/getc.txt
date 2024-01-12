@@ -1,0 +1,4 @@
+int getc()
+{
+  return at91_serial_getc();
+}

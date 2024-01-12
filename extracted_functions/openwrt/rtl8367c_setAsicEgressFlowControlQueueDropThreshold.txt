@@ -1,0 +1,10 @@
+ret_t rtl8367c_setAsicEgressFlowControlQueueDropThreshold(rtk_uint32 qid, rtk_uint32 threshold)
+{
+    if( threshold >= RTL8367C_PAGE_NUMBER)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if(qid > RTL8367C_QIDMAX)
+        return RT_ERR_QUEUE_ID;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_FLOWCTRL_QUEUE_DROP_ON_REG(qid), RTL8367C_FLOWCTRL_QUEUE_DROP_ON_MASK, threshold);
+}

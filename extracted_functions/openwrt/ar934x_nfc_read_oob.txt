@@ -1,0 +1,18 @@
+static int ar934x_nfc_read_oob(struct nand_chip *chip,
+			       int page)
+{
+	struct ar934x_nfc *nfc = chip->priv;
+	struct mtd_info *mtd = ar934x_nfc_to_mtd(nfc);
+	int err;
+
+	nfc_dbg(nfc, "read_oob: page:%d\n", page);
+
+	err = ar934x_nfc_send_read(nfc, NAND_CMD_READ0, mtd->writesize, page,
+				   mtd->oobsize);
+	if (err)
+		return err;
+
+	memcpy(chip->oob_poi, nfc->buf, mtd->oobsize);
+
+	return 0;
+}

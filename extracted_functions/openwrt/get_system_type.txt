@@ -1,0 +1,4 @@
+const char *get_system_type(void)
+{
+	return soc_info.name;
+}

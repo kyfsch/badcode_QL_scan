@@ -1,0 +1,9 @@
+static void button_hotplug_disconnect(struct input_handle *handle)
+{
+	struct bh_priv *priv = handle->private;
+
+	input_close_device(handle);
+	input_unregister_handle(handle);
+
+	kfree(priv);
+}

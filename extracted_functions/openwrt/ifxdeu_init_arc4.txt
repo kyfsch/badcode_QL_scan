@@ -1,0 +1,28 @@
+int ifxdeu_init_arc4(void)
+{
+    int ret = -ENOSYS;
+
+
+        if ((ret = crypto_register_alg(&ifxdeu_arc4_alg)))
+                goto arc4_err;
+
+        if ((ret = crypto_register_skcipher(&ifxdeu_ecb_arc4_alg)))
+                goto ecb_arc4_err;
+
+        arc4_chip_init ();
+
+        CRTCL_SECT_INIT;
+
+        printk (KERN_NOTICE "IFX DEU ARC4 initialized%s%s.\n", disable_multiblock ? "" : " (multiblock)", disable_deudma ? "" : " (DMA)");
+        return ret;
+
+arc4_err:
+        crypto_unregister_alg(&ifxdeu_arc4_alg);
+        printk(KERN_ERR "IFX arc4 initialization failed!\n");
+        return ret;
+ecb_arc4_err:
+        crypto_unregister_skcipher(&ifxdeu_ecb_arc4_alg);
+        printk (KERN_ERR "IFX ecb_arc4 initialization failed!\n");
+        return ret;
+
+}

@@ -1,0 +1,21 @@
+static void mt7621_nfc_write_data(struct mt7621_nfc *nfc, const u8 *buf,
+				  u32 len)
+{
+	while (((uintptr_t)buf & 3) && len) {
+		mt7621_nfc_pio_write(nfc, *buf, true);
+		buf++;
+		len--;
+	}
+
+	while (len >= 4) {
+		mt7621_nfc_pio_write(nfc, *(const u32 *)buf, false);
+		buf += 4;
+		len -= 4;
+	}
+
+	while (len) {
+		mt7621_nfc_pio_write(nfc, *buf, true);
+		buf++;
+		len--;
+	}
+}

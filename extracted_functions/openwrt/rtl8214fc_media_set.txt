@@ -1,0 +1,32 @@
+static void rtl8214fc_media_set(struct phy_device *phydev, bool set_fibre)
+{
+	int mac = phydev->mdio.addr;
+
+	static int reg[] = {16, 19, 20, 21};
+	int val;
+
+	pr_info("%s: port %d, set_fibre: %d\n", __func__, mac, set_fibre);
+	phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	val = phy_package_read_paged(phydev, RTL821X_PAGE_PORT, reg[mac % 4]);
+
+	val |= BIT(10);
+	if (set_fibre) {
+		val &= ~BMCR_PDOWN;
+	} else {
+		val |= BMCR_PDOWN;
+	}
+
+	phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	phy_package_write_paged(phydev, RTL821X_PAGE_PORT, reg[mac % 4], val);
+	phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+
+	if (!phydev->suspended) {
+		if (set_fibre) {
+			rtl8214fc_power_set(phydev, PORT_MII, false);
+			rtl8214fc_power_set(phydev, PORT_FIBRE, true);
+		} else {
+			rtl8214fc_power_set(phydev, PORT_FIBRE, false);
+			rtl8214fc_power_set(phydev, PORT_MII, true);
+		}
+	}
+}

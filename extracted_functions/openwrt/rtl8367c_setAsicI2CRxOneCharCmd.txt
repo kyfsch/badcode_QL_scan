@@ -1,0 +1,23 @@
+ret_t rtl8367c_setAsicI2CRxOneCharCmd(rtk_uint8 *pValue)
+{
+    rtk_uint32 regData;
+    ret_t retVal;
+
+    /* Bits [4-1] = 0b0011, Rx one char; Bit [0] = 1, Trigger the Command */
+    if ((retVal = rtl8367c_getAsicReg(RTL8367C_REG_M_I2C_CTL_STA_REG, &regData)) != RT_ERR_OK)
+        return retVal;
+    regData &= 0xFFE0;
+    regData |= 0x0007;
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_M_I2C_CTL_STA_REG, regData)) != RT_ERR_OK)
+        return retVal;
+
+    /* wait for command finished */
+     do{
+        if ((retVal = rtl8367c_getAsicReg(RTL8367C_REG_M_I2C_CTL_STA_REG, &regData)) != RT_ERR_OK)
+             return retVal;
+     }while( (regData & 0x1) != 0x0);
+
+    *pValue = (rtk_uint8)(regData >> 8);
+     return RT_ERR_OK ;
+
+}

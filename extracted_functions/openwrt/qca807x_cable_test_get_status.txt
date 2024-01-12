@@ -1,0 +1,16 @@
+static int qca807x_cable_test_get_status(struct phy_device *phydev,
+					 bool *finished)
+{
+	int val;
+
+	*finished = false;
+
+	val = phy_read(phydev, QCA807X_CDT);
+	if (!((val & QCA807X_CDT_ENABLE) && (val & QCA807X_CDT_STATUS))) {
+		*finished = true;
+
+		return qca807x_cable_test_report(phydev);
+	}
+
+	return 0;
+}

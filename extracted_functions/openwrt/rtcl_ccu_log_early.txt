@@ -1,0 +1,14 @@
+void rtcl_ccu_log_early(void)
+{
+	char meminfo[80], clkinfo[255], msg[255] = "rtl83xx-clk: initialized";
+
+	sprintf(meminfo, " (%d Bit DDR%d)", rtcl_ccu->dram.buswidth, rtcl_ccu->dram.type);
+	for (int clk_idx = 0; clk_idx < CLK_COUNT; clk_idx++) {
+		sprintf(clkinfo, ", %s %lu MHz", rtcl_clk_info[clk_idx].display_name,
+			rtcl_ccu->clks[clk_idx].startup / 1000000);
+		if (clk_idx == CLK_MEM)
+			strcat(clkinfo, meminfo);
+		strcat(msg, clkinfo);
+	}
+	pr_info("%s\n", msg);
+}

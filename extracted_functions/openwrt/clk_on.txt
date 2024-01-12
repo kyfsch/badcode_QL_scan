@@ -1,0 +1,9 @@
+static inline int clk_on(struct dc_ep_dev *dev, u32 bits)
+{
+	if (WARN_ON(!dev))
+		return -EINVAL;
+	if (WARN_ON(!dev->priv))
+		return -EINVAL;
+
+	return dc_ep_clk_on(dev->priv, bits);
+}

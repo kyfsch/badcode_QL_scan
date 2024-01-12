@@ -1,0 +1,9 @@
+handle_done_auth(void)
+{
+	struct ead_msg_auth *auth = EAD_DATA(msg, auth);
+	if (t_clientverify(tc, auth->data) != 0) {
+		fprintf(stderr, "Client auth verify failed\n");
+		return false;
+	}
+	return true;
+}

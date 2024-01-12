@@ -1,0 +1,41 @@
+static int bcm4908img_info(int argc, char **argv) {
+	struct bcm4908img_info info;
+	const char *pathname = NULL;
+	FILE *fp;
+	int c;
+	int err = 0;
+
+	while ((c = getopt(argc, argv, "i:")) != -1) {
+		switch (c) {
+		case 'i':
+			pathname = optarg;
+			break;
+		}
+	}
+
+	fp = bcm4908img_open(pathname, "r");
+	if (!fp) {
+		fprintf(stderr, "Failed to open BCM4908 image\n");
+		err = -EACCES;
+		goto out;
+	}
+
+	err = bcm4908img_parse(fp, &info);
+	if (err) {
+		fprintf(stderr, "Failed to parse BCM4908 image\n");
+		goto err_close;
+	}
+
+	if (info.bootfs_offset != info.cferom_offset)
+		printf("cferom offset:\t%zu\n", info.cferom_offset);
+	printf("bootfs offset:\t0x%zx\n", info.bootfs_offset);
+	if (info.padding_offset)
+		printf("padding offset:\t0x%zx\n", info.padding_offset);
+	printf("rootfs offset:\t0x%zx\n", info.rootfs_offset);
+	printf("Checksum:\t0x%08x\n", info.crc32);
+
+err_close:
+	bcm4908img_close(fp);
+out:
+	return err;
+}

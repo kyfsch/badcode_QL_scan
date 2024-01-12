@@ -1,0 +1,15 @@
+static int fe_set_mac_address(struct net_device *dev, void *p)
+{
+	int ret = eth_mac_addr(dev, p);
+
+	if (!ret) {
+		struct fe_priv *priv = netdev_priv(dev);
+
+		if (priv->soc->set_mac)
+			priv->soc->set_mac(priv, dev->dev_addr);
+		else
+			fe_hw_set_macaddr(priv, p);
+	}
+
+	return ret;
+}

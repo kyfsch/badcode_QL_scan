@@ -1,0 +1,15 @@
+ret_t rtl8367c_setAsicFieldSelector(rtk_uint32 index, rtk_uint32 format, rtk_uint32 offset)
+{
+    rtk_uint32 regData;
+
+    if(index > RTL8367C_FIELDSEL_FORMAT_NUMBER)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if(format >= FIELDSEL_FORMAT_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    regData = (((format << RTL8367C_FIELD_SELECTOR_FORMAT_OFFSET) & RTL8367C_FIELD_SELECTOR_FORMAT_MASK ) |
+               ((offset << RTL8367C_FIELD_SELECTOR_OFFSET_OFFSET) & RTL8367C_FIELD_SELECTOR_OFFSET_MASK ));
+
+    return rtl8367c_setAsicReg(RTL8367C_FIELD_SELECTOR_REG(index), regData);
+}

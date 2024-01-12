@@ -1,0 +1,17 @@
+void plat_time_init_fallback(void)
+{
+	struct device_node *np;
+	u32 freq = 500000000;
+
+	np = of_find_node_by_name(NULL, "cpus");
+	if (!np) {
+		pr_err("Missing 'cpus' DT node, using default frequency.");
+	} else {
+		if (of_property_read_u32(np, "frequency", &freq) < 0)
+			pr_err("No 'frequency' property in DT, using default.");
+		else
+			pr_info("CPU frequency from device tree: %dMHz", freq / 1000000);
+		of_node_put(np);
+	}
+	mips_hpt_frequency = freq / 2;
+}

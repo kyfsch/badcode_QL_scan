@@ -1,0 +1,25 @@
+static int rtl931x_sds_cmu_page_get(phy_interface_t mode)
+{
+	switch (mode) {
+	case PHY_INTERFACE_MODE_SGMII:
+	case PHY_INTERFACE_MODE_1000BASEX:	/* MII_1000BX_FIBER / 100BX_FIBER / 1000BX100BX_AUTO */
+		return 0x24;
+	case PHY_INTERFACE_MODE_HSGMII:
+	case PHY_INTERFACE_MODE_2500BASEX:	/* MII_2500Base_X: */
+		return 0x28;
+/*	case MII_HISGMII_5G: */
+/*		return 0x2a; */
+	case PHY_INTERFACE_MODE_QSGMII:
+		return 0x2a;			/* Code also has 0x34 */
+	case PHY_INTERFACE_MODE_XAUI:		/* MII_RXAUI_LITE: */
+		return 0x2c;
+	case PHY_INTERFACE_MODE_XGMII:		/* MII_XSGMII */
+	case PHY_INTERFACE_MODE_10GKR:
+	case PHY_INTERFACE_MODE_10GBASER:	/* MII_10GR */
+		return 0x2e;
+	default:
+		return -1;
+	}
+
+	return -1;
+}

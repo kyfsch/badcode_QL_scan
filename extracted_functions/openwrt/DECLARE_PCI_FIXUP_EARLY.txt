@@ -1,0 +1,16 @@
+DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_ATHEROS, PCI_ANY_ID,
+			tl_wdr4900_v1_pci_wmac_fixup);
+#endif /* CONFIG_PCI */
+
+/*
+ * Setup the architecture
+ */
+static void __init tl_wdr4900_v1_setup_arch(void)
+{
+	if (ppc_md.progress)
+		ppc_md.progress("tl_wdr4900_v1_setup_arch()", 0);
+
+	fsl_pci_assign_primary();
+
+	printk(KERN_INFO "TL-WDR4900 v1 board from TP-Link\n");
+}

@@ -1,0 +1,28 @@
+hostapd_rrm_nr_list(struct ubus_context *ctx, struct ubus_object *obj,
+		    struct ubus_request_data *req, const char *method,
+		    struct blob_attr *msg)
+{
+	struct hostapd_data *hapd = get_hapd_from_object(obj);
+	struct hostapd_neighbor_entry *nr;
+	void *c;
+
+	hostapd_rrm_nr_enable(hapd);
+	blob_buf_init(&b, 0);
+
+	c = blobmsg_open_array(&b, "list");
+	dl_list_for_each(nr, &hapd->nr_db, struct hostapd_neighbor_entry, list) {
+		void *cur;
+
+		if (!memcmp(nr->bssid, hapd->own_addr, ETH_ALEN))
+			continue;
+
+		cur = blobmsg_open_array(&b, NULL);
+		hostapd_rrm_print_nr(nr);
+		blobmsg_close_array(&b, cur);
+	}
+	blobmsg_close_array(&b, c);
+
+	ubus_send_reply(ctx, req, b.head);
+
+	return 0;
+}

@@ -1,0 +1,48 @@
+rtk_api_ret_t rtk_filter_igrAcl_field_add(rtk_filter_cfg_t* pFilter_cfg, rtk_filter_field_t* pFilter_field)
+{
+    rtk_uint32 i;
+    rtk_filter_field_t *tailPtr;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pFilter_cfg || NULL == pFilter_field)
+        return RT_ERR_NULL_POINTER;
+
+    if(pFilter_field->fieldType >= FILTER_FIELD_END)
+        return RT_ERR_ENTRY_INDEX;
+
+
+    if(0 == pFilter_field->fieldTemplateNo)
+    {
+        pFilter_field->fieldTemplateNo = filter_fieldSize[pFilter_field->fieldType];
+
+        for(i = 0; i < pFilter_field->fieldTemplateNo; i++)
+        {
+            pFilter_field->fieldTemplateIdx[i] = filter_fieldTemplateIndex[pFilter_field->fieldType][i];
+        }
+    }
+
+    if(NULL == pFilter_cfg->fieldHead)
+    {
+        pFilter_cfg->fieldHead = pFilter_field;
+    }
+    else
+    {
+        if (pFilter_cfg->fieldHead->next == NULL)
+        {
+            pFilter_cfg->fieldHead->next = pFilter_field;
+        }
+        else
+        {
+            tailPtr = pFilter_cfg->fieldHead->next;
+            while( tailPtr->next != NULL)
+            {
+                tailPtr = tailPtr->next;
+            }
+            tailPtr->next = pFilter_field;
+        }
+    }
+
+    return RT_ERR_OK;
+}

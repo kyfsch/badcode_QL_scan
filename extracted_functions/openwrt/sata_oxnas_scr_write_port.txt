@@ -1,0 +1,6 @@
+static int sata_oxnas_scr_write_port(struct ata_port *ap, unsigned int sc_reg,
+					u32 val)
+{
+	sata_oxnas_link_write(ap, 0x20 + (sc_reg * 4), val);
+	return 0;
+}

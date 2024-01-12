@@ -1,0 +1,4 @@
+static inline u32 ecc_read32(struct mt7621_nfc *nfc, u32 reg)
+{
+	return readl(nfc->ecc_regs + reg);
+}

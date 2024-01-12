@@ -1,0 +1,21 @@
+int __init b53_phy_driver_register(void)
+{
+	int ret;
+
+	ret = phy_driver_register(&b53_phy_driver_id1, THIS_MODULE);
+	if (ret)
+		return ret;
+
+	ret = phy_driver_register(&b53_phy_driver_id2, THIS_MODULE);
+	if (ret)
+		goto err1;
+
+	ret = phy_driver_register(&b53_phy_driver_id3, THIS_MODULE);
+	if (!ret)
+		return 0;
+
+	phy_driver_unregister(&b53_phy_driver_id2);
+err1:
+	phy_driver_unregister(&b53_phy_driver_id1);
+	return ret;
+}

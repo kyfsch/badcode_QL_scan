@@ -1,0 +1,8 @@
+ret_t rtl8367c_setAsicGreenTrafficType(rtk_uint32 priority, rtk_uint32 traffictype)
+{
+
+    if(priority > RTL8367C_PRIMAX)
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_HIGHPRI_CFG, priority, (traffictype?1:0));
+}

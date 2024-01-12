@@ -1,0 +1,27 @@
+static u32 mt7621_nfc_pio_read(struct mt7621_nfc *nfc, bool br)
+{
+	u32 reg;
+
+	/* after each byte read, the NFI_STA reg is reset by the hardware */
+	reg = (nfi_read32(nfc, NFI_STA) & STA_NFI_FSM_M) >> STA_NFI_FSM_S;
+	if (reg != STA_FSM_CUSTOM_DATA) {
+		reg = nfi_read16(nfc, NFI_CNFG);
+		reg |= CNFG_READ_MODE | CNFG_BYTE_RW;
+		if (!br)
+			reg &= ~CNFG_BYTE_RW;
+		nfi_write16(nfc, NFI_CNFG, reg);
+
+		/*
+		 * set to max sector to allow the HW to continue reading over
+		 * unaligned accesses
+		 */
+		nfi_write16(nfc, NFI_CON, CON_NFI_SEC_M | CON_NFI_BRD);
+
+		/* trigger to fetch data */
+		nfi_write16(nfc, NFI_STRDATA, STR_DATA);
+	}
+
+	mt7621_nfc_wait_pio_ready(nfc);
+
+	return nfi_read32(nfc, NFI_DATAR);
+}

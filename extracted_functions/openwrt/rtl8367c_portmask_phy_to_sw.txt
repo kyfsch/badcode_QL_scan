@@ -1,0 +1,12 @@
+static inline unsigned int rtl8367c_portmask_phy_to_sw(rtk_portmask_t phy_portmask)
+{
+	int i;
+	for (i = 0; i < RTL8367C_NUM_PORTS; i++) {
+		if(RTK_PORTMASK_IS_PORT_SET(phy_portmask,rtl8367c_sw_to_phy_port(i))) {
+			RTK_PORTMASK_PORT_CLEAR(phy_portmask,rtl8367c_sw_to_phy_port(i));
+			RTK_PORTMASK_PORT_SET(phy_portmask,i);
+		}		
+
+	}
+	return (unsigned int)phy_portmask.bits[0];
+}

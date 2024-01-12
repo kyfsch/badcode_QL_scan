@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsic1xMBOpdirConfig(rtk_uint32 *pOpdir)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_DOT1X_CFG_REG, RTL8367C_DOT1X_MAC_OPDIR_OFFSET, pOpdir);
+}

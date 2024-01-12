@@ -1,0 +1,20 @@
+static int rtl8366_smi_wait_for_ack(struct rtl8366_smi *smi)
+{
+	int retry_cnt;
+
+	retry_cnt = 0;
+	do {
+		u32 ack;
+
+		rtl8366_smi_read_bits(smi, 1, &ack);
+		if (ack == 0)
+			break;
+
+		if (++retry_cnt > RTL8366_SMI_ACK_RETRY_COUNT) {
+			dev_err(smi->parent, "ACK timeout\n");
+			return -ETIMEDOUT;
+		}
+	} while (1);
+
+	return 0;
+}

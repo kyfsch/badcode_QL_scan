@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_stat_lengthMode_get(rtk_stat_lengthMode_t *pTxMode, rtk_stat_lengthMode_t *pRxMode)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pTxMode)
+        return RT_ERR_NULL_POINTER;
+
+    if(NULL == pRxMode)
+        return RT_ERR_NULL_POINTER;
+
+    if((retVal = rtl8367c_getAsicMIBsLength((rtk_uint32 *)pTxMode, (rtk_uint32 *)pRxMode)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

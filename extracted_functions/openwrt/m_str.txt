@@ -1,0 +1,3 @@
+static inline void m_str(const char *id, const char *value) {
+	blobmsg_add_string(&b, id, value);
+}

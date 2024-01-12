@@ -1,0 +1,19 @@
+rtk_api_ret_t rtk_qos_priMap_get(rtk_queue_num_t queue_num, rtk_qos_pri2queue_t *pPri2qid)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 pri;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if ((0 == queue_num) || (queue_num > RTK_MAX_NUM_OF_QUEUE))
+        return RT_ERR_QUEUE_NUM;
+
+    for (pri = 0; pri <= RTK_PRIMAX; pri++)
+    {
+        if ((retVal = rtl8367c_getAsicPriorityToQIDMappingTable(queue_num-1, pri, &pPri2qid->pri2queue[pri])) != RT_ERR_OK)
+            return retVal;
+    }
+
+    return RT_ERR_OK;
+}

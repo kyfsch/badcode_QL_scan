@@ -1,0 +1,6 @@
+static inline void set_out_lanes(struct oxnas_pcie *pcie, unsigned lanes)
+{
+	regmap_update_bits(pcie->sys_ctrl, pcie->outbound_offset + PCIE_AHB_SLAVE_CTRL,
+				  PCIE_SLAVE_BE_MASK, PCIE_SLAVE_BE(lanes));
+	wmb();
+}

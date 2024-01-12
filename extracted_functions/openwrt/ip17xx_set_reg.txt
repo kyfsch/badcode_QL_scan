@@ -1,0 +1,11 @@
+static int ip17xx_set_reg(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	struct ip17xx_state *state = get_state(dev);
+	int new_reg = val->value.i;
+
+	if (new_reg < 0 || new_reg > 31)
+		state->proc_mii.m = (u16)-1;
+	else
+		state->proc_mii.m = (u16)new_reg;
+	return 0;
+}

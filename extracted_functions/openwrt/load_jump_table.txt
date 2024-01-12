@@ -1,0 +1,17 @@
+load_jump_table (unsigned long addr)
+{
+	int i;
+	uint32_t addr_le, addr_be;
+	uint32_t jump_table[32];
+
+	for (i = 0; i < 16; i++) {
+		addr_le = i * 8 + addr;
+		addr_be = ((addr_le >> 16) & 0xffff);
+		addr_be |= ((addr_le & 0xffff) << 16);
+		jump_table[i * 2 + 0] = 0x0f802020;
+		jump_table[i * 2 + 1] = addr_be;
+		//printk("jt %X %08X %08X\n",i,jump_table[i*2+0],jump_table[i*2+1]);
+	}
+	arc_code_page_download (32, &jump_table[0]);
+return 0;
+}

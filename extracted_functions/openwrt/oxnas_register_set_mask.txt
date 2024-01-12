@@ -1,0 +1,7 @@
+static inline void oxnas_register_set_mask(void __iomem *p, unsigned mask)
+{
+	u32 val = readl_relaxed(p);
+
+	val |= mask;
+	writel_relaxed(val, p);
+}

@@ -1,0 +1,4 @@
+void rtl838x_traffic_set(int source, u64 dest_matrix)
+{
+	rtl838x_set_port_reg(dest_matrix, rtl838x_port_iso_ctrl(source));
+}

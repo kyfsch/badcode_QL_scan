@@ -1,0 +1,42 @@
+static void bcm6318_pcie_setup(struct bcm6318_pcie *priv)
+{
+	u32 val;
+
+	__raw_writel(CPU_INT_PCIE_INTA | CPU_INT_PCIE_INTB |
+		     CPU_INT_PCIE_INTC | CPU_INT_PCIE_INTD,
+		     priv->base + PCIE_CPU_INT1_MASK_CLEAR_REG);
+
+	val = bcm6318_pcie_mem_resource.end & C2P_BASELIMIT_LIMIT_MASK;
+	val |= (bcm6318_pcie_mem_resource.start >> C2P_BASELIMIT_LIMIT_SHIFT)
+	       << C2P_BASELIMIT_BASE_SHIFT;
+	__raw_writel(val, priv->base + PCIE_CPU_2_PCIE_MEM_WIN0_BASELIMIT_REG);
+
+	/* setup class code as bridge */
+	val = __raw_readl(priv->base + PCIE_IDVAL3_REG);
+	val &= ~IDVAL3_CLASS_CODE_MASK;
+	val |= (PCI_CLASS_BRIDGE_PCI << IDVAL3_SUBCLASS_SHIFT);
+	__raw_writel(val, priv->base + PCIE_IDVAL3_REG);
+
+	/* disable bar1 size */
+	val = __raw_readl(priv->base + PCIE_CONFIG2_REG);
+	val &= ~CONFIG2_BAR1_SIZE_MASK;
+	__raw_writel(val, priv->base + PCIE_CONFIG2_REG);
+
+	/* set bar0 to little endian */
+	val = __raw_readl(priv->base + PCIE_CPU_2_PCIE_MEM_WIN0_LO_REG);
+	val |= bcm6318_pcie_mem_resource.start & C2P_MEM_WIN_BASE_ADDR_MASK;
+	val |= C2P_MEM_WIN_ENDIAN_HALF_BYTE_SWAP;
+	__raw_writel(val, priv->base + PCIE_CPU_2_PCIE_MEM_WIN0_LO_REG);
+
+	__raw_writel(SPECIFIC_ENDIAN_MODE_BYTE_ALIGN,
+		     priv->base + PCIE_SPECIFIC_REG);
+
+	__raw_writel(RC_BAR_CFG_LO_SIZE_256MB,
+		     priv->base + PCIE_RC_BAR1_CONFIG_LO_REG);
+
+	__raw_writel(BAR1_CFG_REMAP_ACCESS_EN,
+		     priv->base + PCIE_UBUS_BAR1_CFG_REMAP_REG);
+
+	__raw_writel(PCIE_BUS_DEVICE << EXT_CFG_BUS_NUM_SHIFT,
+		     priv->base + PCIE_EXT_CFG_INDEX_REG);
+}

@@ -1,0 +1,4 @@
+static inline int rtl838x_mac_link_spd_sts(int p)
+{
+	return RTL838X_MAC_LINK_SPD_STS(p);
+}

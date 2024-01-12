@@ -1,0 +1,34 @@
+static void rtl838x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_from, int index_to)
+{
+	int block_from = index_from / PIE_BLOCK_SIZE;
+	int block_to = index_to / PIE_BLOCK_SIZE;
+	u32 v = (index_from << 1)| (index_to << 12 ) | BIT(0);
+	u32 block_state;
+
+	pr_debug("%s: from %d to %d\n", __func__, index_from, index_to);
+	mutex_lock(&priv->reg_mutex);
+
+	/* Remember currently active blocks */
+	block_state = sw_r32(RTL838X_ACL_BLK_LOOKUP_CTRL);
+
+	/* Make sure rule-lookup is disabled in the relevant blocks */
+	for (int block = block_from; block <= block_to; block++) {
+		if (block_state & BIT(block))
+			sw_w32(block_state & (~BIT(block)), RTL838X_ACL_BLK_LOOKUP_CTRL);
+	}
+
+	/* Write from-to and execute bit into control register */
+	sw_w32(v, RTL838X_ACL_CLR_CTRL);
+
+	/* Wait until command has completed */
+	do {
+	} while (sw_r32(RTL838X_ACL_CLR_CTRL) & BIT(0));
+
+	/* Re-enable rule lookup */
+	for (int block = block_from; block <= block_to; block++) {
+		if (!(block_state & BIT(block)))
+			sw_w32(block_state | BIT(block), RTL838X_ACL_BLK_LOOKUP_CTRL);
+	}
+
+	mutex_unlock(&priv->reg_mutex);
+}

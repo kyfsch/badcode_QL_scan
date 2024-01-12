@@ -1,0 +1,17 @@
+static int ip17xx_set_enable_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	struct ip17xx_state *state = get_state(dev);
+	int enable;
+
+	enable = val->value.i;
+	if (state->vlan_enabled == enable) {
+		// Do not change any state.
+		return 0;
+	}
+	state->vlan_enabled = enable;
+
+	// Otherwise, if we are switching state, set fields to a known default.
+	ip17xx_reset_vlan_config(state);
+
+	return state->regs->set_vlan_mode(state);
+}

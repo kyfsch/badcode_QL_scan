@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicUnknownMulticastTrapPriority(rtk_uint32 priority)
+{
+    if(priority > RTL8367C_PRIMAX)
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_QOS_TRAP_PRIORITY_CTRL0_REG, RTL8367C_UNKNOWN_MC_PRIORTY_MASK, priority);
+}

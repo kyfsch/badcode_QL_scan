@@ -1,0 +1,31 @@
+static int ubootenv_probe(struct platform_device *pdev)
+{
+	struct ubootenv_drvdata *data = &drvdata;
+	struct device *dev = &pdev->dev;
+	struct device_node *np;
+
+	/* enforce single instance */
+	if (data->env)
+		return -EINVAL;
+
+	np = of_parse_phandle(dev->of_node, "memory-region", 0);
+	if (!np)
+		return -ENODEV;
+
+	data->rmem = of_reserved_mem_lookup(np);
+	of_node_put(np);
+	if (!data->rmem)
+		return -ENODEV;
+
+	if (!data->rmem->size || (data->rmem->size > ULONG_MAX))
+		return -EINVAL;
+
+	if (!PAGE_ALIGNED(data->rmem->base) || !PAGE_ALIGNED(data->rmem->size))
+		return -EINVAL;
+
+	data->env = devm_memremap(&pdev->dev, data->rmem->base, data->rmem->size, MEMREMAP_WB);
+	platform_set_drvdata(pdev, data);
+
+	data->misc.parent = &pdev->dev;
+	return misc_register(&data->misc);
+}

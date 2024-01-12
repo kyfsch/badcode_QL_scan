@@ -1,0 +1,13 @@
+void b53_set_forwarding(struct b53_device *dev, int enable)
+{
+	u8 mgmt;
+
+	b53_read8(dev, B53_CTRL_PAGE, B53_SWITCH_MODE, &mgmt);
+
+	if (enable)
+		mgmt |= SM_SW_FWD_EN;
+	else
+		mgmt &= ~SM_SW_FWD_EN;
+
+	b53_write8(dev, B53_CTRL_PAGE, B53_SWITCH_MODE, mgmt);
+}

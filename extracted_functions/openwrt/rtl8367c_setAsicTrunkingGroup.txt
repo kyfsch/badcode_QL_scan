@@ -1,0 +1,6 @@
+ret_t rtl8367c_setAsicTrunkingGroup(rtk_uint32 group, rtk_uint32 portmask)
+{
+    if(group > RTL8367C_MAX_TRUNK_GID)
+        return RT_ERR_LA_TRUNK_ID;
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_PORT_TRUNK_GROUP_MASK, RTL8367C_PORT_TRUNK_GROUP0_MASK_MASK << (group * 4), portmask);
+}

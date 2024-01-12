@@ -1,0 +1,4 @@
+static DSL_int_t ubus_main(DSL_CPE_Thread_Params_t *params) {
+	uloop_run();
+	return 0;
+}

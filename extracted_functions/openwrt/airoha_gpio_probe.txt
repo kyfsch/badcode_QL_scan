@@ -1,0 +1,39 @@
+static int airoha_gpio_probe(struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
+	struct airoha_gpio_ctrl *ctrl;
+	int err;
+
+	ctrl = devm_kzalloc(dev, sizeof(*ctrl), GFP_KERNEL);
+	if (!ctrl)
+		return -ENOMEM;
+
+	ctrl->data = devm_platform_ioremap_resource(pdev, 0);
+	if (IS_ERR(ctrl->data))
+		return PTR_ERR(ctrl->data);
+
+	ctrl->dir[0] = devm_platform_ioremap_resource(pdev, 1);
+	if (IS_ERR(ctrl->dir[0]))
+		return PTR_ERR(ctrl->dir[0]);
+
+	ctrl->dir[1] = devm_platform_ioremap_resource(pdev, 2);
+	if (IS_ERR(ctrl->dir[1]))
+		return PTR_ERR(ctrl->dir[1]);
+
+	ctrl->output = devm_platform_ioremap_resource(pdev, 3);
+	if (IS_ERR(ctrl->output))
+		return PTR_ERR(ctrl->output);
+
+	err = bgpio_init(&ctrl->gc, dev, 4, ctrl->data, NULL,
+			 NULL, NULL, NULL, 0);
+	if (err)
+		return dev_err_probe(dev, err, "unable to init generic GPIO");
+
+	ctrl->gc.ngpio = AIROHA_GPIO_MAX;
+	ctrl->gc.owner = THIS_MODULE;
+	ctrl->gc.direction_output = airoha_dir_out;
+	ctrl->gc.direction_input = airoha_dir_in;
+	ctrl->gc.get_direction = airoha_get_dir;
+
+	return devm_gpiochip_add_data(dev, &ctrl->gc, ctrl);
+}

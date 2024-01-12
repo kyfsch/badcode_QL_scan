@@ -1,0 +1,22 @@
+ret_t rtl8367c_getAsicPriorityPortBased(rtk_uint32 port, rtk_uint32 *pPriority )
+{
+    ret_t retVal;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(port < 8)
+    {
+        retVal = rtl8367c_getAsicRegBits(RTL8367C_QOS_PORTBASED_PRIORITY_REG(port), RTL8367C_QOS_PORTBASED_PRIORITY_MASK(port), pPriority);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+    }
+    else
+    {
+        retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_QOS_PORTBASED_PRIORITY_CTRL2, 0x7 << ((port - 8) << 2), pPriority);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+    }
+
+    return RT_ERR_OK;
+}

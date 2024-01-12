@@ -1,0 +1,25 @@
+ret_t rtl8367c_setAsicIGMPPortMAXGroup(rtk_uint32 port, rtk_uint32 max_group)
+{
+    ret_t retVal;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(max_group > RTL8367C_IGMP_MAX_GOUP)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if(port < 8)
+    {
+        retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_IGMP_PORT01_MAX_GROUP + (port/2), RTL8367C_PORT0_MAX_GROUP_MASK << (RTL8367C_PORT1_MAX_GROUP_OFFSET * (port%2)), max_group);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+    }
+    else
+    {
+        retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_IGMP_PORT89_MAX_GROUP + (port/2), RTL8367C_PORT0_MAX_GROUP_MASK << (RTL8367C_PORT1_MAX_GROUP_OFFSET * (port%2)), max_group);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+    }
+
+    return RT_ERR_OK;
+}

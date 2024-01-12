@@ -1,0 +1,60 @@
+static int mt7621_nfc_read_page_hwecc(struct nand_chip *nand, uint8_t *buf,
+				      int oob_required, int page)
+{
+	struct mt7621_nfc *nfc = nand_get_controller_data(nand);
+	struct mtd_info *mtd = nand_to_mtd(nand);
+	int bitflips = 0, ret = 0;
+	int rc, i;
+
+	nand_read_page_op(nand, page, 0, NULL, 0);
+
+	nfi_write16(nfc, NFI_CNFG, (CNFG_OP_CUSTOM << CNFG_OP_MODE_S) |
+		    CNFG_READ_MODE | CNFG_AUTO_FMT_EN | CNFG_HW_ECC_EN);
+
+	mt7621_ecc_decoder_op(nfc, true);
+
+	nfi_write16(nfc, NFI_CON,
+		    CON_NFI_BRD | (nand->ecc.steps << CON_NFI_SEC_S));
+
+	for (i = 0; i < nand->ecc.steps; i++) {
+		if (buf)
+			mt7621_nfc_read_data(nfc, page_data_ptr(nand, buf, i),
+					     nand->ecc.size);
+		else
+			mt7621_nfc_read_data_discard(nfc, nand->ecc.size);
+
+		rc = mt7621_ecc_decoder_wait_done(nfc, i);
+
+		mt7621_nfc_read_sector_fdm(nfc, i);
+
+		if (rc < 0) {
+			ret = -EIO;
+			continue;
+		}
+
+		rc = mt7621_ecc_correct_check(nfc,
+			buf ? page_data_ptr(nand, buf, i) : NULL,
+			oob_fdm_ptr(nand, i), i);
+
+		if (rc < 0) {
+			dev_dbg(nfc->dev,
+				 "Uncorrectable ECC error at page %d.%d\n",
+				 page, i);
+			bitflips = nand->ecc.strength + 1;
+			mtd->ecc_stats.failed++;
+		} else {
+			if (rc > bitflips)
+				bitflips = rc;
+			mtd->ecc_stats.corrected += rc;
+		}
+	}
+
+	mt7621_ecc_decoder_op(nfc, false);
+
+	nfi_write16(nfc, NFI_CON, 0);
+
+	if (ret < 0)
+		return ret;
+
+	return bitflips;
+}

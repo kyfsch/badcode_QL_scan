@@ -1,0 +1,44 @@
+static void rtl838x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
+{
+	u64 mac = ether_addr_to_u64(e->mac);
+
+	if (!e->valid) {
+		r[0] = r[1] = r[2] = 0;
+		return;
+	}
+
+	r[0] = e->is_ip_mc ? BIT(22) : 0;
+	r[0] |= e->is_ipv6_mc ? BIT(21) : 0;
+
+	if (!e->is_ip_mc && !e->is_ipv6_mc) {
+		r[1] = mac >> 20;
+		r[2] = (mac & 0xfffff) << 12;
+
+		/* Is it a unicast entry? check multicast bit */
+		if (!(e->mac[0] & 1)) {
+			r[0] |= e->is_static ? BIT(19) : 0;
+			r[0] |= (e->port & 0x3f) << 12;
+			r[0] |= e->vid;
+			r[1] |= e->block_da ? BIT(30) : 0;
+			r[1] |= e->block_sa ? BIT(31) : 0;
+			r[1] |= e->suspended ? BIT(29) : 0;
+			r[2] |= e->rvid & 0xfff;
+			if (e->next_hop) {
+				r[1] |= BIT(28);
+				r[0] |= e->nh_vlan_target ? BIT(9) : 0;
+				r[0] |= e->nh_route_id & 0x1ff;
+			}
+			r[0] |= (e->age & 0x3) << 17;
+		} else { /* L2 Multicast */
+			r[0] |= (e->mc_portmask_index & 0x1ff) << 12;
+			r[2] |= e->rvid & 0xfff;
+			r[0] |= e->vid & 0xfff;
+			pr_debug("FILL MC: %08x %08x %08x\n", r[0], r[1], r[2]);
+		}
+	} else { /* IPv4 and IPv6 multicast */
+		r[0] |= (e->mc_portmask_index & 0x1ff) << 12;
+		r[1] = e->mc_gip >> 20;
+		r[2] = e->mc_gip << 12;
+		r[2] |= e->rvid;
+	}
+}

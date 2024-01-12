@@ -1,0 +1,15 @@
+static bool wpas_ubus_init(void)
+{
+	if (ctx)
+		return true;
+
+	eloop_add_uloop();
+	ctx = ubus_connect(NULL);
+	if (!ctx)
+		return false;
+
+	ctx->connection_lost = wpas_ubus_connection_lost;
+	ubus_add_uloop(ctx);
+
+	return true;
+}

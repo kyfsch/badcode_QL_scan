@@ -1,0 +1,13 @@
+static void ep_mem_write(u8 __iomem *dst, const void *src, size_t len)
+{
+	int i;
+	const u32 *src_addr = src;
+
+	if (len % 4)
+		pr_info("Warning!!: Copy len is not multiple of 4\n");
+
+	len = len >> 2;
+
+	for (i = 0; i < len; i++)
+		writel(src_addr[i], (dst + (i << 2)));
+}

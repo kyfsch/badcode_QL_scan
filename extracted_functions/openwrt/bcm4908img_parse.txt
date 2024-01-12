@@ -1,0 +1,129 @@
+static int bcm4908img_parse(FILE *fp, struct bcm4908img_info *info) {
+	struct bcm4908img_tail *tail = &info->tail;
+	struct linksys_tail *linksys;
+	struct chk_header *chk;
+	struct stat st;
+	uint8_t buf[1024];
+	size_t file_size;
+	uint16_t tmp16;
+	size_t length;
+	size_t bytes;
+	int err = 0;
+
+	memset(info, 0, sizeof(*info));
+
+	/* File size */
+
+	if (fstat(fileno(fp), &st)) {
+		err = -errno;
+		fprintf(stderr, "Failed to fstat: %d\n", err);
+		return err;
+	}
+	file_size = st.st_size;
+
+	info->tail_offset = file_size - sizeof(*tail);
+
+	/* Vendor formats */
+
+	rewind(fp);
+	if (fread(buf, 1, sizeof(buf), fp) != sizeof(buf)) {
+		fprintf(stderr, "Failed to read file header\n");
+		return -EIO;
+	}
+	chk = (void *)buf;
+	if (be32_to_cpu(chk->magic) == 0x2a23245e)
+		info->cferom_offset = be32_to_cpu(chk->header_len);
+
+	fseek(fp, -sizeof(buf), SEEK_END);
+	if (fread(buf, 1, sizeof(buf), fp) != sizeof(buf)) {
+		fprintf(stderr, "Failed to read file header\n");
+		return -EIO;
+	}
+	linksys = (void *)(buf + sizeof(buf) - sizeof(*linksys));
+	if (!memcmp(linksys->magic, ".LINKSYS.", sizeof(linksys->magic))) {
+		info->tail_offset -= sizeof(*linksys);
+	}
+
+	/* Offsets */
+
+	for (info->bootfs_offset = info->cferom_offset;
+	     info->bootfs_offset < info->tail_offset;
+	     info->bootfs_offset += 0x20000) {
+		if (fseek(fp, info->bootfs_offset, SEEK_SET)) {
+			err = -errno;
+			fprintf(stderr, "Failed to fseek to the 0x%zx\n", info->bootfs_offset);
+			return err;
+		}
+		if (fread(&tmp16, 1, sizeof(tmp16), fp) != sizeof(tmp16)) {
+			fprintf(stderr, "Failed to read while looking for JFFS2\n");
+			return -EIO;
+		}
+		if (be16_to_cpu(tmp16) == 0x8519)
+			break;
+	}
+	if (info->bootfs_offset >= info->tail_offset) {
+		fprintf(stderr, "Failed to find bootfs offset\n");
+		return -EPROTO;
+	}
+
+	for (info->rootfs_offset = info->bootfs_offset;
+	     info->rootfs_offset < info->tail_offset;
+	     info->rootfs_offset += 0x20000) {
+		uint32_t *magic = (uint32_t *)&buf[0];
+
+		if (fseek(fp, info->rootfs_offset, SEEK_SET)) {
+			err = -errno;
+			fprintf(stderr, "Failed to fseek: %d\n", err);
+			return err;
+		}
+
+		length = info->padding_offset ? sizeof(*magic) : 256;
+		bytes = fread(buf, 1, length, fp);
+		if (bytes != length) {
+			fprintf(stderr, "Failed to read %zu bytes\n", length);
+			return -EIO;
+		}
+
+		if (!info->padding_offset && bcm4908img_is_all_ff(buf, length))
+			info->padding_offset = info->rootfs_offset;
+
+		if (be32_to_cpu(*magic) == UBI_EC_HDR_MAGIC)
+			break;
+	}
+	if (info->rootfs_offset >= info->tail_offset) {
+		fprintf(stderr, "Failed to find rootfs offset\n");
+		return -EPROTO;
+	}
+
+	/* CRC32 */
+
+	/* Start with cferom (or bootfs) - skip vendor header */
+	fseek(fp, info->cferom_offset, SEEK_SET);
+
+	info->crc32 = 0xffffffff;
+	length = info->tail_offset - info->cferom_offset;
+	while (length && (bytes = fread(buf, 1, bcm4908img_min(sizeof(buf), length), fp)) > 0) {
+		info->crc32 = bcm4908img_crc32(info->crc32, buf, bytes);
+		length -= bytes;
+	}
+	if (length) {
+		fprintf(stderr, "Failed to read last %zd B of data\n", length);
+		return -EIO;
+	}
+
+	/* Tail */
+
+	if (fread(tail, 1, sizeof(*tail), fp) != sizeof(*tail)) {
+		fprintf(stderr, "Failed to read BCM4908 image tail\n");
+		return -EIO;
+	}
+
+	/* Standard validation */
+
+	if (info->crc32 != le32_to_cpu(tail->crc32)) {
+		fprintf(stderr, "Invalid data crc32: 0x%08x instead of 0x%08x\n", info->crc32, le32_to_cpu(tail->crc32));
+		return -EPROTO;
+	}
+
+	return 0;
+}

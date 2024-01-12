@@ -1,0 +1,15 @@
+static int ag71xx_hw_enable(struct ag71xx *ag)
+{
+	int ret;
+
+	ret = ag71xx_rings_init(ag);
+	if (ret)
+		return ret;
+
+	napi_enable(&ag->napi);
+	ag71xx_wr(ag, AG71XX_REG_TX_DESC, ag->tx_ring.descs_dma);
+	ag71xx_wr(ag, AG71XX_REG_RX_DESC, ag->rx_ring.descs_dma);
+	netif_start_queue(ag->dev);
+
+	return 0;
+}

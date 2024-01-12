@@ -1,0 +1,52 @@
+static int aca_soc_desc_alloc(int dev)
+{
+	dma_addr_t phy_addr;
+	void *base;
+	u32 size;
+
+	if (dev < 0 || dev > (DC_EP_MAX_PEER + 1))
+		return -EINVAL;
+
+	/* TXIN */
+	size = TXIN_SOC_DES_NUM * TXIN_HD_DES_SIZE * 4;
+	base  = dma_alloc_coherent(NULL, size, &phy_addr, GFP_DMA);
+	if (!base)
+		goto txin;
+	aca_soc_hd_desc[dev].txin.base = base;
+	aca_soc_hd_desc[dev].txin.phy_base = phy_addr;
+	aca_soc_hd_desc[dev].txin.size = size;
+	pr_info("txin soc desc base %p phy 0x%08x size 0x%08x\n",
+		base, (u32)phy_addr, size);
+
+	/* TXOUT */
+	size = TXOUT_SOC_DES_NUM * TXOUT_HD_DES_SIZE * 4;
+	base  = dma_alloc_coherent(NULL, size, &phy_addr, GFP_DMA);
+	if (!base)
+		goto txout;
+	aca_soc_hd_desc[dev].txout.base = base;
+	aca_soc_hd_desc[dev].txout.phy_base = phy_addr;
+	aca_soc_hd_desc[dev].txout.size = size;
+	pr_info("txout soc desc base %p phy 0x%08x size 0x%08x\n",
+		base, (u32)phy_addr, size);
+	/* RXOUT */
+	size = RXOUT_SOC_DES_NUM * RXOUT_HD_DES_SIZE * 4;
+	base  = dma_alloc_coherent(NULL, size, &phy_addr, GFP_DMA);
+	if (!base)
+		goto rxout;
+	aca_soc_hd_desc[dev].rxout.base = base;
+	aca_soc_hd_desc[dev].rxout.phy_base = phy_addr;
+	aca_soc_hd_desc[dev].rxout.size = size;
+	pr_info("rxout soc desc base %p phy 0x%08x size 0x%08x\n",
+		base, (u32)phy_addr, size);
+	return 0;
+rxout:
+	dma_free_coherent(NULL, aca_soc_hd_desc[dev].txout.size,
+		aca_soc_hd_desc[dev].txout.base,
+		aca_soc_hd_desc[dev].txout.phy_base);
+txout:
+	dma_free_coherent(NULL, aca_soc_hd_desc[dev].txin.size,
+		aca_soc_hd_desc[dev].txin.base,
+		aca_soc_hd_desc[dev].txin.phy_base);
+txin:
+	return -ENOMEM;
+}

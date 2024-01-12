@@ -1,0 +1,20 @@
+uc_bpf_module_get_map(uc_vm_t *vm, size_t nargs)
+{
+	struct bpf_object *obj = uc_fn_thisval("bpf.module");
+	struct bpf_map *map;
+	uc_value_t *name = uc_fn_arg(0);
+	int fd;
+
+	if (!obj || ucv_type(name) != UC_STRING)
+		err_return(EINVAL, NULL);
+
+	map = bpf_object__find_map_by_name(obj, ucv_string_get(name));
+	if (!map)
+		err_return(errno, NULL);
+
+	fd = bpf_map__fd(map);
+	if (fd < 0)
+		err_return(EINVAL, NULL);
+
+	return uc_bpf_map_create(fd, bpf_map__key_size(map), bpf_map__value_size(map), false);
+}

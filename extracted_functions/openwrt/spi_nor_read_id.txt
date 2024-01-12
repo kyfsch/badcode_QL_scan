@@ -1,0 +1,27 @@
+int spi_nor_read_id(void)
+{
+	int ret;
+
+	const uint8_t tx_buf[1] = {CMD_READ_ID};
+	uint8_t rx_buf[3] = {};
+	struct spi_transfer t[2] = {{
+		.tx_buf = tx_buf,
+		.rx_buf = NULL,
+		.len = sizeof(tx_buf),
+	}, {
+		.tx_buf = NULL,
+		.rx_buf = rx_buf,
+		.len = sizeof(rx_buf),
+	}};
+
+	ret = spi_xfer(t, ARRAY_SIZE(t));
+	if (ret) {
+		puts("SPI transfer failed\n");
+		return ret;
+	}
+
+	puts("Flash JECED ID: ");
+	put_array(rx_buf, sizeof(rx_buf));
+
+	return 0;
+}

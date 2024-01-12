@@ -1,0 +1,27 @@
+static int rtl838x_poll_rx(struct napi_struct *napi, int budget)
+{
+	struct rtl838x_rx_q *rx_q = container_of(napi, struct rtl838x_rx_q, napi);
+	struct rtl838x_eth_priv *priv = rx_q->priv;
+	int work_done = 0;
+	int r = rx_q->id;
+	int work;
+
+	while (work_done < budget) {
+		work = rtl838x_hw_receive(priv->netdev, r, budget - work_done);
+		if (!work)
+			break;
+		work_done += work;
+	}
+
+	if (work_done < budget) {
+		napi_complete_done(napi, work_done);
+
+		/* Enable RX interrupt */
+		if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID)
+			sw_w32(0xffffffff, priv->r->dma_if_intr_rx_done_msk);
+		else
+			sw_w32_mask(0, 0xf00ff | BIT(r + 8), priv->r->dma_if_intr_msk);
+	}
+
+	return work_done;
+}

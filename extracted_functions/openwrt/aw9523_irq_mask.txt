@@ -1,0 +1,9 @@
+static void aw9523_irq_mask(struct irq_data *d)
+{
+	struct aw9523 *awi = gpiochip_get_data(irq_data_get_irq_chip_data(d));
+	unsigned int n = d->hwirq % AW9523_PINS_PER_PORT;
+
+	regmap_update_bits(awi->regmap,
+			   AW9523_REG_INTR_DIS(d->hwirq),
+			   BIT(n), BIT(n));
+}

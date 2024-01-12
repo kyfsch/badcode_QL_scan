@@ -1,0 +1,10 @@
+static void bcm6348_int_cfg_writel(u32 val, u32 reg)
+{
+	struct bcm6348_pci *priv = &bcm6348_pci;
+	u32 tmp;
+
+	tmp = reg & MPI_PCICFGCTL_CFGADDR_MASK;
+	tmp |= MPI_PCICFGCTL_WRITEEN_MASK;
+	__raw_writel(tmp, priv->pci + MPI_PCICFGCTL_REG);
+	__raw_writel(val, priv->pci + MPI_PCICFGDATA_REG);
+}

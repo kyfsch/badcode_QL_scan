@@ -1,0 +1,28 @@
+static int aca_soc_desc_free(int dev)
+{
+	dma_addr_t phy_addr;
+	void *base;
+	size_t size;
+
+	if (dev < 0 || dev > (DC_EP_MAX_PEER + 1))
+		return -EINVAL;
+
+	/* TXIN */
+	base = aca_soc_hd_desc[dev].txin.base;
+	phy_addr = aca_soc_hd_desc[dev].txin.phy_base;
+	size = aca_soc_hd_desc[dev].txin.size;
+	dma_free_coherent(NULL, size, base, phy_addr);
+
+	/* TXOUT */
+	base = aca_soc_hd_desc[dev].txout.base;
+	phy_addr = aca_soc_hd_desc[dev].txout.phy_base;
+	size = aca_soc_hd_desc[dev].txout.size;
+	dma_free_coherent(NULL, size, base, phy_addr);
+
+	/* RXOUT */
+	base = aca_soc_hd_desc[dev].rxout.base;
+	phy_addr = aca_soc_hd_desc[dev].rxout.phy_base;
+	size = aca_soc_hd_desc[dev].rxout.size;
+	dma_free_coherent(NULL, size, base, phy_addr);
+	return 0;
+}

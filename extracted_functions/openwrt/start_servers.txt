@@ -1,0 +1,14 @@
+start_servers(bool restart)
+{
+	struct ead_instance *in;
+	struct list_head *p;
+
+	list_for_each(p, &instances) {
+		in = list_entry(p, struct ead_instance, list);
+		if (in->pid > 0)
+			continue;
+
+		sleep(1);
+		start_server(in);
+	}
+}

@@ -1,0 +1,12 @@
+rtk_api_ret_t rtk_ptp_mac_get(rtk_mac_t *pMac)
+{
+    rtk_api_ret_t retVal;
+    ether_addr_t sw_mac;
+
+    if((retVal=rtl8367c_getAsicEavMacAddress(&sw_mac))!=RT_ERR_OK)
+        return retVal;
+
+    memcpy(pMac->octet, sw_mac.octet, ETHER_ADDR_LEN);
+
+    return RT_ERR_OK;
+}

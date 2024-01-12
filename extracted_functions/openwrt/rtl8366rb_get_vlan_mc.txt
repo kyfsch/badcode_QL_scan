@@ -1,0 +1,30 @@
+static int rtl8366rb_get_vlan_mc(struct rtl8366_smi *smi, u32 index,
+				 struct rtl8366_vlan_mc *vlanmc)
+{
+	u32 data[3];
+	int err;
+	int i;
+
+	memset(vlanmc, '\0', sizeof(struct rtl8366_vlan_mc));
+
+	if (index >= RTL8366RB_NUM_VLANS)
+		return -EINVAL;
+
+	for (i = 0; i < 3; i++) {
+		err = rtl8366_smi_read_reg(smi,
+					   RTL8366RB_VLAN_MC_BASE(index) + i,
+					   &data[i]);
+		if (err)
+			return err;
+	}
+
+	vlanmc->vid = data[0] & RTL8366RB_VLAN_VID_MASK;
+	vlanmc->priority = (data[0] >> RTL8366RB_VLAN_PRIORITY_SHIFT) &
+			   RTL8366RB_VLAN_PRIORITY_MASK;
+	vlanmc->untag = (data[1] >> RTL8366RB_VLAN_UNTAG_SHIFT) &
+			RTL8366RB_VLAN_UNTAG_MASK;
+	vlanmc->member = data[1] & RTL8366RB_VLAN_MEMBER_MASK;
+	vlanmc->fid = data[2] & RTL8366RB_VLAN_FID_MASK;
+
+	return 0;
+}

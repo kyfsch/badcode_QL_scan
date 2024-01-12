@@ -1,0 +1,22 @@
+ret_t rtl8367c_setAsicI2CStartCmd(void)
+{
+    rtk_uint32 regData;
+    ret_t retVal;
+
+    /* Bits [4-1] = 0b0000, Start Command; Bit [0] = 1, Trigger the Command */
+    if ((retVal = rtl8367c_getAsicReg(RTL8367C_REG_M_I2C_CTL_STA_REG, &regData)) != RT_ERR_OK)
+        return retVal;
+    regData &= 0xFFE0;
+    regData |= 0x0001;
+
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_M_I2C_CTL_STA_REG, regData)) != RT_ERR_OK)
+        return retVal;
+
+    /* wait for command finished */
+    do{
+       if ((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_M_I2C_CTL_STA_REG, RTL8367C_I2C_CMD_EXEC_OFFSET, &regData)) != RT_ERR_OK)
+            return retVal;
+    }while( regData != 0x0);
+
+    return RT_ERR_OK ;
+}

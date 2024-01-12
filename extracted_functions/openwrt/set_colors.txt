@@ -1,0 +1,25 @@
+void set_colors(void)
+{
+	const struct nconf_attr_param *p;
+	int pair = 0;
+
+	if (has_colors()) {
+		start_color();
+		use_default_colors();
+		p = color_theme_params;
+	} else {
+		p = no_color_theme_params;
+	}
+
+	for (; p->attr; p++) {
+		int attr = p->highlight;
+
+		if (p->has_color) {
+			pair++;
+			init_pair(pair, p->color_fg, p->color_bg);
+			attr |= COLOR_PAIR(pair);
+		}
+
+		*p->attr = attr;
+	}
+}

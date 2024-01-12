@@ -1,0 +1,10 @@
+static void line_feature_config(int fd, DSL_AccessDir_t direction, bool *retx) {
+	IOCTL_DIR(DSL_LineFeature_t, DSL_FIO_LINE_FEATURE_STATUS_GET, direction)
+
+	m_bool("trellis", out.data.bTrellisEnable);
+	m_bool("bitswap", out.data.bBitswapEnable);
+	m_bool("retx", out.data.bReTxEnable);
+	m_bool("virtual_noise", out.data.bVirtualNoiseSupport);
+
+	*retx = out.data.bReTxEnable;
+}

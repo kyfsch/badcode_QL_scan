@@ -1,0 +1,9 @@
+void fe_mdio_cleanup(struct fe_priv *priv)
+{
+	if (!priv->mii_bus)
+		return;
+
+	mdiobus_unregister(priv->mii_bus);
+	of_node_put(priv->mii_bus->dev.of_node);
+	kfree(priv->mii_bus);
+}

@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicMaxLengthCfg(rtk_uint32 cfgId, rtk_uint32 maxLength)
+{
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_MAX_LEN_RX_TX_CFG0 + cfgId, RTL8367C_MAX_LEN_RX_TX_CFG0_MASK, maxLength);
+}

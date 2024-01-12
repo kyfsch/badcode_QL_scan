@@ -1,0 +1,7 @@
+void rtl9300_do_rx_calibration_2(int sds)
+{
+	rtl930x_sds_rx_rst(sds, PHY_INTERFACE_MODE_10GBASER);
+	rtl9300_do_rx_calibration_2_1(sds);
+	rtl9300_do_rx_calibration_2_2(sds);
+	rtl9300_do_rx_calibration_2_3(sds);
+}

@@ -1,0 +1,64 @@
+hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
+		       struct ubus_request_data *ureq, const char *method,
+		       struct blob_attr *msg)
+{
+	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+	struct blob_attr *tb[__BEACON_REQ_MAX];
+	struct blob_attr *cur;
+	struct wpabuf *req;
+	u8 bssid[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+	u8 addr[ETH_ALEN];
+	int mode, rem, ret;
+	int buf_len = 13;
+
+	blobmsg_parse(beacon_req_policy, __BEACON_REQ_MAX, tb, blob_data(msg), blob_len(msg));
+
+	if (!tb[BEACON_REQ_ADDR] || !tb[BEACON_REQ_MODE] || !tb[BEACON_REQ_DURATION] ||
+	    !tb[BEACON_REQ_OP_CLASS] || !tb[BEACON_REQ_CHANNEL])
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	if (tb[BEACON_REQ_SSID])
+		buf_len += blobmsg_data_len(tb[BEACON_REQ_SSID]) + 2 - 1;
+
+	mode = blobmsg_get_u32(tb[BEACON_REQ_MODE]);
+	if (hwaddr_aton(blobmsg_data(tb[BEACON_REQ_ADDR]), addr))
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	if (tb[BEACON_REQ_BSSID] &&
+	    hwaddr_aton(blobmsg_data(tb[BEACON_REQ_BSSID]), bssid))
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	req = wpabuf_alloc(buf_len);
+	if (!req)
+		return UBUS_STATUS_UNKNOWN_ERROR;
+
+	/* 1: regulatory class */
+	wpabuf_put_u8(req, blobmsg_get_u32(tb[BEACON_REQ_OP_CLASS]));
+
+	/* 2: channel number */
+	wpabuf_put_u8(req, blobmsg_get_u32(tb[BEACON_REQ_CHANNEL]));
+
+	/* 3-4: randomization interval */
+	wpabuf_put_le16(req, 0);
+
+	/* 5-6: duration */
+	wpabuf_put_le16(req, blobmsg_get_u32(tb[BEACON_REQ_DURATION]));
+
+	/* 7: mode */
+	wpabuf_put_u8(req, blobmsg_get_u32(tb[BEACON_REQ_MODE]));
+
+	/* 8-13: BSSID */
+	wpabuf_put_data(req, bssid, ETH_ALEN);
+
+	if ((cur = tb[BEACON_REQ_SSID]) != NULL) {
+		wpabuf_put_u8(req, WLAN_EID_SSID);
+		wpabuf_put_u8(req, blobmsg_data_len(cur) - 1);
+		wpabuf_put_data(req, blobmsg_data(cur), blobmsg_data_len(cur) - 1);
+	}
+
+	ret = hostapd_send_beacon_req(hapd, addr, 0, req);
+	if (ret < 0)
+		return -ret;
+
+	return 0;
+}

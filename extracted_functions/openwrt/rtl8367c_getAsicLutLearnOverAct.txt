@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicLutLearnOverAct(rtk_uint32* pAction)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_PORT_SECURITY_CTRL, RTL8367C_LUT_LEARN_OVER_ACT_MASK, pAction);
+}

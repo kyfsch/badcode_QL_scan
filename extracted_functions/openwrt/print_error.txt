@@ -1,0 +1,5 @@
+static void print_error()
+{
+	fprintf(stderr, "%s", strerror(errno));
+	exit(1);
+}

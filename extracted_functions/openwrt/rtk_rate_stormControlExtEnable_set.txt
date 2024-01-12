@@ -1,0 +1,37 @@
+rtk_api_ret_t rtk_rate_stormControlExtEnable_set(rtk_rate_storm_group_t stormType, rtk_enable_t enable)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (stormType >= STORM_GROUP_END)
+        return RT_ERR_SFC_UNKNOWN_GROUP;
+
+    if (enable >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    switch (stormType)
+    {
+        case STORM_GROUP_UNKNOWN_UNICAST:
+            if ((retVal = rtl8367c_setAsicStormFilterExtUnknownUnicastEnable(enable)) != RT_ERR_OK)
+                return retVal;
+            break;
+        case STORM_GROUP_UNKNOWN_MULTICAST:
+            if ((retVal = rtl8367c_setAsicStormFilterExtUnknownMulticastEnable(enable)) != RT_ERR_OK)
+                return retVal;
+            break;
+        case STORM_GROUP_MULTICAST:
+            if ((retVal = rtl8367c_setAsicStormFilterExtMulticastEnable(enable)) != RT_ERR_OK)
+                return retVal;
+            break;
+        case STORM_GROUP_BROADCAST:
+            if ((retVal = rtl8367c_setAsicStormFilterExtBroadcastEnable(enable)) != RT_ERR_OK)
+                return retVal;
+            break;
+        default:
+            break;
+    }
+
+    return RT_ERR_OK;
+}

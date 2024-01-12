@@ -1,0 +1,13 @@
+ret_t rtl8367c_setAsicIpMulticastPortIsoLeaky(rtk_uint32 port, rtk_uint32 enabled)
+{
+    ret_t   retVal;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_IPMCAST_PORTISO_LEAKY_REG, (0x0001 << port), enabled);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

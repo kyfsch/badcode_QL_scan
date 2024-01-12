@@ -1,0 +1,72 @@
+t_changepw(pwname, diff)
+     const char * pwname;
+     const struct t_pwent * diff;
+{
+  char * bakfile;
+  char * bakfile2;
+  struct stat st;
+  FILE * passfp;
+  FILE * bakfp;
+
+  if(pwname == NULL)
+    pwname = DEFAULT_PASSWD;
+
+  if((passfp = fopen(pwname, "rb")) == NULL || fstat(fileno(passfp), &st) < 0)
+    return -1;
+
+  if((bakfile = malloc(strlen(pwname) + 5)) == NULL) {
+    fclose(passfp);
+    return -1;
+  }
+  else if((bakfile2 = malloc(strlen(pwname) + 5)) == NULL) {
+    fclose(passfp);
+    free(bakfile);
+    return -1;
+  }
+
+  sprintf(bakfile, "%s.bak", pwname);
+  sprintf(bakfile2, "%s.sav", pwname);
+
+  if((bakfp = fopen(bakfile2, "wb")) == NULL &&
+     (unlink(bakfile2) < 0 || (bakfp = fopen(bakfile2, "wb")) == NULL)) {
+    fclose(passfp);
+    free(bakfile);
+    free(bakfile2);
+    return -1;
+  }
+
+#ifdef NO_FCHMOD
+  chmod(bakfile2, st.st_mode & 0777);
+#else
+  fchmod(fileno(bakfp), st.st_mode & 0777);
+#endif
+
+  t_pwcopy(bakfp, passfp, diff);
+
+  fclose(bakfp);
+  fclose(passfp);
+
+#ifdef USE_RENAME
+  unlink(bakfile);
+  if(rename(pwname, bakfile) < 0) {
+    free(bakfile);
+    free(bakfile2);
+    return -1;
+  }
+  if(rename(bakfile2, pwname) < 0) {
+    free(bakfile);
+    free(bakfile2);
+    return -1;
+  }
+#else
+  unlink(bakfile);
+  link(pwname, bakfile);
+  unlink(pwname);
+  link(bakfile2, pwname);
+  unlink(bakfile2);
+#endif
+  free(bakfile);
+  free(bakfile2);
+
+  return 0;
+}

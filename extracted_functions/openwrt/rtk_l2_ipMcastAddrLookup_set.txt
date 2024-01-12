@@ -1,0 +1,39 @@
+rtk_api_ret_t rtk_l2_ipMcastAddrLookup_set(rtk_l2_ipmc_lookup_type_t type)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(type == LOOKUP_MAC)
+    {
+        if((retVal = rtl8367c_setAsicLutIpMulticastLookup(DISABLED)) != RT_ERR_OK)
+            return retVal;
+    }
+    else if(type == LOOKUP_IP)
+    {
+        if((retVal = rtl8367c_setAsicLutIpMulticastLookup(ENABLED)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicLutIpMulticastVidLookup(DISABLED))!=RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicLutIpLookupMethod(1))!=RT_ERR_OK)
+            return retVal;
+    }
+    else if(type == LOOKUP_IP_VID)
+    {
+        if((retVal = rtl8367c_setAsicLutIpMulticastLookup(ENABLED)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicLutIpMulticastVidLookup(ENABLED))!=RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicLutIpLookupMethod(1))!=RT_ERR_OK)
+            return retVal;
+    }
+    else
+        return RT_ERR_INPUT;
+
+    return RT_ERR_OK;
+}

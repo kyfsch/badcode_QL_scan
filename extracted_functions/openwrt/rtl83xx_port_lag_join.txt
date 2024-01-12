@@ -1,0 +1,43 @@
+static int rtl83xx_port_lag_join(struct dsa_switch *ds, int port,
+				   struct net_device *lag,
+				   struct netdev_lag_upper_info *info)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int i, err = 0;
+
+	if (!rtl83xx_lag_can_offload(ds, lag, info))
+		return -EOPNOTSUPP;
+
+	mutex_lock(&priv->reg_mutex);
+
+	for (i = 0; i < priv->n_lags; i++) {
+		if ((!priv->lag_devs[i]) || (priv->lag_devs[i] == lag))
+			break;
+	}
+	if (port >= priv->cpu_port) {
+		err = -EINVAL;
+		goto out;
+	}
+	pr_info("port_lag_join: group %d, port %d\n",i, port);
+	if (!priv->lag_devs[i])
+		priv->lag_devs[i] = lag;
+
+	if (priv->lag_primary[i] == -1) {
+		priv->lag_primary[i] = port;
+	} else
+		priv->is_lagmember[port] = 1;
+
+	priv->lagmembers |= (1ULL << port);
+
+	pr_debug("lag_members = %llX\n", priv->lagmembers);
+	err = rtl83xx_lag_add(priv->ds, i, port, info);
+	if (err) {
+		err = -EINVAL;
+		goto out;
+	}
+
+out:
+	mutex_unlock(&priv->reg_mutex);
+
+	return err;
+}

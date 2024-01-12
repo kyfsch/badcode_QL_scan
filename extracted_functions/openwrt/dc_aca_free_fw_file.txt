@@ -1,0 +1,11 @@
+void dc_aca_free_fw_file(struct dc_ep_priv *priv)
+{
+	struct aca_fw_info *fw_info = to_fw_info(priv);
+
+	if (fw_info->fw && !IS_ERR(fw_info->fw))
+		release_firmware(fw_info->fw);
+
+	fw_info->fw = NULL;
+	fw_info->fw_data = NULL;
+	fw_info->fw_len = 0;
+}

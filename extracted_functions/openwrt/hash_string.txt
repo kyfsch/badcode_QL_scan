@@ -1,0 +1,13 @@
+static char *hash_string(unsigned char *buf, int len)
+{
+	static char str[SHA256_DIGEST_LENGTH * 2 + 1];
+	int i;
+
+	if (len * 2 + 1 > sizeof(str))
+		return NULL;
+
+	for (i = 0; i < len; i++)
+		sprintf(&str[i * 2], "%02x", buf[i]);
+
+	return str;
+}

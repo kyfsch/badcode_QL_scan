@@ -1,0 +1,44 @@
+uc_hostapd_iface_switch_channel(uc_vm_t *vm, size_t nargs)
+{
+	struct hostapd_iface *iface = uc_fn_thisval("hostapd.iface");
+	uc_value_t *info = uc_fn_arg(0);
+	struct hostapd_config *conf;
+	struct csa_settings csa = {};
+	uint64_t intval;
+	int i, ret = 0;
+
+	if (!iface || ucv_type(info) != UC_OBJECT)
+		return NULL;
+
+	conf = iface->conf;
+	if ((intval = ucv_int64_get(ucv_object_get(info, "csa_count", NULL))) && !errno)
+		csa.cs_count = intval;
+	if ((intval = ucv_int64_get(ucv_object_get(info, "sec_channel", NULL))) && !errno)
+		csa.freq_params.sec_channel_offset = intval;
+
+	csa.freq_params.ht_enabled = conf->ieee80211n;
+	csa.freq_params.vht_enabled = conf->ieee80211ac;
+	csa.freq_params.he_enabled = conf->ieee80211ax;
+#ifdef CONFIG_IEEE80211BE
+	csa.freq_params.eht_enabled = conf->ieee80211be;
+#endif
+	intval = ucv_int64_get(ucv_object_get(info, "oper_chwidth", NULL));
+	if (errno)
+		intval = hostapd_get_oper_chwidth(conf);
+	if (intval)
+		csa.freq_params.bandwidth = 40 << intval;
+	else
+		csa.freq_params.bandwidth = csa.freq_params.sec_channel_offset ? 40 : 20;
+
+	if ((intval = ucv_int64_get(ucv_object_get(info, "frequency", NULL))) && !errno)
+		csa.freq_params.freq = intval;
+	if ((intval = ucv_int64_get(ucv_object_get(info, "center_freq1", NULL))) && !errno)
+		csa.freq_params.center_freq1 = intval;
+	if ((intval = ucv_int64_get(ucv_object_get(info, "center_freq2", NULL))) && !errno)
+		csa.freq_params.center_freq2 = intval;
+
+	for (i = 0; i < iface->num_bss; i++)
+		ret = hostapd_switch_channel(iface->bss[i], &csa);
+
+	return ucv_boolean_new(!ret);
+}

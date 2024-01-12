@@ -1,0 +1,5 @@
+void ringbuf_free(struct ringbuf *r)
+{
+	free(r->buf);
+	memset(r, 0, sizeof(*r));
+}

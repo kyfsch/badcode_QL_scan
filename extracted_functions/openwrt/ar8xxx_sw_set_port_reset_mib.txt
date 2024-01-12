@@ -1,0 +1,28 @@
+ar8xxx_sw_set_port_reset_mib(struct switch_dev *dev,
+			     const struct switch_attr *attr,
+			     struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port;
+	int ret;
+
+	if (!ar8xxx_has_mib_counters(priv))
+		return -EOPNOTSUPP;
+
+	port = val->port_vlan;
+	if (port >= dev->ports)
+		return -EINVAL;
+
+	mutex_lock(&priv->mib_lock);
+	ret = ar8xxx_mib_capture(priv);
+	if (ret)
+		goto unlock;
+
+	ar8xxx_mib_fetch_port_stat(priv, port, true);
+
+	ret = 0;
+
+unlock:
+	mutex_unlock(&priv->mib_lock);
+	return ret;
+}

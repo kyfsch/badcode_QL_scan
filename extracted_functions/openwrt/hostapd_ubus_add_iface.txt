@@ -1,0 +1,5 @@
+void hostapd_ubus_add_iface(struct hostapd_iface *iface)
+{
+	if (!hostapd_ubus_init())
+		return;
+}

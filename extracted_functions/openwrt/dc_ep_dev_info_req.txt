@@ -1,0 +1,55 @@
+int dc_ep_dev_info_req(int dev_idx, enum dc_ep_int module,
+			struct dc_ep_dev *dev)
+{
+	int i;
+	struct dc_ep_priv *priv;
+
+	if ((dev_idx < 0) || (dev_idx >= DC_EP_MAX_NUM)) {
+		dev_err(dev->dev, "%s invalid device index %d\n",
+			__func__, dev_idx);
+		return -EIO;
+	}
+
+	priv = &g_dc_ep_info.pcie_ep[dev_idx];
+	if (atomic_read(&priv->refcnt) >= DC_EP_MAX_REFCNT) {
+		dev_err(dev->dev,
+			"%s mismatch request/release module usage\n", __func__);
+		return -EIO;
+	}
+
+	switch (module) {
+	case DC_EP_INT_PPE:
+		dev->irq = priv->irq_base;
+		if (priv->msi_mode == DC_EP_8_MSI_MODE) {
+			dev->aca_tx_irq = priv->irq_base + 7;
+			dev->aca_rx_irq = priv->irq_base + 6;
+		} else if (priv->msi_mode == DC_EP_4_MSI_MODE) {
+			dev->aca_tx_irq = priv->irq_base + 2;
+			dev->aca_rx_irq = priv->irq_base + 3;
+		} else {
+			dev_err(dev->dev, "%s ACA should never occur\n",
+				__func__);
+		}
+		break;
+	case DC_EP_INT_MEI:
+		dev->irq = priv->irq_base + 1;
+		break;
+	default:
+		dev->irq = priv->irq_base;
+		break;
+	}
+
+	dev->dev = priv->dev;
+	dev->membase = priv->mem;
+	dev->phy_membase = priv->phymem;
+	dev->peer_num = priv->peer_num;
+	for (i = 0; i < dev->peer_num; i++) {
+		dev->peer_membase[i] = priv->peer_mem[i];
+		dev->peer_phy_membase[i] = priv->peer_phymem[i];
+	}
+	dev->switch_attached = priv->switch_attached;
+	dev->priv = priv;
+	dev->hw_ops = &dc_ep_hw_ops;
+	atomic_inc(&priv->refcnt);
+	return 0;
+}

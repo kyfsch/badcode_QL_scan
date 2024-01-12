@@ -1,0 +1,40 @@
+static bool nmbm_create_info_table(struct nmbm_instance *ni)
+{
+	uint32_t lb;
+	bool success;
+
+	/* Set initial mapping_blocks_top_off  */
+	success = nmbm_block_walk(ni, false, ni->signature_ba,
+				  &ni->mapping_blocks_top_ba, 1,
+				  ni->mgmt_start_ba);
+	if (!success) {
+		nlog_err(ni, "No room for spare blocks\n");
+		return false;
+	}
+
+	/* Generate info table cache */
+	nmbm_generate_info_table_cache(ni);
+
+	/* Write info table */
+	success = nmbm_rebuild_info_table(ni);
+	if (!success) {
+		nlog_err(ni, "Failed to build info tables\n");
+		return false;
+	}
+
+	/* Remap bad block(s) at end of data area */
+	for (lb = ni->data_block_count; lb < ni->mgmt_start_ba; lb++) {
+		success = nmbm_map_block(ni, lb);
+		if (!success)
+			break;
+
+		ni->data_block_count++;
+	}
+
+	/* If state table and/or mapping table changed, update info table. */
+	success = nmbm_update_info_table(ni);
+	if (!success)
+		return false;
+
+	return true;
+}

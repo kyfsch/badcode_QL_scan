@@ -1,0 +1,4 @@
+static int b53_spi_read8(struct b53_device *dev, u8 page, u8 reg, u8 *val)
+{
+	return b53_spi_read(dev, page, reg, val, 1);
+}

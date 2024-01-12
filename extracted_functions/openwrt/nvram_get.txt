@@ -1,0 +1,19 @@
+char * nvram_get(nvram_handle_t *h, const char *name)
+{
+	uint32_t i;
+	nvram_tuple_t *t;
+	char *value;
+
+	if (!name)
+		return NULL;
+
+	/* Hash the name */
+	i = hash(name) % NVRAM_ARRAYSIZE(h->nvram_hash);
+
+	/* Find the associated tuple in the hash table */
+	for (t = h->nvram_hash[i]; t && strcmp(t->name, name); t = t->next);
+
+	value = t ? t->value : NULL;
+
+	return value;
+}

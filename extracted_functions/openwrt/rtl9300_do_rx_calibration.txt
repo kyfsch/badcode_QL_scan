@@ -1,0 +1,23 @@
+void rtl9300_do_rx_calibration(int sds, phy_interface_t phy_mode)
+{
+	u32 latch_sts;
+
+	rtl9300_do_rx_calibration_1(sds, phy_mode);
+	rtl9300_do_rx_calibration_2(sds);
+	rtl9300_do_rx_calibration_4(sds);
+	rtl9300_do_rx_calibration_5(sds, phy_mode);
+	mdelay(20);
+
+	/* Do this only for 10GR mode, SDS active in mode 0x1a */
+	if (rtl9300_sds_field_r(sds, 0x1f, 9, 11, 7) == 0x1a) {
+		pr_info("%s: SDS enabled\n", __func__);
+		latch_sts = rtl9300_sds_field_r(sds, 0x4, 1, 2, 2);
+		mdelay(1);
+		latch_sts = rtl9300_sds_field_r(sds, 0x4, 1, 2, 2);
+		if (latch_sts) {
+			rtl9300_do_rx_calibration_dfe_disable(sds);
+			rtl9300_do_rx_calibration_4(sds);
+			rtl9300_do_rx_calibration_5(sds, phy_mode);
+		}
+	}
+}

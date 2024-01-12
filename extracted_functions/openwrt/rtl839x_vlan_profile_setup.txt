@@ -1,0 +1,14 @@
+static void rtl839x_vlan_profile_setup(int profile)
+{
+	u32 p[2];
+	u32 pmask_id = UNKNOWN_MC_PMASK;
+
+	p[0] = pmask_id; /* Use portmaks 0xfff for unknown IPv6 MC flooding */
+	/* Enable L2 Learning BIT 0, portmask UNKNOWN_MC_PMASK for IP/L2-MC traffic flooding */
+	p[1] = 1 | pmask_id << 1 | pmask_id << 13;
+
+	sw_w32(p[0], RTL839X_VLAN_PROFILE(profile));
+	sw_w32(p[1], RTL839X_VLAN_PROFILE(profile) + 4);
+
+	rtl839x_write_mcast_pmask(UNKNOWN_MC_PMASK, 0x001fffffffffffff);
+}

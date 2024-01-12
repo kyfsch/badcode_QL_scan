@@ -1,0 +1,24 @@
+ret_t rtl8367c_getAsicSdsReg(rtk_uint32 sdsId, rtk_uint32 sdsReg, rtk_uint32 sdsPage, rtk_uint32 *value)
+{
+    rtk_uint32 retVal, busy;
+
+    if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, (sdsPage<<5) | sdsReg)) != RT_ERR_OK)
+        return retVal;
+
+    if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x0080|sdsId)) != RT_ERR_OK)
+        return retVal;
+
+    while(1)
+    {
+        if ((retVal = rtl8367c_getAsicReg(RTL8367C_REG_SDS_INDACS_CMD, &busy))!=RT_ERR_OK)
+            return retVal;
+
+        if ((busy & 0x100) == 0)
+            break;
+    }
+
+    if ((retVal = rtl8367c_getAsicReg(RTL8367C_REG_SDS_INDACS_DATA, value))!=RT_ERR_OK)
+            return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,39 @@
+static int esw_get_port_bool(struct switch_dev *dev,
+			 const struct switch_attr *attr,
+			 struct switch_val *val)
+{
+	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
+	int idx = val->port_vlan;
+	u32 x, reg, shift;
+
+	if (idx < 0 || idx >= RT305X_ESW_NUM_PORTS)
+		return -EINVAL;
+
+	switch (attr->id) {
+	case RT305X_ESW_ATTR_PORT_DISABLE:
+		reg = RT305X_ESW_REG_POC0;
+		shift = RT305X_ESW_POC0_DIS_PORT_S;
+		break;
+	case RT305X_ESW_ATTR_PORT_DOUBLETAG:
+		reg = RT305X_ESW_REG_SGC2;
+		shift = RT305X_ESW_SGC2_DOUBLE_TAG_S;
+		break;
+	case RT305X_ESW_ATTR_PORT_UNTAG:
+		reg = RT305X_ESW_REG_POC2;
+		shift = RT305X_ESW_POC2_UNTAG_EN_S;
+		break;
+	case RT305X_ESW_ATTR_PORT_LAN:
+		reg = RT305X_ESW_REG_SGC2;
+		shift = RT305X_ESW_SGC2_LAN_PMAP_S;
+		if (idx >= RT305X_ESW_NUM_LANWAN)
+			return -EINVAL;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	x = esw_r32(esw, reg);
+	val->value.i = (x >> (idx + shift)) & 1;
+
+	return 0;
+}

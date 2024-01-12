@@ -1,0 +1,31 @@
+static int ag71xx_ring_rx_refill(struct ag71xx *ag)
+{
+	struct ag71xx_ring *ring = &ag->rx_ring;
+	int ring_mask = BIT(ring->order) - 1;
+	unsigned int count;
+	int offset = ag->rx_buf_offset;
+
+	count = 0;
+	for (; ring->curr - ring->dirty > 0; ring->dirty++) {
+		struct ag71xx_desc *desc;
+		unsigned int i;
+
+		i = ring->dirty & ring_mask;
+		desc = ag71xx_ring_desc(ring, i);
+
+		if (!ring->buf[i].rx_buf &&
+		    !ag71xx_fill_rx_buf(ag, &ring->buf[i], offset,
+					napi_alloc_frag))
+			break;
+
+		desc->ctrl = DESC_EMPTY;
+		count++;
+	}
+
+	/* flush descriptors */
+	wmb();
+
+	DBG("%s: %u rx descriptors refilled\n", ag->dev->name, count);
+
+	return count;
+}

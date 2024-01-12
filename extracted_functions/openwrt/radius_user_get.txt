@@ -1,0 +1,28 @@
+radius_user_get(struct radius_user_data *s, const char *name)
+{
+	struct blob_attr *cur;
+	int rem;
+
+	cur = kvlist_get(&s->users, name);
+	if (cur)
+		return cur;
+
+	blobmsg_for_each_attr(cur, s->wildcard, rem) {
+		static const struct blobmsg_policy policy = {
+			"name", BLOBMSG_TYPE_STRING
+		};
+		struct blob_attr *pattern;
+
+		if (blobmsg_type(cur) != BLOBMSG_TYPE_TABLE)
+			continue;
+
+		blobmsg_parse(&policy, 1, &pattern, blobmsg_data(cur), blobmsg_len(cur));
+		if (!name)
+			continue;
+
+		if (!fnmatch(blobmsg_get_string(pattern), name, 0))
+			return cur;
+	}
+
+	return NULL;
+}

@@ -1,0 +1,4 @@
+static void arc4_chip_init (void)
+{
+        //do nothing
+}

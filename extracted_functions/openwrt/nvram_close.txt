@@ -1,0 +1,9 @@
+int nvram_close(nvram_handle_t *h)
+{
+	_nvram_free(h);
+	munmap(h->mmap, h->length);
+	close(h->fd);
+	free(h);
+
+	return 0;
+}

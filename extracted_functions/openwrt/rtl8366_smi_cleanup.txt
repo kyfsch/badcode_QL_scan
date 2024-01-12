@@ -1,0 +1,6 @@
+void rtl8366_smi_cleanup(struct rtl8366_smi *smi)
+{
+	rtl8366_debugfs_remove(smi);
+	rtl8366_smi_mii_cleanup(smi);
+	__rtl8366_smi_cleanup(smi);
+}

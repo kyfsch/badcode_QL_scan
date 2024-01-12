@@ -1,0 +1,14 @@
+wpas_bss_wps_cancel(struct ubus_context *ctx, struct ubus_object *obj,
+			struct ubus_request_data *req, const char *method,
+			struct blob_attr *msg)
+{
+	int rc;
+	struct wpa_supplicant *wpa_s = get_wpas_from_object(obj);
+
+	rc = wpas_wps_cancel(wpa_s);
+
+	if (rc != 0)
+		return UBUS_STATUS_NOT_SUPPORTED;
+
+	return 0;
+}

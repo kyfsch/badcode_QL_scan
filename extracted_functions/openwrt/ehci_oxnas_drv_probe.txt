@@ -1,0 +1,130 @@
+static int ehci_oxnas_drv_probe(struct platform_device *ofdev)
+{
+	struct device_node *np = ofdev->dev.of_node;
+	struct usb_hcd *hcd;
+	struct ehci_hcd *ehci;
+	struct resource res;
+	struct oxnas_hcd *oxnas;
+	int irq, err;
+	struct reset_control *rstc;
+
+	if (usb_disabled())
+		return -ENODEV;
+
+	if (!ofdev->dev.dma_mask)
+		ofdev->dev.dma_mask = &ofdev->dev.coherent_dma_mask;
+	if (!ofdev->dev.coherent_dma_mask)
+		ofdev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
+
+	hcd = usb_create_hcd(&oxnas_hc_driver,	&ofdev->dev,
+					dev_name(&ofdev->dev));
+	if (!hcd)
+		return -ENOMEM;
+
+	err = of_address_to_resource(np, 0, &res);
+	if (err)
+		goto err_res;
+
+	hcd->rsrc_start = res.start;
+	hcd->rsrc_len = resource_size(&res);
+
+	hcd->regs = devm_ioremap_resource(&ofdev->dev, &res);
+	if (IS_ERR(hcd->regs)) {
+		dev_err(&ofdev->dev, "devm_ioremap_resource failed\n");
+		err = PTR_ERR(hcd->regs);
+		goto err_ioremap;
+	}
+
+	oxnas = (struct oxnas_hcd *)hcd_to_ehci(hcd)->priv;
+
+	oxnas->use_pllb = of_property_read_bool(np, "oxsemi,ehci_use_pllb");
+	oxnas->use_phya = of_property_read_bool(np, "oxsemi,ehci_use_phya");
+
+	oxnas->syscon = syscon_regmap_lookup_by_phandle(np, "oxsemi,sys-ctrl");
+	if (IS_ERR(oxnas->syscon)) {
+		err = PTR_ERR(oxnas->syscon);
+		goto err_syscon;
+	}
+
+	oxnas->clk = of_clk_get_by_name(np, "usb");
+	if (IS_ERR(oxnas->clk)) {
+		err = PTR_ERR(oxnas->clk);
+		goto err_clk;
+	}
+
+	if (oxnas->use_pllb) {
+		oxnas->refsrc = of_clk_get_by_name(np, "refsrc");
+		if (IS_ERR(oxnas->refsrc)) {
+			err = PTR_ERR(oxnas->refsrc);
+			goto err_refsrc;
+		}
+		oxnas->phyref = of_clk_get_by_name(np, "phyref");
+		if (IS_ERR(oxnas->refsrc)) {
+			err = PTR_ERR(oxnas->refsrc);
+			goto err_phyref;
+		}
+
+	} else {
+		oxnas->refsrc = NULL;
+		oxnas->phyref = NULL;
+	}
+
+	rstc = devm_reset_control_get(&ofdev->dev, "host");
+	if (IS_ERR(rstc)) {
+		err = PTR_ERR(rstc);
+		goto err_rst;
+	}
+	oxnas->rst_host = rstc;
+
+	rstc = devm_reset_control_get(&ofdev->dev, "phya");
+	if (IS_ERR(rstc)) {
+		err = PTR_ERR(rstc);
+		goto err_rst;
+	}
+	oxnas->rst_phya = rstc;
+
+	rstc = devm_reset_control_get(&ofdev->dev, "phyb");
+	if (IS_ERR(rstc)) {
+		err = PTR_ERR(rstc);
+		goto err_rst;
+	}
+	oxnas->rst_phyb = rstc;
+
+	irq = irq_of_parse_and_map(np, 0);
+	if (!irq) {
+		dev_err(&ofdev->dev, "irq_of_parse_and_map failed\n");
+		err = -EBUSY;
+		goto err_irq;
+	}
+
+	hcd->has_tt = 1;
+	ehci = hcd_to_ehci(hcd);
+	ehci->caps = hcd->regs;
+
+	start_oxnas_usb_ehci(oxnas);
+
+	err = usb_add_hcd(hcd, irq, IRQF_SHARED);
+	if (err)
+		goto err_hcd;
+
+	return 0;
+
+err_hcd:
+	stop_oxnas_usb_ehci(oxnas);
+err_irq:
+err_rst:
+	if (oxnas->phyref)
+		clk_put(oxnas->phyref);
+err_phyref:
+	if (oxnas->refsrc)
+		clk_put(oxnas->refsrc);
+err_refsrc:
+	clk_put(oxnas->clk);
+err_syscon:
+err_clk:
+err_ioremap:
+err_res:
+	usb_put_hcd(hcd);
+
+	return err;
+}

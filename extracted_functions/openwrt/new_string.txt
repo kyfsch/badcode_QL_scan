@@ -1,0 +1,7 @@
+				new_string();
+				BEGIN(STRING);
+			}
+	YY_BREAK
+case 49:
+YY_RULE_SETUP
+{

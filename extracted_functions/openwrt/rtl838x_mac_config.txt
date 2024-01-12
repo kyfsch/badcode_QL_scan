@@ -1,0 +1,10 @@
+static void rtl838x_mac_config(struct phylink_config *config,
+			       unsigned int mode,
+			       const struct phylink_link_state *state)
+{
+	/* This is only being called for the master device,
+	 * i.e. the CPU-Port. We don't need to do anything.
+	 */
+
+	pr_info("In %s, mode %x\n", __func__, mode);
+}

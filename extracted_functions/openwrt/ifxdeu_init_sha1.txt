@@ -1,0 +1,15 @@
+int ifxdeu_init_sha1 (void)
+{
+    int ret = -ENOSYS;
+
+
+    if ((ret = crypto_register_shash(&ifxdeu_sha1_alg)))
+        goto sha1_err;
+
+    printk (KERN_NOTICE "IFX DEU SHA1 initialized%s.\n", disable_deudma ? "" : " (DMA)");
+    return ret;
+
+sha1_err:
+    printk(KERN_ERR "IFX DEU SHA1 initialization failed!\n");
+    return ret;
+}

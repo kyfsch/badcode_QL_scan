@@ -1,0 +1,11 @@
+static void ag71xx_of_set(struct device_node *np, const char *prop,
+			  u32 *reg, u32 shift, u32 mask)
+{
+	u32 val;
+
+	if (of_property_read_u32(np, prop, &val))
+		return;
+
+	*reg &= ~(mask << shift);
+	*reg |= ((val & mask) << shift);
+}

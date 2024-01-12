@@ -1,0 +1,27 @@
+u32 sata_oxnas_link_read(struct ata_port *ap, unsigned int link_reg)
+{
+	struct sata_oxnas_port_priv *pd = ap->private_data;
+	struct sata_oxnas_host_priv *hd = ap->host->private_data;
+	void __iomem *port_base = pd->port_base;
+	u32 result;
+	u32 patience;
+	unsigned long flags;
+
+	spin_lock_irqsave(&hd->phy_lock, flags);
+	/* accessed twice as a work around for a bug in the SATA abp bridge
+	 * hardware (bug 6828) */
+	iowrite32(link_reg, port_base + LINK_RD_ADDR);
+	ioread32(port_base + LINK_RD_ADDR);
+
+	for (patience = 0x100000; patience > 0; --patience) {
+		if (ioread32(port_base + LINK_CONTROL) & 0x00000001)
+			break;
+	}
+	if (patience == 0)
+		DPRINTK("link read timed out for port %d\n", ap->port_no);
+
+	result = ioread32(port_base + LINK_DATA);
+	spin_unlock_irqrestore(&hd->phy_lock, flags);
+
+	return result;
+}

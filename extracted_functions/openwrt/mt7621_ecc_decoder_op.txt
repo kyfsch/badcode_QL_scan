@@ -1,0 +1,5 @@
+static void mt7621_ecc_decoder_op(struct mt7621_nfc *nfc, bool enable)
+{
+	mt7621_ecc_wait_idle(nfc, ECC_DECIDLE);
+	ecc_write16(nfc, ECC_DECCON, enable ? DEC_EN : 0);
+}

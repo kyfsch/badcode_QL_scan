@@ -1,0 +1,28 @@
+ret_t rtl8367c_setAsicRma(rtk_uint32 index, rtl8367c_rma_t* pRmacfg)
+{
+    rtk_uint32 regData = 0;
+    ret_t retVal;
+
+    if(index > RTL8367C_RMAMAX)
+        return RT_ERR_RMA_ADDR;
+
+    regData |= (pRmacfg->portiso_leaky & 0x0001);
+    regData |= ((pRmacfg->vlan_leaky & 0x0001) << 1);
+    regData |= ((pRmacfg->keep_format & 0x0001) << 2);
+    regData |= ((pRmacfg->trap_priority & 0x0007) << 3);
+    regData |= ((pRmacfg->discard_storm_filter & 0x0001) << 6);
+    regData |= ((pRmacfg->operation & 0x0003) << 7);
+
+    if( (index >= 0x4 && index <= 0x7) || (index >= 0x9 && index <= 0x0C) || (0x0F == index))
+        index = 0x04;
+    else if((index >= 0x13 && index <= 0x17) || (0x19 == index) || (index >= 0x1B && index <= 0x1f))
+        index = 0x13;
+    else if(index >= 0x22 && index <= 0x2F)
+        index = 0x22;
+
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_RMA_CTRL00, RTL8367C_TRAP_PRIORITY_MASK, pRmacfg->trap_priority);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return rtl8367c_setAsicReg(RTL8367C_REG_RMA_CTRL00+index, regData);
+}

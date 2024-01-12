@@ -1,0 +1,4 @@
+static inline void rttm_enable_timer(void __iomem *base, u32 mode, u32 divisor)
+{
+	iowrite32(RTTM_CTRL_ENABLE | mode | divisor, base + RTTM_CTRL);
+}

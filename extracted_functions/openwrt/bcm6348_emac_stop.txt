@@ -1,0 +1,55 @@
+static int bcm6348_emac_stop(struct net_device *ndev)
+{
+	struct bcm6348_emac *emac = netdev_priv(ndev);
+	struct bcm6348_iudma *iudma = emac->iudma;
+	struct device *dev = &emac->pdev->dev;
+	unsigned int i;
+
+	netif_stop_queue(ndev);
+	napi_disable(&emac->napi);
+	if (ndev->phydev)
+		phy_stop(ndev->phydev);
+	del_timer_sync(&emac->rx_timeout);
+
+	/* mask all interrupts */
+	emac_writel(emac, 0, ENET_IRMASK_REG);
+	dmac_writel(iudma, 0, DMAC_IRMASK_REG, emac->rx_chan);
+	dmac_writel(iudma, 0, DMAC_IRMASK_REG, emac->tx_chan);
+
+	/* disable dma & emac */
+	bcm6348_iudma_chan_stop(iudma, emac->tx_chan);
+	bcm6348_iudma_chan_stop(iudma, emac->rx_chan);
+	bcm6348_emac_disable_mac(emac);
+
+	/* force reclaim of all tx buffers */
+	bcm6348_emac_tx_reclaim(ndev, 1);
+
+	/* free the rx skb ring */
+	for (i = 0; i < emac->rx_ring_size; i++) {
+		struct bcm6348_iudma_desc *desc;
+
+		if (!emac->rx_skb[i])
+			continue;
+
+		desc = &emac->rx_desc_cpu[i];
+		dma_unmap_single_attrs(dev, desc->address, emac->rx_skb_size,
+				       DMA_FROM_DEVICE,
+				       DMA_ATTR_SKIP_CPU_SYNC);
+		kfree_skb(emac->rx_skb[i]);
+	}
+
+	/* free remaining allocated memory */
+	kfree(emac->rx_skb);
+	kfree(emac->tx_skb);
+	dma_free_coherent(dev, emac->rx_desc_alloc_size, emac->rx_desc_cpu,
+			  emac->rx_desc_dma);
+	dma_free_coherent(dev, emac->tx_desc_alloc_size, emac->tx_desc_cpu,
+			  emac->tx_desc_dma);
+	free_irq(emac->irq_tx, ndev);
+	free_irq(emac->irq_rx, ndev);
+	free_irq(ndev->irq, ndev);
+
+	netdev_reset_queue(ndev);
+
+	return 0;
+}

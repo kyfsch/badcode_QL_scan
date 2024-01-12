@@ -1,0 +1,23 @@
+ret_t rtl8367c_getAsicAclTemplate(rtk_uint32 index, rtl8367c_acltemplate_t *pAclType)
+{
+    ret_t retVal;
+    rtk_uint32 i;
+    rtk_uint32 regData, regAddr;
+
+    if(index >= RTL8367C_ACLTEMPLATENO)
+        return RT_ERR_OUT_OF_RANGE;
+
+    regAddr = RTL8367C_ACL_RULE_TEMPLATE_CTRL_REG(index);
+
+    for(i = 0; i < (RTL8367C_ACLRULEFIELDNO/2); i++)
+    {
+        retVal = rtl8367c_getAsicReg(regAddr + i,&regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        pAclType->field[i*2] = regData & 0xFF;
+        pAclType->field[i*2 + 1] = (regData >> 8) & 0xFF;
+    }
+
+    return RT_ERR_OK;
+}

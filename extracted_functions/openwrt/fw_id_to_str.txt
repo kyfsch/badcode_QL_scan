@@ -1,0 +1,22 @@
+static const char *fw_id_to_str(u32 fw_id)
+{
+	switch (fw_id) {
+	case ACA_FW_TXIN:
+		return "txin";
+
+	case ACA_FW_TXOUT:
+		return "txout";
+
+	case ACA_FW_RXIN:
+		return "rxin";
+
+	case ACA_FW_RXOUT:
+		return "rxout";
+
+	case ACA_FW_GNRC:
+		return "Genrisc";
+
+	default:
+		return "unknow";
+	}
+}

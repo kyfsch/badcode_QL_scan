@@ -1,0 +1,4 @@
+void menu_add_dep(struct expr *dep)
+{
+	current_entry->dep = expr_alloc_and(current_entry->dep, dep);
+}

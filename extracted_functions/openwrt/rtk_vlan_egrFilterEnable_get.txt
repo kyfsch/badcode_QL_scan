@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_vlan_egrFilterEnable_get(rtk_enable_t *pEgrFilter)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 state;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pEgrFilter)
+        return RT_ERR_NULL_POINTER;
+
+    /* enable VLAN */
+    if ((retVal = rtl8367c_getAsicVlanFilter(&state)) != RT_ERR_OK)
+        return retVal;
+
+    *pEgrFilter = (rtk_enable_t)state;
+    return RT_ERR_OK;
+}

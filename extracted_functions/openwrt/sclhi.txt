@@ -1,0 +1,10 @@
+static int sclhi(void)
+{
+	gpio_direction_input(scl_index);
+	udelay(ADAP_DELAY);
+	if (!getscl()) {
+		printk(KERN_ERR "SCL pin should be low\n");
+		return -ETIMEDOUT;
+	}
+	return 0;
+}

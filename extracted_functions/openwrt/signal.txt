@@ -1,0 +1,38 @@
+	old_signal = signal (SIGINT, sig_catch);
+#endif
+
+#ifdef USE_SGTTY
+	new_modes.sg_flags &= ~ECHO;
+#else
+	new_modes.c_iflag &= ~IGNCR;
+	new_modes.c_iflag |= ICRNL;
+	new_modes.c_oflag |= OPOST|ONLCR;
+	new_modes.c_lflag &= ~(ECHO|ECHOE|ECHOK);
+	new_modes.c_lflag |= ICANON|ECHONL;
+#endif
+
+	if (STTY (fileno (fp), &new_modes))
+		goto out;
+
+	/*
+	 * the prompt is output, and the response read without
+	 * echoing.  the trailing newline must be removed.  if
+	 * the fgets() returns an error, a NULL pointer is
+	 * returned.
+	 */
+
+	if (fputs (prompt, stdout) == EOF)
+		goto out;
+
+	(void) fflush (stdout);
+
+	if (fgets (buf, maxlen, fp) == buf) {
+		if ((cp = strchr (buf, '\n')))
+			*cp = '\0';
+		else
+			buf[maxlen - 1] = '\0';
+
+#ifdef USE_SGTTY
+		putc ('\n', stdout);
+#endif
+	}

@@ -1,0 +1,13 @@
+static ssize_t age_out_read(struct file *filp, char __user *buffer, size_t count,
+			     loff_t *ppos)
+{
+	struct rtl838x_port *p = filp->private_data;
+	struct dsa_switch *ds = p->dp->ds;
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int value = sw_r32(priv->r->l2_port_aging_out);
+
+	if (value < 0)
+		return -EINVAL;
+
+	return rtl838x_common_read(buffer, count, ppos, (u32)value);
+}

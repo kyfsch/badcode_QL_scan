@@ -1,0 +1,49 @@
+image_check(int imagefd, const char *mtd)
+{
+	uint32_t magic;
+	int ret = 1;
+	int bufread;
+
+	while (buflen < sizeof(magic)) {
+		bufread = read(imagefd, buf + buflen, sizeof(magic) - buflen);
+		if (bufread < 1)
+			break;
+
+		buflen += bufread;
+	}
+
+	if (buflen < sizeof(magic)) {
+		fprintf(stdout, "Could not get image magic\n");
+		return 0;
+	}
+
+	magic = ((uint32_t *)buf)[0];
+
+	if (be32_to_cpu(magic) == opt_trxmagic)
+		imageformat = MTD_IMAGE_FORMAT_TRX;
+	else if (be32_to_cpu(magic) == SEAMA_MAGIC)
+		imageformat = MTD_IMAGE_FORMAT_SEAMA;
+	else if (le32_to_cpu(magic) == WRG_MAGIC)
+		imageformat = MTD_IMAGE_FORMAT_WRG;
+	else if (le32_to_cpu(magic) == WRGG03_MAGIC)
+		imageformat = MTD_IMAGE_FORMAT_WRGG03;
+
+	switch (imageformat) {
+	case MTD_IMAGE_FORMAT_TRX:
+		if (trx_check)
+			ret = trx_check(imagefd, mtd, buf, &buflen);
+		break;
+	case MTD_IMAGE_FORMAT_SEAMA:
+	case MTD_IMAGE_FORMAT_WRG:
+	case MTD_IMAGE_FORMAT_WRGG03:
+		break;
+	default:
+#ifdef target_brcm
+		if (!strcmp(mtd, "firmware"))
+			ret = 0;
+#endif
+		break;
+	}
+
+	return ret;
+}

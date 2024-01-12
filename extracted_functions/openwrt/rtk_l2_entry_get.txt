@@ -1,0 +1,127 @@
+rtk_api_ret_t rtk_l2_entry_get(rtk_l2_addr_table_t *pL2_entry)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 method;
+    rtl8367c_luttb l2Table;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (pL2_entry->index >= rtk_switch_maxLutAddrNumber_get())
+        return RT_ERR_INPUT;
+
+    memset(&l2Table, 0x00, sizeof(rtl8367c_luttb));
+    l2Table.address= pL2_entry->index;
+    method = LUTREADMETHOD_ADDRESS;
+    if ((retVal = rtl8367c_getAsicL2LookupTb(method, &l2Table)) != RT_ERR_OK)
+        return retVal;
+
+    if ((pL2_entry->index>0x800)&&(l2Table.lookup_hit==0))
+         return RT_ERR_L2_EMPTY_ENTRY;
+
+    if(l2Table.l3lookup)
+    {
+        if(l2Table.l3vidlookup)
+        {
+            memset(&pL2_entry->mac, 0, sizeof(rtk_mac_t));
+            pL2_entry->is_ipmul  = l2Table.l3lookup;
+            pL2_entry->sip       = l2Table.sip;
+            pL2_entry->dip       = l2Table.dip;
+            pL2_entry->is_static = l2Table.nosalearn;
+
+            /* Get Logical port mask */
+            if ((retVal = rtk_switch_portmask_P2L_get(l2Table.mbr, &(pL2_entry->portmask)))!=RT_ERR_OK)
+                return retVal;
+
+            pL2_entry->fid       = 0;
+            pL2_entry->age       = 0;
+            pL2_entry->auth      = 0;
+            pL2_entry->sa_block  = 0;
+            pL2_entry->is_ipvidmul = 1;
+            pL2_entry->l3_vid      = l2Table.l3_vid;
+        }
+        else
+        {
+            memset(&pL2_entry->mac, 0, sizeof(rtk_mac_t));
+            pL2_entry->is_ipmul  = l2Table.l3lookup;
+            pL2_entry->sip       = l2Table.sip;
+            pL2_entry->dip       = l2Table.dip;
+            pL2_entry->is_static = l2Table.nosalearn;
+
+            /* Get Logical port mask */
+            if ((retVal = rtk_switch_portmask_P2L_get(l2Table.mbr, &(pL2_entry->portmask)))!=RT_ERR_OK)
+                return retVal;
+
+            pL2_entry->fid       = 0;
+            pL2_entry->age       = 0;
+            pL2_entry->auth      = 0;
+            pL2_entry->sa_block  = 0;
+            pL2_entry->is_ipvidmul = 0;
+            pL2_entry->l3_vid      = 0;
+        }
+    }
+    else if(l2Table.mac.octet[0]&0x01)
+    {
+        memset(&pL2_entry->sip, 0, sizeof(ipaddr_t));
+        memset(&pL2_entry->dip, 0, sizeof(ipaddr_t));
+        pL2_entry->mac.octet[0] = l2Table.mac.octet[0];
+        pL2_entry->mac.octet[1] = l2Table.mac.octet[1];
+        pL2_entry->mac.octet[2] = l2Table.mac.octet[2];
+        pL2_entry->mac.octet[3] = l2Table.mac.octet[3];
+        pL2_entry->mac.octet[4] = l2Table.mac.octet[4];
+        pL2_entry->mac.octet[5] = l2Table.mac.octet[5];
+        pL2_entry->is_ipmul  = l2Table.l3lookup;
+        pL2_entry->is_static = l2Table.nosalearn;
+
+        /* Get Logical port mask */
+        if ((retVal = rtk_switch_portmask_P2L_get(l2Table.mbr, &(pL2_entry->portmask)))!=RT_ERR_OK)
+            return retVal;
+
+        pL2_entry->ivl       = l2Table.ivl_svl;
+        if(l2Table.ivl_svl == 1) /* IVL */
+        {
+            pL2_entry->cvid      = l2Table.cvid_fid;
+            pL2_entry->fid       = 0;
+        }
+        else /* SVL*/
+        {
+            pL2_entry->cvid      = 0;
+            pL2_entry->fid       = l2Table.cvid_fid;
+        }
+        pL2_entry->auth      = l2Table.auth;
+        pL2_entry->sa_block  = l2Table.sa_block;
+        pL2_entry->age       = 0;
+        pL2_entry->is_ipvidmul = 0;
+        pL2_entry->l3_vid      = 0;
+    }
+    else if((l2Table.age != 0)||(l2Table.nosalearn == 1))
+    {
+        memset(&pL2_entry->sip, 0, sizeof(ipaddr_t));
+        memset(&pL2_entry->dip, 0, sizeof(ipaddr_t));
+        pL2_entry->mac.octet[0] = l2Table.mac.octet[0];
+        pL2_entry->mac.octet[1] = l2Table.mac.octet[1];
+        pL2_entry->mac.octet[2] = l2Table.mac.octet[2];
+        pL2_entry->mac.octet[3] = l2Table.mac.octet[3];
+        pL2_entry->mac.octet[4] = l2Table.mac.octet[4];
+        pL2_entry->mac.octet[5] = l2Table.mac.octet[5];
+        pL2_entry->is_ipmul  = l2Table.l3lookup;
+        pL2_entry->is_static = l2Table.nosalearn;
+
+        /* Get Logical port mask */
+        if ((retVal = rtk_switch_portmask_P2L_get(1<<(l2Table.spa), &(pL2_entry->portmask)))!=RT_ERR_OK)
+            return retVal;
+
+        pL2_entry->ivl       = l2Table.ivl_svl;
+        pL2_entry->cvid      = l2Table.cvid_fid;
+        pL2_entry->fid       = l2Table.fid;
+        pL2_entry->auth      = l2Table.auth;
+        pL2_entry->sa_block  = l2Table.sa_block;
+        pL2_entry->age       = l2Table.age;
+        pL2_entry->is_ipvidmul = 0;
+        pL2_entry->l3_vid      = 0;
+    }
+    else
+       return RT_ERR_L2_EMPTY_ENTRY;
+
+    return RT_ERR_OK;
+}

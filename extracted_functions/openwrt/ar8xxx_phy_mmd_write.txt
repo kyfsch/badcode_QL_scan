@@ -1,0 +1,9 @@
+ar8xxx_phy_mmd_write(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 reg, u16 data)
+{
+	struct mii_bus *bus = priv->mii_bus;
+
+	mutex_lock(&bus->mdio_lock);
+	ar8xxx_phy_mmd_prep(bus, phy_addr, addr, reg);
+	bus->write(bus, phy_addr, MII_ATH_MMD_DATA, data);
+	mutex_unlock(&bus->mdio_lock);
+}

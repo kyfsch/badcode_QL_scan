@@ -1,0 +1,24 @@
+uc_bpf_module_get_program(uc_vm_t *vm, size_t nargs)
+{
+	struct bpf_object *obj = uc_fn_thisval("bpf.module");
+	struct bpf_program *prog;
+	uc_value_t *name = uc_fn_arg(0);
+	struct uc_bpf_fd *f;
+	int fd;
+
+	if (!obj || !name || ucv_type(name) != UC_STRING)
+		err_return(EINVAL, NULL);
+
+	prog = bpf_object__find_program_by_name(obj, ucv_string_get(name));
+	if (!prog)
+		err_return(errno, NULL);
+
+	fd = bpf_program__fd(prog);
+	if (fd < 0)
+		err_return(EINVAL, NULL);
+
+	f = xalloc(sizeof(*f));
+	f->fd = fd;
+
+	return uc_resource_new(program_type, f);
+}

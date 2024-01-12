@@ -1,0 +1,23 @@
+static void rtl839x_hw_en_rxtx(struct rtl838x_eth_priv *priv)
+{
+	/* Setup CPU-Port: RX Buffer */
+	sw_w32((DEFAULT_MTU << 5) | RX_TRUNCATE_EN_83XX, priv->r->dma_if_ctrl);
+
+	/* Enable Notify, RX done, RX overflow and TX done interrupts */
+	sw_w32(0x007fffff, priv->r->dma_if_intr_msk); /* Notify IRQ! */
+
+	/* Enable DMA */
+	sw_w32_mask(0, RX_EN | TX_EN, priv->r->dma_if_ctrl);
+
+	/* Restart TX/RX to CPU port, enable CRC checking */
+	sw_w32_mask(0x0, 0x3 | BIT(3), priv->r->mac_port_ctrl(priv->cpu_port));
+
+	/* CPU port joins Lookup Miss Flooding Portmask */
+	/* TODO: The code below should also work for the RTL838x */
+	sw_w32(0x28000, RTL839X_TBL_ACCESS_L2_CTRL);
+	sw_w32_mask(0, 0x80000000, RTL839X_TBL_ACCESS_L2_DATA(0));
+	sw_w32(0x38000, RTL839X_TBL_ACCESS_L2_CTRL);
+
+	/* Force CPU port link up */
+	sw_w32_mask(0, 3, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
+}

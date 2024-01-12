@@ -1,0 +1,15 @@
+int ar9_start(int pp32)
+{
+	int ret;
+
+	ret = pp32_download_code(ar9_fw_bin, sizeof(ar9_fw_bin) / sizeof(*ar9_fw_bin),
+			ar9_fw_data, sizeof(ar9_fw_data) / sizeof(*ar9_fw_data));
+	if ( ret != 0 )
+		return ret;
+
+	IFX_REG_W32(DBG_CTRL_RESTART, PP32_DBG_CTRL(0));
+
+	udelay(10);
+
+	return 0;
+}

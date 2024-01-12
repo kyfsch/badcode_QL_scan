@@ -1,0 +1,15 @@
+extern int ifx_mei_atm_showtime_check(int *is_showtime, struct port_cell_info *port_cell, void **xdata_addr);
+
+static int g_showtime = 0;
+static void *g_xdata_addr = NULL;
+
+
+#define ENABLE_TMP_DBG                          0
+
+unsigned long cgu_get_pp32_clock(void)
+{
+	struct clk *c = clk_get_ppe();
+	unsigned long rate = clk_get_rate(c);
+	clk_put(c);
+	return rate;
+}

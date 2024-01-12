@@ -1,0 +1,23 @@
+struct expr *expr_eliminate_dups(struct expr *e)
+{
+	int oldcount;
+	if (!e)
+		return e;
+
+	oldcount = trans_count;
+	while (1) {
+		trans_count = 0;
+		switch (e->type) {
+		case E_OR: case E_AND:
+			expr_eliminate_dups1(e->type, &e, &e);
+		default:
+			;
+		}
+		if (!trans_count)
+			/* No simplifications done in this pass. We're done */
+			break;
+		e = expr_eliminate_yn(e);
+	}
+	trans_count = oldcount;
+	return e;
+}

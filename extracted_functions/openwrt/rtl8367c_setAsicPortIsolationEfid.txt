@@ -1,0 +1,10 @@
+ret_t rtl8367c_setAsicPortIsolationEfid(rtk_uint32 port, rtk_uint32 efid)
+{
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    if( efid > RTL8367C_EFIDMAX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_PORT_EFID_REG(port), RTL8367C_PORT_EFID_MASK(port), efid);
+}

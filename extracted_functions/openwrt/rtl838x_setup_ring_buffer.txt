@@ -1,0 +1,39 @@
+static void rtl838x_setup_ring_buffer(struct rtl838x_eth_priv *priv, struct ring_b *ring)
+{
+	for (int i = 0; i < priv->rxrings; i++) {
+	        struct p_hdr *h;
+                int j;
+
+		for (j = 0; j < priv->rxringlen; j++) {
+			h = &ring->rx_header[i][j];
+			memset(h, 0, sizeof(struct p_hdr));
+			h->buf = (u8 *)KSEG1ADDR(ring->rx_space +
+			                         i * priv->rxringlen * RING_BUFFER +
+			                         j * RING_BUFFER);
+			h->size = RING_BUFFER;
+			/* All rings owned by switch, last one wraps */
+			ring->rx_r[i][j] = KSEG1ADDR(h) | 1 | (j == (priv->rxringlen - 1) ?
+			                   WRAP :
+			                   0);
+		}
+		ring->c_rx[i] = 0;
+	}
+
+	for (int i = 0; i < TXRINGS; i++) {
+		struct p_hdr *h;
+		int j;
+
+		for (j = 0; j < TXRINGLEN; j++) {
+			h = &ring->tx_header[i][j];
+			memset(h, 0, sizeof(struct p_hdr));
+			h->buf = (u8 *)KSEG1ADDR(ring->tx_space +
+			                         i * TXRINGLEN * RING_BUFFER +
+			                         j * RING_BUFFER);
+			h->size = RING_BUFFER;
+			ring->tx_r[i][j] = KSEG1ADDR(&ring->tx_header[i][j]);
+		}
+		/* Last header is wrapping around */
+		ring->tx_r[i][j - 1] |= WRAP;
+		ring->c_tx[i] = 0;
+	}
+}

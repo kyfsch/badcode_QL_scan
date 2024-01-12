@@ -1,0 +1,71 @@
+hostapd_rrm_nr_set(struct ubus_context *ctx, struct ubus_object *obj,
+		   struct ubus_request_data *req, const char *method,
+		   struct blob_attr *msg)
+{
+	static const struct blobmsg_policy nr_e_policy[] = {
+		{ .type = BLOBMSG_TYPE_STRING },
+		{ .type = BLOBMSG_TYPE_STRING },
+		{ .type = BLOBMSG_TYPE_STRING },
+	};
+	struct hostapd_data *hapd = get_hapd_from_object(obj);
+	struct blob_attr *tb_l[__NR_SET_LIST_MAX];
+	struct blob_attr *tb[ARRAY_SIZE(nr_e_policy)];
+	struct blob_attr *cur;
+	int rem;
+
+	hostapd_rrm_nr_enable(hapd);
+
+	blobmsg_parse(nr_set_policy, __NR_SET_LIST_MAX, tb_l, blob_data(msg), blob_len(msg));
+	if (!tb_l[NR_SET_LIST])
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	hostapd_rrm_nr_clear(hapd);
+	blobmsg_for_each_attr(cur, tb_l[NR_SET_LIST], rem) {
+		struct wpa_ssid_value ssid;
+		struct wpabuf *data;
+		u8 bssid[ETH_ALEN];
+		char *s, *nr_s;
+
+		blobmsg_parse_array(nr_e_policy, ARRAY_SIZE(nr_e_policy), tb, blobmsg_data(cur), blobmsg_data_len(cur));
+		if (!tb[0] || !tb[1] || !tb[2])
+			goto invalid;
+
+		/* Neighbor Report binary */
+		nr_s = blobmsg_get_string(tb[2]);
+		data = wpabuf_parse_bin(nr_s);
+		if (!data)
+			goto invalid;
+
+		/* BSSID */
+		s = blobmsg_get_string(tb[0]);
+		if (strlen(s) == 0) {
+			/* Copy BSSID from neighbor report */
+			if (hwaddr_compact_aton(nr_s, bssid))
+				goto invalid;
+		} else if (hwaddr_aton(s, bssid)) {
+			goto invalid;
+		}
+
+		/* SSID */
+		s = blobmsg_get_string(tb[1]);
+		if (strlen(s) == 0) {
+			/* Copy SSID from hostapd BSS conf */
+			memcpy(&ssid, &hapd->conf->ssid, sizeof(ssid));
+		} else {
+			ssid.ssid_len = strlen(s);
+			if (ssid.ssid_len > sizeof(ssid.ssid))
+				goto invalid;
+
+			memcpy(&ssid, s, ssid.ssid_len);
+		}
+
+		hostapd_neighbor_set(hapd, bssid, &ssid, data, NULL, NULL, 0, 0);
+		wpabuf_free(data);
+		continue;
+
+invalid:
+		return UBUS_STATUS_INVALID_ARGUMENT;
+	}
+
+	return 0;
+}

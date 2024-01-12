@@ -1,0 +1,7 @@
+wait_handler(struct nl_msg *msg, void *arg)
+{
+	int *finished = arg;
+
+	*finished = 1;
+	return NL_STOP;
+}

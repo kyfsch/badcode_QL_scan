@@ -1,0 +1,22 @@
+static ssize_t igmp_ops(struct file *file,
+                            const char __user *buffer, size_t count,
+                            loff_t *data)
+{
+        char buf[8];
+        unsigned int ops;
+
+        if (copy_from_user(buf, buffer, count))
+                return -EFAULT;
+
+	if(sscanf(buf, "%d", &ops) == -1)
+		return -EFAULT;
+
+        if(ops == 0)
+                rtk_hal_disable_igmpsnoop();
+	else if (ops == 1)
+		rtk_hal_enable_igmpsnoop(0);
+	else //hw igmp
+		rtk_hal_enable_igmpsnoop(1);
+
+        return count;
+}

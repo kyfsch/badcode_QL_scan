@@ -1,0 +1,31 @@
+static int __fe_tx_dma_map_page(struct fe_tx_ring *ring, struct fe_map_state *st,
+				struct page *page, size_t offset, size_t size)
+{
+	struct device *dev = st->dev;
+	struct fe_tx_buf *tx_buf;
+	dma_addr_t mapped_addr;
+
+	mapped_addr = dma_map_page(dev, page, offset, size, DMA_TO_DEVICE);
+	if (unlikely(dma_mapping_error(dev, mapped_addr)))
+		return -EIO;
+
+	if (st->i && !(st->i & 1))
+	    fe_tx_dma_write_desc(ring, st);
+
+	tx_buf = &ring->tx_buf[st->ring_idx];
+	if (st->i & 1) {
+		st->txd.txd3 = mapped_addr;
+		st->txd.txd2 |= TX_DMA_PLEN1(size);
+		dma_unmap_addr_set(tx_buf, dma_addr1, mapped_addr);
+		dma_unmap_len_set(tx_buf, dma_len1, size);
+	} else {
+		tx_buf->skb = (struct sk_buff *)DMA_DUMMY_DESC;
+		st->txd.txd1 = mapped_addr;
+		st->txd.txd2 = TX_DMA_PLEN0(size);
+		dma_unmap_addr_set(tx_buf, dma_addr0, mapped_addr);
+		dma_unmap_len_set(tx_buf, dma_len0, size);
+	}
+	st->i++;
+
+	return 0;
+}

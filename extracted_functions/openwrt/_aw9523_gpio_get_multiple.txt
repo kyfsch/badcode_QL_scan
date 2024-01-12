@@ -1,0 +1,33 @@
+static int _aw9523_gpio_get_multiple(struct aw9523 *awi, u8 regbit,
+				     u8 *state, u8 mask)
+{
+	u32 dir_in, val;
+	u8 m;
+	int ret;
+
+	/* Registers are 8-bits wide */
+	ret = regmap_read(awi->regmap, AW9523_REG_CONF_STATE(regbit), &dir_in);
+	if (ret)
+		return ret;
+	*state = 0;
+
+	m = mask & dir_in;
+	if (m) {
+		ret = regmap_read(awi->regmap, AW9523_REG_IN_STATE(regbit),
+				  &val);
+		if (ret)
+			return ret;
+		*state |= (u8)val & m;
+	}
+
+	m = mask & ~dir_in;
+	if (m) {
+		ret = regmap_read(awi->regmap, AW9523_REG_OUT_STATE(regbit),
+				  &val);
+		if (ret)
+			return ret;
+		*state |= (u8)val & m;
+	}
+
+	return 0;
+}

@@ -1,0 +1,9 @@
+static int b53_spi_read32(struct b53_device *dev, u8 page, u8 reg, u32 *val)
+{
+	int ret = b53_spi_read(dev, page, reg, (u8 *)val, 4);
+
+	if (!ret)
+		*val = le32_to_cpu(*val);
+
+	return ret;
+}

@@ -1,0 +1,21 @@
+static void rtl83xx_port_disable(struct dsa_switch *ds, int port)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	u64 v;
+
+	pr_debug("%s %x: %d", __func__, (u32)priv, port);
+	/* you can only disable user ports */
+	if (!dsa_is_user_port(ds, port))
+		return;
+
+	/* BUG: This does not work on RTL931X */
+	/* remove port from switch mask of CPU_PORT */
+	priv->r->traffic_disable(priv->cpu_port, port);
+
+	/* remove all other ports in the same bridge from switch mask of port */
+	v = priv->r->traffic_get(port);
+	v &= ~priv->ports[port].pm;
+	priv->r->traffic_set(port, v);
+
+	priv->ports[port].enable = false;
+}

@@ -1,0 +1,24 @@
+static void get_vector_status(int fd, vector_t *status) {
+	*status = VECTOR_UNKNOWN;
+
+#ifdef INCLUDE_DSL_CPE_API_VRX
+	if (fd < 0)
+		return;
+
+	IOCTL(IOCTL_MEI_dsmStatus_t, FIO_MEI_DSM_STATUS_GET);
+
+	switch (out.eVectorStatus) {
+	case e_MEI_VECTOR_STAT_OFF:
+		*status = VECTOR_OFF;
+		break;
+	case e_MEI_VECTOR_STAT_ON_DS:
+		*status = VECTOR_ON_DS;
+		break;
+	case e_MEI_VECTOR_STAT_ON_DS_US:
+		*status = VECTOR_ON_DS_US;
+		break;
+	default:
+		break;
+	};
+#endif
+}

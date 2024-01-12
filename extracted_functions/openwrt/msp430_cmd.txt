@@ -1,0 +1,20 @@
+static inline int msp430_cmd(struct spi_device *spi, u8 tx[MSP430_CMD_BYTES],
+			     u8 rx[MSP430_CMD_BYTES])
+{
+	struct device *dev = &spi->dev;
+	int rc;
+
+	memset(rx, 0, MSP430_CMD_BYTES);
+
+	rc = spi_write_then_read(spi, tx, MSP430_CMD_BYTES,
+				  rx, MSP430_CMD_BYTES);
+	if (rc)
+		dev_err(dev, "spi error\n");
+
+	dev_dbg(dev, "msp430_cmd: [%02x %02x %02x %02x %02x %02x]"
+		" -> [%02x %02x %02x %02x %02x %02x]",
+		tx[0], tx[1], tx[2], tx[3], tx[4], tx[5],
+		rx[0], rx[1], rx[2], rx[3], rx[4], rx[5]);
+
+	return rc;
+}

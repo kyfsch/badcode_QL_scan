@@ -1,0 +1,4 @@
+static inline u32 emac_readl(struct bcm6348_emac *emac, u32 off)
+{
+	return __raw_readl(emac->base + off);
+}

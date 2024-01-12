@@ -1,0 +1,38 @@
+static void rtl839x_l2_notification_handler(struct rtl838x_eth_priv *priv)
+{
+	struct notify_b *nb = priv->membase + sizeof(struct ring_b);
+        u32 e = priv->lastEvent;
+
+	while (!(nb->ring[e] & 1)) {
+                struct fdb_update_work *w;
+                struct n_event *event;
+                u64 mac;
+                int i;
+
+		w = kzalloc(sizeof(*w), GFP_ATOMIC);
+		if (!w) {
+			pr_err("Out of memory: %s", __func__);
+			return;
+		}
+		INIT_WORK(&w->work, rtl838x_fdb_sync);
+
+		for (i = 0; i < NOTIFY_EVENTS; i++) {
+			event = &nb->blocks[e].events[i];
+			if (!event->valid)
+				continue;
+			mac = event->mac;
+			if (event->type)
+				mac |= 1ULL << 63;
+			w->ndev = priv->netdev;
+			w->macs[i] = mac;
+		}
+
+		/* Hand the ring entry back to the switch */
+		nb->ring[e] = nb->ring[e] | 1;
+		e = (e + 1) % NOTIFY_BLOCKS;
+
+		w->macs[i] = 0ULL;
+		schedule_work(&w->work);
+	}
+	priv->lastEvent = e;
+}

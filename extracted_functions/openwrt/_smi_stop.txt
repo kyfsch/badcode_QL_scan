@@ -1,0 +1,26 @@
+static void _smi_stop(void)
+{
+
+    CLK_DURATION(DELAY);
+    GPIO_DATA_SET(smi_SDA, 0);
+    GPIO_DATA_SET(smi_SCK, 1);
+    CLK_DURATION(DELAY);
+    GPIO_DATA_SET(smi_SDA, 1);
+    CLK_DURATION(DELAY);
+    GPIO_DATA_SET(smi_SCK, 1);
+    CLK_DURATION(DELAY);
+    GPIO_DATA_SET(smi_SCK, 0);
+    CLK_DURATION(DELAY);
+    GPIO_DATA_SET(smi_SCK, 1);
+
+    /* add a click */
+    CLK_DURATION(DELAY);
+    GPIO_DATA_SET(smi_SCK, 0);
+    CLK_DURATION(DELAY);
+    GPIO_DATA_SET(smi_SCK, 1);
+
+
+    /* change GPIO pin to Input only */
+    GPIO_DIRECTION_SET(smi_SDA, GPIO_DIR_IN);
+    GPIO_DIRECTION_SET(smi_SCK, GPIO_DIR_IN);
+}

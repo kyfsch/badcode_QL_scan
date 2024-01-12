@@ -1,0 +1,23 @@
+int rtl8366_sw_reset_switch(struct switch_dev *dev)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	int err;
+
+	err = rtl8366_reset(smi);
+	if (err)
+		return err;
+
+	err = smi->ops->setup(smi);
+	if (err)
+		return err;
+
+	err = rtl8366_smi_reset_vlan(smi);
+	if (err)
+		return err;
+
+	err = rtl8366_smi_enable_vlan(smi, 1);
+	if (err)
+		return err;
+
+	return rtl8366_smi_enable_all_ports(smi, 1);
+}

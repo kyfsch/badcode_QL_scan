@@ -1,0 +1,14 @@
+				yylval.string = expand_token(yytext, yyleng);
+				if (strlen(yylval.string))
+					return T_WORD;
+				free(yylval.string);
+			}
+	YY_BREAK
+case 51:
+YY_RULE_SETUP
+warn_ignored_character(*yytext);
+	YY_BREAK
+
+case 52:
+YY_RULE_SETUP
+{

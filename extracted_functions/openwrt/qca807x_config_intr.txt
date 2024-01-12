@@ -1,0 +1,26 @@
+static int qca807x_config_intr(struct phy_device *phydev)
+{
+	int ret, val;
+
+	val = phy_read(phydev, QCA807X_INTR_ENABLE);
+
+	if (phydev->interrupts == PHY_INTERRUPT_ENABLED) {
+		/* Check for combo port as it has fewer interrupts */
+		if (phy_read(phydev, QCA807X_CHIP_CONFIGURATION)) {
+			val |= QCA807X_INTR_ENABLE_SPEED_CHANGED;
+			val |= QCA807X_INTR_ENABLE_LINK_FAIL;
+			val |= QCA807X_INTR_ENABLE_LINK_SUCCESS;
+		} else {
+			val |= QCA807X_INTR_ENABLE_AUTONEG_ERR;
+			val |= QCA807X_INTR_ENABLE_SPEED_CHANGED;
+			val |= QCA807X_INTR_ENABLE_DUPLEX_CHANGED;
+			val |= QCA807X_INTR_ENABLE_LINK_FAIL;
+			val |= QCA807X_INTR_ENABLE_LINK_SUCCESS;
+		}
+		ret = phy_write(phydev, QCA807X_INTR_ENABLE, val);
+	} else {
+		ret = phy_write(phydev, QCA807X_INTR_ENABLE, 0);
+	}
+
+	return ret;
+}

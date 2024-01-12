@@ -1,0 +1,13 @@
+void uc_module_init(uc_vm_t *vm, uc_value_t *scope)
+{
+	uc_function_list_register(scope, global_fns);
+	register_constants(vm, scope);
+
+	registry = ucv_array_new(vm);
+	uc_vm_registry_set(vm, "bpf.registry", registry);
+
+	module_type = uc_type_declare(vm, "bpf.module", module_fns, module_free);
+	map_type = uc_type_declare(vm, "bpf.map", map_fns, uc_bpf_fd_free);
+	map_iter_type = uc_type_declare(vm, "bpf.map_iter", map_iter_fns, free);
+	program_type = uc_type_declare(vm, "bpf.program", prog_fns, uc_bpf_fd_free);
+}

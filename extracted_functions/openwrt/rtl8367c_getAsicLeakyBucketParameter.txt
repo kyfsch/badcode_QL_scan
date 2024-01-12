@@ -1,0 +1,13 @@
+ret_t rtl8367c_getAsicLeakyBucketParameter(rtk_uint32 *tick, rtk_uint32 *token)
+{
+    ret_t retVal;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_LEAKY_BUCKET_TICK_REG, RTL8367C_LEAKY_BUCKET_TICK_MASK, tick);
+
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_LEAKY_BUCKET_TOKEN_REG, RTL8367C_LEAKY_BUCKET_TOKEN_MASK, token);
+
+    return retVal;
+}

@@ -1,0 +1,22 @@
+static void mt7621_nfc_write_fdm(struct mt7621_nfc *nfc)
+{
+	struct nand_chip *nand = &nfc->nand;
+	u32 vall, valm;
+	u8 *oobptr;
+	int i, j;
+
+	for (i = 0; i < nand->ecc.steps; i++) {
+		vall = 0;
+		valm = 0;
+		oobptr = oob_fdm_ptr(nand, i);
+
+		for (j = 0; j < 4; j++)
+			vall |= (u32)oobptr[j] << (j * 8);
+
+		for (j = 0; j < 4; j++)
+			valm |= (u32)oobptr[j + 4] << (j * 8);
+
+		nfi_write32(nfc, NFI_FDML(i), vall);
+		nfi_write32(nfc, NFI_FDMM(i), valm);
+	}
+}

@@ -1,0 +1,20 @@
+int wpa_ucode_call_prepare(const char *fname)
+{
+	uc_value_t *obj, *func;
+
+	if (!registry)
+		return -1;
+
+	obj = ucv_array_get(registry, 0);
+	if (!obj)
+		return -1;
+
+	func = ucv_object_get(obj, fname, NULL);
+	if (!ucv_is_callable(func))
+		return -1;
+
+	uc_vm_stack_push(&vm, ucv_get(obj));
+	uc_vm_stack_push(&vm, ucv_get(func));
+
+	return 0;
+}

@@ -1,0 +1,6 @@
+IFX_MEI_CleanUpDevNode (int num)
+{
+	if (num == 0)
+		unregister_chrdev (dev_major, MEI_DIRNAME);
+	return 0;
+}

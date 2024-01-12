@@ -1,0 +1,6 @@
+static void __exit ar8216_exit(void)
+{
+	mdio_driver_unregister(&ar8xxx_mdio_driver);
+	phy_drivers_unregister(ar8xxx_phy_driver,
+			        ARRAY_SIZE(ar8xxx_phy_driver));
+}

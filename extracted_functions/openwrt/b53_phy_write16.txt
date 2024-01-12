@@ -1,0 +1,9 @@
+static int b53_phy_write16(struct switch_dev *dev, int addr, u8 reg, u16 value)
+{
+	struct b53_device *priv = sw_to_b53(dev);
+
+	if (priv->ops->phy_write16)
+		return priv->ops->phy_write16(priv, addr, reg, value);
+
+	return b53_write16(priv, B53_PORT_MII_PAGE(addr), reg, value);
+}

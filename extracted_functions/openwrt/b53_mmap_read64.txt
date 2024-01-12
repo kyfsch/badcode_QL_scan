@@ -1,0 +1,14 @@
+static int b53_mmap_read64(struct b53_device *dev, u8 page, u8 reg, u64 *val)
+{
+	u32 hi, lo;
+
+	if (WARN_ON(reg % 4))
+		return -EINVAL;
+
+	b53_mmap_read32(dev, page, reg, &lo);
+	b53_mmap_read32(dev, page, reg + 4, &hi);
+
+	*val = ((u64)hi << 32) | lo;
+
+	return 0;
+}

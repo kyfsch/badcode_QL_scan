@@ -1,0 +1,8 @@
+u16 rtl93xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
+			  struct net_device *sb_dev)
+{
+	if (skb->priority >= TC_PRIO_CONTROL)
+		return 1;
+
+	return 0;
+}

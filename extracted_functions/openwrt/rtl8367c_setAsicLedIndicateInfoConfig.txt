@@ -1,0 +1,17 @@
+ret_t rtl8367c_setAsicLedIndicateInfoConfig(rtk_uint32 ledno, rtk_uint32 config)
+{
+    ret_t   retVal;
+    CONST rtk_uint16 bits[RTL8367C_LEDGROUPNO] = {RTL8367C_LED0_CFG_MASK, RTL8367C_LED1_CFG_MASK, RTL8367C_LED2_CFG_MASK};
+
+    if(ledno >= RTL8367C_LEDGROUPNO)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if(config >= LEDCONF_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_LED_CONFIGURATION, RTL8367C_LED_CONFIG_SEL_OFFSET, 0);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_LED_CONFIGURATION, bits[ledno], config);
+}

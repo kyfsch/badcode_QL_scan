@@ -1,0 +1,85 @@
+rtk_api_ret_t rtk_mirror_portBased_set(rtk_port_t mirroring_port, rtk_portmask_t *pMirrored_rx_portmask, rtk_portmask_t *pMirrored_tx_portmask)
+{
+    rtk_api_ret_t retVal;
+    rtk_enable_t mirRx, mirTx;
+    rtk_uint32 i, pmask;
+    rtk_port_t source_port;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check port valid */
+    RTK_CHK_PORT_VALID(mirroring_port);
+
+    if(NULL == pMirrored_rx_portmask)
+        return RT_ERR_NULL_POINTER;
+
+    if(NULL == pMirrored_tx_portmask)
+        return RT_ERR_NULL_POINTER;
+
+    RTK_CHK_PORTMASK_VALID(pMirrored_rx_portmask);
+
+    RTK_CHK_PORTMASK_VALID(pMirrored_tx_portmask);
+
+    /*Mirror Sorce Port Mask Check*/
+    if (pMirrored_tx_portmask->bits[0]!=pMirrored_rx_portmask->bits[0]&&pMirrored_tx_portmask->bits[0]!=0&&pMirrored_rx_portmask->bits[0]!=0)
+        return RT_ERR_PORT_MASK;
+
+     /*mirror port != source port*/
+    if(RTK_PORTMASK_IS_PORT_SET((*pMirrored_tx_portmask), mirroring_port) || RTK_PORTMASK_IS_PORT_SET((*pMirrored_rx_portmask), mirroring_port))
+        return RT_ERR_PORT_MASK;
+
+    source_port = rtk_switch_maxLogicalPort_get();
+
+    RTK_SCAN_ALL_LOG_PORT(i)
+    {
+        if (pMirrored_tx_portmask->bits[0]&(1<<i))
+        {
+            source_port = i;
+            break;
+        }
+
+        if (pMirrored_rx_portmask->bits[0]&(1<<i))
+        {
+            source_port = i;
+            break;
+        }
+    }
+
+    if ((retVal = rtl8367c_setAsicPortMirror(rtk_switch_port_L2P_get(source_port), rtk_switch_port_L2P_get(mirroring_port))) != RT_ERR_OK)
+        return retVal;
+    if(pMirrored_rx_portmask->bits[0] != 0)
+    {
+        if ((retVal = rtk_switch_portmask_L2P_get(pMirrored_rx_portmask, &pmask)) != RT_ERR_OK)
+            return retVal;
+        if ((retVal = rtl8367c_setAsicPortMirrorMask(pmask)) != RT_ERR_OK)
+            return retVal;
+    }
+    else
+    {
+        if ((retVal = rtk_switch_portmask_L2P_get(pMirrored_tx_portmask, &pmask)) != RT_ERR_OK)
+            return retVal;
+        if ((retVal = rtl8367c_setAsicPortMirrorMask(pmask)) != RT_ERR_OK)
+            return retVal;
+    }
+
+
+    if (pMirrored_rx_portmask->bits[0])
+        mirRx = ENABLED;
+    else
+        mirRx = DISABLED;
+
+    if ((retVal = rtl8367c_setAsicPortMirrorRxFunction(mirRx)) != RT_ERR_OK)
+        return retVal;
+
+    if (pMirrored_tx_portmask->bits[0])
+        mirTx = ENABLED;
+    else
+        mirTx = DISABLED;
+
+    if ((retVal = rtl8367c_setAsicPortMirrorTxFunction(mirTx)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+
+}

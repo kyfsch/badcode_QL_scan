@@ -1,0 +1,13 @@
+rtk_api_ret_t rtk_switch_isSgmiiPort(rtk_port_t logicalPort)
+{
+    if(init_state != INIT_COMPLETED)
+        return RT_ERR_NOT_INIT;
+
+    if(logicalPort >= RTK_SWITCH_PORT_NUM)
+        return RT_ERR_FAILED;
+
+    if( ((0x01 << logicalPort) & halCtrl->sg_logical_portmask) != 0)
+        return RT_ERR_OK;
+    else
+        return RT_ERR_FAILED;
+}

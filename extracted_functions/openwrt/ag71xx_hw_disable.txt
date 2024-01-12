@@ -1,0 +1,12 @@
+static void ag71xx_hw_disable(struct ag71xx *ag)
+{
+	netif_stop_queue(ag->dev);
+
+	ag71xx_hw_stop(ag);
+	ag71xx_dma_reset(ag);
+
+	napi_disable(&ag->napi);
+	del_timer_sync(&ag->oom_timer);
+
+	ag71xx_rings_cleanup(ag);
+}

@@ -1,0 +1,5 @@
+ar8xxx_age_time_val(int age_time)
+{
+	return (age_time + AR8XXX_REG_ARL_CTRL_AGE_TIME_SECS / 2) /
+	       AR8XXX_REG_ARL_CTRL_AGE_TIME_SECS;
+}

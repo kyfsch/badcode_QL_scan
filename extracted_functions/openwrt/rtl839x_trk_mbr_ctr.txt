@@ -1,0 +1,4 @@
+static inline int rtl839x_trk_mbr_ctr(int group)
+{
+	return RTL839X_TRK_MBR_CTR + (group << 3);
+}

@@ -1,0 +1,8 @@
+void sata_oxnas_thaw_host(struct ata_port *ap)
+{
+	struct sata_oxnas_host_priv *hd = ap->host->private_data;
+
+	DPRINTK("ENTER\n");
+	hd->port_in_eh &= ~BIT(ap->port_no);
+	smp_wmb();
+}

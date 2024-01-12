@@ -1,0 +1,6 @@
+static int __init ws_ap3825i_probe(void)
+{
+	if (of_machine_is_compatible("extreme-networks,ws-ap3825i"))
+		return 1;
+	return 0;
+}

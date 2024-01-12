@@ -1,0 +1,4 @@
+static inline struct bbmt *bmt_tbl(struct bbbt *bbbt)
+{
+	return (struct bbmt *)&bbbt->bb_tbl[bmtd.table_size];
+}

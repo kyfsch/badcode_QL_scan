@@ -1,0 +1,6 @@
+static int __init ifx_ptm_test_init(void)
+{
+    proc_file_create();
+
+    return 0;
+}

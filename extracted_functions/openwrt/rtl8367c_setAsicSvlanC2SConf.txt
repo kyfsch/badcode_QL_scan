@@ -1,0 +1,21 @@
+ret_t rtl8367c_setAsicSvlanC2SConf(rtk_uint32 index, rtk_uint32 evid, rtk_uint32 portmask, rtk_uint32 svidx)
+{
+    ret_t retVal;
+
+    if(index > RTL8367C_C2SIDXMAX)
+        return RT_ERR_ENTRY_INDEX;
+
+    retVal = rtl8367c_setAsicReg(RTL8367C_SVLAN_C2SCFG_BASE_REG(index), svidx);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    retVal = rtl8367c_setAsicReg(RTL8367C_SVLAN_C2SCFG_BASE_REG(index) + 1, portmask);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    retVal = rtl8367c_setAsicReg(RTL8367C_SVLAN_C2SCFG_BASE_REG(index) + 2, evid);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

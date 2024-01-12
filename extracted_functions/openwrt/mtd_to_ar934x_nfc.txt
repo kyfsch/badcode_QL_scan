@@ -1,0 +1,6 @@
+static inline struct ar934x_nfc *mtd_to_ar934x_nfc(struct mtd_info *mtd)
+{
+	struct nand_chip *chip = mtd_to_nand(mtd);
+
+	return container_of(chip, struct ar934x_nfc, nand_chip);
+}

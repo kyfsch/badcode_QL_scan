@@ -1,0 +1,35 @@
+static ssize_t rtl8366_write_debugfs_reg(struct file *file,
+					  const char __user *user_buf,
+					  size_t count, loff_t *ppos)
+{
+	struct rtl8366_smi *smi = (struct rtl8366_smi *)file->private_data;
+	unsigned long data;
+	u32 reg = smi->dbg_reg;
+	int err;
+	size_t len;
+	char *buf = smi->buf;
+
+	len = min(count, sizeof(smi->buf) - 1);
+	if (copy_from_user(buf, user_buf, len)) {
+		dev_err(smi->parent, "copy from user failed\n");
+		return -EFAULT;
+	}
+
+	buf[len] = '\0';
+	if (len > 0 && buf[len - 1] == '\n')
+		buf[len - 1] = '\0';
+
+
+	if (kstrtoul(buf, 16, &data)) {
+		dev_err(smi->parent, "Invalid reg value %s\n", buf);
+	} else {
+		err = rtl8366_smi_write_reg(smi, reg, data);
+		if (err) {
+			dev_err(smi->parent,
+				"writing reg 0x%04x val 0x%04lx failed\n",
+				reg, data);
+		}
+	}
+
+	return count;
+}

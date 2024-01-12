@@ -1,0 +1,7 @@
+void end_dialog(int x, int y)
+{
+	/* move cursor back to original position */
+	move(y, x);
+	refresh();
+	endwin();
+}

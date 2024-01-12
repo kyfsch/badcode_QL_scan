@@ -1,0 +1,32 @@
+static int rtl8366rb_detect(struct rtl8366_smi *smi)
+{
+	u32 chip_id = 0;
+	u32 chip_ver = 0;
+	int ret;
+
+	ret = rtl8366_smi_read_reg(smi, RTL8366RB_CHIP_ID_REG, &chip_id);
+	if (ret) {
+		dev_err(smi->parent, "unable to read chip id\n");
+		return ret;
+	}
+
+	switch (chip_id) {
+	case RTL8366RB_CHIP_ID_8366:
+		break;
+	default:
+		dev_err(smi->parent, "unknown chip id (%04x)\n", chip_id);
+		return -ENODEV;
+	}
+
+	ret = rtl8366_smi_read_reg(smi, RTL8366RB_CHIP_VERSION_CTRL_REG,
+				   &chip_ver);
+	if (ret) {
+		dev_err(smi->parent, "unable to read chip version\n");
+		return ret;
+	}
+
+	dev_info(smi->parent, "RTL%04x ver. %u chip found\n",
+		 chip_id, chip_ver & RTL8366RB_CHIP_VERSION_MASK);
+
+	return 0;
+}

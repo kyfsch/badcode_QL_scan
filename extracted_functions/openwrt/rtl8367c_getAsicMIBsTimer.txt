@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicMIBsTimer(rtk_uint32* pTimer)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_MIB_CTRL4, RTL8367C_MIB_TIMER_MASK, pTimer);
+}

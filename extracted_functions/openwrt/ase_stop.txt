@@ -1,0 +1,5 @@
+void ase_stop(int pp32)
+{
+    /*  halt PP32   */
+    IFX_REG_W32(DBG_CTRL_STOP, PP32_DBG_CTRL);
+}

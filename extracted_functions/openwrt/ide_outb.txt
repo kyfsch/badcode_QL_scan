@@ -1,0 +1,119 @@
+void ide_outb(int device, int port, unsigned char val)
+{
+	typedef enum send_method {
+		SEND_NONE, SEND_SIMPLE, SEND_CMD, SEND_CTL,
+	} send_method_t;
+
+	/* Only permit accesses to disks found to be present during ide_preinit() */
+	if (!disk_present[device]) {
+		return;
+	}
+
+	//    printf("outb: %d:%01x <= %02x\n", device, port, val);
+
+	device_select(device);
+
+#ifdef CONFIG_LBA48
+	if (port >= OUT_HISTORY_BASE && port <= OUT_HISTORY_MAX) {
+		out_history[0][port - OUT_HISTORY_BASE] =
+			out_history[1][port - OUT_HISTORY_BASE];
+		out_history[1][port - OUT_HISTORY_BASE] = val;
+	}
+#endif
+	send_method_t send_regs = SEND_NONE;
+	switch (port) {
+	case ATA_PORT_CTL:
+		wr_sata_orb4[device] &= ~(0xFFUL << SATA_CTL_BIT);
+		wr_sata_orb4[device] |= (val << SATA_CTL_BIT);
+		send_regs = SEND_CTL;
+		break;
+	case ATA_PORT_FEATURE:
+		wr_sata_orb2[device] &= ~(0xFFUL << SATA_FEATURE_BIT);
+		wr_sata_orb2[device] |= (val << SATA_FEATURE_BIT);
+		send_regs = SEND_SIMPLE;
+		break;
+	case ATA_PORT_NSECT:
+		wr_sata_orb2[device] &= ~(0xFFUL << SATA_NSECT_BIT);
+		wr_sata_orb2[device] |= (val << SATA_NSECT_BIT);
+		send_regs = SEND_SIMPLE;
+		break;
+	case ATA_PORT_LBAL:
+		wr_sata_orb3[device] &= ~(0xFFUL << SATA_LBAL_BIT);
+		wr_sata_orb3[device] |= (val << SATA_LBAL_BIT);
+		send_regs = SEND_SIMPLE;
+		break;
+	case ATA_PORT_LBAM:
+		wr_sata_orb3[device] &= ~(0xFFUL << SATA_LBAM_BIT);
+		wr_sata_orb3[device] |= (val << SATA_LBAM_BIT);
+		send_regs = SEND_SIMPLE;
+		break;
+	case ATA_PORT_LBAH:
+		wr_sata_orb3[device] &= ~(0xFFUL << SATA_LBAH_BIT);
+		wr_sata_orb3[device] |= (val << SATA_LBAH_BIT);
+		send_regs = SEND_SIMPLE;
+		break;
+	case ATA_PORT_DEVICE:
+		wr_sata_orb1[device] &= ~(0xFFUL << SATA_DEVICE_BIT);
+		wr_sata_orb1[device] |= (val << SATA_DEVICE_BIT);
+		send_regs = SEND_SIMPLE;
+		break;
+	case ATA_PORT_COMMAND:
+		wr_sata_orb2[device] &= ~(0xFFUL << SATA_COMMAND_BIT);
+		wr_sata_orb2[device] |= (val << SATA_COMMAND_BIT);
+		send_regs = SEND_CMD;
+#ifdef CONFIG_LBA48
+		if (val == ATA_CMD_READ_EXT || val == ATA_CMD_WRITE_EXT)
+		{
+			/* fill high bytes of LBA48 && NSECT */
+			wr_sata_orb2[device] &= ~(0xFFUL << SATA_HOB_NSECT_BIT);
+			wr_sata_orb2[device] |=
+				(out_history[0][ATA_PORT_NSECT - OUT_HISTORY_BASE] << SATA_HOB_NSECT_BIT);
+
+			wr_sata_orb3[device] &= ~(0xFFUL << SATA_HOB_LBAH_BIT);
+			wr_sata_orb3[device] |=
+				(out_history[0][ATA_PORT_LBAL - OUT_HISTORY_BASE] << SATA_HOB_LBAH_BIT);
+
+			wr_sata_orb4[device] &= ~(0xFFUL << SATA_LBA32_BIT);
+			wr_sata_orb4[device] |=
+				(out_history[0][ATA_PORT_LBAM - OUT_HISTORY_BASE] << SATA_LBA32_BIT);
+
+			wr_sata_orb4[device] &= ~(0xFFUL << SATA_LBA40_BIT);
+			wr_sata_orb4[device] |=
+				(out_history[0][ATA_PORT_LBAH - OUT_HISTORY_BASE] << SATA_LBA40_BIT);
+		}
+#endif
+		break;
+	default:
+		printf("ide_outb() Unknown port = %d\n", port);
+	}
+
+	u32 command;
+	switch (send_regs) {
+	case SEND_CMD:
+		wait_sata_command_not_busy(device);
+		command = *(sata_regs_base[device] + SATA_COMMAND_OFF);
+		command &= ~SATA_OPCODE_MASK;
+		command |= SATA_CMD_WRITE_TO_ORB_REGS;
+		xfer_wr_shadow_to_orbs(device);
+		wait_sata_command_not_busy(device);
+		*(sata_regs_base[device] + SATA_COMMAND_OFF) = command;
+		if (!wait_no_error(device)) {
+			printf("ide_outb() Wait for ATA no-error timed-out\n");
+		}
+		break;
+	case SEND_CTL:
+		wait_sata_command_not_busy(device);
+		command = *(sata_regs_base[device] + SATA_COMMAND_OFF);
+		command &= ~SATA_OPCODE_MASK;
+		command |= SATA_CMD_WRITE_TO_ORB_REGS_NO_COMMAND;
+		xfer_wr_shadow_to_orbs(device);
+		wait_sata_command_not_busy(device);
+		*(sata_regs_base[device] + SATA_COMMAND_OFF) = command;
+		if (!wait_no_error(device)) {
+			printf("ide_outb() Wait for ATA no-error timed-out\n");
+		}
+		break;
+	default:
+		break;
+	}
+}

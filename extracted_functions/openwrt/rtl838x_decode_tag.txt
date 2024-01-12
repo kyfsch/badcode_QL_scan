@@ -1,0 +1,16 @@
+bool rtl838x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
+{
+	/* cpu_tag[0] is reserved. Fields are off-by-one */
+	t->reason = h->cpu_tag[4] & 0xf;
+	t->queue = (h->cpu_tag[1] & 0xe0) >> 5;
+	t->port = h->cpu_tag[1] & 0x1f;
+	t->crc_error = t->reason == 13;
+
+	pr_debug("Reason: %d\n", t->reason);
+	if (t->reason != 6) /* NIC_RX_REASON_SPECIAL_TRAP */
+		t->l2_offloaded = 1;
+	else
+		t->l2_offloaded = 0;
+
+	return t->l2_offloaded;
+}

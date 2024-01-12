@@ -1,0 +1,11 @@
+static enum zyxel_bootconfig_image_status zyxel_bootconfig_image_status_parse(const char *status) {
+	struct zyxel_image_status* s;
+
+	for (s = image_status_codes; s->name; s++) {
+		if (!strcmp(status, s->name)) {
+			return s->code;
+		}
+	}
+
+	return __IMAGE_STATUS_EINVAL;
+}

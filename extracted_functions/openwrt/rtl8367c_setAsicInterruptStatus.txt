@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicInterruptStatus(rtk_uint32 ims)
+{
+    return rtl8367c_setAsicReg(RTL8367C_REG_INTR_IMS, ims);
+}

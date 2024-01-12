@@ -1,0 +1,16 @@
+ret_t rtl8367c_getAsicLutAgeTimerSpeed(rtk_uint32* pTimer, rtk_uint32* pSpeed)
+{
+    rtk_uint32 regData;
+    ret_t retVal;
+
+    retVal = rtl8367c_getAsicReg(RTL8367C_REG_LUT_CFG, &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    *pTimer =  (regData & RTL8367C_AGE_TIMER_MASK) >> RTL8367C_AGE_TIMER_OFFSET;
+
+    *pSpeed =  (regData & RTL8367C_AGE_SPEED_MASK) >> RTL8367C_AGE_SPEED_OFFSET;
+
+    return RT_ERR_OK;
+
+}

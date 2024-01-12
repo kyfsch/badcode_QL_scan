@@ -1,0 +1,9 @@
+static inline u32 sata_oxnas_hostportbusy(struct ata_port *ap)
+{
+	struct sata_oxnas_host_priv *hd = ap->host->private_data;
+
+	return (ioread32(hd->port_base + SATA_COMMAND) & CMD_CORE_BUSY) ||
+	       (hd->n_ports > 1 &&
+		(ioread32(hd->port_base + PORT_SIZE + SATA_COMMAND) &
+		 CMD_CORE_BUSY));
+}

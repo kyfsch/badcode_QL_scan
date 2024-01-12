@@ -1,0 +1,19 @@
+static int ecb_arc4_encrypt(struct skcipher_request *req)
+{
+        struct arc4_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
+        struct skcipher_walk walk;
+        unsigned int nbytes;
+        int err;
+
+        DPRINTF(1, "\n");
+        err = skcipher_walk_virt(&walk, req, false);
+
+        while ((nbytes = walk.nbytes)) {
+                _deu_arc4_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                               NULL, nbytes, CRYPTO_DIR_ENCRYPT, 0);
+                nbytes &= ARC4_BLOCK_SIZE - 1;
+                err = skcipher_walk_done(&walk, nbytes);
+        }
+
+        return err;
+}

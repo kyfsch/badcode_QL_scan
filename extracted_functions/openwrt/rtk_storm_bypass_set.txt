@@ -1,0 +1,65 @@
+rtk_api_ret_t rtk_storm_bypass_set(rtk_storm_bypass_t type, rtk_enable_t enable)
+{
+    rtk_api_ret_t retVal;
+    rtl8367c_rma_t rmacfg;
+    rtk_uint32 tmp;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (type >= BYPASS_END)
+        return RT_ERR_INPUT;
+
+    if (enable >= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if (type >= 0 && type <= BYPASS_UNDEF_GARP_2F)
+    {
+        if ((retVal = rtl8367c_getAsicRma(type, &rmacfg)) != RT_ERR_OK)
+            return retVal;
+
+        rmacfg.discard_storm_filter = enable;
+
+        if ((retVal = rtl8367c_setAsicRma(type, &rmacfg)) != RT_ERR_OK)
+            return retVal;
+    }
+    else if(type == BYPASS_IGMP)
+    {
+        if ((retVal = rtl8367c_setAsicIGMPBypassStormCTRL(enable)) != RT_ERR_OK)
+            return retVal;
+    }
+    else if (type == BYPASS_CDP)
+    {
+        if ((retVal = rtl8367c_getAsicRmaCdp(&rmacfg)) != RT_ERR_OK)
+            return retVal;
+
+        rmacfg.discard_storm_filter = enable;
+
+        if ((retVal = rtl8367c_setAsicRmaCdp(&rmacfg)) != RT_ERR_OK)
+            return retVal;
+    }
+    else if (type  == BYPASS_CSSTP)
+    {
+        if ((retVal = rtl8367c_getAsicRmaCsstp(&rmacfg)) != RT_ERR_OK)
+            return retVal;
+
+        rmacfg.discard_storm_filter = enable;
+
+        if ((retVal = rtl8367c_setAsicRmaCsstp(&rmacfg)) != RT_ERR_OK)
+            return retVal;
+    }
+    else if (type  == BYPASS_LLDP)
+    {
+        if ((retVal = rtl8367c_getAsicRmaLldp(&tmp, &rmacfg)) != RT_ERR_OK)
+            return retVal;
+
+        rmacfg.discard_storm_filter = enable;
+
+        if ((retVal = rtl8367c_setAsicRmaLldp(tmp, &rmacfg)) != RT_ERR_OK)
+            return retVal;
+    }
+    else
+        return RT_ERR_INPUT;
+
+    return RT_ERR_OK;
+}

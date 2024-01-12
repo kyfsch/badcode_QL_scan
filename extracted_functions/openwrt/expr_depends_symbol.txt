@@ -1,0 +1,28 @@
+bool expr_depends_symbol(struct expr *dep, struct symbol *sym)
+{
+	if (!dep)
+		return false;
+
+	switch (dep->type) {
+	case E_AND:
+		return expr_depends_symbol(dep->left.expr, sym) ||
+		       expr_depends_symbol(dep->right.expr, sym);
+	case E_SYMBOL:
+		return dep->left.sym == sym;
+	case E_EQUAL:
+		if (dep->left.sym == sym) {
+			if (dep->right.sym == &symbol_yes || dep->right.sym == &symbol_mod)
+				return true;
+		}
+		break;
+	case E_UNEQUAL:
+		if (dep->left.sym == sym) {
+			if (dep->right.sym == &symbol_no)
+				return true;
+		}
+		break;
+	default:
+		;
+	}
+ 	return false;
+}

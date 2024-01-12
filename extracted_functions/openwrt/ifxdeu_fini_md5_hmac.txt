@@ -1,0 +1,4 @@
+void ifxdeu_fini_md5_hmac (void)
+{
+    crypto_unregister_shash(&ifxdeu_md5_hmac_alg);
+}

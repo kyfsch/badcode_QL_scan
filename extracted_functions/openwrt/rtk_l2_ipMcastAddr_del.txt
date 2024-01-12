@@ -1,0 +1,42 @@
+rtk_api_ret_t rtk_l2_ipMcastAddr_del(rtk_l2_ipMcastAddr_t *pIpMcastAddr)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 method;
+    rtl8367c_luttb l2Table;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Error Checking */
+    if (pIpMcastAddr == NULL)
+        return RT_ERR_INPUT;
+
+    if( (pIpMcastAddr->dip & 0xF0000000) != 0xE0000000)
+        return RT_ERR_INPUT;
+
+    memset(&l2Table, 0x00, sizeof(rtl8367c_luttb));
+    l2Table.sip = pIpMcastAddr->sip;
+    l2Table.dip = pIpMcastAddr->dip;
+    l2Table.l3lookup = 1;
+    l2Table.l3vidlookup = 0;
+    method = LUTREADMETHOD_MAC;
+    retVal = rtl8367c_getAsicL2LookupTb(method, &l2Table);
+    if (RT_ERR_OK == retVal)
+    {
+        l2Table.sip = pIpMcastAddr->sip;
+        l2Table.dip = pIpMcastAddr->dip;
+        l2Table.mbr = 0;
+        l2Table.nosalearn = 0;
+        l2Table.l3lookup = 1;
+        l2Table.l3vidlookup = 0;
+        l2Table.lut_pri = 0;
+        l2Table.fwd_en  = 0;
+        if((retVal = rtl8367c_setAsicL2LookupTb(&l2Table)) != RT_ERR_OK)
+            return retVal;
+
+        pIpMcastAddr->address = l2Table.address;
+        return RT_ERR_OK;
+    }
+    else
+        return retVal;
+}

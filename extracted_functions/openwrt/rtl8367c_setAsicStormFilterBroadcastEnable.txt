@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicStormFilterBroadcastEnable(rtk_uint32 port, rtk_uint32 enabled)
+{
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    return rtl8367c_setAsicRegBit(RTL8367C_STORM_BCAST_REG, port, enabled);
+}

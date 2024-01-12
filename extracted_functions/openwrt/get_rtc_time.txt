@@ -1,0 +1,41 @@
+static void get_rtc_time(struct rtc_time *rtc_tm)
+{
+	int cr2;
+
+	/*
+	 * Read date and time from the RTC. We use read method (3).
+	 */
+
+	spin_lock_irq(&rtc_lock);
+	i2c_start();
+	i2c_outb(RTC_I2C_ADDRESS | I2C_READ_MASK);
+	cr2             = i2c_inb(I2C_ACK);
+	rtc_tm->tm_sec  = i2c_inb(I2C_ACK);
+	rtc_tm->tm_min  = i2c_inb(I2C_ACK);
+	rtc_tm->tm_hour = i2c_inb(I2C_ACK);
+	rtc_tm->tm_wday = i2c_inb(I2C_ACK);
+	rtc_tm->tm_mday = i2c_inb(I2C_ACK);
+	rtc_tm->tm_mon  = i2c_inb(I2C_ACK);
+	rtc_tm->tm_year = i2c_inb(I2C_NAK);
+	i2c_stop();
+	spin_unlock_irq(&rtc_lock);
+
+	if (cr2 & RTC_VDET_MASK) {
+		printk(KERN_WARNING "***RTC BATTERY FAILURE***\n");
+	}
+
+	/* Handle century bit */
+	if (rtc_tm->tm_mon & RTC_Y2K_MASK) {
+		rtc_tm->tm_mon &= ~RTC_Y2K_MASK;
+		rtc_tm->tm_year += 0x100;
+	}
+
+	rtc_tm->tm_sec  = from_bcd(rtc_tm->tm_sec);
+	rtc_tm->tm_min  = from_bcd(rtc_tm->tm_min);
+	rtc_tm->tm_hour = from_bcd(rtc_tm->tm_hour);
+	rtc_tm->tm_mday = from_bcd(rtc_tm->tm_mday);
+	rtc_tm->tm_mon  = from_bcd(rtc_tm->tm_mon) - 1;
+	rtc_tm->tm_year = from_bcd(rtc_tm->tm_year);
+
+	rtc_tm->tm_isdst = -1; /* DST not known */
+}

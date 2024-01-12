@@ -1,0 +1,20 @@
+mtk_bmt_init_bbt(struct device_node *np)
+{
+	int buf_size = round_up(bmtd.total_blks >> 2, bmtd.blk_size);
+	int ret;
+
+	bmtd.bbt_buf = kmalloc(buf_size, GFP_KERNEL);
+	if (!bmtd.bbt_buf)
+		return -ENOMEM;
+
+	memset(bmtd.bbt_buf, 0xff, buf_size);
+	bmtd.mtd->size -= 4 * bmtd.mtd->erasesize;
+
+	ret = mtk_bmt_read_bbt();
+	if (ret)
+		return ret;
+
+	bmtd.bmt_pgs = buf_size / bmtd.pg_size;
+
+	return 0;
+}

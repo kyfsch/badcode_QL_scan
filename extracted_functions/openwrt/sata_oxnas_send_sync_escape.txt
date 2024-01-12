@@ -1,0 +1,14 @@
+static inline void sata_oxnas_send_sync_escape(struct ata_port *ap)
+{
+	struct sata_oxnas_port_priv *pd = ap->private_data;
+	u32 reg;
+
+	/* read the SSTATUS register and only send a sync escape if there is a
+	* link active */
+	if ((sata_oxnas_link_read(ap, 0x20) & 3) == 3) {
+		reg = ioread32(pd->port_base + SATA_COMMAND);
+		reg &= ~SATA_OPCODE_MASK;
+		reg |= CMD_SYNC_ESCAPE;
+		iowrite32(reg, pd->port_base + SATA_COMMAND);
+	}
+}

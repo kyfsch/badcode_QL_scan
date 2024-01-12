@@ -1,0 +1,27 @@
+static bool nmbm_generate_info_table_cache(struct nmbm_instance *ni)
+{
+	bool changed = false;
+
+	memset(ni->info_table_cache, 0xff, ni->info_table_size);
+
+	memcpy(ni->info_table_cache + ni->info_table.state_table_off,
+	       ni->block_state, ni->state_table_size);
+
+	memcpy(ni->info_table_cache + ni->info_table.mapping_table_off,
+		ni->block_mapping, ni->mapping_table_size);
+
+	ni->info_table.header.magic = NMBM_MAGIC_INFO_TABLE;
+	ni->info_table.header.version = NMBM_VER;
+	ni->info_table.header.size = ni->info_table_size;
+
+	if (ni->block_state_changed || ni->block_mapping_changed) {
+		ni->info_table.write_count++;
+		changed = true;
+	}
+
+	memcpy(ni->info_table_cache, &ni->info_table, sizeof(ni->info_table));
+
+	nmbm_update_checksum((struct nmbm_header *)ni->info_table_cache);
+
+	return changed;
+}

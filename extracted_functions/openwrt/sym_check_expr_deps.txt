@@ -1,0 +1,33 @@
+static struct symbol *sym_check_expr_deps(struct expr *e)
+{
+	struct symbol *sym;
+
+	if (!e)
+		return NULL;
+	switch (e->type) {
+	case E_OR:
+	case E_AND:
+		sym = sym_check_expr_deps(e->left.expr);
+		if (sym)
+			return sym;
+		return sym_check_expr_deps(e->right.expr);
+	case E_NOT:
+		return sym_check_expr_deps(e->left.expr);
+	case E_EQUAL:
+	case E_GEQ:
+	case E_GTH:
+	case E_LEQ:
+	case E_LTH:
+	case E_UNEQUAL:
+		sym = sym_check_deps(e->left.sym);
+		if (sym)
+			return sym;
+		return sym_check_deps(e->right.sym);
+	case E_SYMBOL:
+		return sym_check_deps(e->left.sym);
+	default:
+		break;
+	}
+	fprintf(stderr, "Oops! How to check %d?\n", e->type);
+	return NULL;
+}

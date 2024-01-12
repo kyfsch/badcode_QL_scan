@@ -1,0 +1,4 @@
+static inline unsigned int rtl8367c_sw_to_phy_port(int port)
+{
+	return rtl8367c_port_id[port];
+}

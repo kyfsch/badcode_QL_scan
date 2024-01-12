@@ -1,0 +1,81 @@
+int mtd_write_jffs2(const char *mtd, const char *filename, const char *dir)
+{
+	int err = -1, fdeof = 0;
+
+	outfd = mtd_check_open(mtd);
+	if (outfd < 0)
+		return -1;
+
+	if (quiet < 2)
+		fprintf(stderr, "Appending %s to jffs2 partition %s\n", filename, mtd);
+	
+	buf = malloc(erasesize);
+	if (!buf) {
+		fprintf(stderr, "Out of memory!\n");
+		goto done;
+	}
+
+	if (!*dir)
+		target_ino = 1;
+
+	/* parse the structure of the jffs2 first
+	 * locate the directory that the file is going to be placed in */
+	for(;;) {
+		struct jffs2_unknown_node *node = (struct jffs2_unknown_node *) buf;
+
+		if (read(outfd, buf, erasesize) != erasesize) {
+			fdeof = 1;
+			break;
+		}
+		mtdofs += erasesize;
+
+		if (node->magic == 0x8519) {
+			fprintf(stderr, "Error: wrong endianness filesystem\n");
+			goto done;
+		}
+
+		/* assume  no magic == end of filesystem
+		 * the filesystem will probably end with be32(0xdeadc0de) */
+		if (node->magic != 0x1985)
+			break;
+
+		mtd_parse_jffs2data(buf, dir);
+	}
+
+	if (fdeof) {
+		fprintf(stderr, "Error: No room for additional data\n");
+		goto done;
+	}
+
+	/* jump back one eraseblock */
+	mtdofs -= erasesize;
+	lseek(outfd, mtdofs, SEEK_SET);
+
+	ofs = 0;
+
+	if (!last_ino)
+		last_ino = 1;
+
+	if (!target_ino)
+		target_ino = add_dir(dir, 1);
+
+	add_file(filename, target_ino);
+	pad(erasesize);
+
+	/* add eof marker, pad to eraseblock size and write the data */
+	add_data(JFFS2_EOF, sizeof(JFFS2_EOF) - 1);
+	pad(erasesize);
+
+	err = 0;
+
+	if (trx_fixup) {
+	  trx_fixup(outfd, mtd);
+	}
+
+done:
+	close(outfd);
+	if (buf)
+		free(buf);
+
+	return err;
+}

@@ -1,0 +1,7 @@
+static int rtl83xx_sw_remove(struct platform_device *pdev)
+{
+	/* TODO: */
+	pr_debug("Removing platform driver for rtl83xx-sw\n");
+
+	return 0;
+}

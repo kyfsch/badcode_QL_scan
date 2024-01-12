@@ -1,0 +1,30 @@
+static void udebug_netlink_hook(int tx, const void *data, size_t len)
+{
+	struct {
+		uint16_t pkttype;
+		uint16_t arphdr;
+		uint16_t _pad[5];
+		uint16_t proto;
+	} hdr = {
+		.pkttype = host_to_be16(tx ? 7 : 6),
+		.arphdr = host_to_be16(824),
+		.proto = host_to_be16(16),
+	};
+	const struct nlmsghdr *nlh = data;
+	const struct genlmsghdr *gnlh = data + NLMSG_HDRLEN;
+	struct udebug_buf *buf = &ud_nl[!!tx];
+
+	if (nlh->nlmsg_type == 0x10)
+		buf = &ud_nl[2];
+	else if (!tx && gnlh->cmd == NL80211_CMD_FRAME &&
+	         !(udebug_buf_flags(buf) & UDEBUG_FLAG_RX_FRAME))
+		return;
+
+	if (!udebug_buf_valid(buf))
+		return;
+
+	udebug_entry_init(buf);
+	udebug_entry_append(buf, &hdr, sizeof(hdr));
+	udebug_entry_append(buf, data, len);
+	udebug_entry_add(buf);
+}

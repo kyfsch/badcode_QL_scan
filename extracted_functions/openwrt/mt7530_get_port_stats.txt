@@ -1,0 +1,13 @@
+static int mt7530_get_port_stats(struct switch_dev *dev, int port,
+					struct switch_port_stats *stats)
+{
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+
+	if (port < 0 || port >= MT7530_NUM_PORTS)
+		return -EINVAL;
+
+	stats->tx_bytes = get_mib_counter_port_7620(priv, MT7530_PORT_MIB_TXB_ID, port);
+	stats->rx_bytes = get_mib_counter_port_7620(priv, MT7530_PORT_MIB_RXB_ID, port);
+
+	return 0;
+}

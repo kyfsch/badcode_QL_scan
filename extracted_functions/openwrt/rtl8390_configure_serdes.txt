@@ -1,0 +1,15 @@
+static int rtl8390_configure_serdes(struct phy_device *phydev)
+{
+	phydev_info(phydev, "Detected internal RTL8390 SERDES\n");
+
+	/* In autoneg state, force link, set SR4_CFG_EN_LINK_FIB1G */
+	sw_w32_mask(0, 1 << 18, RTL839X_SDS12_13_XSG0 + 0x0a);
+
+	/* Disable EEE: Clear FRE16_EEE_RSG_FIB1G, FRE16_EEE_STD_FIB1G,
+	 * FRE16_C1_PWRSAV_EN_FIB1G, FRE16_C2_PWRSAV_EN_FIB1G
+	 * and FRE16_EEE_QUIET_FIB1G
+	 */
+	sw_w32_mask(0x1f << 10, 0, RTL839X_SDS12_13_XSG0 + 0xe0);
+
+	return 0;
+}

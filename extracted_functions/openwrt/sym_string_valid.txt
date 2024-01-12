@@ -1,0 +1,42 @@
+bool sym_string_valid(struct symbol *sym, const char *str)
+{
+	signed char ch;
+
+	switch (sym->type) {
+	case S_STRING:
+		return true;
+	case S_INT:
+		ch = *str++;
+		if (ch == '-')
+			ch = *str++;
+		if (!isdigit(ch))
+			return false;
+		if (ch == '0' && *str != 0)
+			return false;
+		while ((ch = *str++)) {
+			if (!isdigit(ch))
+				return false;
+		}
+		return true;
+	case S_HEX:
+		if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
+			str += 2;
+		ch = *str++;
+		do {
+			if (!isxdigit(ch))
+				return false;
+		} while ((ch = *str++));
+		return true;
+	case S_BOOLEAN:
+	case S_TRISTATE:
+		switch (str[0]) {
+		case 'y': case 'Y':
+		case 'm': case 'M':
+		case 'n': case 'N':
+			return true;
+		}
+		return false;
+	default:
+		return false;
+	}
+}

@@ -1,0 +1,11 @@
+swlib_free_port_map(struct switch_dev *dev)
+{
+	int i;
+
+	if (!dev || !dev->maps)
+		return;
+
+	for (i = 0; i < dev->ports; i++)
+		free(dev->maps[i].segment);
+	free(dev->maps);
+}

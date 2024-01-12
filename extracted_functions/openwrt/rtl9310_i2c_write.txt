@@ -1,0 +1,4 @@
+static int rtl9310_i2c_write(struct rtl9300_i2c *i2c, u8 *buf, int len)
+{
+	return i2c_write(REG(i2c, RTL9310_I2C_DATA), buf, len);
+}

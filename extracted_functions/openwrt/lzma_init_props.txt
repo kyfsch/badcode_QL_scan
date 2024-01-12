@@ -1,0 +1,24 @@
+static int lzma_init_props(void)
+{
+	unsigned char props[LZMA_PROPERTIES_SIZE];
+	int res;
+	int i;
+
+	/* read lzma properties */
+	for (i = 0; i < LZMA_PROPERTIES_SIZE; i++)
+		props[i] = lzma_get_byte();
+
+	/* read the lower half of uncompressed size in the header */
+	lzma_outsize = ((SizeT) lzma_get_byte()) +
+		       ((SizeT) lzma_get_byte() << 8) +
+		       ((SizeT) lzma_get_byte() << 16) +
+		       ((SizeT) lzma_get_byte() << 24);
+
+	/* skip rest of the header (upper half of uncompressed size) */
+	for (i = 0; i < 4; i++)
+		lzma_get_byte();
+
+	res = LzmaDecodeProperties(&lzma_state.Properties, props,
+					LZMA_PROPERTIES_SIZE);
+	return res;
+}

@@ -1,0 +1,6 @@
+static int __init mtdsplit_squashfs_init(void)
+{
+	register_mtd_parser(&mtdsplit_squashfs_parser);
+
+	return 0;
+}

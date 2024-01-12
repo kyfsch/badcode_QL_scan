@@ -1,0 +1,24 @@
+ret_t rtl8367c_setAsicLedGroupEnable(rtk_uint32 group, rtk_uint32 portmask)
+{
+    ret_t retVal;
+    rtk_uint32 regAddr;
+    rtk_uint32 regDataMask;
+
+    if ( group >= RTL8367C_LEDGROUPNO )
+        return RT_ERR_INPUT;
+
+    regAddr = RTL8367C_REG_PARA_LED_IO_EN1 + group/2;
+    regDataMask = 0xFF << ((group%2)*8);
+    retVal = rtl8367c_setAsicRegBits(regAddr, regDataMask, portmask&0xff);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    regAddr = RTL8367C_REG_PARA_LED_IO_EN3;
+    regDataMask = 0x3 << (group*2);
+    retVal = rtl8367c_setAsicRegBits(regAddr, regDataMask, (portmask>>8)&0x7);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+
+    return RT_ERR_OK;
+}

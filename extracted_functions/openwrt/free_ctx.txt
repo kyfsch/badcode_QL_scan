@@ -1,0 +1,7 @@
+void free_ctx(ctx_t *ctx)
+{
+    if (ctx) {
+	mbedtls_cipher_free(ctx);
+	free(ctx);
+    }
+}

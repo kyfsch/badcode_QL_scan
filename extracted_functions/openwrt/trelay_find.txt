@@ -1,0 +1,10 @@
+static struct trelay *trelay_find(struct net_device *dev)
+{
+	struct trelay *tr;
+
+	list_for_each_entry(tr, &trelay_devs, list) {
+		if (tr->dev1 == dev || tr->dev2 == dev)
+			return tr;
+	}
+	return NULL;
+}

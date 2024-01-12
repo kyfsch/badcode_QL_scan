@@ -1,0 +1,76 @@
+int hvfprintf(const char *fmt, va_list va)
+{
+  char *s;
+
+	do {
+		if(*fmt == '%')	{
+			bool done = false;
+
+			int type = 0;
+			int precision = 0;
+
+			do {
+				fmt++;
+				switch(*fmt) {
+				case '0' :
+					if(!precision)
+						type |= ZEROPAD;
+				case '1' :
+				case '2' :
+				case '3' :
+				case '4' :
+				case '5' :
+				case '6' :
+				case '7' :
+				case '8' :
+				case '9' :
+					precision = precision * 10 + (*fmt - '0');
+					break;
+				case '.' :
+					break;
+				case 's' :
+					s = va_arg(va, char *);
+					if(!s)
+						puts("<NULL>");
+					else
+						puts(s);
+					done = true;
+					break;
+				case 'c' :
+					putc(va_arg(va, int));
+					done = true;
+					break;
+				case 'd' :
+					number(va_arg(va, int), 10, 0, precision, type);
+					done = true;
+					break;
+				case 'x' :
+				case 'X' :
+					number(va_arg(va, int), 16, 0, precision, type);
+					done = true;
+					break;
+				case '%' :
+					putc(*fmt);
+					done = true;
+				default: 
+					putc('%');
+					putc(*fmt);
+					done = true;
+					break;
+				} 
+			} while(!done);
+		} else if(*fmt == '\\') {
+			fmt++;
+			if(*fmt == 'r') {
+				putc('\r');
+			} else if(*fmt == 'n') { 
+				putc('\n');
+			}
+        	} else {
+         		putc(*fmt);
+        	}
+		fmt++;
+	} while(*fmt != 0);
+  
+  return 0;
+}

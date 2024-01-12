@@ -1,0 +1,7 @@
+void ifx_pp32_stop(int pp32)
+{
+    unsigned int mask = 1 << (pp32 << 4);
+
+    /*  halt PP32   */
+    IFX_REG_W32_MASK(0, mask, PP32_FREEZE);
+}

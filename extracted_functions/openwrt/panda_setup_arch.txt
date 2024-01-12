@@ -1,0 +1,11 @@
+static void __init panda_setup_arch(void)
+{
+	if (ppc_md.progress)
+		ppc_md.progress("panda_setup_arch()", 0);
+
+	mpc85xx_smp_init();
+
+	fsl_pci_assign_primary();
+
+	pr_info("Panda board from OCEDO\n");
+}

@@ -1,0 +1,5 @@
+static void pm_channel_counters_showtime(int fd) {
+	IOCTL_DIR(DSL_PM_ChannelCounters_t, DSL_FIO_PM_CHANNEL_COUNTERS_SHOWTIME_GET, DSL_NEAR_END);
+
+	m_u32("uptime", out.interval.nElapsedTime);
+}

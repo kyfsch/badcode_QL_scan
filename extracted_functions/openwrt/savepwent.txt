@@ -1,0 +1,14 @@
+savepwent(tpw, pwent)
+     struct t_pw * tpw;
+     struct t_pwent *pwent;
+{
+  tpw->pebuf.name = tpw->userbuf;
+  tpw->pebuf.password.data = tpw->pwbuf;
+  tpw->pebuf.salt.data = tpw->saltbuf;
+  strcpy(tpw->pebuf.name, pwent->name);
+  tpw->pebuf.password.len = pwent->password.len;
+  memcpy(tpw->pebuf.password.data, pwent->password.data, pwent->password.len);
+  tpw->pebuf.salt.len = pwent->salt.len;
+  memcpy(tpw->pebuf.salt.data, pwent->salt.data, pwent->salt.len);
+  tpw->pebuf.index = pwent->index;
+}

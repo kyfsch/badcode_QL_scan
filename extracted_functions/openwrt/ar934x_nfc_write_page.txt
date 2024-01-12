@@ -1,0 +1,27 @@
+static int ar934x_nfc_write_page(struct nand_chip *chip,
+				 const u8 *buf, int oob_required, int page)
+{
+	struct ar934x_nfc *nfc = chip->priv;
+	struct mtd_info *mtd = ar934x_nfc_to_mtd(nfc);
+	int err;
+
+	nfc_dbg(nfc, "write_page: page:%d oob:%d\n", page, oob_required);
+
+	/* write OOB first */
+	if (oob_required &&
+	    !is_all_ff(chip->oob_poi, mtd->oobsize)) {
+		err = ar934x_nfc_write_oob(chip, page);
+		if (err)
+			return err;
+	}
+
+	/* TODO: optimize to avoid memcopy */
+	memcpy(nfc->buf, buf, mtd->writesize);
+
+	ar934x_nfc_enable_hwecc(nfc);
+	err = ar934x_nfc_send_write(nfc, NAND_CMD_PAGEPROG, 0, page,
+				    mtd->writesize);
+	ar934x_nfc_disable_hwecc(nfc);
+
+	return err;
+}

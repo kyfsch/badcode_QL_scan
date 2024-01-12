@@ -1,0 +1,81 @@
+static int mt7621_nfc_setup_interface(struct nand_chip *nand, int csline,
+				      const struct nand_interface_config *conf)
+{
+	struct mt7621_nfc *nfc = nand_get_controller_data(nand);
+	const struct nand_sdr_timings *timings;
+	u32 acccon, temp, rate, tpoecs, tprecs, tc2r, tw2r, twh, twst, trlt;
+
+	if (!nfc->nfi_clk)
+		return -ENOTSUPP;
+
+	timings = nand_get_sdr_timings(conf);
+	if (IS_ERR(timings))
+		return -ENOTSUPP;
+
+	rate = clk_get_rate(nfc->nfi_clk);
+
+	/* turn clock rate into KHZ */
+	rate /= 1000;
+
+	tpoecs = max(timings->tALH_min, timings->tCLH_min) / 1000;
+	tpoecs = DIV_ROUND_UP(tpoecs * rate, 1000000);
+	tpoecs = min_t(u32, tpoecs, ACCCON_POECS_MAX);
+
+	tprecs = max(timings->tCLS_min, timings->tALS_min) / 1000;
+	tprecs = DIV_ROUND_UP(tprecs * rate, 1000000);
+	tprecs = min_t(u32, tprecs, ACCCON_PRECS_MAX);
+
+	/* sdr interface has no tCR which means CE# low to RE# low */
+	tc2r = 0;
+
+	tw2r = timings->tWHR_min / 1000;
+	tw2r = DIV_ROUND_UP(tw2r * rate, 1000000);
+	tw2r = DIV_ROUND_UP(tw2r - 1, 2);
+	tw2r = min_t(u32, tw2r, ACCCON_W2R_MAX);
+
+	twh = max(timings->tREH_min, timings->tWH_min) / 1000;
+	twh = DIV_ROUND_UP(twh * rate, 1000000) - 1;
+	twh = min_t(u32, twh, ACCCON_WH_MAX);
+
+	/* Calculate real WE#/RE# hold time in nanosecond */
+	temp = (twh + 1) * 1000000 / rate;
+	/* nanosecond to picosecond */
+	temp *= 1000;
+
+	/*
+	 * WE# low level time should be expaned to meet WE# pulse time
+	 * and WE# cycle time at the same time.
+	 */
+	if (temp < timings->tWC_min)
+		twst = timings->tWC_min - temp;
+	else
+		twst = 0;
+	twst = max(timings->tWP_min, twst) / 1000;
+	twst = DIV_ROUND_UP(twst * rate, 1000000) - 1;
+	twst = min_t(u32, twst, ACCCON_WST_MAX);
+
+	/*
+	 * RE# low level time should be expaned to meet RE# pulse time
+	 * and RE# cycle time at the same time.
+	 */
+	if (temp < timings->tRC_min)
+		trlt = timings->tRC_min - temp;
+	else
+		trlt = 0;
+	trlt = max(trlt, timings->tRP_min) / 1000;
+	trlt = DIV_ROUND_UP(trlt * rate, 1000000) - 1;
+	trlt = min_t(u32, trlt, ACCCON_RLT_MAX);
+
+	if (csline == NAND_DATA_IFACE_CHECK_ONLY) {
+		if (twst < ACCCON_WST_MIN || trlt < ACCCON_RLT_MIN)
+			return -ENOTSUPP;
+	}
+
+	acccon = ACCTIMING(tpoecs, tprecs, tc2r, tw2r, twh, twst, trlt);
+
+	dev_dbg(nfc->dev, "Using programmed access timing: %08x\n", acccon);
+
+	nfi_write32(nfc, NFI_ACCCON, acccon);
+
+	return 0;
+}

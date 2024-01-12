@@ -1,0 +1,33 @@
+static int msp430_blink_set(struct led_classdev *led_cdev,
+			    unsigned long *delay_on,
+			    unsigned long *delay_off)
+{
+	struct msp430_led *led =
+		container_of(led_cdev, struct msp430_led, cdev);
+	u8 tx[MSP430_CMD_BYTES] = {led->id, MSP430_LED_FLASH, 0, 0, 0, 0};
+	u8 rx[MSP430_CMD_BYTES];
+	unsigned long delay;
+
+	if (!*delay_on)
+		*delay_on = MSP430_LED_BLINK_DEF;
+	if (!*delay_off)
+		*delay_off = MSP430_LED_BLINK_DEF;
+
+	delay = msp430_blink_delay(*delay_on);
+	if (delay != msp430_blink_delay(*delay_off)) {
+		dev_dbg(led_cdev->dev,
+			"fallback to soft blinking (delay_on != delay_off)\n");
+		return -EINVAL;
+	}
+
+	if (delay > MSP430_LED_BLINK_MASK) {
+		dev_dbg(led_cdev->dev,
+			"fallback to soft blinking (delay > %ums)\n",
+			MSP430_LED_BLINK_MAX);
+		return -EINVAL;
+	}
+
+	tx[3] = delay;
+
+	return msp430_cmd(led->spi, tx, rx);
+}

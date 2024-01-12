@@ -1,0 +1,8 @@
+static void version_information(int fd) {
+	IOCTL(DSL_VersionInformation_t, DSL_FIO_VERSION_INFORMATION_GET)
+
+	m_str("api_version", out.data.DSL_DriverVersionApi);
+	m_str("firmware_version", out.data.DSL_ChipSetFWVersion);
+	m_str("chipset", out.data.DSL_ChipSetType);
+	m_str("driver_version", out.data.DSL_DriverVersionMeiBsp);
+}

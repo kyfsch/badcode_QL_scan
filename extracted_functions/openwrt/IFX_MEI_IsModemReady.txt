@@ -1,0 +1,4 @@
+IFX_MEI_IsModemReady (DSL_DEV_Device_t * pDev)
+{
+	return DSL_DEV_PRIVATE(pDev)->modem_ready;
+}

@@ -1,0 +1,4 @@
+mvswitch_exit(void)
+{
+	phy_driver_unregister(&mvswitch_driver);
+}

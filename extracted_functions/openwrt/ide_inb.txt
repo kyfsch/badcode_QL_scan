@@ -1,0 +1,56 @@
+unsigned char ide_inb(int device, int port)
+{
+	unsigned char val = 0;
+
+	/* Only permit accesses to disks found to be present during ide_preinit() */
+	if (!disk_present[device]) {
+		return ATA_STAT_FAULT;
+	}
+
+	device_select(device);
+
+	switch (port) {
+	case ATA_PORT_CTL:
+		val = (*(sata_regs_base[device] + SATA_ORB4_OFF)
+			& (0xFFUL << SATA_CTL_BIT)) >> SATA_CTL_BIT;
+		break;
+	case ATA_PORT_FEATURE:
+		val = (*(sata_regs_base[device] + SATA_ORB2_OFF)
+			& (0xFFUL << SATA_FEATURE_BIT)) >> SATA_FEATURE_BIT;
+		break;
+	case ATA_PORT_NSECT:
+		val = (*(sata_regs_base[device] + SATA_ORB2_OFF)
+			& (0xFFUL << SATA_NSECT_BIT)) >> SATA_NSECT_BIT;
+		break;
+	case ATA_PORT_LBAL:
+		val = (*(sata_regs_base[device] + SATA_ORB3_OFF)
+			& (0xFFUL << SATA_LBAL_BIT)) >> SATA_LBAL_BIT;
+		break;
+	case ATA_PORT_LBAM:
+		val = (*(sata_regs_base[device] + SATA_ORB3_OFF)
+			& (0xFFUL << SATA_LBAM_BIT)) >> SATA_LBAM_BIT;
+		break;
+	case ATA_PORT_LBAH:
+		val = (*(sata_regs_base[device] + SATA_ORB3_OFF)
+			& (0xFFUL << SATA_LBAH_BIT)) >> SATA_LBAH_BIT;
+		break;
+	case ATA_PORT_DEVICE:
+		val = (*(sata_regs_base[device] + SATA_ORB3_OFF)
+			& (0xFFUL << SATA_HOB_LBAH_BIT)) >> SATA_HOB_LBAH_BIT;
+		val |= (*(sata_regs_base[device] + SATA_ORB1_OFF)
+			& (0xFFUL << SATA_DEVICE_BIT)) >> SATA_DEVICE_BIT;
+		break;
+	case ATA_PORT_COMMAND:
+		val = (*(sata_regs_base[device] + SATA_ORB2_OFF)
+			& (0xFFUL << SATA_COMMAND_BIT)) >> SATA_COMMAND_BIT;
+		val |= ATA_STAT_DRQ;
+		break;
+	default:
+		printf("ide_inb() Unknown port = %d\n", port);
+		break;
+	}
+
+	//    printf("inb: %d:%01x => %02x\n", device, port, val);
+
+	return val;
+}

@@ -1,0 +1,7 @@
+append_expanded_string(yytext);
+	YY_BREAK
+case 56:
+YY_RULE_SETUP
+{
+		append_string(yytext, yyleng);
+	}

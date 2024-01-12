@@ -1,0 +1,8 @@
+int sata_oxnas_check_link(struct ata_port *ap)
+{
+	int reg;
+
+	sata_oxnas_scr_read_port(ap, SCR_STATUS, &reg);
+	/* Check for the cable present indicated by SCR status bit-0 set */
+	return reg & 0x1;
+}

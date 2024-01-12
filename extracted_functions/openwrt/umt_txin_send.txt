@@ -1,0 +1,25 @@
+static void umt_txin_send(struct dc_ep_dev *dev,
+	u8 __iomem *soc_dbase, int num)
+{
+	int i;
+	struct aca_dma_desc desc;
+
+	memset(&desc, 0, sizeof(desc));
+	desc.own = 0;
+	desc.sop = 1;
+	desc.eop = 1;
+	desc.dic = 1;
+	desc.pdu_type = 1;
+	desc.data_len = 127;
+	desc.data_pointer = 0x26000000;
+	desc.dw1 = 0x700;
+	desc.dw0 = 0x0000007f;
+
+	for (i = 0; i < num; i++) {
+		desc.data_pointer += roundup(desc.data_len, 4);
+		ep_mem_write(soc_dbase + i * sizeof(desc),
+			(void *)&desc, sizeof(desc));
+	}
+
+	ep_wr32(num, TXIN_HD_ACCUM_ADD);
+}

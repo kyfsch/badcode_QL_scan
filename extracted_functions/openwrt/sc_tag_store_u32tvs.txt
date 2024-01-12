@@ -1,0 +1,23 @@
+static ssize_t sc_tag_store_u32tvs(const u8 *pld, u16 pld_len, const char *buf, size_t count,
+				   const struct sc_u32tvs tvs[], const int tvselmts)
+{
+	int i;
+
+	if (tvselmts < 0)
+		return tvselmts;
+
+	if (sizeof(u32) != pld_len)
+		return -EINVAL;
+
+	for (i = 0; i < tvselmts; i++) {
+		if (sysfs_streq(buf, tvs[i].str)) {
+			write_lock(&sc_bufrwl);
+			*(u32 *)pld = tvs[i].val;	// pld aliases sc_buf
+			RB_SC_CLRCRC();
+			write_unlock(&sc_bufrwl);
+			return count;
+		}
+	}
+
+	return -EINVAL;
+}

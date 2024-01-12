@@ -1,0 +1,4 @@
+u64 rtl838x_traffic_get(int source)
+{
+	return rtl838x_get_port_reg(rtl838x_port_iso_ctrl(source));
+}

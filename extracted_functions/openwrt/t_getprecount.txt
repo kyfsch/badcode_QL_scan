@@ -1,0 +1,4 @@
+t_getprecount()
+{
+  return (sizeof(pre_params) / sizeof(struct pre_struct));
+}

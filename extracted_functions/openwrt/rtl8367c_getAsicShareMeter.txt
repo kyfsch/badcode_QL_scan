@@ -1,0 +1,44 @@
+ret_t rtl8367c_getAsicShareMeter(rtk_uint32 index, rtk_uint32 *pRate, rtk_uint32 *pIfg)
+{
+    rtk_uint32 regData;
+    rtk_uint32 regData2;
+    ret_t retVal;
+
+    if(index > RTL8367C_METERMAX)
+        return RT_ERR_FILTER_METER_ID;
+
+    if(index < 32)
+    {
+    /*17-bits Rate*/
+     retVal = rtl8367c_getAsicReg(RTL8367C_METER_RATE_REG(index), &regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+     retVal = rtl8367c_getAsicReg(RTL8367C_METER_RATE_REG(index) + 1, &regData2);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+    *pRate = ((regData2 << 16) & 0x70000) | regData;
+    /*IFG*/
+    retVal = rtl8367c_getAsicRegBit(RTL8367C_METER_IFG_CTRL_REG(index), RTL8367C_METER_IFG_OFFSET(index), pIfg);
+
+    return retVal;
+    }
+    else
+    {
+    /*17-bits Rate*/
+     retVal = rtl8367c_getAsicReg(RTL8367C_REG_METER32_RATE_CTRL0 + ((index-32) << 1), &regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+     retVal = rtl8367c_getAsicReg(RTL8367C_REG_METER32_RATE_CTRL0 + ((index-32) << 1) + 1, &regData2);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+    *pRate = ((regData2 << 16) & 0x70000) | regData;
+    /*IFG*/
+    retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_METER_IFG_CTRL2 + ((index-32) >> 4), RTL8367C_METER_IFG_OFFSET(index), pIfg);
+
+    return retVal;
+    }
+}

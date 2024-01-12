@@ -1,0 +1,10 @@
+void mt7620_print_link_state(struct fe_priv *priv, int port, int link,
+			     int speed, int duplex)
+{
+	if (link)
+		netdev_info(priv->netdev, "port %d link up (%sMbps/%s duplex)\n",
+			    port, fe_speed_str(speed),
+			    (duplex) ? "Full" : "Half");
+	else
+		netdev_info(priv->netdev, "port %d link down\n", port);
+}

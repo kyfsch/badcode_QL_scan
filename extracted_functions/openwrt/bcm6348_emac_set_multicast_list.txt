@@ -1,0 +1,54 @@
+static void bcm6348_emac_set_multicast_list(struct net_device *ndev)
+{
+	struct bcm6348_emac *emac = netdev_priv(ndev);
+	struct netdev_hw_addr *ha;
+	u32 val;
+	unsigned int i;
+
+	val = emac_readl(emac, ENET_RXCFG_REG);
+
+	if (ndev->flags & IFF_PROMISC)
+		val |= ENET_RXCFG_PROMISC_MASK;
+	else
+		val &= ~ENET_RXCFG_PROMISC_MASK;
+
+	/* only 3 perfect match registers left, first one is used for
+	 * own mac address */
+	if ((ndev->flags & IFF_ALLMULTI) || netdev_mc_count(ndev) > 3)
+		val |= ENET_RXCFG_ALLMCAST_MASK;
+	else
+		val &= ~ENET_RXCFG_ALLMCAST_MASK;
+
+	/* no need to set perfect match registers if we catch all
+	 * multicast */
+	if (val & ENET_RXCFG_ALLMCAST_MASK) {
+		emac_writel(emac, val, ENET_RXCFG_REG);
+		return;
+	}
+
+	i = 0;
+	netdev_for_each_mc_addr(ha, ndev) {
+		u8 *dmi_addr;
+		u32 tmp;
+
+		if (i == 3)
+			break;
+
+		/* update perfect match registers */
+		dmi_addr = ha->addr;
+		tmp = (dmi_addr[2] << 24) | (dmi_addr[3] << 16) |
+			(dmi_addr[4] << 8) | dmi_addr[5];
+		emac_writel(emac, tmp, ENET_PML_REG(i + 1));
+
+		tmp = (dmi_addr[0] << 8 | dmi_addr[1]);
+		tmp |= ENET_PMH_DATAVALID_MASK;
+		emac_writel(emac, tmp, ENET_PMH_REG(i++ + 1));
+	}
+
+	for (; i < 3; i++) {
+		emac_writel(emac, 0, ENET_PML_REG(i + 1));
+		emac_writel(emac, 0, ENET_PMH_REG(i + 1));
+	}
+
+	emac_writel(emac, val, ENET_RXCFG_REG);
+}

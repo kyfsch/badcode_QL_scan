@@ -1,0 +1,23 @@
+void rtl930x_vlan_profile_dump(int profile)
+{
+	u32 p[5];
+
+	if (profile < 0 || profile > 7)
+		return;
+
+	p[0] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile));
+	p[1] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 4);
+	p[2] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 8) & 0x1FFFFFFF;
+	p[3] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 12) & 0x1FFFFFFF;
+	p[4] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 16) & 0x1FFFFFFF;
+
+	pr_info("VLAN %d: L2 learn: %d; Unknown MC PMasks: L2 %0x, IPv4 %0x, IPv6: %0x",
+		profile, p[0] & (3 << 21), p[2], p[3], p[4]);
+	pr_info("  Routing enabled: IPv4 UC %c, IPv6 UC %c, IPv4 MC %c, IPv6 MC %c\n",
+		p[0] & BIT(17) ? 'y' : 'n', p[0] & BIT(16) ? 'y' : 'n',
+		p[0] & BIT(13) ? 'y' : 'n', p[0] & BIT(12) ? 'y' : 'n');
+	pr_info("  Bridge enabled: IPv4 MC %c, IPv6 MC %c,\n",
+		p[0] & BIT(15) ? 'y' : 'n', p[0] & BIT(14) ? 'y' : 'n');
+	pr_info("VLAN profile %d: raw %08x %08x %08x %08x %08x\n",
+		profile, p[0], p[1], p[2], p[3], p[4]);
+}

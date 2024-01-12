@@ -1,0 +1,4 @@
+void menu_add_symbol(enum prop_type type, struct symbol *sym, struct expr *dep)
+{
+	menu_add_prop(type, expr_alloc_symbol(sym), dep);
+}

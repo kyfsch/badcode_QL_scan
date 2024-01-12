@@ -1,0 +1,19 @@
+int ecb_aes_decrypt(struct skcipher_request *req)
+{
+    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
+    struct skcipher_walk walk;
+    int err;
+    unsigned int dec_bytes, nbytes;
+
+    err = skcipher_walk_virt(&walk, req, false);
+
+    while ((nbytes = dec_bytes = walk.nbytes)) {
+            dec_bytes -= (nbytes % AES_BLOCK_SIZE);
+        ifx_deu_aes_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                       NULL, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
+        nbytes &= AES_BLOCK_SIZE - 1;
+        err = skcipher_walk_done(&walk, nbytes);
+    }
+
+    return err;
+}

@@ -1,0 +1,114 @@
+static int lq_deu_aes_core (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
+                            u8 *iv_arg, size_t nbytes, int encdec, int mode)
+{
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+    volatile struct aes_t *aes = (volatile struct aes_t *) AES_START;
+    struct aes_ctx *ctx = (struct aes_ctx *)ctx_arg;
+    u32 *in_key = ctx->buf;
+    unsigned long flag;
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+    int key_len = ctx->key_length;
+
+    volatile struct deu_dma_t *dma = (struct deu_dma_t *) IFX_DEU_DMA_CON;
+    struct dma_device_info *dma_device = ifx_deu[0].dma_device;
+    deu_drv_priv_t *deu_priv = (deu_drv_priv_t *)dma_device->priv;
+    int wlen = 0;
+    //u32 *outcopy = NULL;
+    u32 *dword_mem_aligned_in = NULL;
+
+    CRTCL_SECT_START;
+
+    /* 128, 192 or 256 bit key length */
+    aes->controlr.K = key_len / 8 - 2;
+        if (key_len == 128 / 8) {
+        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
+        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
+        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
+        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
+    }
+    else if (key_len == 192 / 8) {
+        aes->K5R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
+        aes->K4R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
+        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
+        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
+        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 4));
+        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 5));
+    }
+    else if (key_len == 256 / 8) {
+        aes->K7R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
+        aes->K6R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
+        aes->K5R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
+        aes->K4R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
+        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 4));
+        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 5));
+        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 6));
+        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 7));
+    }
+    else {
+        printk (KERN_ERR "[%s %s %d]: Invalid key_len : %d\n", __FILE__, __func__, __LINE__, key_len);
+        CRTCL_SECT_END;
+        return -EINVAL;
+    }
+
+    /* let HW pre-process DEcryption key in any case (even if
+       ENcryption is used). Key Valid (KV) bit is then only
+       checked in decryption routine! */
+    aes->controlr.PNK = 1;
+
+    while (aes->controlr.BUS) {
+        // this will not take long
+    }
+    AES_DMA_MISC_CONFIG();
+
+    aes->controlr.E_D = !encdec;    //encryption
+    aes->controlr.O = mode; //0 ECB 1 CBC 2 OFB 3 CFB 4 CTR 
+
+    //aes->controlr.F = 128; //default; only for CFB and OFB modes; change only for customer-specific apps
+    if (mode > 0) {
+        aes->IV3R = DEU_ENDIAN_SWAP(*(u32 *) iv_arg);
+        aes->IV2R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 1));
+        aes->IV1R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 2));
+        aes->IV0R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 3));
+    };
+
+
+    /* Prepare Rx buf length used in dma psuedo interrupt */
+    deu_priv->deu_rx_buf = (u32 *)out_arg;
+    deu_priv->deu_rx_len = nbytes;
+   
+    /* memory alignment issue */ 
+    dword_mem_aligned_in = (u32 *) DEU_DWORD_REORDERING(in_arg, aes_buff_in, BUFFER_IN, nbytes);
+
+    dma->controlr.ALGO = 1;   //AES
+    dma->controlr.BS = 0;
+    aes->controlr.DAU = 0;
+    dma->controlr.EN = 1;
+
+    while (aes->controlr.BUS) {
+         // wait for AES to be ready
+    };
+
+    deu_priv->outcopy = (u32 *) DEU_DWORD_REORDERING(out_arg, aes_buff_out, BUFFER_OUT, nbytes);
+    deu_priv->event_src = AES_ASYNC_EVENT;
+
+    wlen = dma_device_write (dma_device, (u8 *)dword_mem_aligned_in, nbytes, NULL);
+    if (wlen != nbytes) {
+        dma->controlr.EN = 0;
+        CRTCL_SECT_END;
+        printk (KERN_ERR "[%s %s %d]: dma_device_write fail!\n", __FILE__, __func__, __LINE__);
+        return -EINVAL;
+    }
+
+   // WAIT_AES_DMA_READY();
+
+    CRTCL_SECT_END;
+
+    if (mode > 0) {
+        *((u32 *) iv_arg) = DEU_ENDIAN_SWAP(*((u32 *) iv_arg));
+        *((u32 *) iv_arg + 1) = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 1));
+        *((u32 *) iv_arg + 2) = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 2));
+        *((u32 *) iv_arg + 3) = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 3));
+    }
+   
+    return -EINPROGRESS;	
+}

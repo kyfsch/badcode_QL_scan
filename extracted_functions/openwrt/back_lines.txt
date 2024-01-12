@@ -1,0 +1,24 @@
+static void back_lines(int n);
+static void print_page(WINDOW *win, int height, int width, update_text_fn
+		       update_text, void *data);
+static void print_line(WINDOW *win, int row, int width);
+static char *get_line(void);
+static void print_position(WINDOW * win);
+
+static int hscroll;
+static int begin_reached, end_reached, page_length;
+static char *buf;
+static char *page;
+
+/*
+ * refresh window content
+ */
+static void refresh_text_box(WINDOW *dialog, WINDOW *box, int boxh, int boxw,
+			     int cur_y, int cur_x, update_text_fn update_text,
+			     void *data)
+{
+	print_page(box, boxh, boxw, update_text, data);
+	print_position(dialog);
+	wmove(dialog, cur_y, cur_x);	/* Restore cursor position */
+	wrefresh(dialog);
+}

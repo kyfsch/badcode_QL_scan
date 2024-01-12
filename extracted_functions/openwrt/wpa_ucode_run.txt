@@ -1,0 +1,30 @@
+int wpa_ucode_run(const char *script)
+{
+	uc_source_t *source;
+	uc_program_t *prog;
+	uc_value_t *ops;
+	char *err;
+	int ret;
+
+	source = uc_source_new_file(script);
+	if (!source)
+		return -1;
+
+	prog = uc_compile(vm.config, source, &err);
+	uc_source_put(source);
+	if (!prog) {
+		wpa_printf(MSG_ERROR, "Error loading ucode: %s\n", err);
+		return -1;
+	}
+
+	ret = uc_vm_execute(&vm, prog, &ops);
+	uc_program_put(prog);
+	if (ret || !ops)
+		return -1;
+
+	registry = ucv_array_new(&vm);
+	uc_vm_registry_set(&vm, "hostap.registry", registry);
+	ucv_array_set(registry, 0, ucv_get(ops));
+
+	return 0;
+}

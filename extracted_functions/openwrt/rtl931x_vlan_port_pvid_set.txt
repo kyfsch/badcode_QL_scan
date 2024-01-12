@@ -1,0 +1,7 @@
+void rtl931x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
+{
+	if (type == PBVLAN_TYPE_INNER)
+		sw_w32_mask(0xfff, pvid, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
+	else
+		sw_w32_mask(0xfff << 14, pvid << 14, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
+}

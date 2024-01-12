@@ -1,0 +1,7 @@
+IFX_MEI_LongWordReadOffset (DSL_DEV_Device_t * pDev, u32 ul_address,
+				  u32 * pul_data)
+{
+	*pul_data = IFX_MEI_READ_REGISTER_L (pDev->base_address + ul_address);
+	rmb();
+	return;
+}

@@ -1,0 +1,95 @@
+static void msdc_init_hw(struct msdc_host *host)
+{
+	void __iomem *base = host->base;
+
+	/* Power on */
+#if 0 /* --- by chhung */
+	msdc_vcore_on(host);
+	msdc_pin_reset(host, MSDC_PIN_PULL_UP);
+	msdc_select_clksrc(host, hw->clk_src);
+	enable_clock(PERI_MSDC0_PDN + host->id, "SD");
+	msdc_vdd_on(host);
+#endif /* end of --- */
+	/* Configure to MMC/SD mode */
+	sdr_set_field(MSDC_CFG, MSDC_CFG_MODE, MSDC_SDMMC);
+
+	/* Reset */
+	msdc_reset_hw(host);
+	msdc_clr_fifo();
+
+	/* Disable card detection */
+	sdr_clr_bits(MSDC_PS, MSDC_PS_CDEN);
+
+	/* Disable and clear all interrupts */
+	sdr_clr_bits(MSDC_INTEN, sdr_read32(MSDC_INTEN));
+	sdr_write32(MSDC_INT, sdr_read32(MSDC_INT));
+
+#if 1
+	/* reset tuning parameter */
+	sdr_write32(MSDC_PAD_CTL0,   0x00090000);
+	sdr_write32(MSDC_PAD_CTL1,   0x000A0000);
+	sdr_write32(MSDC_PAD_CTL2,   0x000A0000);
+	// sdr_write32(MSDC_PAD_TUNE,   0x00000000);
+	sdr_write32(MSDC_PAD_TUNE,   0x84101010);		// for MT7620 E2 and afterward
+	// sdr_write32(MSDC_DAT_RDDLY0, 0x00000000);
+	sdr_write32(MSDC_DAT_RDDLY0, 0x10101010);		// for MT7620 E2 and afterward
+	sdr_write32(MSDC_DAT_RDDLY1, 0x00000000);
+	sdr_write32(MSDC_IOCON,      0x00000000);
+#if 0 // use MT7620 default value: 0x403c004f
+	sdr_write32(MSDC_PATCH_BIT0, 0x003C000F); /* bit0 modified: Rx Data Clock Source: 1 -> 2.0*/
+#endif
+
+	if (sdr_read32(MSDC_ECO_VER) >= 4) {
+		if (host->id == 1) {
+			sdr_set_field(MSDC_PATCH_BIT1, MSDC_PATCH_BIT1_WRDAT_CRCS, 1);
+			sdr_set_field(MSDC_PATCH_BIT1, MSDC_PATCH_BIT1_CMD_RSP,    1);
+
+			/* internal clock: latch read data */
+			sdr_set_bits(MSDC_PATCH_BIT0, MSDC_PATCH_BIT_CKGEN_CK);
+		}
+	}
+#endif
+
+	/* for safety, should clear SDC_CFG.SDIO_INT_DET_EN & set SDC_CFG.SDIO in
+	   pre-loader,uboot,kernel drivers. and SDC_CFG.SDIO_INT_DET_EN will be only
+	   set when kernel driver wants to use SDIO bus interrupt */
+	/* Configure to enable SDIO mode. it's must otherwise sdio cmd5 failed */
+	sdr_set_bits(SDC_CFG, SDC_CFG_SDIO);
+
+	/* disable detect SDIO device interupt function */
+	sdr_clr_bits(SDC_CFG, SDC_CFG_SDIOIDE);
+
+	/* eneable SMT for glitch filter */
+	sdr_set_bits(MSDC_PAD_CTL0, MSDC_PAD_CTL0_CLKSMT);
+	sdr_set_bits(MSDC_PAD_CTL1, MSDC_PAD_CTL1_CMDSMT);
+	sdr_set_bits(MSDC_PAD_CTL2, MSDC_PAD_CTL2_DATSMT);
+
+#if 1
+	/* set clk, cmd, dat pad driving */
+	sdr_set_field(MSDC_PAD_CTL0, MSDC_PAD_CTL0_CLKDRVN, 4);
+	sdr_set_field(MSDC_PAD_CTL0, MSDC_PAD_CTL0_CLKDRVP, 4);
+	sdr_set_field(MSDC_PAD_CTL1, MSDC_PAD_CTL1_CMDDRVN, 4);
+	sdr_set_field(MSDC_PAD_CTL1, MSDC_PAD_CTL1_CMDDRVP, 4);
+	sdr_set_field(MSDC_PAD_CTL2, MSDC_PAD_CTL2_DATDRVN, 4);
+	sdr_set_field(MSDC_PAD_CTL2, MSDC_PAD_CTL2_DATDRVP, 4);
+#else
+	sdr_set_field(MSDC_PAD_CTL0, MSDC_PAD_CTL0_CLKDRVN, 0);
+	sdr_set_field(MSDC_PAD_CTL0, MSDC_PAD_CTL0_CLKDRVP, 0);
+	sdr_set_field(MSDC_PAD_CTL1, MSDC_PAD_CTL1_CMDDRVN, 0);
+	sdr_set_field(MSDC_PAD_CTL1, MSDC_PAD_CTL1_CMDDRVP, 0);
+	sdr_set_field(MSDC_PAD_CTL2, MSDC_PAD_CTL2_DATDRVN, 0);
+	sdr_set_field(MSDC_PAD_CTL2, MSDC_PAD_CTL2_DATDRVP, 0);
+#endif
+
+	/* set sampling edge */
+
+	/* write crc timeout detection */
+	sdr_set_field(MSDC_PATCH_BIT0, 1 << 30, 1);
+
+	/* Configure to default data timeout */
+	sdr_set_field(SDC_CFG, SDC_CFG_DTOC, DEFAULT_DTOC);
+
+	msdc_set_buswidth(host, MMC_BUS_WIDTH_1);
+
+	N_MSG(FUC, "init hardware done!");
+}

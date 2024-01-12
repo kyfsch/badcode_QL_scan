@@ -1,0 +1,6 @@
+static int rtl8214fc_match_phy_device(struct phy_device *phydev)
+{
+	int addr = phydev->mdio.addr;
+
+	return phydev->phy_id == PHY_ID_RTL8214FC && addr >= 24;
+}

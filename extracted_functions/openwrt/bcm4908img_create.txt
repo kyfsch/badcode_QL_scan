@@ -1,0 +1,76 @@
+static int bcm4908img_create(int argc, char **argv) {
+	struct bcm4908img_tail tail = {
+		.version = cpu_to_le32(WFI_VERSION),
+		.chip_id = cpu_to_le32(0x4908),
+		.flash_type = cpu_to_le32(WFI_NAND128_FLASH),
+		.flags = cpu_to_le32(WFI_FLAG_SUPPORTS_BTRM),
+	};
+	uint32_t crc32 = 0xffffffff;
+	size_t cur_offset = 0;
+	ssize_t bytes;
+	FILE *fp;
+	int c;
+	int err = 0;
+
+	if (argc < 3) {
+		fprintf(stderr, "No BCM4908 image pathname passed\n");
+		err = -EINVAL;
+		goto out;
+	}
+	pathname = argv[2];
+
+	fp = fopen(pathname, "w+");
+	if (!fp) {
+		fprintf(stderr, "Failed to open %s\n", pathname);
+		err = -EACCES;
+		goto out;
+	}
+
+	optind = 3;
+	while ((c = getopt(argc, argv, "f:a:A:")) != -1) {
+		switch (c) {
+		case 'f':
+			bytes = bcm4908img_create_append_file(fp, optarg, &crc32);
+			if (bytes < 0) {
+				fprintf(stderr, "Failed to append file %s\n", optarg);
+			} else {
+				cur_offset += bytes;
+			}
+			break;
+		case 'a':
+			bytes = bcm4908img_create_align(fp, cur_offset, strtol(optarg, NULL, 0));
+			if (bytes < 0)
+				fprintf(stderr, "Failed to append zeros\n");
+			else
+				cur_offset += bytes;
+			break;
+		case 'A':
+			bytes = strtol(optarg, NULL, 0) - cur_offset;
+			if (bytes < 0) {
+				fprintf(stderr, "Current BCM4908 image length is 0x%zx, can't pad it with zeros to 0x%lx\n", cur_offset, strtol(optarg, NULL, 0));
+			} else {
+				bytes = bcm4908img_create_append_zeros(fp, bytes);
+				if (bytes < 0)
+					fprintf(stderr, "Failed to append zeros\n");
+				else
+					cur_offset += bytes;
+			}
+			break;
+		}
+		if (err)
+			goto err_close;
+	}
+
+	tail.crc32 = cpu_to_le32(crc32);
+
+	bytes = fwrite(&tail, 1, sizeof(tail), fp);
+	if (bytes != sizeof(tail)) {
+		fprintf(stderr, "Failed to write BCM4908 image tail to %s\n", pathname);
+		return -EIO;
+	}
+
+err_close:
+	fclose(fp);
+out:
+	return err;
+}

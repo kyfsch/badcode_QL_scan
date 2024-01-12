@@ -1,0 +1,19 @@
+static int __init ag71xx_module_init(void)
+{
+	int ret;
+
+	ret = ag71xx_debugfs_root_init();
+	if (ret)
+		goto err_out;
+
+	ret = platform_driver_register(&ag71xx_driver);
+	if (ret)
+		goto err_debugfs_exit;
+
+	return 0;
+
+err_debugfs_exit:
+	ag71xx_debugfs_root_exit();
+err_out:
+	return ret;
+}

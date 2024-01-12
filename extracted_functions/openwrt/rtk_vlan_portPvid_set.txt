@@ -1,0 +1,27 @@
+rtk_api_ret_t rtk_vlan_portPvid_set(rtk_port_t port, rtk_vlan_t pvid, rtk_pri_t priority)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 index;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    /* vid must be 0~8191 */
+    if (pvid > RTL8367C_EVIDMAX)
+        return RT_ERR_VLAN_VID;
+
+    /* priority must be 0~7 */
+    if (priority > RTL8367C_PRIMAX)
+        return RT_ERR_VLAN_PRIORITY;
+
+    if((retVal = rtk_vlan_checkAndCreateMbr(pvid, &index)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicVlanPortBasedVID(rtk_switch_port_L2P_get(port), index, priority)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

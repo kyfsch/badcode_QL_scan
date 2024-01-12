@@ -1,0 +1,22 @@
+		alloc_string(yytext, yyleng);
+		yylval.string = text;
+		return T_ASSIGN_VAL;
+	}
+	YY_BREAK
+case 53:
+/* rule 53 can match eol */
+YY_RULE_SETUP
+{ BEGIN(INITIAL); return T_EOL; }
+	YY_BREAK
+case 54:
+YY_RULE_SETUP
+
+	YY_BREAK
+
+case 55:
+YY_RULE_SETUP
+append_expanded_string(yytext);
+	YY_BREAK
+case 56:
+YY_RULE_SETUP
+{

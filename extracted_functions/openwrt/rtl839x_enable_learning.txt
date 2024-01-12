@@ -1,0 +1,7 @@
+static void rtl839x_enable_learning(int port, bool enable)
+{
+	/* Limit learning to maximum: 32k entries */
+
+	sw_w32_mask(0x7fff << 2, enable ? (0x7fff << 2) : 0,
+		    RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
+}

@@ -1,0 +1,17 @@
+static void rtl83xx_get_ethtool_stats(struct dsa_switch *ds, int port,
+				      uint64_t *data)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	const struct rtl83xx_mib_desc *mib;
+	u64 h;
+
+	for (int i = 0; i < ARRAY_SIZE(rtl83xx_mib); i++) {
+		mib = &rtl83xx_mib[i];
+
+		data[i] = sw_r32(priv->r->stat_port_std_mib + (port << 8) + 252 - mib->offset);
+		if (mib->size == 2) {
+			h = sw_r32(priv->r->stat_port_std_mib + (port << 8) + 248 - mib->offset);
+			data[i] |= h << 32;
+		}
+	}
+}

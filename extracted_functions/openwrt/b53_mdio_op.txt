@@ -1,0 +1,35 @@
+static int b53_mdio_op(struct b53_device *dev, u8 page, u8 reg, u16 op)
+{
+	int i;
+	u16 v;
+	int ret;
+	struct mii_bus *bus = dev->priv;
+
+	if (dev->current_page != page) {
+		/* set page number */
+		v = (page << 8) | REG_MII_PAGE_ENABLE;
+		ret = mdiobus_write(bus, B53_PSEUDO_PHY, REG_MII_PAGE, v);
+		if (ret)
+			return ret;
+		dev->current_page = page;
+	}
+
+	/* set register address */
+	v = (reg << 8) | op;
+	ret = mdiobus_write(bus, B53_PSEUDO_PHY, REG_MII_ADDR, v);
+	if (ret)
+		return ret;
+
+	/* check if operation completed */
+	for (i = 0; i < 5; ++i) {
+		v = mdiobus_read(bus, B53_PSEUDO_PHY, REG_MII_ADDR);
+		if (!(v & (REG_MII_ADDR_WRITE | REG_MII_ADDR_READ)))
+			break;
+		usleep_range(10, 100);
+	}
+
+	if (WARN_ON(i == 5))
+		return -EIO;
+
+	return 0;
+}

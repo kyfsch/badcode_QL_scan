@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_stat_global_get(rtk_stat_global_type_t cntr_idx, rtk_stat_counter_t *pCntr)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pCntr)
+        return RT_ERR_NULL_POINTER;
+
+    if (cntr_idx!=DOT1D_TP_LEARNED_ENTRY_DISCARDS_INDEX)
+        return RT_ERR_STAT_INVALID_GLOBAL_CNTR;
+
+    if ((retVal = rtl8367c_getAsicMIBsCounter(0, cntr_idx, pCntr)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

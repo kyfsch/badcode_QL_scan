@@ -1,0 +1,67 @@
+static int jffs2_find_file(struct mtd_info *mtd, uint8_t *buf,
+			   const char *name, size_t name_len,
+			   loff_t *offs, loff_t size,
+			   char **out_name, size_t *out_name_len)
+{
+	const loff_t end = *offs + size;
+	struct jffs2_raw_dirent *node;
+	bool valid = false;
+	size_t retlen;
+	uint16_t magic;
+	int rc;
+
+	for (; *offs < end; *offs += mtd->erasesize) {
+		unsigned int block_offs = 0;
+
+		/* Skip CFE erased blocks */
+		rc = mtd_read(mtd, *offs, sizeof(magic), &retlen,
+			      (void *) &magic);
+		if (rc || retlen != sizeof(magic)) {
+			continue;
+		}
+
+		/* Skip blocks not starting with JFFS2 magic */
+		if (magic != JFFS2_MAGIC_BITMASK)
+			continue;
+
+		/* Read full block */
+		rc = mtd_read(mtd, *offs, mtd->erasesize, &retlen,
+			      (void *) buf);
+		if (rc)
+			return rc;
+		if (retlen != mtd->erasesize)
+			return -EINVAL;
+
+		while (block_offs < mtd->erasesize) {
+			node = (struct jffs2_raw_dirent *) &buf[block_offs];
+
+			if (!jffs2_dirent_valid(node)) {
+				block_offs += 4;
+				continue;
+			}
+
+			if (!memcmp(node->name, OPENWRT_NAME,
+				    OPENWRT_NAME_LEN)) {
+				valid = true;
+			} else if (!memcmp(node->name, name, name_len)) {
+				if (!valid)
+					return -EINVAL;
+
+				if (out_name)
+					*out_name = kstrndup(node->name,
+							     node->nsize,
+							     GFP_KERNEL);
+
+				if (out_name_len)
+					*out_name_len = node->nsize;
+
+				return 0;
+			}
+
+			block_offs += je32_to_cpu(node->totlen);
+			block_offs = (block_offs + 0x3) & ~0x3;
+		}
+	}
+
+	return -ENOENT;
+}

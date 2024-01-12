@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicCputagMode(rtk_uint32 mode)
+{
+    if(mode > 1)
+        return RT_ERR_INPUT;
+
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_CPU_CTRL, RTL8367C_CPU_TAG_FORMAT_OFFSET, mode);
+}

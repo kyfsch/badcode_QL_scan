@@ -1,0 +1,4 @@
+static inline void rtl8366_smi_clk_delay(struct rtl8366_smi *smi)
+{
+	ndelay(smi->clk_delay);
+}

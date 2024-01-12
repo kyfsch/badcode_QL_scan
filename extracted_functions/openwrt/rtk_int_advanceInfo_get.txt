@@ -1,0 +1,93 @@
+rtk_api_ret_t rtk_int_advanceInfo_get(rtk_int_advType_t adv_type, rtk_int_info_t *pInfo)
+{
+    rtk_api_ret_t   retVal;
+    rtk_uint32      data;
+    rtk_uint32      intAdvType;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(adv_type >= ADV_END)
+        return RT_ERR_INPUT;
+
+    if(NULL == pInfo)
+        return RT_ERR_NULL_POINTER;
+
+    if(adv_type != ADV_METER_EXCEED_MASK)
+    {
+        if((retVal = _rtk_int_Advidx_get(adv_type, &intAdvType)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    switch(adv_type)
+    {
+        case ADV_L2_LEARN_PORT_MASK:
+            /* Get physical portmask */
+            if((retVal = rtl8367c_getAsicInterruptRelatedStatus(intAdvType, &data)) != RT_ERR_OK)
+                return retVal;
+
+            /* Clear Advanced Info */
+            if((retVal = rtl8367c_setAsicInterruptRelatedStatus(intAdvType, 0xFFFF)) != RT_ERR_OK)
+                return retVal;
+
+            /* Translate to logical portmask */
+            if((retVal = rtk_switch_portmask_P2L_get(data, &(pInfo->portMask))) != RT_ERR_OK)
+                return retVal;
+
+            /* Get system learn */
+            if((retVal = rtl8367c_getAsicInterruptRelatedStatus(INTRST_SYS_LEARN, &data)) != RT_ERR_OK)
+                return retVal;
+
+            /* Clear system learn */
+            if((retVal = rtl8367c_setAsicInterruptRelatedStatus(INTRST_SYS_LEARN, 0x0001)) != RT_ERR_OK)
+                return retVal;
+
+            pInfo->systemLearnOver = data;
+            break;
+        case ADV_SPEED_CHANGE_PORT_MASK:
+        case ADV_SPECIAL_CONGESTION_PORT_MASK:
+        case ADV_PORT_LINKDOWN_PORT_MASK:
+        case ADV_PORT_LINKUP_PORT_MASK:
+        case ADV_RLDP_LOOPED:
+        case ADV_RLDP_RELEASED:
+            /* Get physical portmask */
+            if((retVal = rtl8367c_getAsicInterruptRelatedStatus(intAdvType, &data)) != RT_ERR_OK)
+                return retVal;
+
+            /* Clear Advanced Info */
+            if((retVal = rtl8367c_setAsicInterruptRelatedStatus(intAdvType, 0xFFFF)) != RT_ERR_OK)
+                return retVal;
+
+            /* Translate to logical portmask */
+            if((retVal = rtk_switch_portmask_P2L_get(data, &(pInfo->portMask))) != RT_ERR_OK)
+                return retVal;
+
+            break;
+        case ADV_METER_EXCEED_MASK:
+            /* Get Meter Mask */
+            if((retVal = rtl8367c_getAsicInterruptRelatedStatus(INTRST_METER0_15, &data)) != RT_ERR_OK)
+                return retVal;
+
+            /* Clear Advanced Info */
+            if((retVal = rtl8367c_setAsicInterruptRelatedStatus(INTRST_METER0_15, 0xFFFF)) != RT_ERR_OK)
+                return retVal;
+
+            pInfo->meterMask = data & 0xFFFF;
+
+            /* Get Meter Mask */
+            if((retVal = rtl8367c_getAsicInterruptRelatedStatus(INTRST_METER16_31, &data)) != RT_ERR_OK)
+                return retVal;
+
+            /* Clear Advanced Info */
+            if((retVal = rtl8367c_setAsicInterruptRelatedStatus(INTRST_METER16_31, 0xFFFF)) != RT_ERR_OK)
+                return retVal;
+
+            pInfo->meterMask = pInfo->meterMask | ((data << 16) & 0xFFFF0000);
+
+            break;
+        default:
+            return RT_ERR_INPUT;
+    }
+
+    return RT_ERR_OK;
+}

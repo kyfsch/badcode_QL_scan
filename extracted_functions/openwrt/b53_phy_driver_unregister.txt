@@ -1,0 +1,6 @@
+void __exit b53_phy_driver_unregister(void)
+{
+	phy_driver_unregister(&b53_phy_driver_id3);
+	phy_driver_unregister(&b53_phy_driver_id2);
+	phy_driver_unregister(&b53_phy_driver_id1);
+}

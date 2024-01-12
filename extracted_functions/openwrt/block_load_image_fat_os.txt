@@ -1,0 +1,12 @@
+static int block_load_image_fat_os(void)
+{
+	int err;
+
+	err = file_fat_read(CONFIG_SPL_FAT_LOAD_ARGS_NAME,
+			    (void *)CONFIG_SYS_SPL_ARGS_ADDR, 0);
+	if (err <= 0) {
+		return -1;
+	}
+
+	return block_load_image_fat(CONFIG_SPL_FAT_LOAD_KERNEL_NAME);
+}

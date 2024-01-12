@@ -1,0 +1,7 @@
+static ssize_t hc_tag_show_mac(const u8 *pld, u16 pld_len, char *buf)
+{
+	if (8 != pld_len)
+		return -EINVAL;
+
+	return sprintf(buf, "%pM\n", pld);
+}

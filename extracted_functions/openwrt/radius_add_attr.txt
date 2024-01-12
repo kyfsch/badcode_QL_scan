@@ -1,0 +1,37 @@
+radius_add_attr(struct radius_parse_attr_state *state,
+		u32 vendor, u8 type, u8 len)
+{
+	struct hostapd_radius_attr *attr;
+	struct wpabuf *buf;
+	void *val;
+
+	val = state->attrdata;
+
+	buf = state->buf++;
+	buf->buf = val;
+
+	attr = state->attr++;
+	attr->val = buf;
+	attr->type = type;
+
+	if (state->prev)
+		state->prev->next = attr;
+	state->prev = attr;
+
+	if (vendor) {
+		u8 *vendor_hdr = val + 4;
+
+		WPA_PUT_BE32(val, vendor);
+		vendor_hdr[0] = type;
+		vendor_hdr[1] = len + 2;
+
+		len += VENDOR_ATTR_SIZE;
+		val += VENDOR_ATTR_SIZE;
+		attr->type = RADIUS_ATTR_VENDOR_SPECIFIC;
+	}
+
+	buf->size = buf->used = len;
+	state->attrdata += len;
+
+	return val;
+}

@@ -1,0 +1,4 @@
+static int item_is_tag(char tag)
+{
+	return item_tag() == tag;
+}

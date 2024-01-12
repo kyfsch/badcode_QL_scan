@@ -1,0 +1,42 @@
+rtk_api_ret_t rtk_dot1x_macBasedAuthMac_add(rtk_port_t port, rtk_mac_t *pAuth_mac, rtk_fid_t fid)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 method;
+    rtl8367c_luttb l2Table;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* must be unicast address */
+    if ((pAuth_mac == NULL) || (pAuth_mac->octet[0] & 0x1))
+        return RT_ERR_MAC;
+
+    /* Check port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if (fid > RTL8367C_FIDMAX)
+        return RT_ERR_L2_FID;
+
+    memset(&l2Table, 0, sizeof(rtl8367c_luttb));
+
+    /* fill key (MAC,FID) to get L2 entry */
+    memcpy(l2Table.mac.octet, pAuth_mac->octet, ETHER_ADDR_LEN);
+    l2Table.fid = fid;
+    method = LUTREADMETHOD_MAC;
+    retVal = rtl8367c_getAsicL2LookupTb(method, &l2Table);
+    if ( RT_ERR_OK == retVal)
+    {
+        if (l2Table.spa != rtk_switch_port_L2P_get(port))
+            return RT_ERR_DOT1X_MAC_PORT_MISMATCH;
+
+        memcpy(l2Table.mac.octet, pAuth_mac->octet, ETHER_ADDR_LEN);
+        l2Table.fid = fid;
+        l2Table.efid = 0;
+        l2Table.auth = 1;
+        retVal = rtl8367c_setAsicL2LookupTb(&l2Table);
+        return retVal;
+    }
+    else
+        return retVal;
+
+}

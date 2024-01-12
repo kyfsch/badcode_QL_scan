@@ -1,0 +1,20 @@
+ret_t rtl8367c_getAsicForceGroupLed(rtk_uint32* groupmask, rtk_uint32* pMode)
+{
+    ret_t retVal;
+    rtk_uint32 i,regData;
+    CONST rtk_uint16 bits[3] = {0x0004,0x0010,0x0040};
+
+    /* Get Related Registers */
+    if((retVal = rtl8367c_getAsicRegBits(RTL8367C_LED_FORCE_CTRL, RTL8367C_LED_FORCE_MODE_MASK, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    for(i = 0; i< RTL8367C_LEDGROUPNO; i++)
+    {
+        if((regData & bits[i]) == bits[i])
+        {
+            *groupmask = *groupmask | (1 << i);
+        }
+    }
+
+    return rtl8367c_getAsicRegBits(RTL8367C_LED_FORCE_CTRL, RTL8367C_FORCE_MODE_MASK, pMode);
+}

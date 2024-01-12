@@ -1,0 +1,74 @@
+static int rtl83xx_port_mdb_add(struct dsa_switch *ds, int port,
+			const struct switchdev_obj_port_mdb *mdb)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	u64 mac = ether_addr_to_u64(mdb->addr);
+	struct rtl838x_l2_entry e;
+	int err = 0, idx;
+	int vid = mdb->vid;
+	u64 seed = priv->r->l2_hash_seed(mac, vid);
+	int mc_group;
+
+	if (priv->id >= 0x9300)
+		return -EOPNOTSUPP;
+
+	pr_debug("In %s port %d, mac %llx, vid: %d\n", __func__, port, mac, vid);
+
+	if (priv->is_lagmember[port]) {
+		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
+		return -EINVAL;
+	}
+
+	mutex_lock(&priv->reg_mutex);
+
+	idx = rtl83xx_find_l2_hash_entry(priv, seed, false, &e);
+
+	/* Found an existing or empty entry */
+	if (idx >= 0) {
+		if (e.valid) {
+			pr_debug("Found an existing entry %016llx, mc_group %d\n",
+				ether_addr_to_u64(e.mac), e.mc_portmask_index);
+			rtl83xx_mc_group_add_port(priv, e.mc_portmask_index, port);
+		} else {
+			pr_debug("New entry for seed %016llx\n", seed);
+			mc_group = rtl83xx_mc_group_alloc(priv, port);
+			if (mc_group < 0) {
+				err = -ENOTSUPP;
+				goto out;
+			}
+			rtl83xx_setup_l2_mc_entry(&e, vid, mac, mc_group);
+			priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
+		}
+		goto out;
+	}
+
+	/* Hash buckets full, try CAM */
+	idx = rtl83xx_find_l2_cam_entry(priv, seed, false, &e);
+
+	if (idx >= 0) {
+		if (e.valid) {
+			pr_debug("Found existing CAM entry %016llx, mc_group %d\n",
+				 ether_addr_to_u64(e.mac), e.mc_portmask_index);
+			rtl83xx_mc_group_add_port(priv, e.mc_portmask_index, port);
+		} else {
+			pr_debug("New entry\n");
+			mc_group = rtl83xx_mc_group_alloc(priv, port);
+			if (mc_group < 0) {
+				err = -ENOTSUPP;
+				goto out;
+			}
+			rtl83xx_setup_l2_mc_entry(&e, vid, mac, mc_group);
+			priv->r->write_cam(idx, &e);
+		}
+		goto out;
+	}
+
+	err = -ENOTSUPP;
+
+out:
+	mutex_unlock(&priv->reg_mutex);
+	if (err)
+		dev_err(ds->dev, "failed to add MDB entry\n");
+
+	return err;
+}

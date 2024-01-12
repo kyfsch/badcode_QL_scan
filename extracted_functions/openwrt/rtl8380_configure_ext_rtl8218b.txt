@@ -1,0 +1,114 @@
+static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
+{
+	u32 val, ipd, phy_id;
+	int mac = phydev->mdio.addr;
+	struct fw_header *h;
+	u32 *rtl8380_rtl8218b_perchip;
+	u32 *rtl8218B_6276B_rtl8380_perport;
+	u32 *rtl8380_rtl8218b_perport;
+
+	if (soc_info.family == RTL8380_FAMILY_ID && mac != 0 && mac != 16) {
+		phydev_err(phydev, "External RTL8218B must have PHY-IDs 0 or 16!\n");
+		return -1;
+	}
+	val = phy_read(phydev, 2);
+	phy_id = val << 16;
+	val = phy_read(phydev, 3);
+	phy_id |= val;
+	pr_info("Phy on MAC %d: %x\n", mac, phy_id);
+
+	/* Read internal PHY ID */
+	phy_write_paged(phydev, 31, 27, 0x0002);
+	val = phy_read_paged(phydev, 31, 28);
+	if (val != 0x6276) {
+		phydev_err(phydev, "Expected external RTL8218B, found PHY-ID %x\n", val);
+		return -1;
+	}
+	phydev_info(phydev, "Detected external RTL8218B\n");
+
+	h = rtl838x_request_fw(phydev, &rtl838x_8218b_fw, FIRMWARE_838X_8218b_1);
+	if (!h)
+		return -1;
+
+	if (h->phy != 0x8218b000) {
+		phydev_err(phydev, "Wrong firmware file: PHY mismatch.\n");
+		return -1;
+	}
+
+	rtl8380_rtl8218b_perchip = (void *)h + sizeof(struct fw_header) + h->parts[0].start;
+	rtl8218B_6276B_rtl8380_perport = (void *)h + sizeof(struct fw_header) + h->parts[1].start;
+	rtl8380_rtl8218b_perport = (void *)h + sizeof(struct fw_header) + h->parts[2].start;
+
+	val = phy_read(phydev, MII_BMCR);
+	if (val & BMCR_PDOWN)
+		rtl8380_int_phy_on_off(phydev, true);
+	else
+		rtl8380_phy_reset(phydev);
+
+	msleep(100);
+
+	/* Get Chip revision */
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, 0x1b, 0x4);
+	val = phy_read_paged(phydev, RTL83XX_PAGE_RAW, 0x1c);
+
+	phydev_info(phydev, "Detected chip revision %04x\n", val);
+
+	for (int i = 0; rtl8380_rtl8218b_perchip[i * 3] &&
+	                rtl8380_rtl8218b_perchip[i * 3 + 1]; i++) {
+		phy_package_port_write_paged(phydev, rtl8380_rtl8218b_perchip[i * 3],
+					     RTL83XX_PAGE_RAW, rtl8380_rtl8218b_perchip[i * 3 + 1],
+					     rtl8380_rtl8218b_perchip[i * 3 + 2]);
+	}
+
+	/* Enable PHY */
+	for (int i = 0; i < 8; i++) {
+		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
+		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, 0x00, 0x1140);
+	}
+	mdelay(100);
+
+	/* Request patch */
+	for (int i = 0; i < 8; i++) {
+		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PATCH);
+		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, 0x10, 0x0010);
+	}
+
+	mdelay(300);
+
+	/* Verify patch readiness */
+	for (int i = 0; i < 8; i++) {
+		int l;
+
+		for (l = 0; l < 100; l++) {
+			val = phy_package_port_read_paged(phydev, i, RTL821X_PAGE_STATE, 0x10);
+			if (val & 0x40)
+				break;
+		}
+		if (l >= 100) {
+			phydev_err(phydev, "Could not patch PHY\n");
+			return -1;
+		}
+	}
+
+	/* Use Broadcast ID method for patching */
+	rtl821x_phy_setup_package_broadcast(phydev, true);
+
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, 30, 8);
+	phy_write_paged(phydev, 0x26e, 17, 0xb);
+	phy_write_paged(phydev, 0x26e, 16, 0x2);
+	mdelay(1);
+	ipd = phy_read_paged(phydev, 0x26e, 19);
+	phy_write_paged(phydev, 0, 30, 0);
+	ipd = (ipd >> 4) & 0xf; /* unused ? */
+
+	for (int i = 0; rtl8218B_6276B_rtl8380_perport[i * 2]; i++) {
+		phy_write_paged(phydev, RTL83XX_PAGE_RAW, rtl8218B_6276B_rtl8380_perport[i * 2],
+		                rtl8218B_6276B_rtl8380_perport[i * 2 + 1]);
+	}
+
+	/* Disable broadcast ID */
+	rtl821x_phy_setup_package_broadcast(phydev, false);
+
+	return 0;
+}

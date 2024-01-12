@@ -1,0 +1,7 @@
+static unsigned int get_num(char *str)
+{
+	if (!strncmp("0x", str, 2))
+		return strtoul(str+2, NULL, 16);
+	else
+		return strtoul(str, NULL, 10);
+}

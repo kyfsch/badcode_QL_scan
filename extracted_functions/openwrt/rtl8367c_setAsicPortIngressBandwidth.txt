@@ -1,0 +1,37 @@
+ret_t rtl8367c_setAsicPortIngressBandwidth(rtk_uint32 port, rtk_uint32 bandwidth, rtk_uint32 preifg, rtk_uint32 enableFC)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+    rtk_uint32 regAddr;
+
+    /* Invalid input parameter */
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    if(bandwidth > RTL8367C_QOS_GRANULARTY_MAX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    regAddr = RTL8367C_INGRESSBW_PORT_RATE_LSB_REG(port);
+    regData = bandwidth & RTL8367C_QOS_GRANULARTY_LSB_MASK;
+    retVal = rtl8367c_setAsicReg(regAddr, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    regAddr += 1;
+    regData = (bandwidth & RTL8367C_QOS_GRANULARTY_MSB_MASK) >> RTL8367C_QOS_GRANULARTY_MSB_OFFSET;
+    retVal = rtl8367c_setAsicRegBits(regAddr, RTL8367C_INGRESSBW_PORT0_RATE_CTRL1_INGRESSBW_RATE16_MASK, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    regAddr = RTL8367C_PORT_MISC_CFG_REG(port);
+    retVal = rtl8367c_setAsicRegBit(regAddr, RTL8367C_PORT0_MISC_CFG_INGRESSBW_IFG_OFFSET, preifg);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    regAddr = RTL8367C_PORT_MISC_CFG_REG(port);
+    retVal = rtl8367c_setAsicRegBit(regAddr, RTL8367C_PORT0_MISC_CFG_INGRESSBW_FLOWCTRL_OFFSET, enableFC);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

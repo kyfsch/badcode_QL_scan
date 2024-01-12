@@ -1,0 +1,4 @@
+static void __exit ehci_oxnas_cleanup(void)
+{
+	platform_driver_unregister(&ehci_oxnas_driver);
+}

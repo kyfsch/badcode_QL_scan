@@ -1,0 +1,26 @@
+int des3_ede_setkey(struct crypto_tfm *tfm, const u8 *key,
+                    unsigned int keylen)
+{
+        struct ifx_deu_des_ctx *dctx = crypto_tfm_ctx(tfm);
+        int err;
+
+        //printk("setkey in %s\n", __FILE__);
+
+        err = des3_ede_expand_key(&dctx->des3_ede_context, key, keylen);
+        if (err == -ENOKEY) {
+                if (crypto_tfm_get_flags(tfm) & CRYPTO_TFM_REQ_FORBID_WEAK_KEYS)
+                        err = -EINVAL;
+                else
+                        err = 0;
+        }
+
+        dctx->controlr_M = keylen / 8 + 1;      // 3DES EDE1 / EDE2 / EDE3 Mode
+        dctx->key_length = keylen;
+
+        memcpy ((u8 *) (dctx->expkey), key, keylen);
+
+        if (err)
+                memset(dctx, 0, sizeof(*dctx));
+
+        return err;
+}

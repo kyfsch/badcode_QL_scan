@@ -1,0 +1,4 @@
+static int adm6996_probe(struct phy_device *pdev)
+{
+	return 0;
+}

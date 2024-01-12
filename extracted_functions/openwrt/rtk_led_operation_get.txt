@@ -1,0 +1,23 @@
+rtk_api_ret_t rtk_led_operation_get(rtk_led_operation_t *pMode)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 regData;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pMode)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicLedOperationMode(&regData)) != RT_ERR_OK)
+        return retVal;
+
+    if (regData == LEDOP_SERIAL)
+        *pMode = LED_OP_SERIAL;
+    else if (regData ==LEDOP_PARALLEL)
+        *pMode = LED_OP_PARALLEL;
+    else
+       return RT_ERR_FAILED;
+
+    return RT_ERR_OK;
+}

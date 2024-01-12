@@ -1,0 +1,5 @@
+static void rtk_hal_disable_igmpsnoop(void)
+{
+        if (rtk_igmp_state_set(DISABLED) != RT_ERR_OK)
+                printk("Disable IGMP SNOOPING failed\n");
+}

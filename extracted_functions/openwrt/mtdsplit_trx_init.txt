@@ -1,0 +1,6 @@
+static int __init mtdsplit_trx_init(void)
+{
+	register_mtd_parser(&trx_parser);
+
+	return 0;
+}

@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_qos_portPriSelIndex_set(rtk_port_t port, rtk_qos_priDecTbl_t index)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if (index >= PRIDECTBL_END )
+        return RT_ERR_ENTRY_INDEX;
+
+    if ((retVal = rtl8367c_setAsicPortPriorityDecisionIndex(rtk_switch_port_L2P_get(port), index)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,18 @@
+ret_t rtl8367c_setAsicWFQWeight(rtk_uint32 port, rtk_uint32 qid, rtk_uint32 qWeight)
+{
+    ret_t retVal;
+
+    /* Invalid input parameter */
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(qid > RTL8367C_QIDMAX)
+        return RT_ERR_QUEUE_ID;
+
+    if(qWeight > RTL8367C_QWEIGHTMAX && qid > 0)
+        return RT_ERR_QOS_QUEUE_WEIGHT;
+
+    retVal = rtl8367c_setAsicReg(RTL8367C_SCHEDULE_PORT_QUEUE_WFQ_WEIGHT_REG(port, qid), qWeight);
+
+    return retVal;
+}

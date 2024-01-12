@@ -1,0 +1,17 @@
+ar8xxx_sw_set_flush_port_arl_table(struct switch_dev *dev,
+				   const struct switch_attr *attr,
+				   struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port, ret;
+
+	port = val->port_vlan;
+	if (port >= dev->ports)
+		return -EINVAL;
+
+	mutex_lock(&priv->reg_mutex);
+	ret = priv->chip->atu_flush_port(priv, port);
+	mutex_unlock(&priv->reg_mutex);
+
+	return ret;
+}

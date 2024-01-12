@@ -1,0 +1,26 @@
+void mtd_parse_jffs2data(const char *buf, const char *dir)
+{
+	struct jffs2_unknown_node *node = (struct jffs2_unknown_node *) buf;
+	unsigned int ofs = 0;
+
+	while (ofs < erasesize) {
+		node = (struct jffs2_unknown_node *) (buf + ofs);
+		if (node->magic != 0x1985)
+			break;
+
+		ofs += PAD(node->totlen);
+		if (node->nodetype == JFFS2_NODETYPE_DIRENT) {
+			struct jffs2_raw_dirent *de = (struct jffs2_raw_dirent *) node;
+
+			/* is this the right directory name and is it a subdirectory of / */
+			if (*dir && (de->pino == 1) && !strncmp((char *) de->name, dir, de->nsize))
+				target_ino = de->ino;
+
+			/* store the last inode and version numbers for adding extra files */
+			if (last_ino < de->ino)
+				last_ino = de->ino;
+			if (last_version < de->version)
+				last_version = de->version;
+		}
+	}
+}

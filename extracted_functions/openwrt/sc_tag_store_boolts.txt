@@ -1,0 +1,22 @@
+static ssize_t sc_tag_store_boolts(const u8 *pld, u16 pld_len, const char *buf, size_t count,
+				   const struct sc_boolts *bts)
+{
+	u32 data;	// cpu-endian
+
+	if (sizeof(data) != pld_len)
+		return -EINVAL;
+
+	if (sysfs_streq(buf, bts->strfalse))
+		data = 0;
+	else if (sysfs_streq(buf, bts->strtrue))
+		data = 1;
+	else
+		return -EINVAL;
+
+	write_lock(&sc_bufrwl);
+	*(u32 *)pld = data;		// pld aliases sc_buf
+	RB_SC_CLRCRC();
+	write_unlock(&sc_bufrwl);
+
+	return count;
+}

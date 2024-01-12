@@ -1,0 +1,28 @@
+int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	if (group >= priv->n_lags) {
+		pr_err("%s: LAG %d invalid.\n", __func__, group);
+		return -EINVAL;
+	}
+
+	if (port >= priv->cpu_port) {
+		pr_err("%s: Port %d invalid.\n", __func__, port);
+		return -EINVAL;
+	}
+
+	if (!(priv->lags_port_members[group] & BIT_ULL(port))) {
+		pr_err("%s: Port %d not member of LAG %d.\n", __func__, port, group);
+		return -ENOSPC;
+	}
+
+	/* 0x7f algo mask all */
+	priv->r->mask_port_reg_be(BIT_ULL(port), 0, priv->r->trk_mbr_ctr(group));
+	priv->lags_port_members[group] &= ~BIT_ULL(port);
+
+	pr_info("%s: Removed port %d from LAG %d. Members now %016llx.\n",
+		 __func__, port, group, priv->lags_port_members[group]);
+
+	return 0;
+}

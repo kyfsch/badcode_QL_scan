@@ -1,0 +1,9 @@
+static inline void reset_assert_device(struct dc_ep_dev *dev, u32 bits)
+{
+	if (WARN_ON(!dev))
+		return;
+	if (WARN_ON(!dev->priv))
+		return;
+
+	dc_ep_assert_device(dev->priv, bits);
+}

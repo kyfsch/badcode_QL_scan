@@ -1,0 +1,11 @@
+t_serveropen(username)
+     const char * username;
+{
+  struct t_passwd * p;
+  p = gettpnam(username);
+  if(p == NULL) {
+    return NULL;
+  } else {
+    return t_serveropenraw(&p->tp, &p->tc);
+  }
+}

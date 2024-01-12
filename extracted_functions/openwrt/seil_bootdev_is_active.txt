@@ -1,0 +1,56 @@
+static bool seil_bootdev_is_active(struct device_node *np)
+{
+	struct mtd_info *env_mtd;
+	char *buf, *var, *value, *eq;
+	const char *devnm;
+	size_t rdlen;
+	int ret;
+
+	/*
+	 * read bootdev name of the partition
+	 * if doesn't exist, return true and skip checking of active device
+	 */
+	ret = of_property_read_string(np, "iij,bootdev-name", &devnm);
+	if (ret == -EINVAL)
+		return true;
+	else if (ret < 0)
+		return false;
+
+	env_mtd = get_mtd_device_nm(LDR_ENV_PART_NAME);
+	if (IS_ERR(env_mtd)) {
+		pr_err("failed to get mtd device \"%s\"", LDR_ENV_PART_NAME);
+		return false;
+	}
+
+	buf = vmalloc(env_mtd->size);
+	if (!buf)
+		return false;
+
+	ret = mtd_read(env_mtd, 0, env_mtd->size, &rdlen, buf);
+	if (ret || rdlen != env_mtd->size) {
+		pr_err("failed to read from mtd (%d)\n", ret);
+		ret = 0;
+		goto exit_vfree;
+	}
+
+	for (var = buf, ret = false;
+	     var < buf + env_mtd->size && *var;
+	     var = value + strlen(value) + 1) {
+		eq = strchr(var, '=');
+		if (!eq)
+			break;
+		*eq = '\0';
+		value = eq + 1;
+
+		pr_debug("ENV: %s=%s\n", var, value);
+		if (!strcmp(var, LDR_ENV_KEY_BOOTDEV)) {
+			ret = !strcmp(devnm, value);
+			break;
+		}
+	}
+
+exit_vfree:
+	vfree(buf);
+
+	return ret;
+}

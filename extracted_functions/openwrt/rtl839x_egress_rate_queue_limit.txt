@@ -1,0 +1,29 @@
+void rtl839x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, int port,
+					int queue, u32 rate)
+{
+	int lsb = 128 + queue * 20;
+	int low_byte = 8 - (lsb >> 5);
+	int start_bit = lsb - (low_byte << 5);
+	u32 high_mask = 0xfffff	>> (32 - start_bit);
+
+	pr_debug("%s: Setting egress rate on port %d, queue %d to %d\n",
+		__func__, port, queue, rate);
+	if (port >= priv->cpu_port)
+		return;
+	if (queue > 7)
+		return;
+
+	mutex_lock(&priv->reg_mutex);
+
+	rtl839x_read_scheduling_table(port);
+
+	sw_w32_mask(0xfffff << start_bit, (rate & 0xfffff) << start_bit,
+		    RTL839X_TBL_ACCESS_DATA_2(low_byte));
+	if (high_mask)
+		sw_w32_mask(high_mask, (rate & 0xfffff) >> (32- start_bit),
+			    RTL839X_TBL_ACCESS_DATA_2(low_byte - 1));
+
+	rtl839x_write_scheduling_table(port);
+
+	mutex_unlock(&priv->reg_mutex);
+}

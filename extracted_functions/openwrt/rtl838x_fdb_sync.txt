@@ -1,0 +1,21 @@
+void rtl838x_fdb_sync(struct work_struct *work)
+{
+	const struct fdb_update_work *uw = container_of(work, struct fdb_update_work, work);
+
+	for (int i = 0; uw->macs[i]; i++) {
+	        struct switchdev_notifier_fdb_info info;
+	        u8 addr[ETH_ALEN];
+	        int action;
+
+		action = (uw->macs[i] & (1ULL << 63)) ?
+		         SWITCHDEV_FDB_ADD_TO_BRIDGE :
+		         SWITCHDEV_FDB_DEL_TO_BRIDGE;
+		u64_to_ether_addr(uw->macs[i] & 0xffffffffffffULL, addr);
+		info.addr = &addr[0];
+		info.vid = 0;
+		info.offloaded = 1;
+		pr_debug("FDB entry %d: %llx, action %d\n", i, uw->macs[0], action);
+		call_switchdev_notifiers(action, uw->ndev, &info.info, NULL);
+	}
+	kfree(work);
+}

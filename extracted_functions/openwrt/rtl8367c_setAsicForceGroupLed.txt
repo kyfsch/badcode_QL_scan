@@ -1,0 +1,32 @@
+ret_t rtl8367c_setAsicForceGroupLed(rtk_uint32 groupmask, rtk_uint32 mode)
+{
+    ret_t retVal;
+    rtk_uint32 i,bitmask;
+    CONST rtk_uint16 bits[3]= {0x0004,0x0010,0x0040};
+
+    /* Invalid input parameter */
+    if(groupmask > RTL8367C_LEDGROUPMASK)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if(mode >= LEDFORCEMODE_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    bitmask = 0;
+    for(i = 0; i <  RTL8367C_LEDGROUPNO; i++)
+    {
+        if(groupmask & (1 << i))
+        {
+            bitmask = bitmask | bits[i];
+        }
+
+    }
+
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_LED_FORCE_CTRL, RTL8367C_LED_FORCE_MODE_MASK, bitmask);
+
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_LED_FORCE_CTRL, RTL8367C_FORCE_MODE_MASK, mode);
+
+    if(LEDFORCEMODE_NORMAL == mode)
+        retVal = rtl8367c_setAsicRegBits(RTL8367C_LED_FORCE_CTRL, RTL8367C_LED_FORCE_MODE_MASK, 0);
+
+    return retVal;
+}

@@ -1,0 +1,20 @@
+set_recv_type(pcap_t *p, bool rx)
+{
+#ifdef PACKET_RECV_TYPE
+	struct sockaddr_ll sll;
+	struct ifreq ifr;
+	int mask;
+	int fd;
+
+	fd = pcap_get_selectable_fd(p);
+	if (fd < 0)
+		return;
+
+	if (rx)
+		mask = 1 << PACKET_BROADCAST;
+	else
+		mask = 0;
+
+	setsockopt(fd, SOL_PACKET, PACKET_RECV_TYPE, &mask, sizeof(mask));
+#endif
+}

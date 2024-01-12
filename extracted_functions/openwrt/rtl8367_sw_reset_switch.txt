@@ -1,0 +1,9 @@
+static int rtl8367_sw_reset_switch(struct switch_dev *dev)
+{
+	if(rtl8367_switch_reset_func)
+		(*rtl8367_switch_reset_func)();
+	else
+		printk("rest switch is not supported\n");
+
+	return 0;
+}

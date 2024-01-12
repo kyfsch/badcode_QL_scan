@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicLutDisableAging(rtk_uint32 port, rtk_uint32 disabled)
+{
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    return rtl8367c_setAsicRegBit(RTL8367C_LUT_AGEOUT_CTRL_REG, port, disabled);
+}

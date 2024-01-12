@@ -1,0 +1,11 @@
+void rtl83xx_setup_prio2queue_cpu_matrix(int *max_queues)
+{
+	int reg = soc_info.family == RTL8380_FAMILY_ID ? RTL838X_QM_PKT2CPU_INTPRI_MAP
+					: RTL839X_QM_PKT2CPU_INTPRI_MAP;
+	u32 v = 0;
+
+	pr_info("QM_PKT2CPU_INTPRI_MAP: %08x\n", sw_r32(reg));
+	for (int i = 0; i < MAX_PRIOS; i++)
+		v |= max_queues[i] << (i * 3);
+	sw_w32(v, reg);
+}

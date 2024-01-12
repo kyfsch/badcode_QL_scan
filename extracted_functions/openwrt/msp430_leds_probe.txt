@@ -1,0 +1,32 @@
+static int msp430_leds_probe(struct spi_device *spi)
+{
+	struct device *dev = &spi->dev;
+	struct device_node *np = dev_of_node(dev);
+	struct device_node *child;
+	int rc;
+
+	rc = msp430_check_workmode(spi);
+	if (rc)
+		return rc;
+
+	for_each_available_child_of_node(np, child) {
+		u32 reg;
+
+		if (of_property_read_u32(child, "reg", &reg))
+			continue;
+
+		if (reg < MSP430_LED_MIN_ID || reg > MSP430_LED_MAX_ID) {
+			dev_err(dev, "invalid LED (%u) [%d, %d]\n", reg,
+				MSP430_LED_MIN_ID, MSP430_LED_MAX_ID);
+			continue;
+		}
+
+		rc = msp430_led(spi, child, reg);
+		if (rc < 0) {
+			of_node_put(child);
+			return rc;
+		}
+	}
+
+	return 0;
+}

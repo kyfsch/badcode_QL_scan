@@ -1,0 +1,16 @@
+uc_hostapd_disable_iface(struct hostapd_iface *iface)
+{
+	switch (iface->state) {
+	case HAPD_IFACE_DISABLED:
+		break;
+#ifdef CONFIG_ACS
+	case HAPD_IFACE_ACS:
+		acs_cleanup(iface);
+		iface->scan_cb = NULL;
+		/* fallthrough */
+#endif
+	default:
+		hostapd_disable_iface(iface);
+		break;
+	}
+}

@@ -1,0 +1,7 @@
+void conf_set_changed(bool val)
+{
+	if (conf_changed_callback && conf_changed != val)
+		conf_changed_callback();
+
+	conf_changed = val;
+}

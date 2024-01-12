@@ -1,0 +1,32 @@
+int AT91F_DataFlashRead(
+	AT91PS_DataFlash pDataFlash,
+	unsigned long addr,
+	unsigned long size,
+	char *buffer)
+{
+	unsigned long SizeToRead;
+
+	AT91F_SpiEnable(pDataFlash->pDevice->cs);
+
+	if(AT91F_DataFlashWaitReady(pDataFlash->pDataFlashDesc, AT91C_DATAFLASH_TIMEOUT) != AT91C_DATAFLASH_OK)
+		return -1;
+
+	while (size)
+	{
+		SizeToRead = (size < 0x8000)? size:0x8000;
+
+		if (AT91F_DataFlashWaitReady(pDataFlash->pDataFlashDesc, AT91C_DATAFLASH_TIMEOUT)
+		    != AT91C_DATAFLASH_OK)
+			return -1;
+
+		if (AT91F_DataFlashContinuousRead (pDataFlash, addr, (unsigned char *)buffer,
+		                                   SizeToRead) != AT91C_DATAFLASH_OK)
+			return -1;
+
+		size -= SizeToRead;
+		addr += SizeToRead;
+		buffer += SizeToRead;
+	}
+
+   	return AT91C_DATAFLASH_OK;
+}

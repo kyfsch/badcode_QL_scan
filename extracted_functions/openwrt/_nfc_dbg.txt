@@ -1,0 +1,3 @@
+void _nfc_dbg(struct ar934x_nfc *nfc, const char *fmt, ...)
+{
+}

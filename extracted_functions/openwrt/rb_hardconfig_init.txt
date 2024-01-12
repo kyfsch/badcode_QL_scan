@@ -1,0 +1,139 @@
+int rb_hardconfig_init(struct kobject *rb_kobj, struct mtd_info *mtd)
+{
+	struct kobject *hc_wlan_kobj;
+	size_t bytes_read, buflen, outlen;
+	const u8 *buf;
+	void *outbuf;
+	int i, j, ret;
+	u32 magic;
+
+	hc_buf = NULL;
+	hc_kobj = NULL;
+	hc_wlan_kobj = NULL;
+
+	ret = __get_mtd_device(mtd);
+	if (ret)
+		return -ENODEV;
+
+	hc_buflen = mtd->size;
+	hc_buf = kmalloc(hc_buflen, GFP_KERNEL);
+	if (!hc_buf) {
+		__put_mtd_device(mtd);
+		return -ENOMEM;
+	}
+
+	ret = mtd_read(mtd, 0, hc_buflen, &bytes_read, hc_buf);
+	__put_mtd_device(mtd);
+
+	if (ret)
+		goto fail;
+
+	if (bytes_read != hc_buflen) {
+		ret = -EIO;
+		goto fail;
+	}
+
+	/* Check we have what we expect */
+	magic = *(const u32 *)hc_buf;
+	if (RB_MAGIC_HARD != magic) {
+		ret = -EINVAL;
+		goto fail;
+	}
+
+	/* Skip magic */
+	buf = hc_buf + sizeof(magic);
+	buflen = hc_buflen - sizeof(magic);
+
+	/* Populate sysfs */
+	ret = -ENOMEM;
+	hc_kobj = kobject_create_and_add(RB_MTD_HARD_CONFIG, rb_kobj);
+	if (!hc_kobj)
+		goto fail;
+
+	/* Locate and publish all known tags */
+	for (i = 0; i < ARRAY_SIZE(hc_attrs); i++) {
+		ret = routerboot_tag_find(buf, buflen, hc_attrs[i].tag_id,
+					  &hc_attrs[i].pld_ofs, &hc_attrs[i].pld_len);
+		if (ret) {
+			hc_attrs[i].pld_ofs = hc_attrs[i].pld_len = 0;
+			continue;
+		}
+
+		/* Account for skipped magic */
+		hc_attrs[i].pld_ofs += sizeof(magic);
+
+		/*
+		 * Special case RB_ID_WLAN_DATA to prep and create the binary attribute.
+		 * We first check if the data is "old style" within a single tag (or no tag at all):
+		 * If it is we publish this single blob as a binary attribute child of hc_kobj to
+		 * preserve backward compatibility.
+		 * If it isn't and instead uses multiple ERD tags, we create a subfolder and
+		 * publish the known ones there.
+		 */
+		if ((RB_ID_WLAN_DATA == hc_attrs[i].tag_id) && hc_attrs[i].pld_len) {
+			outlen = RB_ART_SIZE;
+			outbuf = kmalloc(outlen, GFP_KERNEL);
+			if (!outbuf) {
+				pr_warn(RB_HC_PR_PFX "Out of memory parsing WLAN tag\n");
+				continue;
+			}
+
+			/* Test ID_SOLO first, if found: done */
+			ret = hc_wlan_data_unpack(RB_WLAN_ERD_ID_SOLO, hc_attrs[i].pld_ofs, hc_attrs[i].pld_len, outbuf, &outlen);
+			if (!ret) {
+				hc_wd_solo_battr.pld_ofs = hc_attrs[i].pld_ofs;
+				hc_wd_solo_battr.pld_len = hc_attrs[i].pld_len;
+
+				ret = sysfs_create_bin_file(hc_kobj, &hc_wd_solo_battr.battr);
+				if (ret)
+					pr_warn(RB_HC_PR_PFX "Could not create %s sysfs entry (%d)\n",
+						hc_wd_solo_battr.battr.attr.name, ret);
+			}
+			/* Otherwise, create "wlan_data" subtree and publish known data */
+			else {
+				hc_wlan_kobj = kobject_create_and_add("wlan_data", hc_kobj);
+				if (!hc_wlan_kobj) {
+					kfree(outbuf);
+					pr_warn(RB_HC_PR_PFX "Could not create wlan_data sysfs folder\n");
+					continue;
+				}
+
+				for (j = 0; j < ARRAY_SIZE(hc_wd_multi_battrs); j++) {
+					outlen = RB_ART_SIZE;
+					ret = hc_wlan_data_unpack(hc_wd_multi_battrs[j].erd_tag_id,
+								  hc_attrs[i].pld_ofs, hc_attrs[i].pld_len, outbuf, &outlen);
+					if (ret) {
+						hc_wd_multi_battrs[j].pld_ofs = hc_wd_multi_battrs[j].pld_len = 0;
+						continue;
+					}
+
+					hc_wd_multi_battrs[j].pld_ofs = hc_attrs[i].pld_ofs;
+					hc_wd_multi_battrs[j].pld_len = hc_attrs[i].pld_len;
+
+					ret = sysfs_create_bin_file(hc_wlan_kobj, &hc_wd_multi_battrs[j].battr);
+					if (ret)
+						pr_warn(RB_HC_PR_PFX "Could not create wlan_data/%s sysfs entry (%d)\n",
+							hc_wd_multi_battrs[j].battr.attr.name, ret);
+				}
+			}
+
+			kfree(outbuf);
+		}
+		/* All other tags are published via standard attributes */
+		else {
+			ret = sysfs_create_file(hc_kobj, &hc_attrs[i].kattr.attr);
+			if (ret)
+				pr_warn(RB_HC_PR_PFX "Could not create %s sysfs entry (%d)\n",
+				       hc_attrs[i].kattr.attr.name, ret);
+		}
+	}
+
+	pr_info("MikroTik RouterBOARD hardware configuration sysfs driver v" RB_HARDCONFIG_VER "\n");
+
+	return 0;
+
+fail:
+	kfree(hc_buf);
+	hc_buf = NULL;
+	return ret;
+}

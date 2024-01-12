@@ -1,0 +1,15 @@
+static u64 rtl930x_read_mcast_pmask(int idx)
+{
+	u32 portmask;
+	/* Read MC_PORTMASK (2) via register RTL9300_TBL_L2 */
+	struct table_reg *q = rtl_table_get(RTL9300_TBL_L2, 2);
+
+	rtl_table_read(q, idx);
+	portmask = sw_r32(rtl_table_data(q, 0));
+	portmask >>= 3;
+	rtl_table_release(q);
+
+	pr_debug("%s: Index idx %d has portmask %08x\n", __func__, idx, portmask);
+
+	return portmask;
+}

@@ -1,0 +1,4 @@
+static inline struct aca_pdmem_layout *to_pdmem_layout(struct dc_ep_priv *priv)
+{
+	return &priv->aca.fw_info.pdmem_layout;
+}

@@ -1,0 +1,15 @@
+static void rtl83xx_init_stats(struct rtl838x_switch_priv *priv)
+{
+	mutex_lock(&priv->reg_mutex);
+
+	/* Enable statistics module: all counters plus debug.
+	 * On RTL839x all counters are enabled by default
+	 */
+	if (priv->family_id == RTL8380_FAMILY_ID)
+		sw_w32_mask(0, 3, RTL838X_STAT_CTRL);
+
+	/* Reset statistics counters */
+	sw_w32_mask(0, 1, priv->r->stat_rst);
+
+	mutex_unlock(&priv->reg_mutex);
+}

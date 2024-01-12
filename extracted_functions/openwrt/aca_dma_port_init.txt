@@ -1,0 +1,16 @@
+static void aca_dma_port_init(struct dc_ep_priv *priv)
+{
+	u32 val;
+
+	/* Only one port /port 0 */
+	wr32(0, ADMA_PS);
+	val = rd32(ADMA_PCTRL);
+	set_mask_bit(val, 1, 1, PCTRL_RXBL16);
+	set_mask_bit(val, 1, 1, PCTRL_TXBL16);
+	set_mask_bit(val, 0, 3, PCTRL_RXBL);
+	set_mask_bit(val, 0, 3, PCTRL_TXBL);
+
+	set_mask_bit(val, 0, 3, PCTRL_TXENDI);
+	set_mask_bit(val, 0, 3, PCTRL_RXENDI);
+	wr32(val, ADMA_PCTRL);
+}

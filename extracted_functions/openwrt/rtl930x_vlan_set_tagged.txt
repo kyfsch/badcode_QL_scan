@@ -1,0 +1,20 @@
+static void rtl930x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
+{
+	u32 v, w;
+	/* Access VLAN table (1) via register 0 */
+	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 1);
+
+	v = info->tagged_ports << 3;
+	v |= ((u32)info->fid) >> 3;
+
+	w = ((u32)info->fid) << 29;
+	w |= info->hash_mc_fid ? BIT(27) : 0;
+	w |= info->hash_uc_fid ? BIT(28) : 0;
+	w |= info->profile_id << 24;
+
+	sw_w32(v, rtl_table_data(r, 0));
+	sw_w32(w, rtl_table_data(r, 1));
+
+	rtl_table_write(r, vlan);
+	rtl_table_release(r);
+}

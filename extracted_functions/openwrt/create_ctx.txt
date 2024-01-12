@@ -1,0 +1,62 @@
+ctx_t *create_ctx(const cipher_t *cipher, const unsigned char *key,
+		  const unsigned char *iv, int enc, int padding)
+{
+    mbedtls_cipher_context_t *ctx;
+    const mbedtls_cipher_info_t *cipher_info=cipher;
+    int ret;
+
+    ctx = malloc(sizeof (mbedtls_cipher_context_t));
+    if (!ctx) {
+	fprintf (stderr, "Error: create_ctx: out of memory.\n");
+	return NULL;
+    }
+
+    mbedtls_cipher_init(ctx);
+    ret = mbedtls_cipher_setup(ctx, cipher_info);
+    if (ret) {
+	fprintf(stderr, "Error: mbedtls_cipher_setup: %d\n", ret);
+	goto abort;
+    }
+    ret = mbedtls_cipher_setkey(ctx, key,
+				(int) mbedtls_cipher_get_key_bitlen(ctx),
+				enc ? MBEDTLS_ENCRYPT : MBEDTLS_DECRYPT);
+    if (ret) {
+	fprintf(stderr, "Error: mbedtls_cipher_setkey: %d\n", ret);
+	goto abort;
+    }
+    if (iv) {
+        ret = mbedtls_cipher_set_iv(ctx, iv, mbedtls_cipher_get_iv_size(ctx));
+	if (ret) {
+	    fprintf(stderr, "Error: mbedtls_cipher_set_iv: %d\n", ret);
+	    goto abort;
+	}
+    }
+
+    if (cipher_info->mode == MBEDTLS_MODE_CBC) {
+	ret = mbedtls_cipher_set_padding_mode(ctx, padding ?
+						   MBEDTLS_PADDING_PKCS7 :
+						   MBEDTLS_PADDING_NONE);
+	if (ret) {
+	    fprintf(stderr, "Error: mbedtls_cipher_set_padding_mode: %d\n",
+		    ret);
+	    goto abort;
+	}
+    } else {
+	if (cipher_info->block_size > 1 && padding) {
+	    fprintf(stderr,
+		    "Error: mbedTLS only allows padding with CBC ciphers.\n");
+	    goto abort;
+	}
+    }
+
+    ret = mbedtls_cipher_reset(ctx);
+    if (ret) {
+	fprintf(stderr, "Error: mbedtls_cipher_reset: %d\n", ret);
+	goto abort;
+    }
+    return ctx;
+
+abort:
+    free_ctx(ctx);
+    return NULL;
+}

@@ -1,0 +1,24 @@
+void rtk_hal_get_phy_status(struct ra_switch_ioctl_data *data)
+{
+	rtk_port_linkStatus_t linkStatus;
+	rtk_port_speed_t speed;
+	rtk_port_duplex_t duplex;
+
+    rtk_port_phyStatus_get(data->port, &linkStatus, &speed, &duplex);
+    printk("Port%d Status:\n", data->port);
+	if (linkStatus == 1) {
+        printk("Link Up");
+        if (speed == 0)
+			printk(" 10M");
+		else if (speed == 1)
+			printk(" 100M");
+		else if (speed == 2)
+            printk(" 1000M");
+        if (duplex == 0)
+			printk(" Half Duplex\n");
+		else
+			printk(" Full Duplex\n");
+	} else
+		printk("Link Down\n");
+
+}

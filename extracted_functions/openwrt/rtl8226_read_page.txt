@@ -1,0 +1,4 @@
+static int rtl8226_read_page(struct phy_device *phydev)
+{
+	return __phy_read(phydev, RTL8XXX_PAGE_SELECT);
+}

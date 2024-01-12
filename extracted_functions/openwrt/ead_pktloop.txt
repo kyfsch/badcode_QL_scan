@@ -1,0 +1,9 @@
+ead_pktloop(void)
+{
+	while (1) {
+		if (pcap_dispatch(pcap_fp_rx, 1, handle_packet, NULL) < 0) {
+			ead_pcap_reopen(false);
+			continue;
+		}
+	}
+}

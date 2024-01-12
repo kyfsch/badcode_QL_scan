@@ -1,0 +1,14 @@
+uc_bpf_set_debug_handler(uc_vm_t *vm, size_t nargs)
+{
+	uc_value_t *handler = uc_fn_arg(0);
+
+	if (handler && !ucv_is_callable(handler))
+		err_return(EINVAL, NULL);
+
+	debug_vm = vm;
+	libbpf_set_print(handler ? uc_bpf_debug_print : NULL);
+
+	ucv_array_set(registry, 0, ucv_get(handler));
+
+	return NULL;
+}

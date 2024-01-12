@@ -1,0 +1,118 @@
+rtk_int32 smi_write(rtk_uint32 mAddrs, rtk_uint32 rData)
+{
+#if (!defined(MDC_MDIO_OPERATION) && !defined(SPI_OPERATION))
+    rtk_int8 con;
+    rtk_uint32 ACK;
+    rtk_uint32 ret = RT_ERR_OK;
+#endif
+
+    if(mAddrs > 0xFFFF)
+        return RT_ERR_INPUT;
+
+    if(rData > 0xFFFF)
+        return RT_ERR_INPUT;
+
+#if defined(MDC_MDIO_OPERATION)
+
+    /* Lock */
+    rtlglue_drvMutexLock();
+
+    /* Write address control code to register 31 */
+    MDC_MDIO_WRITE(MDC_MDIO_PREAMBLE_LEN, MDC_MDIO_PHY_ID, MDC_MDIO_CTRL0_REG, MDC_MDIO_ADDR_OP);
+
+    /* Write address to register 23 */
+    MDC_MDIO_WRITE(MDC_MDIO_PREAMBLE_LEN, MDC_MDIO_PHY_ID, MDC_MDIO_ADDRESS_REG, mAddrs);
+
+    /* Write data to register 24 */
+    MDC_MDIO_WRITE(MDC_MDIO_PREAMBLE_LEN, MDC_MDIO_PHY_ID, MDC_MDIO_DATA_WRITE_REG, rData);
+
+    /* Write data control code to register 21 */
+    MDC_MDIO_WRITE(MDC_MDIO_PREAMBLE_LEN, MDC_MDIO_PHY_ID, MDC_MDIO_CTRL1_REG, MDC_MDIO_WRITE_OP);
+
+    /* Unlock */
+    rtlglue_drvMutexUnlock();
+
+    return RT_ERR_OK;
+
+#elif defined(SPI_OPERATION)
+
+    /* Lock */
+    rtlglue_drvMutexLock();
+
+    /* Write 8 bits WRITE OP_CODE */
+    SPI_WRITE(SPI_WRITE_OP, SPI_WRITE_OP_LEN);
+
+    /* Write 16 bits register address */
+    SPI_WRITE(mAddrs, SPI_REG_LEN);
+
+    /* Write 16 bits data */
+    SPI_WRITE(rData, SPI_DATA_LEN);
+
+    /* Unlock */
+    rtlglue_drvMutexUnlock();
+
+    return RT_ERR_OK;
+#else
+
+    /*Disable CPU interrupt to ensure that the SMI operation is atomic.
+      The API is based on RTL865X, rewrite the API if porting to other platform.*/
+    rtlglue_drvMutexLock();
+
+    _smi_start();                                /* Start SMI */
+
+    _smi_writeBit(0x0b, 4);                     /* CTRL code: 4'b1011 for RTL8370*/
+
+    _smi_writeBit(0x4, 3);                        /* CTRL code: 3'b100 */
+
+    _smi_writeBit(0x0, 1);                        /* 0: issue WRITE command */
+
+    con = 0;
+    do {
+        con++;
+        _smi_readBit(1, &ACK);                    /* ACK for issuing WRITE command*/
+    } while ((ACK != 0) && (con < ack_timer));
+    if (ACK != 0) ret = RT_ERR_FAILED;
+
+    _smi_writeBit((mAddrs&0xff), 8);             /* Set reg_addr[7:0] */
+
+    con = 0;
+    do {
+        con++;
+        _smi_readBit(1, &ACK);                    /* ACK for setting reg_addr[7:0] */
+    } while ((ACK != 0) && (con < ack_timer));
+    if (ACK != 0) ret = RT_ERR_FAILED;
+
+    _smi_writeBit((mAddrs>>8), 8);                 /* Set reg_addr[15:8] */
+
+    con = 0;
+    do {
+        con++;
+        _smi_readBit(1, &ACK);                    /* ACK for setting reg_addr[15:8] */
+    } while ((ACK != 0) && (con < ack_timer));
+    if (ACK != 0) ret = RT_ERR_FAILED;
+
+    _smi_writeBit(rData&0xff, 8);                /* Write Data [7:0] out */
+
+    con = 0;
+    do {
+        con++;
+        _smi_readBit(1, &ACK);                    /* ACK for writting data [7:0] */
+    } while ((ACK != 0) && (con < ack_timer));
+    if (ACK != 0) ret = RT_ERR_FAILED;
+
+    _smi_writeBit(rData>>8, 8);                    /* Write Data [15:8] out */
+
+    con = 0;
+    do {
+        con++;
+        _smi_readBit(1, &ACK);                        /* ACK for writting data [15:8] */
+    } while ((ACK != 0) && (con < ack_timer));
+    if (ACK != 0) ret = RT_ERR_FAILED;
+
+    _smi_stop();
+
+    rtlglue_drvMutexUnlock();/*enable CPU interrupt*/
+
+    return ret;
+#endif /* end of #if defined(MDC_MDIO_OPERATION) */
+}

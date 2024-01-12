@@ -1,0 +1,13 @@
+static int gpio_keys_remove(struct platform_device *pdev)
+{
+	struct gpio_keys_button_dev *bdev = platform_get_drvdata(pdev);
+
+	platform_set_drvdata(pdev, NULL);
+
+	if (bdev->polled)
+		gpio_keys_polled_close(bdev);
+	else
+		gpio_keys_irq_close(bdev);
+
+	return 0;
+}

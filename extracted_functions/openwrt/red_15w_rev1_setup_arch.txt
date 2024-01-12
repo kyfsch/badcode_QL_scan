@@ -1,0 +1,9 @@
+static void __init red_15w_rev1_setup_arch(void)
+{
+	if (ppc_md.progress)
+		ppc_md.progress("red_15w_rev1_setup_arch()", 0);
+
+	fsl_pci_assign_primary();
+
+	pr_info("RED 15w Rev.1 from Sophos\n");
+}

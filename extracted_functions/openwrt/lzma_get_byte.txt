@@ -1,0 +1,9 @@
+static __inline__ unsigned char lzma_get_byte(void)
+{
+	unsigned char c;
+
+	lzma_datasize--;
+	c = *lzma_data++;
+
+	return c;
+}

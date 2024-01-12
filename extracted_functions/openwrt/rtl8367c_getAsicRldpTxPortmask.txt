@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicRldpTxPortmask(rtk_uint32 *pPortmask)
+{
+    return rtl8367c_getAsicReg(RTL8367C_RLDP_TX_PMSK_REG, pPortmask);
+}

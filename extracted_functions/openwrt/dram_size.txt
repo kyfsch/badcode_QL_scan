@@ -1,0 +1,36 @@
+static long int dram_size (long int *base, long int maxsize)
+{
+	volatile long int *addr, *b = base;
+	long int cnt, val, save1, save2;
+
+#define STARTVAL (CONFIG_MIN_SDRAM_SIZE / 2)	/* start test at half size */
+	for (cnt = STARTVAL / sizeof (long); cnt < maxsize / sizeof (long);
+	     cnt <<= 1) {
+		addr = base + cnt;	/* pointer arith! */
+
+		save1 = *addr;	/* save contents of addr */
+		save2 = *b;	/* save contents of base */
+
+		*addr = cnt;	/* write cnt to addr */
+		*b = 0;		/* put null at base */
+
+		/* check at base address */
+		if ((*b) != 0) {
+			*addr = save1;	/* restore *addr */
+			*b = save2;	/* restore *b */
+			return (0);
+		}
+		val = *addr;	/* read *addr */
+
+		*addr = save1;
+		*b = save2;
+
+		if (val != cnt) {
+			/* fix boundary condition.. STARTVAL means zero */
+			if (cnt == STARTVAL / sizeof (long))
+				cnt = 0;
+			return (cnt * sizeof (long));
+		}
+	}
+	return maxsize;
+}

@@ -1,0 +1,5 @@
+void rtl839x_set_port_reg_le(u64 set, int reg)
+{
+	sw_w32(set, reg);
+	sw_w32(set >> 32, reg + 4);
+}

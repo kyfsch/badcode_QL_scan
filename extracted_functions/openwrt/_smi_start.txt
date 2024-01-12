@@ -1,0 +1,28 @@
+static void _smi_start(void)
+{
+
+    /* change GPIO pin to Output only */
+    GPIO_DIRECTION_SET(smi_SCK, GPIO_DIR_OUT);
+    GPIO_DIRECTION_SET(smi_SDA, GPIO_DIR_OUT);
+
+    /* Initial state: SCK: 0, SDA: 1 */
+    GPIO_DATA_SET(smi_SCK, 0);
+    GPIO_DATA_SET(smi_SDA, 1);
+    CLK_DURATION(DELAY);
+
+    /* CLK 1: 0 -> 1, 1 -> 0 */
+    GPIO_DATA_SET(smi_SCK, 1);
+    CLK_DURATION(DELAY);
+    GPIO_DATA_SET(smi_SCK, 0);
+    CLK_DURATION(DELAY);
+
+    /* CLK 2: */
+    GPIO_DATA_SET(smi_SCK, 1);
+    CLK_DURATION(DELAY);
+    GPIO_DATA_SET(smi_SDA, 0);
+    CLK_DURATION(DELAY);
+    GPIO_DATA_SET(smi_SCK, 0);
+    CLK_DURATION(DELAY);
+    GPIO_DATA_SET(smi_SDA, 1);
+
+}

@@ -1,0 +1,24 @@
+static int bcm6348_emac_mdio_write(struct mii_bus *bus, int phy_id,
+				   int loc, uint16_t val)
+{
+	struct bcm6348_emac *emac = bus->priv;
+	struct platform_device *pdev = emac->pdev;
+	struct device *dev = &pdev->dev;
+	uint32_t reg;
+
+	reg = (val << ENET_MIID_DATA_SHIFT) & ENET_MIID_DATA_MASK;
+	reg |= 0x2 << ENET_MIID_TA_SHIFT;
+	reg |= loc << ENET_MIID_REG_SHIFT;
+	reg |= phy_id << ENET_MIID_PHY_SHIFT;
+	reg |= ENET_MIID_OP_WRITE;
+
+	if (bcm6348_emac_mdio_op(emac, reg)) {
+		dev_err(dev, "mdio_write: phy=%d loc=%x timeout!\n",
+			phy_id, loc);
+		return -EINVAL;
+	}
+
+	bcm6348_emac_mdio_op(emac, reg);
+
+	return 0;
+}

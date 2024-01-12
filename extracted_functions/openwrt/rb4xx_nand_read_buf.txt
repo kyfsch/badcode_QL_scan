@@ -1,0 +1,7 @@
+static void rb4xx_nand_read_buf(struct nand_chip *chip, u8 *buf, int len)
+{
+	struct rb4xx_nand *nand = chip->priv;
+	struct rb4xx_cpld *cpld = nand->cpld;
+
+	cpld->read_nand(cpld, buf, len);
+}

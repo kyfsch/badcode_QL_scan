@@ -1,0 +1,6 @@
+static void conf_default_message_callback(const char *s)
+{
+	printf("#\n# ");
+	printf("%s", s);
+	printf("\n#\n");
+}

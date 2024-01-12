@@ -1,0 +1,22 @@
+ret_t rtl8367c_getAsicVlanPortBasedVID(rtk_uint32 port, rtk_uint32 *pIndex, rtk_uint32 *pPri)
+{
+    rtk_uint32 regAddr,bit_mask;
+    ret_t  retVal;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    regAddr = RTL8367C_VLAN_PVID_CTRL_REG(port);
+    bit_mask = RTL8367C_PORT_VIDX_MASK(port);
+    retVal = rtl8367c_getAsicRegBits(regAddr, bit_mask, pIndex);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    regAddr = RTL8367C_VLAN_PORTBASED_PRIORITY_REG(port);
+    bit_mask = RTL8367C_VLAN_PORTBASED_PRIORITY_MASK(port);
+    retVal = rtl8367c_getAsicRegBits(regAddr, bit_mask, pPri);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

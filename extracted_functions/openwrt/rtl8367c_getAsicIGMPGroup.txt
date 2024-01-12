@@ -1,0 +1,65 @@
+ret_t rtl8367c_getAsicIGMPGroup(rtk_uint32 idx, rtk_uint32 *valid, rtl8367c_igmpgroup *grp)
+{
+    ret_t   retVal;
+    rtk_uint32  regAddr, regData;
+    rtk_uint32  i;
+    rtk_uint32  groupInfo = 0;
+
+    if(idx > RTL8367C_IGMP_MAX_GOUP)
+        return RT_ERR_OUT_OF_RANGE;
+
+    /* Write ACS_ADR register for data bits */
+    regAddr = RTL8367C_TABLE_ACCESS_ADDR_REG;
+    regData = idx;
+    retVal = rtl8367c_setAsicReg(regAddr, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    /* Write ACS_CMD register */
+    regAddr = RTL8367C_TABLE_ACCESS_CTRL_REG;
+    regData = RTL8367C_TABLE_ACCESS_REG_DATA(TB_OP_READ, TB_TARGET_IGMP_GROUP);
+    retVal = rtl8367c_setAsicRegBits(regAddr, RTL8367C_TABLE_TYPE_MASK | RTL8367C_COMMAND_TYPE_MASK, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    /* Read Data Bits */
+    regAddr = RTL8367C_TABLE_ACCESS_RDDATA_BASE;
+    for(i = 0 ;i <= 1; i++)
+    {
+        retVal = rtl8367c_getAsicReg(regAddr, &regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        groupInfo |= ((regData & 0xFFFF) << (i * 16));
+        regAddr ++;
+    }
+
+    grp->p0_timer = groupInfo & 0x00000007;
+    grp->p1_timer = (groupInfo >> 3) & 0x00000007;
+    grp->p2_timer = (groupInfo >> 6) & 0x00000007;
+    grp->p3_timer = (groupInfo >> 9) & 0x00000007;
+    grp->p4_timer = (groupInfo >> 12) & 0x00000007;
+    grp->p5_timer = (groupInfo >> 15) & 0x00000007;
+    grp->p6_timer = (groupInfo >> 18) & 0x00000007;
+    grp->p7_timer = (groupInfo >> 21) & 0x00000007;
+    grp->report_supp_flag = (groupInfo >> 24) & 0x00000001;
+    grp->p8_timer = (groupInfo >> 25) & 0x00000007;
+    grp->p9_timer = (groupInfo >> 28) & 0x00000007;
+    grp->p10_timer = (groupInfo >> 31) & 0x00000001;
+
+    regAddr = RTL8367C_TABLE_ACCESS_RDDATA_BASE + 2;
+    retVal = rtl8367c_getAsicReg(regAddr, &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    grp->p10_timer |= (regData & 0x00000003) << 1;
+
+    /* Valid bit */
+    retVal = rtl8367c_getAsicReg(RTL8367C_IGMP_GROUP_USAGE_REG(idx), &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    *valid = ((regData & (0x0001 << (idx %16))) != 0) ? 1 : 0;
+
+    return RT_ERR_OK;
+}

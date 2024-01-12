@@ -1,0 +1,56 @@
+rtk_api_ret_t rtk_rldp_portStatus_get(rtk_port_t port, rtk_rldp_portStatus_t *pPortStatus)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 pmsk;
+    rtk_portmask_t logicalPmask;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if ((retVal = rtl8367c_getAsicRldpLoopedPortmask(&pmsk))!=RT_ERR_OK)
+        return retVal;
+    if ((retVal = rtk_switch_portmask_P2L_get(pmsk, &logicalPmask)) != RT_ERR_OK)
+        return retVal;
+
+    if (logicalPmask.bits[0] & (1<<port))
+    {
+         pPortStatus->loop_status = RTK_RLDP_LOOPSTS_LOOPING;
+    }
+    else
+    {
+         pPortStatus->loop_status  = RTK_RLDP_LOOPSTS_NONE;
+    }
+
+    if ((retVal = rtl8367c_getAsicRldpEnterLoopedPortmask(&pmsk))!=RT_ERR_OK)
+        return retVal;
+    if ((retVal = rtk_switch_portmask_P2L_get(pmsk, &logicalPmask)) != RT_ERR_OK)
+        return retVal;
+
+    if (logicalPmask.bits[0] & (1<<port))
+    {
+         pPortStatus->loop_enter = RTK_RLDP_LOOPSTS_LOOPING;
+    }
+    else
+    {
+         pPortStatus->loop_enter  = RTK_RLDP_LOOPSTS_NONE;
+    }
+
+    if ((retVal = rtl8367c_getAsicRldpLeaveLoopedPortmask(&pmsk))!=RT_ERR_OK)
+        return retVal;
+    if ((retVal = rtk_switch_portmask_P2L_get(pmsk, &logicalPmask)) != RT_ERR_OK)
+        return retVal;
+
+    if (logicalPmask.bits[0] & (1<<port))
+    {
+         pPortStatus->loop_leave = RTK_RLDP_LOOPSTS_LOOPING;
+    }
+    else
+    {
+         pPortStatus->loop_leave  = RTK_RLDP_LOOPSTS_NONE;
+    }
+
+    return RT_ERR_OK;
+}

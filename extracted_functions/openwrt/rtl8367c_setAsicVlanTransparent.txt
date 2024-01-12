@@ -1,0 +1,10 @@
+ret_t rtl8367c_setAsicVlanTransparent(rtk_uint32 port, rtk_uint32 portmask)
+{
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(portmask > RTL8367C_PORTMASK)
+        return RT_ERR_PORT_MASK;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_VLAN_EGRESS_TRANS_CTRL0 + port, RTL8367C_VLAN_EGRESS_TRANS_CTRL0_MASK, portmask);
+}

@@ -1,0 +1,4 @@
+void put_ptr(const void *p)
+{
+	put_u32((uint32_t)p);
+}

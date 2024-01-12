@@ -1,0 +1,25 @@
+static int rb4xx_cpld_write_nand(struct rb4xx_cpld *cpld, const void *tx_buf,
+				 unsigned int len)
+{
+	struct spi_message m;
+	static const u8 cmd = CPLD_CMD_WRITE_NAND;
+	struct spi_transfer t[3] = {
+		{
+			.tx_buf = &cmd,
+			.len = sizeof(cmd),
+		}, {
+			.tx_buf = tx_buf,
+			.len = len,
+			.tx_nbits = SPI_NBITS_DUAL,
+		}, {
+			.len = 1,
+			.tx_nbits = SPI_NBITS_DUAL,
+		},
+	};
+
+	spi_message_init(&m);
+	spi_message_add_tail(&t[0], &m);
+	spi_message_add_tail(&t[1], &m);
+	spi_message_add_tail(&t[2], &m);
+	return spi_sync(cpld->spi, &m);
+}

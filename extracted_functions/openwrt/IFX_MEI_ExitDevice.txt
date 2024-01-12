@@ -1,0 +1,16 @@
+IFX_MEI_ExitDevice (int num)
+{
+	DSL_DEV_Device_t *pDev;
+	pDev = &dsl_devices[num];
+
+	if (pDev == NULL)
+		return -EIO;
+
+	disable_irq (pDev->nIrq[IFX_DFEIR]);
+	disable_irq (pDev->nIrq[IFX_DYING_GASP]);
+
+	free_irq(pDev->nIrq[IFX_DFEIR], pDev);
+	free_irq(pDev->nIrq[IFX_DYING_GASP], pDev);
+
+	return 0;
+}

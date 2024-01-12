@@ -1,0 +1,24 @@
+rtk_api_ret_t rtk_cpu_tagPort_set(rtk_port_t port, rtk_cpu_insert_t mode)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if (mode >= CPU_INSERT_END)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicCputagPortmask(1<<rtk_switch_port_L2P_get(port))) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicCputagTrapPort(rtk_switch_port_L2P_get(port))) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicCputagInsertMode(mode)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

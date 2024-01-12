@@ -1,0 +1,14 @@
+static int AT91F_StartBoot(void)
+{
+	int	sts;
+	if((sts = AT91F_LoadBoot()) != SUCCESS) return sts;
+//	printf("\n");
+//	printf("PLLA[180MHz], MCK[60Mhz] ==> Start UBOOT\n");
+	if (AT91F_ResetRegisters())
+	{
+		printf("Jump");
+		Jump(AT91C_BOOT_ADDR);
+//		LED_blink(0);
+	}
+	return	IMAGE_ERROR;
+}

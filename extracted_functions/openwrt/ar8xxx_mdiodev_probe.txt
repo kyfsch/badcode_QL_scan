@@ -1,0 +1,88 @@
+ar8xxx_mdiodev_probe(struct mdio_device *mdiodev)
+{
+	const struct of_device_id *match;
+	struct ar8xxx_priv *priv;
+	struct switch_dev *swdev;
+	struct device_node *mdio_node;
+	int ret;
+
+	match = of_match_device(ar8xxx_mdiodev_of_match, &mdiodev->dev);
+	if (!match)
+		return -EINVAL;
+
+	priv = ar8xxx_create();
+	if (priv == NULL)
+		return -ENOMEM;
+
+	priv->mii_bus = mdiodev->bus;
+	priv->pdev = &mdiodev->dev;
+	priv->chip = (const struct ar8xxx_chip *) match->data;
+
+	ret = of_property_read_u32(priv->pdev->of_node, "qca,mib-poll-interval",
+				   &priv->mib_poll_interval);
+	if (ret)
+		priv->mib_poll_interval = 0;
+
+	ret = ar8xxx_read_id(priv);
+	if (ret)
+		goto free_priv;
+
+	ret = ar8xxx_probe_switch(priv);
+	if (ret)
+		goto free_priv;
+
+	if (priv->chip->phy_read && priv->chip->phy_write) {
+		priv->sw_mii_bus = devm_mdiobus_alloc(&mdiodev->dev);
+		priv->sw_mii_bus->name = "ar8xxx-mdio";
+		priv->sw_mii_bus->read = ar8xxx_phy_read;
+		priv->sw_mii_bus->write = ar8xxx_phy_write;
+		priv->sw_mii_bus->priv = priv;
+		priv->sw_mii_bus->parent = &mdiodev->dev;
+		snprintf(priv->sw_mii_bus->id, MII_BUS_ID_SIZE, "%s",
+			 dev_name(&mdiodev->dev));
+		mdio_node = of_get_child_by_name(priv->pdev->of_node, "mdio-bus");
+		ret = of_mdiobus_register(priv->sw_mii_bus, mdio_node);
+		if (ret)
+			goto free_priv;
+	}
+
+	swdev = &priv->dev;
+	swdev->alias = dev_name(&mdiodev->dev);
+
+	if (of_property_read_bool(priv->pdev->of_node, "qca,phy4-mii-enable")) {
+		priv->port4_phy = true;
+		swdev->ports--;
+	}
+
+	ret = register_switch(swdev, NULL);
+	if (ret)
+		goto free_priv;
+
+	pr_info("%s: %s rev. %u switch registered on %s\n",
+		swdev->devname, swdev->name, priv->chip_rev,
+		dev_name(&priv->mii_bus->dev));
+
+	mutex_lock(&ar8xxx_dev_list_lock);
+	list_add(&priv->list, &ar8xxx_dev_list);
+	mutex_unlock(&ar8xxx_dev_list_lock);
+
+	priv->use_count++;
+
+	ret = ar8xxx_start(priv);
+	if (ret)
+		goto err_unregister_switch;
+
+	dev_set_drvdata(&mdiodev->dev, priv);
+
+	return 0;
+
+err_unregister_switch:
+	if (--priv->use_count)
+		return ret;
+
+	unregister_switch(&priv->dev);
+
+free_priv:
+	ar8xxx_free(priv);
+	return ret;
+}

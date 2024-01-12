@@ -1,0 +1,4 @@
+static inline struct hostapd_data *get_hapd_from_object(struct ubus_object *obj)
+{
+	return container_of(obj, struct hostapd_data, ubus.obj);
+}

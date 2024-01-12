@@ -1,0 +1,29 @@
+static void rtl931x_sds_mii_mode_set(u32 sds, phy_interface_t mode)
+{
+	u32 val;
+
+	switch (mode) {
+	case PHY_INTERFACE_MODE_QSGMII:
+		val = 0x6;
+		break;
+	case PHY_INTERFACE_MODE_XGMII:
+		val = 0x10; /* serdes mode XSGMII */
+		break;
+	case PHY_INTERFACE_MODE_USXGMII:
+	case PHY_INTERFACE_MODE_2500BASEX:
+		val = 0xD;
+		break;
+	case PHY_INTERFACE_MODE_HSGMII:
+		val = 0x12;
+		break;
+	case PHY_INTERFACE_MODE_SGMII:
+		val = 0x2;
+		break;
+	default:
+		return;
+	}
+
+	val |= (1 << 7);
+
+	sw_w32(val, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
+}

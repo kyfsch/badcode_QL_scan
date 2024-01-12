@@ -1,0 +1,23 @@
+static int rtl8231_pin_dir_get(struct rtl8231_gpios *gpios, u32 gpio, u32 *dir)
+{
+	/* dir 1: input
+	 * dir 0: output
+	 */
+
+	u32  v;
+	int pin_dir_addr = RTL8231_GPIO_DIR(gpio);
+	int pin = gpio % 16;
+
+	if (gpio > 31) {
+		pin_dir_addr = RTL8231_GPIO_PIN_SEL(gpio);
+		pin += 5;
+	}
+
+	v = rtl8231_read(gpios, pin_dir_addr);
+	if (v & (1 << pin))
+		*dir = 1;
+	else
+		*dir = 0;
+
+	return 0;
+}

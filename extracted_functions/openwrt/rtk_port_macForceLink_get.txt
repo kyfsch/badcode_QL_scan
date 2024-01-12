@@ -1,0 +1,27 @@
+rtk_api_ret_t rtk_port_macForceLink_get(rtk_port_t port, rtk_port_mac_ability_t *pPortability)
+{
+    rtk_api_ret_t retVal;
+    rtl8367c_port_ability_t ability;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_IS_UTP(port);
+
+    if(NULL == pPortability)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicPortForceLink(rtk_switch_port_L2P_get(port), &ability)) != RT_ERR_OK)
+        return retVal;
+
+    pPortability->forcemode = ability.forcemode;
+    pPortability->speed     = ability.speed;
+    pPortability->duplex    = ability.duplex;
+    pPortability->link      = ability.link;
+    pPortability->nway      = ability.nway;
+    pPortability->txpause   = ability.txpause;
+    pPortability->rxpause   = ability.rxpause;
+
+    return RT_ERR_OK;
+}

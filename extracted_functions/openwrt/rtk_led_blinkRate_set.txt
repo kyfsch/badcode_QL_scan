@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_led_blinkRate_set(rtk_led_blink_rate_t blinkRate)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (blinkRate >= LED_BLINKRATE_END)
+        return RT_ERR_FAILED;
+
+    if ((retVal = rtl8367c_setAsicLedBlinkRate(blinkRate)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

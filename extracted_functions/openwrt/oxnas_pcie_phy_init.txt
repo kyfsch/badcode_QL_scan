@@ -1,0 +1,18 @@
+static int oxnas_pcie_phy_init(struct phy *phy)
+{
+	struct oxnas_pcie_phy *pciephy = phy_get_drvdata(phy);
+	int ret;
+
+	/* generate clocks from HCSL buffers, shared parts */
+	regmap_write(pciephy->sys_ctrl, SYS_CTRL_HCSL_CTRL_REGOFFSET, HCSL_BIAS_ON|HCSL_PCIE_EN);
+
+	/* Ensure PCIe PHY is properly reset */
+	ret = reset_control_reset(pciephy->rstc);
+
+	if (ret) {
+		dev_err(pciephy->dev, "phy reset failed %d\n", ret);
+		return ret;
+	}
+
+	return 0;
+}

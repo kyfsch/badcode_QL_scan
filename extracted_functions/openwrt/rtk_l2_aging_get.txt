@@ -1,0 +1,28 @@
+rtk_api_ret_t rtk_l2_aging_get(rtk_l2_age_time_t *pAging_time)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 i,time, speed;
+    CONST_T rtk_uint32 agePara[10][3] = {
+        {45, 0, 1}, {88, 0, 2}, {133, 0, 3}, {177, 0, 4}, {221, 0, 5}, {266, 0, 6}, {310, 0, 7},
+        {354, 2, 6}, {413, 2, 7}, {458, 3, 7}};
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pAging_time)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicLutAgeTimerSpeed(&time, &speed)) != RT_ERR_OK)
+        return retVal;
+
+    for (i = 0; i<10; i++)
+    {
+        if (time==agePara[i][2]&&speed==agePara[i][1])
+        {
+            *pAging_time = agePara[i][0];
+            return RT_ERR_OK;
+        }
+    }
+
+    return RT_ERR_FAILED;
+}

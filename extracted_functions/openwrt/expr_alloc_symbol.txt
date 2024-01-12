@@ -1,0 +1,7 @@
+struct expr *expr_alloc_symbol(struct symbol *sym)
+{
+	struct expr *e = xcalloc(1, sizeof(*e));
+	e->type = E_SYMBOL;
+	e->left.sym = sym;
+	return e;
+}

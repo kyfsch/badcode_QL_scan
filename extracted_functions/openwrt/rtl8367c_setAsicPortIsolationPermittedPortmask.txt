@@ -1,0 +1,10 @@
+ret_t rtl8367c_setAsicPortIsolationPermittedPortmask(rtk_uint32 port, rtk_uint32 permitPortmask)
+{
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    if( permitPortmask > RTL8367C_PORTMASK)
+        return RT_ERR_PORT_MASK;
+
+    return rtl8367c_setAsicReg(RTL8367C_PORT_ISOLATION_PORT_MASK_REG(port), permitPortmask);
+}

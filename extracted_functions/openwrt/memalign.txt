@@ -1,0 +1,13 @@
+void *memalign(size_t alignment, size_t bytes)
+{
+	ulong mem = ALIGN(next_mem, alignment);
+
+	next_mem = mem + bytes;
+
+	if (next_mem > CONFIG_SYS_SDRAM_BASE + CONFIG_MIN_SDRAM_SIZE) {
+		printf("spl: out of memory\n");
+		hang();
+	}
+
+	return (void *)mem;
+}

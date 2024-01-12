@@ -1,0 +1,21 @@
+start_server(struct ead_instance *i)
+{
+	if (!nonfork) {
+		i->pid = fork();
+		if (i->pid != 0) {
+			if (i->pid < 0)
+				i->pid = 0;
+			return;
+		}
+	}
+
+	instance = i;
+	signal(SIGCHLD, instance_handle_sigchld);
+	ead_pcap_reopen(true);
+	ead_pktloop();
+	pcap_close(pcap_fp);
+	if (pcap_fp_rx != pcap_fp)
+		pcap_close(pcap_fp_rx);
+
+	exit(0);
+}

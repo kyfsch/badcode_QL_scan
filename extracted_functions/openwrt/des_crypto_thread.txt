@@ -1,0 +1,88 @@
+static int des_crypto_thread(void *data)
+{
+    struct des_container *des_con = NULL;
+    struct ablkcipher_request *areq = NULL;
+    int err;
+    unsigned long queue_flag;
+
+    daemonize("lq_des_thread");
+   
+    while (1)
+    {  
+       DEU_WAIT_EVENT(deu_dma_priv.deu_thread_wait, DES_ASYNC_EVENT, 
+                       deu_dma_priv.des_event_flags);
+       spin_lock_irqsave(&des_queue->lock, queue_flag);
+
+       /* wait to prevent starting a crypto session before 
+        * exiting the dma interrupt thread.
+        */
+       
+       if (des_queue->hw_status == DES_STARTED) {
+            areq = ablkcipher_dequeue_request(&des_queue->list);
+            des_con = des_container_cast(areq);
+            des_queue->hw_status = DES_BUSY;
+       }
+       else if (des_queue->hw_status == DES_IDLE) {
+            areq = ablkcipher_dequeue_request(&des_queue->list);
+            des_con = des_container_cast(areq);
+            des_queue->hw_status = DES_STARTED;
+       }
+       else if (des_queue->hw_status == DES_BUSY) {
+            areq = ablkcipher_dequeue_request(&des_queue->list);
+            des_con = des_container_cast(areq);
+       }
+       else if (des_queue->hw_status == DES_COMPLETED) {
+            areq->base.complete(&areq->base, 0);
+            lq_sg_complete(des_con);
+            des_queue->hw_status = DES_IDLE;
+            spin_unlock_irqrestore(&des_queue->lock, queue_flag);
+            return 0;
+       }
+       spin_unlock_irqrestore(&des_queue->lock, queue_flag);
+            
+       if ((des_con->bytes_processed == 0)) {
+            goto des_done;
+       }
+
+       if (!des_con) {
+           goto des_done;
+       }
+
+       if (des_con->flag & PROCESS_NEW_PACKET) { 
+           des_con->flag = PROCESS_SCATTER;
+           err = process_next_packet(des_con, areq, PROCESS_NEW_PACKET);  
+       }
+       else
+           err = process_next_packet(des_con, areq, PROCESS_SCATTER);  
+       
+       if (err == -EINVAL) {
+           areq->base.complete(&areq->base, err);
+           lq_sg_complete(des_con);
+           printk("src/dst returned -EINVAL in func: %s\n", __func__);
+       }
+       else if (err > 0) { 
+           printk("src/dst returned zero in func: %s\n", __func__);
+           goto des_done;
+       }
+
+       continue;
+   
+des_done:
+       //printk("debug line - %d, func: %s, qlen: %d\n", __LINE__, __func__, des_queue->list.qlen);
+       areq->base.complete(&areq->base, 0);
+       lq_sg_complete(des_con);
+
+       spin_lock_irqsave(&des_queue->lock, queue_flag);
+       if (des_queue->list.qlen > 0) {
+           spin_unlock_irqrestore(&des_queue->lock, queue_flag);
+           tasklet_schedule(&des_queue->des_task);
+       } 
+       else {
+           des_queue->hw_status = DES_IDLE;
+           spin_unlock_irqrestore(&des_queue->lock, queue_flag);
+       }
+    } // while(1)
+    
+    return 0;
+
+}

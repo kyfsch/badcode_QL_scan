@@ -1,0 +1,5 @@
+static int rtl8390_init_mac(struct rtl838x_eth_priv *priv)
+{
+	/* We will need to set-up EEE and the egress-rate limitation */
+	return 0;
+}

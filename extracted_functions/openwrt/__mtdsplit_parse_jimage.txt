@@ -1,0 +1,123 @@
+static int __mtdsplit_parse_jimage(struct mtd_info *master,
+				   const struct mtd_partition **pparts,
+				   struct mtd_part_parser_data *data,
+				   ssize_t (*find_header)(u_char *buf, size_t len))
+{
+	struct mtd_partition *parts;
+	u_char *buf;
+	int nr_parts;
+	size_t offset;
+	size_t jimage_offset;
+	size_t jimage_size = 0;
+	size_t rootfs_offset;
+	size_t rootfs_size = 0;
+	int jimage_part, rf_part;
+	int ret;
+	enum mtdsplit_part_type type;
+
+	nr_parts = 2;
+	parts = kzalloc(nr_parts * sizeof(*parts), GFP_KERNEL);
+	if (!parts)
+		return -ENOMEM;
+
+	buf = vmalloc(MAX_HEADER_LEN);
+	if (!buf) {
+		ret = -ENOMEM;
+		goto err_free_parts;
+	}
+
+	/* find jImage on erase block boundaries */
+	for (offset = 0; offset < master->size; offset += master->erasesize) {
+		struct jimage_header *header;
+
+		jimage_size = 0;
+
+		ret = read_jimage_header(master, offset, buf, MAX_HEADER_LEN);
+		if (ret)
+			continue;
+
+		ret = find_header(buf, MAX_HEADER_LEN);
+		if (ret < 0) {
+			pr_debug("no valid jImage found in \"%s\" at offset %llx\n",
+				 master->name, (unsigned long long) offset);
+			continue;
+		}
+		header = (struct jimage_header *)(buf + ret);
+
+		jimage_size = sizeof(*header) + header->sch2_image_len + ret;
+		if ((offset + jimage_size) > master->size) {
+			pr_debug("jImage exceeds MTD device \"%s\"\n",
+				 master->name);
+			continue;
+		}
+		break;
+	}
+
+	if (jimage_size == 0) {
+		pr_debug("no jImage found in \"%s\"\n", master->name);
+		ret = -ENODEV;
+		goto err_free_buf;
+	}
+
+	jimage_offset = offset;
+
+	if (jimage_offset == 0) {
+		jimage_part = 0;
+		rf_part = 1;
+
+		/* find the roots after the jImage */
+		ret = mtd_find_rootfs_from(master, jimage_offset + jimage_size,
+					   master->size, &rootfs_offset, &type);
+		if (ret) {
+			pr_debug("no rootfs after jImage in \"%s\"\n",
+				 master->name);
+			goto err_free_buf;
+		}
+
+		rootfs_size = master->size - rootfs_offset;
+		jimage_size = rootfs_offset - jimage_offset;
+	} else {
+		rf_part = 0;
+		jimage_part = 1;
+
+		/* check rootfs presence at offset 0 */
+		ret = mtd_check_rootfs_magic(master, 0, &type);
+		if (ret) {
+			pr_debug("no rootfs before jImage in \"%s\"\n",
+				 master->name);
+			goto err_free_buf;
+		}
+
+		rootfs_offset = 0;
+		rootfs_size = jimage_offset;
+	}
+
+	if (rootfs_size == 0) {
+		pr_debug("no rootfs found in \"%s\"\n", master->name);
+		ret = -ENODEV;
+		goto err_free_buf;
+	}
+
+	parts[jimage_part].name = KERNEL_PART_NAME;
+	parts[jimage_part].offset = jimage_offset;
+	parts[jimage_part].size = jimage_size;
+
+	if (type == MTDSPLIT_PART_TYPE_UBI)
+		parts[rf_part].name = UBI_PART_NAME;
+	else
+		parts[rf_part].name = ROOTFS_PART_NAME;
+	parts[rf_part].offset = rootfs_offset;
+	parts[rf_part].size = rootfs_size;
+
+	vfree(buf);
+
+	*pparts = parts;
+	return nr_parts;
+
+err_free_buf:
+	vfree(buf);
+
+err_free_parts:
+	kfree(parts);
+	return ret;
+}

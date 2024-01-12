@@ -1,0 +1,11 @@
+rtk_api_ret_t rtk_switch_logPortMask_get(rtk_portmask_t *pPortmask)
+{
+    if(init_state != INIT_COMPLETED)
+        return RT_ERR_FAILED;
+
+    if(NULL == pPortmask)
+        return RT_ERR_NULL_POINTER;
+
+    pPortmask->bits[0] = halCtrl->valid_portmask;
+    return RT_ERR_OK;
+}

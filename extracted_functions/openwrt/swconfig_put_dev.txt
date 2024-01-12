@@ -1,0 +1,4 @@
+swconfig_put_dev(struct switch_dev *dev)
+{
+	mutex_unlock(&dev->sw_mutex);
+}

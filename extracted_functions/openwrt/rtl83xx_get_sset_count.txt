@@ -1,0 +1,7 @@
+static int rtl83xx_get_sset_count(struct dsa_switch *ds, int port, int sset)
+{
+	if (sset != ETH_SS_STATS)
+		return 0;
+
+	return ARRAY_SIZE(rtl83xx_mib);
+}

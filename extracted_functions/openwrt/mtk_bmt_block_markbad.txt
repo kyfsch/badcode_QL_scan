@@ -1,0 +1,13 @@
+mtk_bmt_block_markbad(struct mtd_info *mtd, loff_t ofs)
+{
+	u16 orig_block = ofs >> bmtd.blk_shift;
+	int block;
+
+	block = bmtd.ops->get_mapping_block(orig_block);
+	if (block < 0)
+		return -EIO;
+
+	mtk_bmt_remap_block(orig_block, block, bmtd.blk_size);
+
+	return bmtd._block_markbad(mtd, (loff_t)block << bmtd.blk_shift);
+}

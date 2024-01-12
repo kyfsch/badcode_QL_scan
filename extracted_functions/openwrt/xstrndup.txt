@@ -1,0 +1,10 @@
+char *xstrndup(const char *s, size_t n)
+{
+	char *p;
+
+	p = strndup(s, n);
+	if (p)
+		return p;
+	fprintf(stderr, "Out of memory.\n");
+	exit(1);
+}

@@ -1,0 +1,18 @@
+static void set_rtl8367s_sgmii(void)
+{
+	rtk_port_mac_ability_t mac_cfg;
+	rtk_mode_ext_t mode;
+
+	mode = MODE_EXT_HSGMII;
+	mac_cfg.forcemode = MAC_FORCE;
+	mac_cfg.speed = PORT_SPEED_2500M;
+	mac_cfg.duplex = PORT_FULL_DUPLEX;
+	mac_cfg.link = PORT_LINKUP;
+	mac_cfg.nway = DISABLED;
+	mac_cfg.txpause = ENABLED;
+	mac_cfg.rxpause = ENABLED;
+	rtk_port_macForceLinkExt_set(EXT_PORT0, mode, &mac_cfg);
+	rtk_port_sgmiiNway_set(EXT_PORT0, DISABLED);
+	rtk_port_phyEnableAll_set(ENABLED);
+
+}

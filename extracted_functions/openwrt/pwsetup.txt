@@ -1,0 +1,18 @@
+pwsetup(out, tpwd, tcnf)
+     struct t_passwd * out;
+     struct t_pwent * tpwd;
+     struct t_confent * tcnf;
+{
+  out->tp.name = tpwd->name;
+  out->tp.password.len = tpwd->password.len;
+  out->tp.password.data = tpwd->password.data;
+  out->tp.salt.len = tpwd->salt.len;
+  out->tp.salt.data = tpwd->salt.data;
+  out->tp.index = tpwd->index;
+
+  out->tc.index = tcnf->index;
+  out->tc.modulus.len = tcnf->modulus.len;
+  out->tc.modulus.data = tcnf->modulus.data;
+  out->tc.generator.len = tcnf->generator.len;
+  out->tc.generator.data = tcnf->generator.data;
+}

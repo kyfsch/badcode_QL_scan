@@ -1,0 +1,4 @@
+int __init ssb_fbs_register(void)
+{
+	return platform_driver_register(&ssb_fbs_driver);
+}

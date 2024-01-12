@@ -1,0 +1,4 @@
+static int aca_fetch_fw(struct dc_ep_priv *priv)
+{
+	return aca_fetch_fw_api(priv, ACA_FW_FILE);
+}

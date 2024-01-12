@@ -1,0 +1,32 @@
+static void sata_oxnas_reset_core(struct ata_host *ah)
+{
+	struct sata_oxnas_host_priv *host_priv = ah->private_data;
+	int n;
+
+	DPRINTK("ENTER\n");
+	clk_prepare_enable(host_priv->clk);
+
+	reset_control_assert(host_priv->rst_sata);
+	reset_control_assert(host_priv->rst_link);
+	reset_control_assert(host_priv->rst_phy);
+
+	udelay(50);
+
+	/* un-reset the PHY, then Link and Controller */
+	reset_control_deassert(host_priv->rst_phy);
+	udelay(50);
+
+	reset_control_deassert(host_priv->rst_sata);
+	reset_control_deassert(host_priv->rst_link);
+	udelay(50);
+
+	workaround5458(ah);
+	/* tune for sata compatibility */
+	sata_oxnas_link_write(ah->ports[0], 0x60, 0x2988);
+
+	for (n = 0; n < host_priv->n_ports; n++) {
+		/* each port in turn */
+		sata_oxnas_link_write(ah->ports[n], 0x70, 0x55629);
+	}
+	udelay(50);
+}

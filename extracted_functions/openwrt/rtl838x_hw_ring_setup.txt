@@ -1,0 +1,10 @@
+static void rtl838x_hw_ring_setup(struct rtl838x_eth_priv *priv)
+{
+	struct ring_b *ring = priv->membase;
+
+	for (int i = 0; i < priv->rxrings; i++)
+		sw_w32(KSEG1ADDR(&ring->rx_r[i]), priv->r->dma_rx_base + i * 4);
+
+	for (int i = 0; i < TXRINGS; i++)
+		sw_w32(KSEG1ADDR(&ring->tx_r[i]), priv->r->dma_tx_base + i * 4);
+}

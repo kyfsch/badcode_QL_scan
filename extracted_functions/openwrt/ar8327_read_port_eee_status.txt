@@ -1,0 +1,18 @@
+ar8327_read_port_eee_status(struct ar8xxx_priv *priv, int port)
+{
+	int phy;
+	u16 t;
+
+	if (port >= priv->dev.ports)
+		return 0;
+
+	if (port == 0 || port == 6)
+		return 0;
+
+	phy = port - 1;
+
+	/* EEE Ability Auto-negotiation Result */
+	t = ar8xxx_phy_mmd_read(priv, phy, 0x7, 0x8000);
+
+	return mmd_eee_adv_to_ethtool_adv_t(t);
+}

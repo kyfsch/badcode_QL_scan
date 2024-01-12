@@ -1,0 +1,20 @@
+check_all_interfaces(void)
+{
+	struct ead_instance *in;
+	struct list_head *p;
+
+	br_foreach_bridge(check_bridge, NULL);
+
+	/* look for interfaces that are no longer part of a bridge */
+	list_for_each(p, &instances) {
+		in = list_entry(p, struct ead_instance, list);
+
+		if (in->br_check) {
+			in->br_check = false;
+		} else if (in->bridge[0]) {
+			DEBUG(2, "removing port %s from bridge %s\n", in->ifname, in->bridge);
+			in->bridge[0] = 0;
+			stop_server(in, false);
+		}
+	}
+}

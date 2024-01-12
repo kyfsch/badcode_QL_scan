@@ -1,0 +1,32 @@
+static void parse_key_names(struct tffs_entry *names_entry,
+			     struct tffs_key_name_table *key_names)
+{
+	uint32_t pos = 0, i = 0;
+	struct tffs_name_table_entry *name_item;
+
+	key_names->entries = NULL;
+
+	do {
+		key_names->entries = realloc(key_names->entries,
+			 sizeof(struct tffs_name_table_entry) * (i + 1));
+		if (key_names->entries == NULL) {
+			fprintf(stderr, "ERROR: memory allocation failed!\n");
+			exit(EXIT_FAILURE);
+		}
+		name_item = &key_names->entries[i];
+
+		name_item->id = read_uint32(names_entry->val, pos);
+		pos += sizeof(uint32_t);
+		name_item->val = strdup((const char *)(names_entry->val + pos));
+
+		/*
+		 * There is no "length" field because the string values are
+		 * simply NULL-terminated -> strlen() gives us the size.
+		 */
+		pos += get_walk_size(strlen(name_item->val) + 1);
+
+		++i;
+	} while (pos < names_entry->len);
+
+	key_names->size = i;
+}

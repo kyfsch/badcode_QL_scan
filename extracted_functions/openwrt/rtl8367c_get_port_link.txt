@@ -1,0 +1,9 @@
+static int rtl8367c_get_port_link(int port, int *link, int *speed, int *duplex)
+{
+	
+	if(rtk_port_phyStatus_get(rtl8367c_sw_to_phy_port(port),(rtk_port_linkStatus_t *)link,
+					(rtk_port_speed_t *)speed,(rtk_port_duplex_t *)duplex))
+		return -EINVAL;
+
+	return 0;
+}

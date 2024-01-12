@@ -1,0 +1,16 @@
+static void print_quoted_string(FILE *out, const char *str)
+{
+	const char *p;
+	int len;
+
+	putc('"', out);
+	while ((p = strchr(str, '"'))) {
+		len = p - str;
+		if (len)
+			fprintf(out, "%.*s", len, str);
+		fputs("\\\"", out);
+		str = p + 1;
+	}
+	fputs(str, out);
+	putc('"', out);
+}

@@ -1,0 +1,6 @@
+static bool nmbm_check_bad_phys_block(struct nmbm_instance *ni, uint32_t ba)
+{
+	uint64_t addr = ba2addr(ni, ba);
+
+	return bmtd._block_isbad(bmtd.mtd, addr);
+}

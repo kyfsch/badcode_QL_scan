@@ -1,0 +1,13 @@
+ret_t rtl8367c_setAsicPortUnknownDaBehavior(rtk_uint32 port, rtk_uint32 behavior)
+{
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    if(behavior >= L2_UNDA_BEHAVE_END)
+        return RT_ERR_NOT_ALLOWED;
+
+    if(port < 8)
+        return rtl8367c_setAsicRegBits(RTL8367C_REG_UNKNOWN_UNICAST_DA_PORT_BEHAVE, RTL8367C_Port0_ACTION_MASK << (port * 2), behavior);
+    else
+        return rtl8367c_setAsicRegBits(RTL8367C_REG_UNKNOWN_UNICAST_DA_PORT_BEHAVE_EXT, RTL8367C_PORT8_ACTION_MASK << ((port-8) * 2), behavior);
+}

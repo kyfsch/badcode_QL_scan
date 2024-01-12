@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_int_polarity_set(rtk_int_polarity_t type)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(type >= INT_POLAR_END)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicInterruptPolarity(type)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

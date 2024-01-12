@@ -1,0 +1,64 @@
+static int aw9523_hw_init(struct aw9523 *awi)
+{
+	u8 p1_pin = AW9523_PINS_PER_PORT;
+	unsigned int val;
+	int ret;
+
+	/* No register caching during initialization */
+	regcache_cache_bypass(awi->regmap, true);
+
+	/* Bring up the chip */
+	ret = aw9523_hw_reset(awi);
+	if (ret) {
+		dev_err(awi->dev, "HW Reset failed: %d\n", ret);
+		return ret;
+	}
+
+	/*
+	 * This is the expected chip and it is running: it's time to
+	 * set a safe default configuration in case the user doesn't
+	 * configure (all of the available) pins in this chip.
+	 * P.S.: The writes order doesn't matter.
+	 */
+
+	/* Set all pins as GPIO */
+	ret = regmap_write(awi->regmap, AW9523_REG_PORT_MODE(0), U8_MAX);
+	if (ret)
+		return ret;
+	ret = regmap_write(awi->regmap, AW9523_REG_PORT_MODE(p1_pin), U8_MAX);
+	if (ret)
+		return ret;
+
+	/* Set Open-Drain mode on Port 0 (Port 1 is always P-P) */
+	ret = regmap_write(awi->regmap, AW9523_REG_GCR, 0);
+	if (ret)
+		return ret;
+
+	/* Set all pins as inputs */
+	ret = regmap_write(awi->regmap, AW9523_REG_CONF_STATE(0), U8_MAX);
+	if (ret)
+		return ret;
+	ret = regmap_write(awi->regmap, AW9523_REG_CONF_STATE(p1_pin), U8_MAX);
+	if (ret)
+		return ret;
+
+	/* Disable all interrupts to avoid unreasoned wakeups */
+	ret = regmap_write(awi->regmap, AW9523_REG_INTR_DIS(0), U8_MAX);
+	if (ret)
+		return ret;
+	ret = regmap_write(awi->regmap, AW9523_REG_INTR_DIS(p1_pin), U8_MAX);
+	if (ret)
+		return ret;
+
+	/* Clear setup-generated interrupts by performing a port state read */
+	ret = aw9523_get_port_state(awi->regmap, 0, 0, &val);
+	if (ret)
+		return ret;
+	ret = aw9523_get_port_state(awi->regmap, p1_pin, 0, &val);
+	if (ret)
+		return ret;
+
+	/* Everything went fine: activate and reinitialize register cache */
+	regcache_cache_bypass(awi->regmap, false);
+	return regmap_reinit_cache(awi->regmap, &aw9523_regmap);
+}

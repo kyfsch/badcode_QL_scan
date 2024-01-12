@@ -1,0 +1,28 @@
+rtk_api_ret_t rtk_svlan_untag_action_get(rtk_svlan_untag_action_t *pAction, rtk_vlan_t *pSvid)
+{
+    rtk_api_ret_t   retVal;
+    rtk_uint32      svidx;
+    rtl8367c_svlan_memconf_t svlanMemConf;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pAction || NULL == pSvid)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicSvlanIngressUntag(pAction)) != RT_ERR_OK)
+        return retVal;
+
+    if(*pAction == UNTAG_ASSIGN)
+    {
+        if ((retVal = rtl8367c_getAsicSvlanUntagVlan(&svidx)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_getAsicSvlanMemberConfiguration(svidx, &svlanMemConf)) != RT_ERR_OK)
+            return retVal;
+
+        *pSvid = svlanMemConf.vs_svid;
+    }
+
+    return RT_ERR_OK;
+}

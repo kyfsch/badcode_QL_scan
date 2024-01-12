@@ -1,0 +1,6 @@
+static void parse_entry(uint8_t *buffer, uint32_t pos,
+			struct tffs_entry *entry)
+{
+	entry->header = (struct tffs_entry_header *) &buffer[pos];
+	entry->val = &buffer[pos + sizeof(struct tffs_entry_header)];
+}

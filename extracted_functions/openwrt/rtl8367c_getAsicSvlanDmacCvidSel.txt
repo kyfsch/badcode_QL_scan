@@ -1,0 +1,10 @@
+ret_t rtl8367c_getAsicSvlanDmacCvidSel(rtk_uint32 port, rtk_uint32* pEnabled)
+{
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(port < 8)
+        return rtl8367c_getAsicRegBit(RTL8367C_REG_SVLAN_CFG, RTL8367C_VS_PORT0_DMACVIDSEL_OFFSET + port, pEnabled);
+    else
+        return rtl8367c_getAsicRegBit(RTL8367C_REG_SVLAN_CFG_EXT, RTL8367C_VS_PORT8_DMACVIDSEL_OFFSET + (port-8), pEnabled);
+}

@@ -1,0 +1,12 @@
+  free(a);
+  return size - j + 1;
+}
+
+/*
+ * Convert a raw byte string into a null-terminated base64 ASCII string.
+ */
+_TYPE( char * )
+t_tob64(dst, src, size)
+     register char *dst, *src;
+     register unsigned size;
+{

@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicMIBsTimer(rtk_uint32 timer)
+{
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_MIB_CTRL4, RTL8367C_MIB_TIMER_MASK, timer);
+}

@@ -1,0 +1,4 @@
+u64 rtl838x_get_port_reg(int reg)
+{
+	return ((u64)sw_r32(reg));
+}

@@ -1,0 +1,5 @@
+void _menu_init(void)
+{
+	current_entry = current_menu = &rootmenu;
+	last_entry_ptr = &rootmenu.list;
+}

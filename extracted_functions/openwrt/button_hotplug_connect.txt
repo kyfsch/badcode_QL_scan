@@ -1,0 +1,45 @@
+static int button_hotplug_connect(struct input_handler *handler,
+		struct input_dev *dev, const struct input_device_id *id)
+{
+	struct bh_priv *priv;
+	int ret;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(button_map); i++)
+		if (test_bit(button_map[i].code, dev->keybit))
+			break;
+
+	if (i == ARRAY_SIZE(button_map))
+		return -ENODEV;
+
+	priv = kzalloc(sizeof(*priv) +
+		       (sizeof(unsigned long) * ARRAY_SIZE(button_map)),
+		       GFP_KERNEL);
+	if (!priv)
+		return -ENOMEM;
+
+	priv->seen = (unsigned long *) &priv[1];
+	priv->handle.private = priv;
+	priv->handle.dev = dev;
+	priv->handle.handler = handler;
+	priv->handle.name = DRV_NAME;
+
+	ret = input_register_handle(&priv->handle);
+	if (ret)
+		goto err_free_priv;
+
+	ret = input_open_device(&priv->handle);
+	if (ret)
+		goto err_unregister_handle;
+
+	BH_DBG("connected to %s\n", dev->name);
+
+	return 0;
+
+ err_unregister_handle:
+	input_unregister_handle(&priv->handle);
+
+ err_free_priv:
+	kfree(priv);
+	return ret;
+}

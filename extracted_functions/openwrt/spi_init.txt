@@ -1,0 +1,13 @@
+int spi_init(unsigned int cs, unsigned int max_hz, unsigned int mode)
+{
+	if (cs >= ESPI_MAX_CS_NUM)
+		return -1;
+
+	spi.espi = (ccsr_espi_t *)CONFIG_SPI_FSL_ESPI_REG_BASE;
+	spi.cs = cs;
+	spi.mode = mode;
+
+	espi_setup_spi(&spi, max_hz);
+
+	return 0;
+}

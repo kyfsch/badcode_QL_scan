@@ -1,0 +1,5 @@
+void put_u32(uint32_t v)
+{
+	put_u16(v >> 16);
+	put_u16(v);
+}

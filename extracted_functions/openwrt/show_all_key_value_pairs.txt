@@ -1,0 +1,22 @@
+static int show_all_key_value_pairs(struct tffs_key_name_table *key_names)
+{
+	uint8_t has_value = 0;
+	struct tffs_entry tmp;
+
+	for (uint32_t i = 0; i < key_names->size; i++) {
+		if (find_entry(key_names->entries[i].id, &tmp)) {
+			printf("%s=", (const char *)key_names->entries[i].val);
+			print_entry_value(&tmp);
+			printf("\n");
+			has_value++;
+			free(tmp.val);
+		}
+	}
+
+	if (!has_value) {
+		fprintf(stderr, "ERROR: no values found!\n");
+		return EXIT_FAILURE;
+	}
+
+	return EXIT_SUCCESS;
+}

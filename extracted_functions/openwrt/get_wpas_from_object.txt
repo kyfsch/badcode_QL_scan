@@ -1,0 +1,4 @@
+static inline struct wpa_supplicant *get_wpas_from_object(struct ubus_object *obj)
+{
+	return container_of(obj, struct wpa_supplicant, ubus.obj);
+}

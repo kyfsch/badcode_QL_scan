@@ -1,0 +1,9 @@
+mt7530_set_port_mirror_rx(struct switch_dev *dev, const struct switch_attr *attr,
+		struct switch_val *val)
+{
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+
+	priv->port_entries[val->port_vlan].mirror_rx = val->value.i;
+
+	return 0;
+}

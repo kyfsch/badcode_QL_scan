@@ -1,0 +1,14 @@
+static void aca_xbar_ia_reject_clr(struct dc_ep_priv *priv, int ia_id)
+{
+	u32 val;
+
+	/* Check reject bit */
+	val = rd32(ACA_AGENT_CTRL(ia_id));
+	if ((val & XBAR_CTRL_REJECT) == 0)
+		return;
+
+	/* Clear reject bit */
+	val &= ~XBAR_CTRL_REJECT;
+	wr32(val, ACA_AGENT_CTRL(ia_id));
+	rd32(ACA_AGENT_CTRL(ia_id));
+}

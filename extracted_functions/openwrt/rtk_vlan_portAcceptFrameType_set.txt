@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_vlan_portAcceptFrameType_set(rtk_port_t port, rtk_vlan_acceptFrameType_t accept_frame_type)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if (accept_frame_type >= ACCEPT_FRAME_TYPE_END)
+        return RT_ERR_VLAN_ACCEPT_FRAME_TYPE;
+
+    if ((retVal = rtl8367c_setAsicVlanAccpetFrameType(rtk_switch_port_L2P_get(port), (rtl8367c_accframetype)accept_frame_type)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,33 @@
+static void sata_oxnas_tf_read(struct ata_port *ap, struct ata_taskfile *tf)
+{
+	struct sata_oxnas_port_priv *port_priv = ap->private_data;
+	void __iomem *port_base = port_priv->port_base;
+	/* read the orb registers */
+	u32 Orb1 = ioread32(port_base + ORB1);
+	u32 Orb2 = ioread32(port_base + ORB2);
+	u32 Orb3 = ioread32(port_base + ORB3);
+	u32 Orb4 = ioread32(port_base + ORB4);
+
+	/* read common 28/48 bit tf parameters */
+	tf->device = (Orb1 >> 24);
+	tf->nsect = (Orb2 >> 0);
+	tf->feature = (Orb2 >> 16);
+	tf->command = sata_oxnas_check_status(ap);
+
+	/* read 48 or 28 bit tf parameters */
+	if (tf->flags & ATA_TFLAG_LBA48) {
+		tf->hob_nsect = (Orb2 >> 8);
+		tf->lbal = (Orb3 >> 0);
+		tf->lbam = (Orb3 >> 8);
+		tf->lbah = (Orb3 >> 16);
+		tf->hob_lbal = (Orb3 >> 24);
+		tf->hob_lbam = (Orb4 >> 0);
+		tf->hob_lbah = (Orb4 >> 8);
+		/* feature ext and control are write only */
+	} else {
+		/* read 28-bit lba */
+		tf->lbal = (Orb3 >> 0);
+		tf->lbam = (Orb3 >> 8);
+		tf->lbah = (Orb3 >> 16);
+	}
+}

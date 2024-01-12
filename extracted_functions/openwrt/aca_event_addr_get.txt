@@ -1,0 +1,10 @@
+static inline void aca_event_addr_get(struct dc_ep_dev *dev,
+	struct aca_event_reg_addr *regs)
+{
+	if (WARN_ON(!dev || !regs))
+		return;
+	if (WARN_ON(!dev->priv))
+		return;
+
+	dc_aca_event_addr_get(dev->priv, regs);
+}

@@ -1,0 +1,77 @@
+swconfig_list_attrs(struct sk_buff *skb, struct genl_info *info)
+{
+	struct genlmsghdr *hdr = nlmsg_data(info->nlhdr);
+	const struct switch_attrlist *alist;
+	struct switch_dev *dev;
+	struct swconfig_callback cb;
+	int err = -EINVAL;
+	int i;
+
+	/* defaults */
+	struct switch_attr *def_list;
+	unsigned long *def_active;
+	int n_def;
+
+	dev = swconfig_get_dev(info);
+	if (!dev)
+		return -EINVAL;
+
+	switch (hdr->cmd) {
+	case SWITCH_CMD_LIST_GLOBAL:
+		alist = &dev->ops->attr_global;
+		def_list = default_global;
+		def_active = &dev->def_global;
+		n_def = ARRAY_SIZE(default_global);
+		break;
+	case SWITCH_CMD_LIST_VLAN:
+		alist = &dev->ops->attr_vlan;
+		def_list = default_vlan;
+		def_active = &dev->def_vlan;
+		n_def = ARRAY_SIZE(default_vlan);
+		break;
+	case SWITCH_CMD_LIST_PORT:
+		alist = &dev->ops->attr_port;
+		def_list = default_port;
+		def_active = &dev->def_port;
+		n_def = ARRAY_SIZE(default_port);
+		break;
+	default:
+		WARN_ON(1);
+		goto out;
+	}
+
+	memset(&cb, 0, sizeof(cb));
+	cb.info = info;
+	cb.fill = swconfig_dump_attr;
+	for (i = 0; i < alist->n_attr; i++) {
+		if (alist->attr[i].disabled)
+			continue;
+		cb.args[0] = i;
+		err = swconfig_send_multipart(&cb, (void *) &alist->attr[i]);
+		if (err < 0)
+			goto error;
+	}
+
+	/* defaults */
+	for (i = 0; i < n_def; i++) {
+		if (!test_bit(i, def_active))
+			continue;
+		cb.args[0] = SWITCH_ATTR_DEFAULTS_OFFSET + i;
+		err = swconfig_send_multipart(&cb, (void *) &def_list[i]);
+		if (err < 0)
+			goto error;
+	}
+	swconfig_put_dev(dev);
+
+	if (!cb.msg)
+		return 0;
+
+	return genlmsg_reply(cb.msg, info);
+
+error:
+	if (cb.msg)
+		nlmsg_free(cb.msg);
+out:
+	swconfig_put_dev(dev);
+	return err;
+}

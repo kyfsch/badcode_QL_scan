@@ -1,0 +1,7 @@
+static void gpio_keys_irq_work_func(struct work_struct *work)
+{
+	struct gpio_keys_button_data *bdata = container_of(work,
+		struct gpio_keys_button_data, work.work);
+
+	gpio_keys_handle_button(bdata);
+}

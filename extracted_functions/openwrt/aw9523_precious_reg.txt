@@ -1,0 +1,7 @@
+static bool aw9523_precious_reg(struct device *dev, unsigned int reg)
+{
+	/* Reading AW9523_REG_IN_STATE clears interrupt status */
+	return aw9523_is_reg_hole(reg) ||
+	       reg == AW9523_REG_IN_STATE(0) ||
+	       reg == AW9523_REG_IN_STATE(AW9523_PINS_PER_PORT);
+}

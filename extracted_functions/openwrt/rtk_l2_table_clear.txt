@@ -1,0 +1,12 @@
+rtk_api_ret_t rtk_l2_table_clear(void)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if ((retVal = rtl8367c_setAsicLutFlushAll()) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

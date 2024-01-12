@@ -1,0 +1,4 @@
+static void rtl8366s_switch_cleanup(struct rtl8366_smi *smi)
+{
+	unregister_switch(&smi->sw_dev);
+}

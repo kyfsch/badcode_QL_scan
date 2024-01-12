@@ -1,0 +1,12 @@
+static int fe_nway_reset(struct net_device *dev)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+
+	if (!priv->phy_dev)
+		goto out_nway_reset;
+
+	return genphy_restart_aneg(priv->phy_dev);
+
+out_nway_reset:
+	return -EOPNOTSUPP;
+}

@@ -1,0 +1,41 @@
+mt7530_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
+{
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+	u32 member;
+	u32 etags;
+	int i;
+
+	val->len = 0;
+
+	if (val->port_vlan < 0 || val->port_vlan >= MT7530_NUM_VLANS)
+		return -EINVAL;
+
+	mt7530_vtcr(priv, 0, val->port_vlan);
+
+	member = mt7530_r32(priv, REG_ESW_VLAN_VAWD1);
+	member >>= 16;
+	member &= 0xff;
+
+	etags = mt7530_r32(priv, REG_ESW_VLAN_VAWD2);
+
+	for (i = 0; i < MT7530_NUM_PORTS; i++) {
+		struct switch_port *p;
+		int etag;
+
+		if (!(member & BIT(i)))
+			continue;
+
+		p = &val->value.ports[val->len++];
+		p->id = i;
+
+		etag = (etags >> (i * 2)) & 0x3;
+
+		if (etag == ETAG_CTRL_TAG)
+			p->flags |= BIT(SWITCH_PORT_FLAG_TAGGED);
+		else if (etag != ETAG_CTRL_UNTAG)
+			printk("vlan %d port %d egress tag control neither untag nor tag: %d.\n",
+					val->port_vlan, i, etag);
+	}
+
+	return 0;
+}

@@ -1,0 +1,36 @@
+static int b53_switch_init_of(struct b53_device *dev)
+{
+	struct device_node *dn, *pn;
+	const char *alias;
+	u32 port_num;
+	u16 ports = 0;
+
+	dn = of_get_child_by_name(dev_of_node(dev->dev), "ports");
+	if (!dn)
+		return -EINVAL;
+
+	for_each_available_child_of_node(dn, pn) {
+		const char *label;
+		int len;
+
+		if (of_property_read_u32(pn, "reg", &port_num))
+			continue;
+
+		if (port_num > B53_CPU_PORT)
+			continue;
+
+		ports |= BIT(port_num);
+
+		label = of_get_property(pn, "label", &len);
+		if (label && !strcmp(label, "cpu"))
+			dev->sw_dev.cpu_port = port_num;
+	}
+
+	dev->enabled_ports = ports;
+
+	if (!of_property_read_string(dev_of_node(dev->dev), "lede,alias",
+						 &alias))
+		dev->sw_dev.alias = devm_kstrdup(dev->dev, alias, GFP_KERNEL);
+
+	return 0;
+}

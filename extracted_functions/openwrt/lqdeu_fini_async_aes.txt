@@ -1,0 +1,15 @@
+void __exit lqdeu_fini_async_aes (void)
+{
+    int i;
+  
+    for (i = 0; i < ARRAY_SIZE(aes_drivers_alg); i++)
+        crypto_unregister_alg(&aes_drivers_alg[i].alg);
+
+    aes_queue->hw_status = AES_COMPLETED;
+
+    DEU_WAKEUP_EVENT(deu_dma_priv.deu_thread_wait, AES_ASYNC_EVENT,
+                                 deu_dma_priv.aes_event_flags);   
+
+    kfree(aes_queue); 
+
+}

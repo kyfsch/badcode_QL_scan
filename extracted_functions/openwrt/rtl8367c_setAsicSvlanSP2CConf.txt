@@ -1,0 +1,29 @@
+ret_t rtl8367c_setAsicSvlanSP2CConf(rtk_uint32 index, rtl8367c_svlan_s2c_t* pSvlanSp2cCfg)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+    rtk_uint16 *accessPtr;
+    rtk_uint32 i;
+    rtk_uint16 smiSvlanSP2C[RTL8367C_SVLAN_SP2C_LEN];
+
+    if(index > RTL8367C_SP2CMAX)
+        return RT_ERR_ENTRY_INDEX;
+
+    memset(smiSvlanSP2C, 0x00, sizeof(rtk_uint16) * RTL8367C_SVLAN_SP2C_LEN);
+    _rtl8367c_svlanSp2cStUser2Smi(pSvlanSp2cCfg,smiSvlanSP2C);
+
+    accessPtr = smiSvlanSP2C;
+
+    regData = *accessPtr;
+    for(i = 0; i < 2; i++)
+    {
+        retVal = rtl8367c_setAsicReg(RTL8367C_SVLAN_S2C_ENTRY_BASE_REG(index) + i, regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        accessPtr ++;
+        regData = *accessPtr;
+    }
+
+    return retVal;
+}

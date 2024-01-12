@@ -1,0 +1,46 @@
+static int rtl8367_read_phy_reg(struct rtl8366_smi *smi,
+				u32 phy_addr, u32 phy_reg, u32 *val)
+{
+	int timeout;
+	u32 data;
+	int err;
+
+	if (phy_addr > RTL8367_PHY_ADDR_MAX)
+		return -EINVAL;
+
+	if (phy_reg > RTL8367_PHY_REG_MAX)
+		return -EINVAL;
+
+	REG_RD(smi, RTL8367_IA_STATUS_REG, &data);
+	if (data & RTL8367_IA_STATUS_PHY_BUSY)
+		return -ETIMEDOUT;
+
+	/* prepare address */
+	REG_WR(smi, RTL8367_IA_ADDRESS_REG,
+	       RTL8367_INTERNAL_PHY_REG(phy_addr, phy_reg));
+
+	/* send read command */
+	REG_WR(smi, RTL8367_IA_CTRL_REG,
+	       RTL8367_IA_CTRL_CMD_MASK | RTL8367_IA_CTRL_RW_READ);
+
+	timeout = 5;
+	do {
+		REG_RD(smi, RTL8367_IA_STATUS_REG, &data);
+		if ((data & RTL8367_IA_STATUS_PHY_BUSY) == 0)
+			break;
+
+		if (timeout--) {
+			dev_err(smi->parent, "phy read timed out\n");
+			return -ETIMEDOUT;
+		}
+
+		udelay(1);
+	} while (1);
+
+	/* read data */
+	REG_RD(smi, RTL8367_IA_READ_DATA_REG, val);
+
+	dev_dbg(smi->parent, "phy_read: addr:%02x, reg:%02x, val:%04x\n",
+		phy_addr, phy_reg, *val);
+	return 0;
+}

@@ -1,0 +1,11 @@
+void rtl838x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, int port,
+					    int queue, u32 rate)
+{
+	if (port > priv->cpu_port)
+		return;
+
+	if (queue > 7)
+		return;
+
+	sw_w32(rate, RTL838X_SCHED_Q_EGR_RATE_CTRL(port, queue));
+}

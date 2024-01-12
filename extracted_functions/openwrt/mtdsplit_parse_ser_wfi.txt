@@ -1,0 +1,94 @@
+static int mtdsplit_parse_ser_wfi(struct mtd_info *master,
+				  const struct mtd_partition **pparts,
+				  struct mtd_part_parser_data *data)
+{
+	struct mtd_partition *parts;
+	struct mtd_info *mtd_bf1, *mtd_bf2;
+	loff_t img1_off = 0;
+	loff_t img2_off = master->size / 2;
+	loff_t img1_size = (img2_off - img1_off);
+	loff_t img2_size = (master->size - img2_off);
+	loff_t active_off, inactive_off;
+	loff_t active_size, inactive_size;
+	const char *inactive_name;
+	uint8_t *buf;
+	int bf1, bf2;
+	int ret;
+
+	mtd_bf1 = get_mtd_device_nm("bootflag1");
+	if (IS_ERR(mtd_bf1))
+		return -ENOENT;
+
+	mtd_bf2 = get_mtd_device_nm("bootflag2");
+	if (IS_ERR(mtd_bf2))
+		return -ENOENT;
+
+	buf = kzalloc(master->erasesize, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	bf1 = sercomm_bootflag_value(mtd_bf1, buf);
+	if (bf1 >= 0)
+		printk("sercomm: bootflag1=%d\n", bf1);
+
+	bf2 = sercomm_bootflag_value(mtd_bf2, buf);
+	if (bf2 >= 0)
+		printk("sercomm: bootflag2=%d\n", bf2);
+
+	if (bf1 == bf2 && bf2 >= 0) {
+		struct erase_info bf_erase;
+
+		bf2 = -ENOENT;
+		bf_erase.addr = 0;
+		bf_erase.len = mtd_bf2->size;
+		mtd_erase(mtd_bf2, &bf_erase);
+	}
+
+	if (bf1 >= bf2) {
+		active_off = img1_off;
+		active_size = img1_size;
+		inactive_off = img2_off;
+		inactive_size = img2_size;
+		inactive_name = PART_IMAGE_2;
+	} else {
+		active_off = img2_off;
+		active_size = img2_size;
+		inactive_off = img1_off;
+		inactive_size = img1_size;
+		inactive_name = PART_IMAGE_1;
+	}
+
+	ret = parse_bcm_wfi(master, pparts, buf, active_off, active_size, false);
+
+	kfree(buf);
+
+	if (ret > 0) {
+		parts = kzalloc((ret + 1) * sizeof(*parts), GFP_KERNEL);
+		if (!parts)
+			return -ENOMEM;
+
+		memcpy(parts, *pparts, ret * sizeof(*parts));
+		kfree(*pparts);
+
+		parts[ret].name = inactive_name;
+		parts[ret].offset = inactive_off;
+		parts[ret].size = inactive_size;
+		ret++;
+
+		*pparts = parts;
+	} else {
+		parts = kzalloc(BCM_WFI_SPLIT_PARTS * sizeof(*parts), GFP_KERNEL);
+
+		parts[0].name = PART_IMAGE_1;
+		parts[0].offset = img1_off;
+		parts[0].size = img1_size;
+
+		parts[1].name = PART_IMAGE_2;
+		parts[1].offset = img2_off;
+		parts[1].size = img2_size;
+
+		*pparts = parts;
+	}
+
+	return ret;
+}

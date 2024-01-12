@@ -1,0 +1,3 @@
+static void print_ciphers(const OBJ_NAME *name,void *arg) {
+    fprintf(arg, "\t%s\n", name->name);
+}

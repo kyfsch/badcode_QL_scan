@@ -1,0 +1,90 @@
+static int ltq_ptm_probe(struct platform_device *pdev)
+{
+    int ret;
+    int i;
+    char ver_str[256];
+    struct port_cell_info port_cell = {0};
+
+    ret = init_priv_data();
+    if ( ret != 0 ) {
+        err("INIT_PRIV_DATA_FAIL");
+        goto INIT_PRIV_DATA_FAIL;
+    }
+
+    ifx_ptm_init_chip(pdev);
+    ret = init_tables();
+    if ( ret != 0 ) {
+        err("INIT_TABLES_FAIL");
+        goto INIT_TABLES_FAIL;
+    }
+
+    for ( i = 0; i < ARRAY_SIZE(g_net_dev); i++ ) {
+        g_net_dev[i] = alloc_netdev(0, g_net_dev_name[i], NET_NAME_UNKNOWN, ether_setup);
+        if ( g_net_dev[i] == NULL )
+            goto ALLOC_NETDEV_FAIL;
+        ptm_setup(g_net_dev[i], i);
+    }
+
+    for ( i = 0; i < ARRAY_SIZE(g_net_dev); i++ ) {
+        ret = register_netdev(g_net_dev[i]);
+        if ( ret != 0 )
+            goto REGISTER_NETDEV_FAIL;
+    }
+
+    /*  register interrupt handler  */
+    ret = request_irq(PPE_MAILBOX_IGU1_INT, mailbox_irq_handler, 0, "ptm_mailbox_isr", &g_ptm_priv_data);
+    if ( ret ) {
+        if ( ret == -EBUSY ) {
+            err("IRQ may be occupied by other driver, please reconfig to disable it.");
+        }
+        else {
+            err("request_irq fail");
+        }
+        goto REQUEST_IRQ_PPE_MAILBOX_IGU1_INT_FAIL;
+    }
+    disable_irq(PPE_MAILBOX_IGU1_INT);
+
+    ret = ifx_pp32_start(0);
+    if ( ret ) {
+        err("ifx_pp32_start fail!");
+        goto PP32_START_FAIL;
+    }
+    IFX_REG_W32(1 << 16, MBOX_IGU1_IER);    //  enable SWAP interrupt
+    IFX_REG_W32(~0, MBOX_IGU1_ISRC);
+
+    enable_irq(PPE_MAILBOX_IGU1_INT);
+
+    ifx_mei_atm_showtime_check(&g_showtime, &port_cell, &g_xdata_addr);
+    if ( g_showtime ) {
+	ptm_showtime_enter(&port_cell, &g_xdata_addr);
+    }
+
+    ifx_mei_atm_showtime_enter = ptm_showtime_enter;
+    ifx_mei_atm_showtime_exit  = ptm_showtime_exit;
+
+    ifx_ptm_version(ver_str);
+    printk(KERN_INFO "%s", ver_str);
+
+    printk("ifxmips_ptm: PTM init succeed\n");
+
+    return 0;
+
+PP32_START_FAIL:
+    free_irq(PPE_MAILBOX_IGU1_INT, &g_ptm_priv_data);
+REQUEST_IRQ_PPE_MAILBOX_IGU1_INT_FAIL:
+    i = ARRAY_SIZE(g_net_dev);
+REGISTER_NETDEV_FAIL:
+    while ( i-- )
+        unregister_netdev(g_net_dev[i]);
+    i = ARRAY_SIZE(g_net_dev);
+ALLOC_NETDEV_FAIL:
+    while ( i-- ) {
+        free_netdev(g_net_dev[i]);
+        g_net_dev[i] = NULL;
+    }
+INIT_TABLES_FAIL:
+INIT_PRIV_DATA_FAIL:
+    clear_priv_data();
+    printk("ifxmips_ptm: PTM init failed\n");
+    return ret;
+}

@@ -1,0 +1,33 @@
+static void adm6996_gpio_write(struct adm6996_priv *priv, int cs, char *buf, unsigned int bits)
+{
+	int i, len = (bits + 7) / 8;
+	u8 mask;
+
+	gpio_set_value(priv->eecs, cs);
+	udelay(EECK_EDGE_TIME);
+
+	/* Byte assemble from MSB to LSB */
+	for (i = 0; i < len; i++) {
+		/* Bit bang from MSB to LSB */
+		for (mask = 0x80; mask && bits > 0; mask >>= 1, bits --) {
+			/* Clock low */
+			gpio_set_value(priv->eesk, 0);
+			udelay(EECK_EDGE_TIME);
+
+			/* Output on rising edge */
+			gpio_set_value(priv->eedi, (mask & buf[i]));
+			udelay(EEDI_SETUP_TIME);
+
+			/* Clock high */
+			gpio_set_value(priv->eesk, 1);
+			udelay(EECK_EDGE_TIME);
+		}
+	}
+
+	/* Clock low */
+	gpio_set_value(priv->eesk, 0);
+	udelay(EECK_EDGE_TIME);
+
+	if (cs)
+		gpio_set_value(priv->eecs, 0);
+}

@@ -1,0 +1,46 @@
+static void rb91x_nand_write(struct rb91x_nand_drvdata *drvdata,
+			     const u8 *buf,
+			     unsigned len)
+{
+	void __iomem *base = drvdata->ath79_gpio_base;
+	u32 oe_reg;
+	u32 out_reg;
+	u32 out;
+	unsigned i;
+
+	rb91x_nand_latch_lock(drvdata, 1);
+	rb91x_nand_rst_key_poll_disable(drvdata, 1);
+
+	oe_reg = __raw_readl(base + AR71XX_GPIO_REG_OE);
+	out_reg = __raw_readl(base + AR71XX_GPIO_REG_OUT);
+
+	/* Set data lines to output mode */
+	__raw_writel(oe_reg & ~(RB91X_NAND_DATA_BITS | RB91X_NAND_NRW_BIT),
+		     base + AR71XX_GPIO_REG_OE);
+
+	out = out_reg & ~(RB91X_NAND_DATA_BITS | RB91X_NAND_NRW_BIT);
+	for (i = 0; i != len; i++) {
+		u32 data;
+
+		data = (buf[i] & RB91X_NAND_HIGH_DATA_MASK) <<
+			RB91X_NAND_HIGH_DATA_SHIFT;
+		data |= buf[i] & RB91X_NAND_LOW_DATA_MASK;
+		data |= out;
+		__raw_writel(data, base + AR71XX_GPIO_REG_OUT);
+
+		/* Deactivate WE line */
+		data |= RB91X_NAND_NRW_BIT;
+		__raw_writel(data, base + AR71XX_GPIO_REG_OUT);
+		/* Flush write */
+		__raw_readl(base + AR71XX_GPIO_REG_OUT);
+	}
+
+	/* Restore registers */
+	__raw_writel(out_reg, base + AR71XX_GPIO_REG_OUT);
+	__raw_writel(oe_reg, base + AR71XX_GPIO_REG_OE);
+	/* Flush write */
+	__raw_readl(base + AR71XX_GPIO_REG_OUT);
+
+	rb91x_nand_rst_key_poll_disable(drvdata, 0);
+	rb91x_nand_latch_lock(drvdata, 0);
+}

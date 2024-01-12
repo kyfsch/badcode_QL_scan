@@ -1,0 +1,36 @@
+static void ar934x_nfc_send_erase(struct ar934x_nfc *nfc, unsigned command,
+				  int column, int page_addr)
+{
+	u32 addr0, addr1;
+	u32 ctrl_reg;
+	u32 cmd_reg;
+
+	ar934x_nfc_get_addr(nfc, column, page_addr, &addr0, &addr1);
+
+	ctrl_reg = nfc->ctrl_reg;
+	if (nfc->small_page) {
+		/* override number of address cycles for the erase command */
+		ctrl_reg &= ~(AR934X_NFC_CTRL_ADDR_CYCLE0_M <<
+			      AR934X_NFC_CTRL_ADDR_CYCLE0_S);
+		ctrl_reg &= ~(AR934X_NFC_CTRL_ADDR_CYCLE1_M <<
+			      AR934X_NFC_CTRL_ADDR_CYCLE1_S);
+		ctrl_reg &= ~(AR934X_NFC_CTRL_SMALL_PAGE);
+		ctrl_reg |= (nfc->addr_count0 + 1) <<
+			    AR934X_NFC_CTRL_ADDR_CYCLE0_S;
+	}
+
+	cmd_reg = NAND_CMD_ERASE1 << AR934X_NFC_CMD_CMD0_S;
+	cmd_reg |= command << AR934X_NFC_CMD_CMD1_S;
+	cmd_reg |= AR934X_NFC_CMD_SEQ_ERASE;
+
+	nfc_dbg(nfc, "erase page %d, a0:%08x a1:%08x cmd:%08x ctrl:%08x\n",
+		page_addr, addr0, addr1, cmd_reg, ctrl_reg);
+
+	ar934x_nfc_wr(nfc, AR934X_NFC_REG_INT_STATUS, 0);
+	ar934x_nfc_wr(nfc, AR934X_NFC_REG_CTRL, ctrl_reg);
+	ar934x_nfc_wr(nfc, AR934X_NFC_REG_ADDR0_0, addr0);
+	ar934x_nfc_wr(nfc, AR934X_NFC_REG_ADDR0_1, addr1);
+
+	ar934x_nfc_write_cmd_reg(nfc, cmd_reg);
+	ar934x_nfc_wait_dev_ready(nfc);
+}

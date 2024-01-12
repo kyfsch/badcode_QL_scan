@@ -1,0 +1,12 @@
+swlib_alloc(size_t size)
+{
+	void *ptr;
+
+	ptr = malloc(size);
+	if (!ptr)
+		goto done;
+	memset(ptr, 0, size);
+
+done:
+	return ptr;
+}

@@ -1,0 +1,16 @@
+static void band_border_status(int fd, DSL_AccessDir_t direction) {
+	IOCTL(DSL_BandBorderStatus_t, DSL_FIO_BAND_BORDER_STATUS_GET);
+
+	void *c, *c2;
+
+	c = blobmsg_open_array(&b, "limits");
+
+	for (size_t i = 0; i < out.data.nNumData; i++) {
+		c2 = blobmsg_open_table(&b, "");
+		blobmsg_add_u16(&b, "first", out.data.nBandLimits[i].nFirstToneIndex);
+		blobmsg_add_u16(&b, "last", out.data.nBandLimits[i].nLastToneIndex);
+		blobmsg_close_table(&b, c2);
+	}
+
+	blobmsg_close_array(&b, c);
+}

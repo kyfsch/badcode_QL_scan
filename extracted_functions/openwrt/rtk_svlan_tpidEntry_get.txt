@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_svlan_tpidEntry_get(rtk_svlan_tpid_t *pSvlan_tag_id)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pSvlan_tag_id)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicSvlanTpid(pSvlan_tag_id)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

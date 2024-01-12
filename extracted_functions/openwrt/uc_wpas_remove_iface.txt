@@ -1,0 +1,23 @@
+uc_wpas_remove_iface(uc_vm_t *vm, size_t nargs)
+{
+	struct wpa_supplicant *wpa_s = NULL;
+	uc_value_t *ifname_arg = uc_fn_arg(0);
+	const char *ifname = ucv_string_get(ifname_arg);
+	int ret = -1;
+
+	if (!ifname)
+		goto out;
+
+	for (wpa_s = wpa_global->ifaces; wpa_s; wpa_s = wpa_s->next)
+		if (!strcmp(wpa_s->ifname, ifname))
+			break;
+
+	if (!wpa_s)
+		goto out;
+
+	ret = wpa_supplicant_remove_iface(wpa_global, wpa_s, 0);
+	wpas_ucode_update_interfaces();
+
+out:
+	return ucv_int64_new(ret);
+}

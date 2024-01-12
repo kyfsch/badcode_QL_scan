@@ -1,0 +1,9 @@
+static int rtl9300_serdes_probe(struct phy_device *phydev)
+{
+	if (soc_info.family != RTL9300_FAMILY_ID)
+		return -ENODEV;
+
+	phydev_info(phydev, "Detected internal RTL9300 Serdes\n");
+
+	return rtl9300_configure_serdes(phydev);
+}

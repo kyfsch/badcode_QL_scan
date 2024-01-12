@@ -1,0 +1,64 @@
+static rtk_api_ret_t _rtk_switch_init_8364b(void)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+
+    /*enable EEE, include mac & phy*/
+
+    if ((retVal = rtl8367c_setAsicRegBits(0x38, 0x300, 3)) != RT_ERR_OK)
+        return retVal;
+    if ((retVal = rtl8367c_setAsicRegBits(0x78, 0x300, 3)) != RT_ERR_OK)
+        return retVal;
+    if ((retVal = rtl8367c_setAsicRegBits(0xd8, 0x300, 0)) != RT_ERR_OK)
+        return retVal;
+    if ((retVal = rtl8367c_setAsicRegBits(0xf8, 0x300, 0)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicPHYOCPReg(1, 0xa5d0, 6)) != RT_ERR_OK)
+        return retVal;
+    if ((retVal = rtl8367c_setAsicPHYOCPReg(3, 0xa5d0, 6)) != RT_ERR_OK)
+        return retVal;
+
+    /*PAD para*/
+
+    /*EXT1 PAD Para*/
+    if ((retVal = rtl8367c_getAsicReg(0x1303, &regData)) != RT_ERR_OK)
+        return retVal;
+    regData &= 0xFFFFFFFE;
+    regData |= 0x250;
+    if((retVal = rtl8367c_setAsicReg(0x1303, regData)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicRegBits(0x1304, 0x7000, 0)) != RT_ERR_OK)
+        return retVal;
+    if ((retVal = rtl8367c_setAsicRegBits(0x1304, 0x700, 7)) != RT_ERR_OK)
+        return retVal;
+    if ((retVal = rtl8367c_setAsicRegBits(0x13f9, 0x38, 0)) != RT_ERR_OK)
+        return retVal;
+
+    /*EXT2 PAD Para*/
+    if ((retVal = rtl8367c_setAsicRegBit(0x1303, 10, 1)) != RT_ERR_OK)
+        return retVal;
+    if ((retVal = rtl8367c_setAsicRegBits(0x13E2, 0x1ff, 0x26)) != RT_ERR_OK)
+        return retVal;
+    if ((retVal = rtl8367c_setAsicRegBits(0x13f9, 0x1c0, 0)) != RT_ERR_OK)
+        return retVal;
+
+
+    /*SDS PATCH*/
+    /*SP_CFG_EN_LINK_FIB1G*/
+    if((retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &regData)) != RT_ERR_OK)
+        return retVal;
+    regData |= 0x4;
+    if((retVal = rtl8367c_setAsicSdsReg(0,4,0, regData)) != RT_ERR_OK)
+        return retVal;
+
+    /*FIB100 Down-speed*/
+    if((retVal = rtl8367c_getAsicSdsReg(0, 1, 0, &regData)) != RT_ERR_OK)
+        return retVal;
+    regData |= 0x20;
+    if((retVal = rtl8367c_setAsicSdsReg(0,1,0, regData)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

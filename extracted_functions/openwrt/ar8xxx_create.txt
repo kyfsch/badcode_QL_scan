@@ -1,0 +1,14 @@
+ar8xxx_create(void)
+{
+	struct ar8xxx_priv *priv;
+
+	priv = kzalloc(sizeof(struct ar8xxx_priv), GFP_KERNEL);
+	if (priv == NULL)
+		return NULL;
+
+	mutex_init(&priv->reg_mutex);
+	mutex_init(&priv->mib_lock);
+	INIT_DELAYED_WORK(&priv->mib_work, ar8xxx_mib_work_func);
+
+	return priv;
+}

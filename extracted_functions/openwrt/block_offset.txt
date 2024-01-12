@@ -1,0 +1,5 @@
+static inline size_t block_offset(int block)
+{
+	return VFS_ERASEBLOCK_SIZE * (block / (VFS_BLOCKS_PER_ERASEBLOCK-1))
+		+ VFS_BLOCK_SIZE * (1 + (block % (VFS_BLOCKS_PER_ERASEBLOCK-1)));
+}

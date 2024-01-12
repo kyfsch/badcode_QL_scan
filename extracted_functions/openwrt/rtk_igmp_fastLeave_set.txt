@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_igmp_fastLeave_set(rtk_enable_t state)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(state >= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicIGMPFastLeaveEn((rtk_uint32)state))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

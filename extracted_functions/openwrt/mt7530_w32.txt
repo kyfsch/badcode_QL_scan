@@ -1,0 +1,14 @@
+mt7530_w32(struct mt7530_priv *priv, u32 reg, u32 val)
+{
+	if (priv->bus) {
+		mutex_lock(&priv->bus->mdio_lock);
+		__mdiobus_write(priv->bus, 0x1f, 0x1f, (reg >> 6) & 0x3ff);
+		__mdiobus_write(priv->bus, 0x1f, (reg >> 2) & 0xf,  val & 0xffff);
+		__mdiobus_write(priv->bus, 0x1f, 0x10, val >> 16);
+		mutex_unlock(&priv->bus->mdio_lock);
+		return;
+	}
+
+	pr_debug("MT7530 MDIO Write[%04x]=%08x\n", reg, val);
+	iowrite32(val, priv->base + reg);
+}

@@ -1,0 +1,42 @@
+uc_hostapd_bss_delete(uc_vm_t *vm, size_t nargs)
+{
+	struct hostapd_data *hapd = uc_fn_thisval("hostapd.bss");
+	struct hostapd_iface *iface;
+	int i, idx;
+
+	if (!hapd)
+		return NULL;
+
+	iface = hapd->iface;
+	if (iface->num_bss == 1) {
+		wpa_printf(MSG_ERROR, "trying to delete last bss of an iface: %s\n", hapd->conf->iface);
+		return NULL;
+	}
+
+	for (idx = 0; idx < iface->num_bss; idx++)
+		if (iface->bss[idx] == hapd)
+			break;
+
+	if (idx == iface->num_bss)
+		return NULL;
+
+	for (i = idx + 1; i < iface->num_bss; i++)
+		iface->bss[i - 1] = iface->bss[i];
+
+	iface->num_bss--;
+
+	iface->bss[0]->interface_added = 0;
+	hostapd_drv_set_first_bss(iface->bss[0]);
+	hapd->interface_added = 1;
+
+	hostapd_drv_stop_ap(hapd);
+	hostapd_bss_deinit(hapd);
+	hostapd_remove_iface_bss_conf(iface->conf, hapd->conf);
+	hostapd_config_free_bss(hapd->conf);
+	os_free(hapd);
+
+	hostapd_ucode_update_interfaces();
+	ucv_gc(vm);
+
+	return NULL;
+}

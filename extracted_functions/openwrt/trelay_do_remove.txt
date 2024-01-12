@@ -1,0 +1,20 @@
+static int trelay_do_remove(struct trelay *tr)
+{
+	list_del(&tr->list);
+
+	/* First and before all, ensure that the debugfs file is removed
+	 * to prevent dangling pointer in file->private_data */
+	debugfs_remove_recursive(tr->debugfs);
+
+	dev_put(tr->dev1);
+	dev_put(tr->dev2);
+
+	netdev_rx_handler_unregister(tr->dev1);
+	netdev_rx_handler_unregister(tr->dev2);
+
+	trelay_log(KERN_INFO, tr, "stopped");
+
+	kfree(tr);
+
+	return 0;
+}

@@ -1,0 +1,8 @@
+static u8 msdc_dma_calcs(u8 *buf, u32 len)
+{
+	u32 i, sum = 0;
+
+	for (i = 0; i < len; i++)
+		sum += buf[i];
+	return 0xFF - (u8)sum;
+}

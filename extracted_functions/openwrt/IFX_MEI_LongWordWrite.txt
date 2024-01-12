@@ -1,0 +1,6 @@
+IFX_MEI_LongWordWrite (u32 ul_address, u32 ul_data)
+{
+	IFX_MEI_WRITE_REGISTER_L (ul_data, ul_address);
+	wmb();
+	return;
+}

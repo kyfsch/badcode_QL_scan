@@ -1,0 +1,12 @@
+static int block_load_image_ext4_os(void)
+{
+	int err;
+
+	err = ext4_read_file(CONFIG_SPL_EXT4_LOAD_ARGS_NAME,
+			    (void *)CONFIG_SYS_SPL_ARGS_ADDR, 0, 0);
+	if (err <= 0) {
+		return -1;
+	}
+
+	return block_load_image_ext4(CONFIG_SPL_EXT4_LOAD_KERNEL_NAME);
+}

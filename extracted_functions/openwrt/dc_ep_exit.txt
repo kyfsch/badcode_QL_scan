@@ -1,0 +1,7 @@
+static void __exit dc_ep_exit(void)
+{
+	pci_unregister_driver(&dc_ep_driver);
+
+	pr_info("%s: %s driver unloaded\n", __func__,
+		dc_ep_driver_name);
+}

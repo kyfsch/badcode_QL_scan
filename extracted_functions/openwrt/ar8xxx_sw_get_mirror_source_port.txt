@@ -1,0 +1,8 @@
+ar8xxx_sw_get_mirror_source_port(struct switch_dev *dev,
+				 const struct switch_attr *attr,
+				 struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	val->value.i = priv->source_port;
+	return 0;
+}

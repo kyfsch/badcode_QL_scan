@@ -1,0 +1,17 @@
+ret_t rtl8367c_getAsicCputagTrapPort(rtk_uint32 *pPort)
+{
+    ret_t retVal;
+    rtk_uint32 tmpPort;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_CPU_CTRL, RTL8367C_CPU_TRAP_PORT_MASK, &tmpPort);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+    *pPort = tmpPort;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_CPU_CTRL, RTL8367C_CPU_TRAP_PORT_EXT_MASK, &tmpPort);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+    *pPort |= (tmpPort & 1) << 3;
+
+    return RT_ERR_OK;
+}

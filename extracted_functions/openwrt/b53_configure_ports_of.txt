@@ -1,0 +1,80 @@
+static int b53_configure_ports_of(struct b53_device *dev)
+{
+	struct device_node *dn, *pn;
+	u32 port_num;
+
+	dn = of_get_child_by_name(dev_of_node(dev->dev), "ports");
+
+	for_each_available_child_of_node(dn, pn) {
+		struct device_node *fixed_link;
+
+		if (of_property_read_u32(pn, "reg", &port_num))
+			continue;
+
+		if (port_num > B53_CPU_PORT)
+			continue;
+
+		fixed_link = of_get_child_by_name(pn, "fixed-link");
+		if (fixed_link) {
+			u32 spd;
+			u8 po = GMII_PO_LINK;
+			phy_interface_t mode;
+
+			of_get_phy_mode(pn, &mode);
+
+			if (!of_property_read_u32(fixed_link, "speed", &spd)) {
+				switch (spd) {
+				case 10:
+					po |= GMII_PO_SPEED_10M;
+					break;
+				case 100:
+					po |= GMII_PO_SPEED_100M;
+					break;
+				case 2000:
+					if (is_imp_port(dev, port_num))
+						po |= PORT_OVERRIDE_SPEED_2000M;
+					else
+						po |= GMII_PO_SPEED_2000M;
+					fallthrough;
+				case 1000:
+					po |= GMII_PO_SPEED_1000M;
+					break;
+				}
+			}
+
+			if (of_property_read_bool(fixed_link, "full-duplex"))
+				po |= PORT_OVERRIDE_FULL_DUPLEX;
+			if (of_property_read_bool(fixed_link, "pause"))
+				po |= GMII_PO_RX_FLOW;
+			if (of_property_read_bool(fixed_link, "asym-pause"))
+				po |= GMII_PO_TX_FLOW;
+
+			if (is_imp_port(dev, port_num)) {
+				po |= PORT_OVERRIDE_EN;
+
+				if (is5325(dev) &&
+				    mode == PHY_INTERFACE_MODE_REVMII)
+					po |= PORT_OVERRIDE_RV_MII_25;
+
+				b53_write8(dev, B53_CTRL_PAGE,
+					   B53_PORT_OVERRIDE_CTRL, po);
+
+				if (is5325(dev) &&
+				    mode == PHY_INTERFACE_MODE_REVMII) {
+					b53_read8(dev, B53_CTRL_PAGE,
+						  B53_PORT_OVERRIDE_CTRL, &po);
+					if (!(po & PORT_OVERRIDE_RV_MII_25))
+					pr_err("Failed to enable reverse MII mode\n");
+					return -EINVAL;
+				}
+			} else {
+				po |= GMII_PO_EN;
+				b53_write8(dev, B53_CTRL_PAGE,
+					   B53_GMII_PORT_OVERRIDE_CTRL(port_num),
+					   po);
+			}
+		}
+	}
+
+	return 0;
+}

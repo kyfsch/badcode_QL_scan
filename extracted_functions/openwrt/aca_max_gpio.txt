@@ -1,0 +1,4 @@
+static int aca_max_gpio(struct dc_ep_priv *priv)
+{
+	return fls(rd32(PADC_AVAIL));
+}

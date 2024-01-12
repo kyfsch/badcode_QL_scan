@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicMaxTotalPage(rtk_uint32 *pPageCount)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_FLOWCTRL_TOTAL_PAGE_MAX, RTL8367C_FLOWCTRL_TOTAL_PAGE_MAX_MASK, pPageCount);
+}

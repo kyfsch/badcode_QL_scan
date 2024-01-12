@@ -1,0 +1,9 @@
+static inline void icu_enable_intr(struct dc_ep_dev *dev, u32 bits)
+{
+	if (WARN_ON(!dev))
+		return;
+	if (WARN_ON(!dev->priv))
+		return;
+
+	dc_ep_icu_en_intr(dev->priv, bits);
+}

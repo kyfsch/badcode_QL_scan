@@ -1,0 +1,4 @@
+static void __exit rtl8366rb_module_exit(void)
+{
+	platform_driver_unregister(&rtl8366rb_driver);
+}

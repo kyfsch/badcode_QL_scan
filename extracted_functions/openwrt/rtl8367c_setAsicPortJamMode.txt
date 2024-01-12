@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicPortJamMode(rtk_uint32 mode)
+{
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_CFG_BACKPRESSURE, RTL8367C_LONGTXE_OFFSET,mode);
+}

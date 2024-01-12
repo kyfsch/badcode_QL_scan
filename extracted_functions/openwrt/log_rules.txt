@@ -1,0 +1,12 @@
+void log_rules(rule_t *rules)
+{
+	rule_t *rule = rules;
+	while (rule)
+	{
+		syslog(LOG_INFO, " %s r: %d..%d, o: %d, f: %d\n",
+			rule->led->sysfspath,
+			rule->minq, rule->maxq,
+			rule->boffset, rule->bfactor);
+		rule = rule->next;
+	}
+}

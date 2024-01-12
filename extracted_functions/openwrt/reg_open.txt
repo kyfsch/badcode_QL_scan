@@ -1,0 +1,4 @@
+static int reg_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, reg_show, 0);
+}

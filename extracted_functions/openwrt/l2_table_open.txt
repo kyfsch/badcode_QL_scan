@@ -1,0 +1,4 @@
+static int l2_table_open(struct inode *inode, struct file *filp)
+{
+	return single_open(filp, l2_table_show, inode->i_private);
+}

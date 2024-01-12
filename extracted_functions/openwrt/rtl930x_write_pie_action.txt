@@ -1,0 +1,36 @@
+static void rtl930x_write_pie_action(u32 r[],  struct pie_rule *pr)
+{
+	/* Either drop or forward */
+	if (pr->drop) {
+		r[14] |= BIT(24) | BIT(25) | BIT(26); /* Do Green, Yellow and Red drops */
+		/* Actually DROP, not PERMIT in Green / Yellow / Red */
+		r[14] |= BIT(23) | BIT(22) | BIT(20);
+	} else {
+		r[14] |= pr->fwd_sel ? BIT(27) : 0;
+		r[14] |= pr->fwd_act << 18;
+		r[14] |= BIT(14); /* We overwrite any drop */
+	}
+	if (pr->phase == PHASE_VACL)
+		r[14] |= pr->fwd_sa_lrn ? BIT(15) : 0;
+	r[13] |= pr->bypass_sel ? BIT(5) : 0;
+	r[13] |= pr->nopri_sel ? BIT(4) : 0;
+	r[13] |= pr->tagst_sel ? BIT(3) : 0;
+	r[13] |= pr->ovid_sel ? BIT(1) : 0;
+	r[14] |= pr->ivid_sel ? BIT(31) : 0;
+	r[14] |= pr->meter_sel ? BIT(30) : 0;
+	r[14] |= pr->mir_sel ? BIT(29) : 0;
+	r[14] |= pr->log_sel ? BIT(28) : 0;
+
+	r[14] |= ((u32)(pr->fwd_data & 0x3fff)) << 3;
+	r[15] |= pr->log_octets ? BIT(31) : 0;
+	r[15] |= (u32)(pr->meter_data) << 23;
+
+	r[15] |= ((u32)(pr->ivid_act) << 21) & 0x3;
+	r[15] |= ((u32)(pr->ivid_data) << 9) & 0xfff;
+	r[16] |= ((u32)(pr->ovid_act) << 30) & 0x3;
+	r[16] |= ((u32)(pr->ovid_data) & 0xfff) << 16;
+	r[16] |= (pr->mir_data & 0x3) << 6;
+	r[17] |= ((u32)(pr->tagst_data) & 0xf) << 28;
+	r[17] |= ((u32)(pr->nopri_data) & 0x7) << 25;
+	r[17] |= pr->bypass_ibc_sc ? BIT(16) : 0;
+}

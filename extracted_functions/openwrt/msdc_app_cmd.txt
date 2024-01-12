@@ -1,0 +1,22 @@
+static int msdc_app_cmd(struct mmc_host *mmc, struct msdc_host *host)
+{
+	struct mmc_command cmd;
+	struct mmc_request mrq;
+	u32 err;
+
+	memset(&cmd, 0, sizeof(struct mmc_command));
+	cmd.opcode = MMC_APP_CMD;
+#if 0   /* bug: we meet mmc->card is null when ACMD6 */
+	cmd.arg = mmc->card->rca << 16;
+#else
+	cmd.arg = host->app_cmd_arg;
+#endif
+	cmd.flags = MMC_RSP_SPI_R1 | MMC_RSP_R1 | MMC_CMD_AC;
+
+	memset(&mrq, 0, sizeof(struct mmc_request));
+	mrq.cmd = &cmd; cmd.mrq = &mrq;
+	cmd.data = NULL;
+
+	err = msdc_do_command(host, &cmd, 0, CMD_TIMEOUT);
+	return err;
+}

@@ -1,0 +1,18 @@
+static int msdc_debug_proc_read(struct seq_file *s, void *p)
+{
+	seq_puts(s, "\n=========================================\n");
+	seq_puts(s, "Index<0> + Id + Zone\n");
+	seq_puts(s, "-> PWR<9> WRN<8> | FIO<7> OPS<6> FUN<5> CFG<4> | INT<3> RSP<2> CMD<1> DMA<0>\n");
+	seq_puts(s, "-> echo 0 3 0x3ff >msdc_bebug -> host[3] debug zone set to 0x3ff\n");
+	seq_printf(s, "-> MSDC[0] Zone: 0x%.8x\n", sd_debug_zone[0]);
+	seq_printf(s, "-> MSDC[1] Zone: 0x%.8x\n", sd_debug_zone[1]);
+	seq_printf(s, "-> MSDC[2] Zone: 0x%.8x\n", sd_debug_zone[2]);
+	seq_printf(s, "-> MSDC[3] Zone: 0x%.8x\n", sd_debug_zone[3]);
+
+	seq_puts(s, "Index<3> + SDIO_PROFILE + TIME\n");
+	seq_puts(s, "-> echo 3 1 0x1E >msdc_bebug -> enable sdio_profile, 30s\n");
+	seq_printf(s, "-> SDIO_PROFILE<%d> TIME<%ds>\n", sdio_pro_enable, sdio_pro_time);
+	seq_puts(s, "=========================================\n\n");
+
+	return 0;
+}

@@ -1,0 +1,12 @@
+static void do_reboot(void)
+{
+	fprintf(stderr, "Rebooting ...\n");
+	fflush(stderr);
+
+	/* try regular reboot method first */
+	system("/sbin/reboot");
+	sleep(2);
+
+	/* if we're still alive at this point, force the kernel to reboot */
+	syscall(SYS_reboot,LINUX_REBOOT_MAGIC1,LINUX_REBOOT_MAGIC2,LINUX_REBOOT_CMD_RESTART,NULL);
+}

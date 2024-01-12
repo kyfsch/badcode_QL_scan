@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_igmp_queryInterval_set(rtk_uint32 interval)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(interval > RTL8367C_MAX_QUERY_INT)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicIGMPQueryInterval(interval))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

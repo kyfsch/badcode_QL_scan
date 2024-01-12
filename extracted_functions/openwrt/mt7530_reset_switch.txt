@@ -1,0 +1,17 @@
+mt7530_reset_switch(struct switch_dev *dev)
+{
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+	int i;
+
+	memset(priv->port_entries, 0, sizeof(priv->port_entries));
+	memset(priv->vlan_entries, 0, sizeof(priv->vlan_entries));
+
+	/* set default vid of each vlan to the same number of vlan, so the vid
+	 * won't need be set explicitly.
+	 */
+	for (i = 0; i < MT7530_NUM_VLANS; i++) {
+		priv->vlan_entries[i].vid = i;
+	}
+
+	return 0;
+}

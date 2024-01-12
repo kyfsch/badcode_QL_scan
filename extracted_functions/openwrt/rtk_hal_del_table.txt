@@ -1,0 +1,23 @@
+void rtk_hal_del_table(struct ra_switch_ioctl_data *data)
+{
+	rtk_api_ret_t ret;
+	rtk_l2_ucastAddr_t l2_entry;
+	rtk_mac_t mac;
+
+	mac.octet[0] =data->mac[0];
+	mac.octet[1] =data->mac[1];
+	mac.octet[2] =data->mac[2];
+	mac.octet[3] =data->mac[3];
+	mac.octet[4] =data->mac[4];
+	mac.octet[5] =data->mac[5];
+
+	memset(&l2_entry, 0x00, sizeof(rtk_l2_ucastAddr_t));
+	l2_entry.port = data->port;
+	l2_entry.ivl = 1;
+	l2_entry.cvid = data->vid;
+	l2_entry.fid = 0;
+	l2_entry.efid = 0;
+	ret = rtk_l2_addr_del(&mac, &l2_entry);
+	if (ret != RT_ERR_OK)
+		printk("rtk_hal_add_table failed\n");
+}

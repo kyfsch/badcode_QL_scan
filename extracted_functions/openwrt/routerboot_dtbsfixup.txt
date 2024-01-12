@@ -1,0 +1,26 @@
+static int routerboot_dtbsfixup(struct mtd_info *, struct routerboot_dynpart *);
+
+static struct routerboot_dynpart rb_dynparts[] = {
+	{
+		.name = "hard_config",
+		.magic = RB_MAGIC_HARD,	// stored in CPU-endianness on flash
+		.size_fixup = NULL,
+		.offset = 0x0,
+		.size = RB_BLOCK_SIZE,
+		.found = false,
+	}, {
+		.name = "soft_config",
+		.magic = RB_MAGIC_SOFT,	// stored in CPU-endianness on flash
+		.size_fixup = NULL,
+		.offset = 0x0,
+		.size = RB_BLOCK_SIZE,
+		.found = false,
+	}, {
+		.name = "dtb_config",
+		.magic = fdt32_to_cpu(OF_DT_HEADER),	// stored BE on flash
+		.size_fixup = routerboot_dtbsfixup,
+		.offset = 0x0,
+		.size = 0x0,
+		.found = false,
+	}
+};

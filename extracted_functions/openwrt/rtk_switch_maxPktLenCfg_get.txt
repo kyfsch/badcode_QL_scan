@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_switch_maxPktLenCfg_get(rtk_uint32 cfgId, rtk_uint32 *pPktLen)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(cfgId > MAXPKTLEN_CFG_ID_MAX)
+        return RT_ERR_INPUT;
+
+    if(NULL == pPktLen)
+        return RT_ERR_NULL_POINTER;
+
+    if((retVal = rtl8367c_getAsicMaxLengthCfg(cfgId, pPktLen)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

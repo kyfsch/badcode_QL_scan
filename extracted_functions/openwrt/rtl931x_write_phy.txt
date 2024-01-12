@@ -1,0 +1,36 @@
+int rtl931x_write_phy(u32 port, u32 page, u32 reg, u32 val)
+{
+	u32 v;
+	int err = 0;
+
+	val &= 0xffff;
+	if (port > 63 || page > 4095 || reg > 31)
+		return -ENOTSUPP;
+
+	mutex_lock(&smi_lock);
+	pr_debug("%s: writing to phy %d %d %d %d\n", __func__, port, page, reg, val);
+	/* Clear both port registers */
+	sw_w32(0, RTL931X_SMI_INDRT_ACCESS_CTRL_2);
+	sw_w32(0, RTL931X_SMI_INDRT_ACCESS_CTRL_2 + 4);
+	sw_w32_mask(0, BIT(port % 32), RTL931X_SMI_INDRT_ACCESS_CTRL_2 + (port / 32) * 4);
+
+	sw_w32_mask(0xffff, val, RTL931X_SMI_INDRT_ACCESS_CTRL_3);
+
+	v = reg << 6 | page << 11 ;
+	sw_w32(v, RTL931X_SMI_INDRT_ACCESS_CTRL_0);
+
+	sw_w32(0x1ff, RTL931X_SMI_INDRT_ACCESS_CTRL_1);
+
+	v |= BIT(4) | 1; /* Write operation and execute */
+	sw_w32(v, RTL931X_SMI_INDRT_ACCESS_CTRL_0);
+
+	do {
+	} while (sw_r32(RTL931X_SMI_INDRT_ACCESS_CTRL_0) & 0x1);
+
+	if (sw_r32(RTL931X_SMI_INDRT_ACCESS_CTRL_0) & 0x2)
+		err = -EIO;
+
+	mutex_unlock(&smi_lock);
+
+	return err;
+}

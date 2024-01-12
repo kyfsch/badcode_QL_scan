@@ -1,0 +1,71 @@
+rtk_api_ret_t rtk_switch_probe(switch_chip_t *pSwitchChip)
+{
+#if defined(FORCE_PROBE_RTL8367C)
+
+    *pSwitchChip = CHIP_RTL8367C;
+    halCtrl = &rtl8367c_hal_Ctrl;
+
+#elif defined(FORCE_PROBE_RTL8370B)
+
+    *pSwitchChip = CHIP_RTL8370B;
+    halCtrl = &rtl8370b_hal_Ctrl;
+
+#elif defined(FORCE_PROBE_RTL8364B)
+
+    *pSwitchChip = CHIP_RTL8364B;
+    halCtrl = &rtl8364b_hal_Ctrl;
+
+#elif defined(FORCE_PROBE_RTL8363SC_VB)
+
+    *pSwitchChip = CHIP_RTL8363SC_VB;
+    halCtrl = &rtl8363sc_vb_hal_Ctrl;
+
+#else
+    rtk_uint32 retVal;
+    rtk_uint32 data, regValue;
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0249)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_getAsicReg(0x1300, &data)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_getAsicReg(0x1301, &regValue)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0000)) != RT_ERR_OK)
+        return retVal;
+
+    switch (data)
+    {
+        case 0x0276:
+        case 0x0597:
+        case 0x6367:
+            *pSwitchChip = CHIP_RTL8367C;
+            halCtrl = &rtl8367c_hal_Ctrl;
+            break;
+        case 0x0652:
+        case 0x6368:
+            *pSwitchChip = CHIP_RTL8370B;
+            halCtrl = &rtl8370b_hal_Ctrl;
+            break;
+        case 0x0801:
+        case 0x6511:
+            if( (regValue & 0x00F0) == 0x0080)
+            {
+                *pSwitchChip = CHIP_RTL8363SC_VB;
+                halCtrl = &rtl8363sc_vb_hal_Ctrl;
+            }
+            else
+            {
+                *pSwitchChip = CHIP_RTL8364B;
+                halCtrl = &rtl8364b_hal_Ctrl;
+            }
+            break;
+        default:
+            return RT_ERR_FAILED;
+    }
+#endif
+
+    return RT_ERR_OK;
+}

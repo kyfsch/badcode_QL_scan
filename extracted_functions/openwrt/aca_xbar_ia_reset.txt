@@ -1,0 +1,18 @@
+static void aca_xbar_ia_reset(struct dc_ep_priv *priv, int ia_id)
+{
+	/* ACA IA reset */
+	wr32(XBAR_CTRL_CORE_RESET, ACA_AGENT_CTRL(ia_id));
+
+	/* Read till status become 1 */
+	while ((rd32(ACA_AGENT_STATUS(ia_id)) & XBAR_STAT_CORE_RESET) == 0)
+		;
+
+	/* Clear the IA Reset signal */
+	wr32(0, ACA_AGENT_CTRL(ia_id));
+
+	/* Read till status become 0 */
+	while ((rd32(ACA_AGENT_STATUS(ia_id)) & XBAR_STAT_CORE_RESET) == 1)
+		;
+
+	dev_dbg(priv->dev, "ACA XBAR IA(%d) reset done\n", ia_id);
+}

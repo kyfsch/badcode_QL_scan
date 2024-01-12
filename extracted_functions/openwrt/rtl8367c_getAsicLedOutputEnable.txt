@@ -1,0 +1,16 @@
+ret_t rtl8367c_getAsicLedOutputEnable(rtk_uint32 *ptr_enabled)
+{
+    ret_t retVal;
+    rtk_uint32 regdata;
+
+    retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_LED_SYS_CONFIG, RTL8367C_LED_IO_DISABLE_OFFSET, &regdata);
+    if (retVal != RT_ERR_OK)
+        return retVal;
+
+    if (regdata == 1)
+        *ptr_enabled = 0;
+    else
+        *ptr_enabled = 1;
+
+    return RT_ERR_OK;
+}

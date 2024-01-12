@@ -1,0 +1,7 @@
+static inline u8 *oob_ecc_ptr(struct mt7621_nfc *nfc, int sect)
+{
+	struct nand_chip *nand = &nfc->nand;
+
+	return nand->oob_poi + nand->ecc.steps * NFI_FDM_SIZE +
+		sect * (nfc->spare_per_sector - NFI_FDM_SIZE);
+}

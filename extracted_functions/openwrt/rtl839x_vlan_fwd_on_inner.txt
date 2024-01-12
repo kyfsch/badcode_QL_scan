@@ -1,0 +1,7 @@
+static void rtl839x_vlan_fwd_on_inner(int port, bool is_set)
+{
+	if (is_set)
+		rtl839x_mask_port_reg_be(BIT_ULL(port), 0ULL, RTL839X_VLAN_PORT_FWD);
+	else
+		rtl839x_mask_port_reg_be(0ULL, BIT_ULL(port), RTL839X_VLAN_PORT_FWD);
+}

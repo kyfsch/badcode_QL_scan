@@ -1,0 +1,4 @@
+rtk_uint32 rtk_switch_ComboPort_get(void)
+{
+    return halCtrl->combo_logical_port;
+}

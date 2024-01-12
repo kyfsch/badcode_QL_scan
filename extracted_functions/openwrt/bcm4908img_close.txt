@@ -1,0 +1,4 @@
+static void bcm4908img_close(FILE *fp) {
+	if (fp != stdin)
+		fclose(fp);
+}

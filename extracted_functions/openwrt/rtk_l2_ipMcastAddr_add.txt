@@ -1,0 +1,80 @@
+rtk_api_ret_t rtk_l2_ipMcastAddr_add(rtk_l2_ipMcastAddr_t *pIpMcastAddr)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 method;
+    rtl8367c_luttb l2Table;
+    rtk_uint32 pmask;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pIpMcastAddr)
+        return RT_ERR_NULL_POINTER;
+
+    /* check port mask */
+    RTK_CHK_PORTMASK_VALID(&pIpMcastAddr->portmask);
+
+    if( (pIpMcastAddr->dip & 0xF0000000) != 0xE0000000)
+        return RT_ERR_INPUT;
+
+    if(pIpMcastAddr->fwd_pri_en >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if(pIpMcastAddr->priority > RTL8367C_PRIMAX)
+        return RT_ERR_INPUT;
+
+    /* Get Physical port mask */
+    if ((retVal = rtk_switch_portmask_L2P_get(&pIpMcastAddr->portmask, &pmask)) != RT_ERR_OK)
+        return retVal;
+
+    memset(&l2Table, 0x00, sizeof(rtl8367c_luttb));
+    l2Table.sip = pIpMcastAddr->sip;
+    l2Table.dip = pIpMcastAddr->dip;
+    l2Table.l3lookup = 1;
+    l2Table.l3vidlookup = 0;
+    method = LUTREADMETHOD_MAC;
+    retVal = rtl8367c_getAsicL2LookupTb(method, &l2Table);
+    if (RT_ERR_OK == retVal)
+    {
+        l2Table.sip = pIpMcastAddr->sip;
+        l2Table.dip = pIpMcastAddr->dip;
+        l2Table.mbr = pmask;
+        l2Table.nosalearn = 1;
+        l2Table.l3lookup = 1;
+        l2Table.l3vidlookup = 0;
+        l2Table.lut_pri = pIpMcastAddr->priority;
+        l2Table.fwd_en  = pIpMcastAddr->fwd_pri_en;
+        if((retVal = rtl8367c_setAsicL2LookupTb(&l2Table)) != RT_ERR_OK)
+            return retVal;
+
+        pIpMcastAddr->address = l2Table.address;
+        return RT_ERR_OK;
+    }
+    else if (RT_ERR_L2_ENTRY_NOTFOUND == retVal)
+    {
+        memset(&l2Table, 0, sizeof(rtl8367c_luttb));
+        l2Table.sip = pIpMcastAddr->sip;
+        l2Table.dip = pIpMcastAddr->dip;
+        l2Table.mbr = pmask;
+        l2Table.nosalearn = 1;
+        l2Table.l3lookup = 1;
+        l2Table.l3vidlookup = 0;
+        l2Table.lut_pri = pIpMcastAddr->priority;
+        l2Table.fwd_en  = pIpMcastAddr->fwd_pri_en;
+        if ((retVal = rtl8367c_setAsicL2LookupTb(&l2Table)) != RT_ERR_OK)
+            return retVal;
+
+        pIpMcastAddr->address = l2Table.address;
+
+        method = LUTREADMETHOD_MAC;
+        retVal = rtl8367c_getAsicL2LookupTb(method, &l2Table);
+        if (RT_ERR_L2_ENTRY_NOTFOUND == retVal)
+            return     RT_ERR_L2_INDEXTBL_FULL;
+        else
+            return retVal;
+
+    }
+    else
+        return retVal;
+
+}

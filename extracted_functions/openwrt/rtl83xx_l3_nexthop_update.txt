@@ -1,0 +1,74 @@
+static int rtl83xx_l3_nexthop_update(struct rtl838x_switch_priv *priv,  __be32 ip_addr, u64 mac)
+{
+	struct rtl83xx_route *r;
+	struct rhlist_head *tmp, *list;
+
+	rcu_read_lock();
+	list = rhltable_lookup(&priv->routes, &ip_addr, route_ht_params);
+	if (!list) {
+		rcu_read_unlock();
+		return -ENOENT;
+	}
+
+	rhl_for_each_entry_rcu(r, tmp, list, linkage) {
+		pr_info("%s: Setting up fwding: ip %pI4, GW mac %016llx\n",
+			__func__, &ip_addr, mac);
+
+		/* Reads the ROUTING table entry associated with the route */
+		priv->r->route_read(r->id, r);
+		pr_info("Route with id %d to %pI4 / %d\n", r->id, &r->dst_ip, r->prefix_len);
+
+		r->nh.mac = r->nh.gw = mac;
+		r->nh.port = priv->port_ignore;
+		r->nh.id = r->id;
+
+		/* Do we need to explicitly add a DMAC entry with the route's nh index? */
+		if (priv->r->set_l3_egress_mac)
+			priv->r->set_l3_egress_mac(r->id, mac);
+
+		/* Update ROUTING table: map gateway-mac and switch-mac id to route id */
+		rtl83xx_l2_nexthop_add(priv, &r->nh);
+
+		r->attr.valid = true;
+		r->attr.action = ROUTE_ACT_FORWARD;
+		r->attr.type = 0;
+		r->attr.hit = false; /* Reset route-used indicator */
+
+		/* Add PIE entry with dst_ip and prefix_len */
+		r->pr.dip = r->dst_ip;
+		r->pr.dip_m = inet_make_mask(r->prefix_len);
+
+		if (r->is_host_route) {
+			int slot = priv->r->find_l3_slot(r, false);
+
+			pr_info("%s: Got slot for route: %d\n", __func__, slot);
+			priv->r->host_route_write(slot, r);
+		} else {
+			priv->r->route_write(r->id, r);
+			r->pr.fwd_sel = true;
+			r->pr.fwd_data = r->nh.l2_id;
+			r->pr.fwd_act = PIE_ACT_ROUTE_UC;
+		}
+
+		if (priv->r->set_l3_nexthop)
+			priv->r->set_l3_nexthop(r->nh.id, r->nh.l2_id, r->nh.if_id);
+
+		if (r->pr.id < 0) {
+			r->pr.packet_cntr = rtl83xx_packet_cntr_alloc(priv);
+			if (r->pr.packet_cntr >= 0) {
+				pr_info("Using packet counter %d\n", r->pr.packet_cntr);
+				r->pr.log_sel = true;
+				r->pr.log_data = r->pr.packet_cntr;
+			}
+			priv->r->pie_rule_add(priv, &r->pr);
+		} else {
+			int pkts = priv->r->packet_cntr_read(r->pr.packet_cntr);
+			pr_info("%s: total packets: %d\n", __func__, pkts);
+
+			priv->r->pie_rule_write(priv, r->pr.id, &r->pr);
+		}
+	}
+	rcu_read_unlock();
+
+	return 0;
+}

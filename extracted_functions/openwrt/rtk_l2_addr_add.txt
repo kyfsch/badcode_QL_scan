@@ -1,0 +1,119 @@
+rtk_api_ret_t rtk_l2_addr_add(rtk_mac_t *pMac, rtk_l2_ucastAddr_t *pL2_data)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 method;
+    rtl8367c_luttb l2Table;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* must be unicast address */
+    if ((pMac == NULL) || (pMac->octet[0] & 0x1))
+        return RT_ERR_MAC;
+
+    if(pL2_data == NULL)
+        return RT_ERR_MAC;
+
+    RTK_CHK_PORT_VALID(pL2_data->port);
+
+    if (pL2_data->ivl >= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if (pL2_data->cvid > RTL8367C_VIDMAX)
+        return RT_ERR_L2_VID;
+
+    if (pL2_data->fid > RTL8367C_FIDMAX)
+        return RT_ERR_L2_FID;
+
+    if (pL2_data->is_static>= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if (pL2_data->sa_block>= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if (pL2_data->da_block>= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if (pL2_data->auth>= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if (pL2_data->efid> RTL8367C_EFIDMAX)
+        return RT_ERR_INPUT;
+
+    if (pL2_data->priority > RTL8367C_PRIMAX)
+        return RT_ERR_INPUT;
+
+    if (pL2_data->sa_pri_en >= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if (pL2_data->fwd_pri_en >= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    memset(&l2Table, 0, sizeof(rtl8367c_luttb));
+
+    /* fill key (MAC,FID) to get L2 entry */
+    memcpy(l2Table.mac.octet, pMac->octet, ETHER_ADDR_LEN);
+    l2Table.ivl_svl     = pL2_data->ivl;
+    l2Table.fid         = pL2_data->fid;
+    l2Table.cvid_fid    = pL2_data->cvid;
+    l2Table.efid        = pL2_data->efid;
+    method = LUTREADMETHOD_MAC;
+    retVal = rtl8367c_getAsicL2LookupTb(method, &l2Table);
+    if (RT_ERR_OK == retVal )
+    {
+        memcpy(l2Table.mac.octet, pMac->octet, ETHER_ADDR_LEN);
+        l2Table.ivl_svl     = pL2_data->ivl;
+        l2Table.cvid_fid    = pL2_data->cvid;
+        l2Table.fid         = pL2_data->fid;
+        l2Table.efid        = pL2_data->efid;
+        l2Table.spa         = rtk_switch_port_L2P_get(pL2_data->port);
+        l2Table.nosalearn   = pL2_data->is_static;
+        l2Table.sa_block    = pL2_data->sa_block;
+        l2Table.da_block    = pL2_data->da_block;
+        l2Table.l3lookup    = 0;
+        l2Table.auth        = pL2_data->auth;
+        l2Table.age         = 6;
+        l2Table.lut_pri     = pL2_data->priority;
+        l2Table.sa_en       = pL2_data->sa_pri_en;
+        l2Table.fwd_en      = pL2_data->fwd_pri_en;
+        if((retVal = rtl8367c_setAsicL2LookupTb(&l2Table)) != RT_ERR_OK)
+            return retVal;
+
+        pL2_data->address = l2Table.address;
+        return RT_ERR_OK;
+    }
+    else if (RT_ERR_L2_ENTRY_NOTFOUND == retVal )
+    {
+        memset(&l2Table, 0, sizeof(rtl8367c_luttb));
+        memcpy(l2Table.mac.octet, pMac->octet, ETHER_ADDR_LEN);
+        l2Table.ivl_svl     = pL2_data->ivl;
+        l2Table.cvid_fid    = pL2_data->cvid;
+        l2Table.fid         = pL2_data->fid;
+        l2Table.efid        = pL2_data->efid;
+        l2Table.spa         = rtk_switch_port_L2P_get(pL2_data->port);
+        l2Table.nosalearn   = pL2_data->is_static;
+        l2Table.sa_block    = pL2_data->sa_block;
+        l2Table.da_block    = pL2_data->da_block;
+        l2Table.l3lookup    = 0;
+        l2Table.auth        = pL2_data->auth;
+        l2Table.age         = 6;
+        l2Table.lut_pri     = pL2_data->priority;
+        l2Table.sa_en       = pL2_data->sa_pri_en;
+        l2Table.fwd_en      = pL2_data->fwd_pri_en;
+
+        if ((retVal = rtl8367c_setAsicL2LookupTb(&l2Table)) != RT_ERR_OK)
+            return retVal;
+
+        pL2_data->address = l2Table.address;
+
+        method = LUTREADMETHOD_MAC;
+        retVal = rtl8367c_getAsicL2LookupTb(method, &l2Table);
+        if (RT_ERR_L2_ENTRY_NOTFOUND == retVal )
+            return RT_ERR_L2_INDEXTBL_FULL;
+        else
+            return retVal;
+    }
+    else
+        return retVal;
+
+}

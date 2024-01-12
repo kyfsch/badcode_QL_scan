@@ -1,0 +1,65 @@
+static standard_t get_standard(const uint8_t *xtse) {
+	if (xtse[0] & XTSE_1_01_A_T1_413)
+		return STD_T1_413;
+
+	if (xtse[0] & XTSE_1_02_C_TS_101388)
+		return STD_TS_101_388;
+
+	if ((xtse[0] & XTSE_1_03_A_1_NO) ||
+	    (xtse[0] & XTSE_1_04_A_1_O) ||
+	    (xtse[0] & XTSE_1_05_B_1_NO) ||
+	    (xtse[0] & XTSE_1_06_B_1_O) ||
+	    (xtse[0] & XTSE_1_07_C_1_NO) ||
+	    (xtse[0] & XTSE_1_08_C_1_O))
+		return STD_G_992_1;
+
+	if ((xtse[1] & XTSE_2_01_A_2_NO) ||
+	    (xtse[1] & XTSE_2_02_B_2_O) ||
+	    (xtse[1] & XTSE_2_03_C_2_NO) ||
+	    (xtse[1] & XTSE_2_04_C_2_O))
+		return STD_G_992_2;
+
+	if ((xtse[2] & XTSE_3_03_A_3_NO) ||
+	    (xtse[2] & XTSE_3_04_A_3_O) ||
+	    (xtse[2] & XTSE_3_05_B_3_NO) ||
+	    (xtse[2] & XTSE_3_06_B_3_O) ||
+	    (xtse[3] & XTSE_4_05_I_3_NO) ||
+	    (xtse[3] & XTSE_4_06_I_3_O) ||
+	    (xtse[3] & XTSE_4_07_J_3_NO) ||
+	    (xtse[3] & XTSE_4_08_J_3_O) ||
+	    (xtse[4] & XTSE_5_03_L_3_NO) ||
+	    (xtse[4] & XTSE_5_04_L_3_NO) ||
+	    (xtse[4] & XTSE_5_05_L_3_O) ||
+	    (xtse[4] & XTSE_5_06_L_3_O) ||
+	    (xtse[4] & XTSE_5_07_M_3_NO) ||
+	    (xtse[4] & XTSE_5_08_M_3_O))
+		return STD_G_992_3;
+
+	if ((xtse[3] & XTSE_4_01_A_4_NO) ||
+	    (xtse[3] & XTSE_4_02_A_4_O) ||
+	    (xtse[4] & XTSE_5_01_I_4_NO) ||
+	    (xtse[4] & XTSE_5_02_I_4_O))
+		return STD_G_992_4;
+
+	if ((xtse[5] & XTSE_6_01_A_5_NO) ||
+	    (xtse[5] & XTSE_6_02_A_5_O) ||
+	    (xtse[5] & XTSE_6_03_B_5_NO) ||
+	    (xtse[5] & XTSE_6_04_B_5_O) ||
+	    (xtse[5] & XTSE_6_07_I_5_NO) ||
+	    (xtse[5] & XTSE_6_08_I_5_O) ||
+	    (xtse[6] & XTSE_7_01_J_5_NO) ||
+	    (xtse[6] & XTSE_7_02_J_5_O) ||
+	    (xtse[6] & XTSE_7_03_M_5_NO) ||
+	    (xtse[6] & XTSE_7_04_M_5_O))
+		return STD_G_992_5;
+
+	if (xtse[7] & XTSE_8_08)
+		return STD_G_993_1;
+
+	if ((xtse[7] & XTSE_8_01_A) ||
+	    (xtse[7] & XTSE_8_02_B) ||
+	    (xtse[7] & XTSE_8_03_C))
+		return STD_G_993_2;
+
+	return STD_UNKNOWN;
+}

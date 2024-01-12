@@ -1,0 +1,28 @@
+hostapd_bss_wps_status(struct ubus_context *ctx, struct ubus_object *obj,
+			struct ubus_request_data *req, const char *method,
+			struct blob_attr *msg)
+{
+	int rc;
+	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+
+	blob_buf_init(&b, 0);
+
+	blobmsg_add_string(&b, "pbc_status", pbc_status_enum_str(hapd->wps_stats.pbc_status));
+	blobmsg_add_string(&b, "last_wps_result",
+			   (hapd->wps_stats.status == WPS_STATUS_SUCCESS ?
+			    "Success":
+			    (hapd->wps_stats.status == WPS_STATUS_FAILURE ?
+			     "Failed" : "None")));
+
+	/* If status == Failure - Add possible Reasons */
+	if(hapd->wps_stats.status == WPS_STATUS_FAILURE &&
+	   hapd->wps_stats.failure_reason > 0)
+		blobmsg_add_string(&b, "reason", wps_ei_str(hapd->wps_stats.failure_reason));
+
+	if (hapd->wps_stats.status)
+		blobmsg_printf(&b, "peer_address", MACSTR, MAC2STR(hapd->wps_stats.peer_addr));
+
+	ubus_send_reply(ctx, req, b.head);
+
+	return 0;
+}

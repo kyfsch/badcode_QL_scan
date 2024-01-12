@@ -1,0 +1,20 @@
+static int rtl8226_get_eee(struct phy_device *phydev,
+			   struct ethtool_eee *e)
+{
+	u32 val;
+	int addr = phydev->mdio.addr;
+
+	pr_debug("In %s, port %d, was enabled: %d\n", __func__, addr, e->eee_enabled);
+
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV);
+	if (e->eee_enabled) {
+		e->eee_enabled = !!(val & MDIO_EEE_100TX);
+		if (!e->eee_enabled) {
+			val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV2);
+			e->eee_enabled = !!(val & MDIO_EEE_2_5GT);
+		}
+	}
+	pr_debug("%s: enabled: %d\n", __func__, e->eee_enabled);
+
+	return 0;
+}

@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicLutIpmcFwdRouterPort(rtk_uint32 enable)
+{
+    if(enable > 1)
+        return RT_ERR_ENABLE;
+
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_LUT_CFG2, RTL8367C_LUT_IPMC_FWD_RPORT_OFFSET, enable);
+}

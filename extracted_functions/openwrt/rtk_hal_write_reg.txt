@@ -1,0 +1,11 @@
+static void rtk_hal_write_reg(unsigned int reg_addr , unsigned int reg_val)
+{
+        ret_t retVal;
+
+    retVal = smi_write(reg_addr, reg_val);
+
+    if(retVal != RT_ERR_OK)
+        printk("switch reg write failed\n");
+    else
+        printk("write switch reg0x%x 0x%x success\n", reg_addr, reg_val);
+}

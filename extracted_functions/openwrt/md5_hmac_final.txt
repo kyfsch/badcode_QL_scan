@@ -1,0 +1,4 @@
+static int md5_hmac_final(struct shash_desc *desc, u8 *out)
+{
+    return md5_hmac_final_impl(desc, out, true);
+}

@@ -1,0 +1,20 @@
+static void rtl8214fc_power_set(struct phy_device *phydev, int port, bool on)
+{
+	char *state = on ? "on" : "off";
+
+	if (port == PORT_FIBRE) {
+		pr_info("%s: Powering %s FIBRE (port %d)\n", __func__, state, phydev->mdio.addr);
+		phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_FIBRE);
+	} else {
+		pr_info("%s: Powering %s COPPER (port %d)\n", __func__, state, phydev->mdio.addr);
+		phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
+	}
+
+	if (on) {
+		phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, BMCR_PDOWN, 0);
+	} else {
+		phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, 0, BMCR_PDOWN);
+	}
+
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+}

@@ -1,0 +1,26 @@
+static ssize_t bcm4908img_create_append_file(FILE *trx, const char *in_path, uint32_t *crc32) {
+	FILE *in;
+	size_t bytes;
+	ssize_t length = 0;
+	uint8_t buf[1024];
+
+	in = fopen(in_path, "r");
+	if (!in) {
+		fprintf(stderr, "Failed to open %s\n", in_path);
+		return -EACCES;
+	}
+
+	while ((bytes = fread(buf, 1, sizeof(buf), in)) > 0) {
+		if (fwrite(buf, 1, bytes, trx) != bytes) {
+			fprintf(stderr, "Failed to write %zu B to %s\n", bytes, pathname);
+			length = -EIO;
+			break;
+		}
+		*crc32 = bcm4908img_crc32(*crc32, buf, bytes);
+		length += bytes;
+	}
+
+	fclose(in);
+
+	return length;
+}

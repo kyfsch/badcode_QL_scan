@@ -1,0 +1,15 @@
+static void dc_ep_ppe_mbox_reg_dump(struct dc_ep_dev *dev)
+{
+	pr_info("MBOX_IGU0_ISRS addr %p data 0x%08x\n",
+		dev->membase + MBOX_IGU0_ISRS,
+		ep_rd32(MBOX_IGU0_ISRS));
+	pr_info("MBOX_IGU0_ISRC addr %p data 0x%08x\n",
+		dev->membase + MBOX_IGU0_ISRC,
+		ep_rd32(MBOX_IGU0_ISRC));
+	pr_info("MBOX_IGU0_ISR  addr %p data 0x%08x\n",
+		dev->membase + MBOX_IGU0_ISR,
+		ep_rd32(MBOX_IGU0_ISR));
+	pr_info("MBOX_IGU0_IER  addr %p data 0x%08x\n",
+		dev->membase + MBOX_IGU0_IER,
+		ep_rd32(MBOX_IGU0_IER));
+}

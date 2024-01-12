@@ -1,0 +1,9 @@
+static inline int aca_stop(struct dc_ep_dev *dev, u32 *func, int reset)
+{
+	if (WARN_ON(!dev || !func))
+		return -EINVAL;
+	if (WARN_ON(!dev->priv))
+		return -EINVAL;
+
+	return dc_aca_stop(dev->priv, func, reset);
+}

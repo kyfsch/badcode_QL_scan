@@ -1,0 +1,13 @@
+static void ip17xx_reset_vlan_config(struct ip17xx_state *state)
+{
+	int i;
+
+	state->remove_tag = (state->vlan_enabled ? ((1<<state->regs->NUM_PORTS)-1) : 0x0000);
+	state->add_tag = 0x0000;
+	for (i = 0; i < MAX_VLANS; i++) {
+		state->vlans[i].ports = 0x0000;
+		state->vlans[i].tag = (i ? i : 16);
+	}
+	for (i = 0; i < MAX_PORTS; i++)
+		state->ports[i].pvid = 0;
+}

@@ -1,0 +1,21 @@
+static int bcm4908img_calc_crc32(FILE *fp, struct bcm4908img_info *info) {
+	uint8_t buf[1024];
+	size_t length;
+	size_t bytes;
+
+	/* Start with cferom (or bootfs) - skip vendor header */
+	fseek(fp, info->cferom_offset, SEEK_SET);
+
+	info->crc32 = 0xffffffff;
+	length = info->tail_offset - info->cferom_offset;
+	while (length && (bytes = fread(buf, 1, bcm4908img_min(sizeof(buf), length), fp)) > 0) {
+		info->crc32 = bcm4908img_crc32(info->crc32, buf, bytes);
+		length -= bytes;
+	}
+	if (length) {
+		fprintf(stderr, "Failed to read last %zd B of data\n", length);
+		return -EIO;
+	}
+
+	return 0;
+}

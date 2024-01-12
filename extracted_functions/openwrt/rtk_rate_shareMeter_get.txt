@@ -1,0 +1,33 @@
+rtk_api_ret_t rtk_rate_shareMeter_get(rtk_meter_id_t index, rtk_meter_type_t *pType, rtk_rate_t *pRate, rtk_enable_t *pIfg_include)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 regData;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (index > RTK_MAX_METER_ID)
+        return RT_ERR_FILTER_METER_ID;
+
+    if(NULL == pType)
+        return RT_ERR_NULL_POINTER;
+
+    if(NULL == pRate)
+        return RT_ERR_NULL_POINTER;
+
+    if(NULL == pIfg_include)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicShareMeter(index, &regData, pIfg_include)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicShareMeterType(index, (rtk_uint32 *)pType)) != RT_ERR_OK)
+        return retVal;
+
+    if(*pType == METER_TYPE_KBPS)
+        *pRate = regData<<3;
+    else
+        *pRate = regData;
+
+    return RT_ERR_OK;
+}

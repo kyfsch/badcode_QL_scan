@@ -1,0 +1,31 @@
+static int mt7621_nfc_calc_ecc_strength(struct mt7621_nfc *nfc,
+					u32 avail_ecc_bytes)
+{
+	struct nand_chip *nand = &nfc->nand;
+	struct mtd_info *mtd = nand_to_mtd(nand);
+	u32 strength;
+	int i;
+
+	strength = avail_ecc_bytes * 8 / ECC_PARITY_BITS;
+
+	/* Find the closest supported ecc strength */
+	for (i = ARRAY_SIZE(mt7621_ecc_strength) - 1; i >= 0; i--) {
+		if (mt7621_ecc_strength[i] <= strength)
+			break;
+	}
+
+	if (unlikely(i < 0)) {
+		dev_err(nfc->dev, "OOB size (%u) is not supported\n",
+			mtd->oobsize);
+		return -EINVAL;
+	}
+
+	nand->ecc.strength = mt7621_ecc_strength[i];
+	nand->ecc.bytes =
+		DIV_ROUND_UP(nand->ecc.strength * ECC_PARITY_BITS, 8);
+
+	dev_info(nfc->dev, "ECC strength adjusted to %u bits\n",
+		 nand->ecc.strength);
+
+	return i;
+}

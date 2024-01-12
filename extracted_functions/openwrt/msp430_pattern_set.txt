@@ -1,0 +1,64 @@
+static int msp430_pattern_set(struct led_classdev *led_cdev,
+			      struct led_pattern *pattern,
+			      u32 len, int repeat)
+{
+	struct msp430_led *led =
+		container_of(led_cdev, struct msp430_led, cdev);
+	u8 tx[MSP430_CMD_BYTES] = {led->id, 0, 0, 0, 0, 0};
+	u8 rx[MSP430_CMD_BYTES];
+	unsigned long delay0;
+	unsigned long delay1;
+	int rc;
+
+	if (len != 2 ||
+	    repeat > MSP430_LED_REPEAT_MAX ||
+	    pattern[0].delta_t > MSP430_LED_BLINK_MAX ||
+	    pattern[1].delta_t > MSP430_LED_BLINK_MAX)
+		return -EINVAL;
+
+	delay0 = msp430_blink_delay(pattern[0].delta_t);
+	delay1 = msp430_blink_delay(pattern[1].delta_t);
+
+	/* Infinite pattern */
+	if (repeat < 0)
+		repeat = 0;
+
+	/* Pulse: <off> <delay> <max> <delay> */
+	if (delay0 == delay1 &&
+	    pattern[0].brightness == LED_OFF &&
+	    pattern[1].brightness == MSP430_LED_BRIGHTNESS_MAX)
+	{
+		tx[1] = MSP430_LED_PULSE;
+		tx[2] = delay0;
+		tx[4] = (u8) repeat;
+	}
+
+	/* Pulse On: <off> <delay> <max> <0ms> */
+	if (pattern[0].delta_t != 0 &&
+	    pattern[1].delta_t == 0 &&
+	    pattern[0].brightness == LED_OFF &&
+	    pattern[1].brightness == MSP430_LED_BRIGHTNESS_MAX) {
+		tx[1] = MSP430_LED_PULSE_ON;
+		tx[2] = delay0;
+		tx[4] = (u8) repeat;
+	}
+
+	/* Pulse Off: <max> <delay> <off> <0ms> */
+	if (pattern[0].delta_t != 0 &&
+	    pattern[1].delta_t == 0 &&
+	    pattern[0].brightness == MSP430_LED_BRIGHTNESS_MAX &&
+	    pattern[1].brightness == LED_OFF) {
+		tx[1] = MSP430_LED_PULSE_OFF;
+		tx[2] = delay0;
+		tx[4] = (u8) repeat;
+	}
+
+	if (!tx[1])
+		return -EINVAL;
+
+	rc = msp430_cmd(led->spi, tx, rx);
+	if (rc)
+		return rc;
+
+	return 0;
+}

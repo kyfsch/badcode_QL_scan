@@ -1,0 +1,39 @@
+static void rtl83xx_fib_event_work_do(struct work_struct *work)
+{
+	struct rtl83xx_fib_event_work *fib_work =
+		container_of(work, struct rtl83xx_fib_event_work, work);
+	struct rtl838x_switch_priv *priv = fib_work->priv;
+	struct fib_rule *rule;
+	int err;
+
+	/* Protect internal structures from changes */
+	rtnl_lock();
+	pr_debug("%s: doing work, event %ld\n", __func__, fib_work->event);
+	switch (fib_work->event) {
+	case FIB_EVENT_ENTRY_ADD:
+	case FIB_EVENT_ENTRY_REPLACE:
+	case FIB_EVENT_ENTRY_APPEND:
+		if (fib_work->is_fib6) {
+			err = rtl83xx_fib6_add(priv, &fib_work->fen6_info);
+		} else {
+			err = rtl83xx_fib4_add(priv, &fib_work->fen_info);
+			fib_info_put(fib_work->fen_info.fi);
+		}
+		if (err)
+			pr_err("%s: FIB4 failed\n", __func__);
+		break;
+	case FIB_EVENT_ENTRY_DEL:
+		rtl83xx_fib4_del(priv, &fib_work->fen_info);
+		fib_info_put(fib_work->fen_info.fi);
+		break;
+	case FIB_EVENT_RULE_ADD:
+	case FIB_EVENT_RULE_DEL:
+		rule = fib_work->fr_info.rule;
+		if (!fib4_rule_default(rule))
+			pr_err("%s: FIB4 default rule failed\n", __func__);
+		fib_rule_put(rule);
+		break;
+	}
+	rtnl_unlock();
+	kfree(fib_work);
+}

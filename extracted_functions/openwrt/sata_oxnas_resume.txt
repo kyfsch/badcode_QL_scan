@@ -1,0 +1,13 @@
+static int sata_oxnas_resume(struct platform_device *op)
+{
+	struct ata_host *host = dev_get_drvdata(&op->dev);
+	int ret;
+
+	ret = sata_oxnas_init_controller(host);
+	if (ret) {
+		dev_err(&op->dev, "Error initializing hardware\n");
+		return ret;
+	}
+	ata_host_resume(host);
+	return 0;
+}

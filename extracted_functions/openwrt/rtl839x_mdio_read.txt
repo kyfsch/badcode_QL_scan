@@ -1,0 +1,4 @@
+static int rtl839x_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
+{
+	return rtl839x_mdio_read_paged(bus, mii_id, 0, regnum);
+}

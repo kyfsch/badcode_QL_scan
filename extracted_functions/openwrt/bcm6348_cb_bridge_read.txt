@@ -1,0 +1,80 @@
+static int bcm6348_cb_bridge_read(int where, int size, u32 *val)
+{
+	struct bcm6348_cb *cb = &bcm6348_pci.cb;
+	unsigned int reg;
+	u32 data;
+
+	data = 0;
+	reg = where >> 2;
+	switch (reg) {
+	case (PCI_VENDOR_ID >> 2):
+	case (PCI_CB_SUBSYSTEM_VENDOR_ID >> 2):
+		/* create dummy vendor/device id from our cpu id */
+		data = (CARDBUS_DUMMY_ID << 16) | PCI_VENDOR_ID_BROADCOM;
+		break;
+
+	case (PCI_COMMAND >> 2):
+		data = (PCI_STATUS_DEVSEL_SLOW << 16);
+		data |= cb->pci_command;
+		break;
+
+	case (PCI_CLASS_REVISION >> 2):
+		data = (PCI_CLASS_BRIDGE_CARDBUS << 16);
+		break;
+
+	case (PCI_CACHE_LINE_SIZE >> 2):
+		data = (PCI_HEADER_TYPE_CARDBUS << 16);
+		break;
+
+	case (PCI_INTERRUPT_LINE >> 2):
+		/* bridge control */
+		data = (cb->bridge_control << 16);
+		/* pin:intA line:0xff */
+		data |= (0x1 << 8) | 0xff;
+		break;
+
+	case (PCI_CB_PRIMARY_BUS >> 2):
+		data = (cb->cb_latency << 24);
+		data |= (cb->subordinate_busn << 16);
+		data |= (cb->cardbus_busn << 8);
+		data |= cb->pci_busn;
+		break;
+
+	case (PCI_CB_MEMORY_BASE_0 >> 2):
+		data = cb->mem_base0;
+		break;
+
+	case (PCI_CB_MEMORY_LIMIT_0 >> 2):
+		data = cb->mem_limit0;
+		break;
+
+	case (PCI_CB_MEMORY_BASE_1 >> 2):
+		data = cb->mem_base1;
+		break;
+
+	case (PCI_CB_MEMORY_LIMIT_1 >> 2):
+		data = cb->mem_limit1;
+		break;
+
+	case (PCI_CB_IO_BASE_0 >> 2):
+		/* | 1 for 32bits io support */
+		data = cb->io_base0 | 0x1;
+		break;
+
+	case (PCI_CB_IO_LIMIT_0 >> 2):
+		data = cb->io_limit0;
+		break;
+
+	case (PCI_CB_IO_BASE_1 >> 2):
+		/* | 1 for 32bits io support */
+		data = cb->io_base1 | 0x1;
+		break;
+
+	case (PCI_CB_IO_LIMIT_1 >> 2):
+		data = cb->io_limit1;
+		break;
+	}
+
+	*val = postprocess_read(data, where, size);
+	return PCIBIOS_SUCCESSFUL;
+}

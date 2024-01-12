@@ -1,0 +1,10 @@
+t_nextline(fp)
+FILE * fp;
+{
+  int c;
+
+  while((c = getc(fp)) != '\n')
+    if(c == EOF)
+      return -1;
+  return 0;
+}

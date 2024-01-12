@@ -1,0 +1,4 @@
+static inline struct ubootenv_drvdata *to_ubootenv_drvdata(struct file *file)
+{
+	return container_of(file->private_data, struct ubootenv_drvdata, misc);
+}

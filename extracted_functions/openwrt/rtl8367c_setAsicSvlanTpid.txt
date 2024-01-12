@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicSvlanTpid(rtk_uint32 protocolType)
+{
+    return rtl8367c_setAsicReg(RTL8367C_REG_VS_TPID, protocolType);
+}

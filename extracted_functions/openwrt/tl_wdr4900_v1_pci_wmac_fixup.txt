@@ -1,0 +1,28 @@
+static void tl_wdr4900_v1_pci_wmac_fixup(struct pci_dev *dev)
+{
+	if (!machine_is(tl_wdr4900_v1))
+		return;
+
+	if (dev->bus->number == 1 &&
+	    PCI_SLOT(dev->devfn) == 0) {
+		dev->dev.platform_data = &tl_wdr4900_v1_wmac0_data;
+		return;
+	}
+
+	if (dev->bus->number == 3 &&
+	    PCI_SLOT(dev->devfn) == 0 &&
+	    dev->device == 0xabcd) {
+		dev->dev.platform_data = &tl_wdr4900_v1_wmac1_data;
+
+		/*
+		 * The PCI header of the AR9381 chip is not programmed
+		 * correctly by the bootloader and the device uses wrong
+		 * data due to that. Replace the broken values with the
+		 * correct ones.
+		 */
+		dev->device = 0x30;
+		dev->class = 0x028000;
+
+		pr_info("pci %s: AR9381 fixup applied\n", pci_name(dev));
+	}
+}

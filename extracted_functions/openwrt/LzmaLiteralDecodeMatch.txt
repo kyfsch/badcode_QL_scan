@@ -1,0 +1,40 @@
+Byte LzmaLiteralDecodeMatch(CProb *probs, CRangeDecoder *rd, Byte matchByte)
+{ 
+  int symbol = 1;
+  #ifdef _LZMA_LOC_OPT
+  RC_INIT_VAR
+  #endif
+  do
+  {
+    int bit;
+    int matchBit = (matchByte >> 7) & 1;
+    matchByte <<= 1;
+    #ifdef _LZMA_LOC_OPT
+    {
+      CProb *prob = probs + ((1 + matchBit) << 8) + symbol;
+      RC_GET_BIT2(prob, symbol, bit = 0, bit = 1)
+    }
+    #else
+    bit = RangeDecoderBitDecode(probs + ((1 + matchBit) << 8) + symbol, rd);
+    symbol = (symbol << 1) | bit;
+    #endif
+    if (matchBit != bit)
+    {
+      while (symbol < 0x100)
+      {
+        #ifdef _LZMA_LOC_OPT
+        CProb *prob = probs + symbol;
+        RC_GET_BIT(prob, symbol)
+        #else
+        symbol = (symbol + symbol) | RangeDecoderBitDecode(probs + symbol, rd);
+        #endif
+      }
+      break;
+    }
+  }
+  while (symbol < 0x100);
+  #ifdef _LZMA_LOC_OPT
+  RC_FLUSH_VAR
+  #endif
+  return symbol;
+}

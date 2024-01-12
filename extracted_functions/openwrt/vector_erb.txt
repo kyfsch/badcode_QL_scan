@@ -1,0 +1,11 @@
+static void vector_erb(int fd) {
+#ifdef INCLUDE_DSL_CPE_API_VRX
+	if (fd < 0)
+		return;
+
+	IOCTL(IOCTL_MEI_dsmStatistics_t, FIO_MEI_DSM_STATISTICS_GET);
+
+	m_u32("sent", out.n_processed);
+	m_u32("discarded", out.n_fw_dropped_size + out.n_mei_dropped_size + out.n_mei_dropped_no_pp_cb + out.n_pp_dropped);
+#endif
+}

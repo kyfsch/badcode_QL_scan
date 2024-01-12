@@ -1,0 +1,106 @@
+rtk_api_ret_t rtk_qos_init(rtk_queue_num_t queueNum)
+{
+    CONST_T rtk_uint16 g_prioritytToQid[8][8]= {
+            {0, 0,0,0,0,0,0,0},
+            {0, 0,0,0,7,7,7,7},
+            {0, 0,0,0,1,1,7,7},
+            {0, 0,1,1,2,2,7,7},
+            {0, 0,1,1,2,3,7,7},
+            {0, 0,1,2,3,4,7,7},
+            {0, 0,1,2,3,4,5,7},
+            {0,1,2,3,4,5,6,7}
+    };
+
+    CONST_T rtk_uint32 g_priorityDecision[8] = {0x01, 0x80,0x04,0x02,0x20,0x40,0x10,0x08};
+    CONST_T rtk_uint32 g_prioritytRemap[8] = {0,1,2,3,4,5,6,7};
+
+    rtk_api_ret_t retVal;
+    rtk_uint32 qmapidx;
+    rtk_uint32 priority;
+    rtk_uint32 priDec;
+    rtk_uint32 port;
+    rtk_uint32 dscp;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (queueNum <= 0 || queueNum > RTK_MAX_NUM_OF_QUEUE)
+        return RT_ERR_QUEUE_NUM;
+
+    /*Set Output Queue Number*/
+    if (RTK_MAX_NUM_OF_QUEUE == queueNum)
+        qmapidx = 0;
+    else
+        qmapidx = queueNum;
+
+    RTK_SCAN_ALL_PHY_PORTMASK(port)
+    {
+        if ((retVal = rtl8367c_setAsicOutputQueueMappingIndex(port, qmapidx)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    /*Set Priority to Qid*/
+    for (priority = 0; priority <= RTK_PRIMAX; priority++)
+    {
+        if ((retVal = rtl8367c_setAsicPriorityToQIDMappingTable(queueNum - 1, priority, g_prioritytToQid[queueNum - 1][priority])) != RT_ERR_OK)
+            return retVal;
+    }
+
+    /*Set Flow Control Type to Ingress Flow Control*/
+    if ((retVal = rtl8367c_setAsicFlowControlSelect(FC_INGRESS)) != RT_ERR_OK)
+        return retVal;
+
+
+    /*Priority Decision Order*/
+    for (priDec = 0;priDec < PRIDEC_END;priDec++)
+    {
+        if ((retVal = rtl8367c_setAsicPriorityDecision(PRIDECTBL_IDX0, priDec, g_priorityDecision[priDec])) != RT_ERR_OK)
+            return retVal;
+        if ((retVal = rtl8367c_setAsicPriorityDecision(PRIDECTBL_IDX1, priDec, g_priorityDecision[priDec])) != RT_ERR_OK)
+            return retVal;
+    }
+
+    /*Set Port-based Priority to 0*/
+    RTK_SCAN_ALL_PHY_PORTMASK(port)
+    {
+        if ((retVal = rtl8367c_setAsicPriorityPortBased(port, 0)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    /*Disable 1p Remarking*/
+    RTK_SCAN_ALL_PHY_PORTMASK(port)
+    {
+        if ((retVal = rtl8367c_setAsicRemarkingDot1pAbility(port, DISABLED)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    /*Disable DSCP Remarking*/
+    if ((retVal = rtl8367c_setAsicRemarkingDscpAbility(DISABLED)) != RT_ERR_OK)
+        return retVal;
+
+    /*Set 1p & DSCP  Priority Remapping & Remarking*/
+    for (priority = 0; priority <= RTL8367C_PRIMAX; priority++)
+    {
+        if ((retVal = rtl8367c_setAsicPriorityDot1qRemapping(priority, g_prioritytRemap[priority])) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicRemarkingDot1pParameter(priority, 0)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicRemarkingDscpParameter(priority, 0)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    /*Set DSCP Priority*/
+    for (dscp = 0; dscp <= 63; dscp++)
+    {
+        if ((retVal = rtl8367c_setAsicPriorityDscpBased(dscp, 0)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    /* Finetune B/T value */
+    if((retVal = rtl8367c_setAsicReg(0x1722, 0x1158)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

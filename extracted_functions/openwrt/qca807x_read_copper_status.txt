@@ -1,0 +1,76 @@
+static int qca807x_read_copper_status(struct phy_device *phydev)
+{
+	int ss, err, old_link = phydev->link;
+
+	/* Update the link, but return if there was an error */
+	err = genphy_update_link(phydev);
+	if (err)
+		return err;
+
+	/* why bother the PHY if nothing can have changed */
+	if (phydev->autoneg == AUTONEG_ENABLE && old_link && phydev->link)
+		return 0;
+
+	phydev->speed = SPEED_UNKNOWN;
+	phydev->duplex = DUPLEX_UNKNOWN;
+	phydev->pause = 0;
+	phydev->asym_pause = 0;
+
+	err = genphy_read_lpa(phydev);
+	if (err < 0)
+		return err;
+
+	/* Read the QCA807x PHY-Specific Status register copper page,
+	 * which indicates the speed and duplex that the PHY is actually
+	 * using, irrespective of whether we are in autoneg mode or not.
+	 */
+	ss = phy_read(phydev, QCA807X_PHY_SPECIFIC_STATUS);
+	if (ss < 0)
+		return ss;
+
+	if (ss & QCA807X_SS_SPEED_AND_DUPLEX_RESOLVED) {
+		int sfc;
+
+		sfc = phy_read(phydev, QCA807X_FUNCTION_CONTROL);
+		if (sfc < 0)
+			return sfc;
+
+		switch (FIELD_GET(QCA807X_SS_SPEED_MASK, ss)) {
+		case QCA807X_SS_SPEED_10:
+			phydev->speed = SPEED_10;
+			break;
+		case QCA807X_SS_SPEED_100:
+			phydev->speed = SPEED_100;
+			break;
+		case QCA807X_SS_SPEED_1000:
+			phydev->speed = SPEED_1000;
+			break;
+		}
+		if (ss & QCA807X_SS_DUPLEX)
+			phydev->duplex = DUPLEX_FULL;
+		else
+			phydev->duplex = DUPLEX_HALF;
+
+		if (ss & QCA807X_SS_MDIX)
+			phydev->mdix = ETH_TP_MDI_X;
+		else
+			phydev->mdix = ETH_TP_MDI;
+
+		switch (FIELD_GET(QCA807X_FC_MDI_CROSSOVER_MODE_MASK, sfc)) {
+		case QCA807X_FC_MDI_CROSSOVER_MANUAL_MDI:
+			phydev->mdix_ctrl = ETH_TP_MDI;
+			break;
+		case QCA807X_FC_MDI_CROSSOVER_MANUAL_MDIX:
+			phydev->mdix_ctrl = ETH_TP_MDI_X;
+			break;
+		case QCA807X_FC_MDI_CROSSOVER_AUTO:
+			phydev->mdix_ctrl = ETH_TP_MDI_AUTO;
+			break;
+		}
+	}
+
+	if (phydev->autoneg == AUTONEG_ENABLE && phydev->autoneg_complete)
+		phy_resolve_aneg_pause(phydev);
+
+	return 0;
+}

@@ -1,0 +1,5 @@
+static void print_entry_value(const struct tffs_entry *entry)
+{
+	/* These are NOT NULL terminated. */
+	fwrite(entry->val, 1, entry->len, stdout);
+}

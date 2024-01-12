@@ -1,0 +1,7 @@
+void rtl83xx_set_ingress_priority(int port, int priority)
+{
+	if (soc_info.family == RTL8380_FAMILY_ID)
+		sw_w32(priority << ((port % 10) *3), RTL838X_PRI_SEL_PORT_PRI(port));
+	else
+		sw_w32(priority << ((port % 10) *3), RTL839X_PRI_SEL_PORT_PRI(port));
+}

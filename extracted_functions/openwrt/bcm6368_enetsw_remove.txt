@@ -1,0 +1,21 @@
+static int bcm6368_enetsw_remove(struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
+	struct net_device *ndev = platform_get_drvdata(pdev);
+	struct bcm6368_enetsw *priv = netdev_priv(ndev);
+	unsigned int i;
+
+	pm_runtime_put_sync(dev);
+	for (i = 0; priv->pm && i < priv->num_pms; i++) {
+		dev_pm_domain_detach(priv->pm[i], true);
+		device_link_del(priv->link_pm[i]);
+	}
+
+	for (i = 0; i < priv->num_resets; i++)
+		reset_control_assert(priv->reset[i]);
+
+	for (i = 0; i < priv->num_clocks; i++)
+		clk_disable_unprepare(priv->clock[i]);
+
+	return 0;
+}

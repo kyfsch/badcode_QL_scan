@@ -1,0 +1,8 @@
+static int b53_port_get_pvid(struct switch_dev *dev, int port, int *val)
+{
+	struct b53_device *priv = sw_to_b53(dev);
+
+	*val = priv->ports[port].pvid;
+
+	return 0;
+}

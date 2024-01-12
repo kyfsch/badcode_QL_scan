@@ -1,0 +1,12 @@
+static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
+{
+	pr_info("Setting up EEE, state: %d\n", enable);
+
+	/* Setup EEE on all ports */
+	for (int i = 0; i < priv->cpu_port; i++) {
+		if (priv->ports[i].phy)
+			rtl930x_port_eee_set(priv, i, enable);
+	}
+
+	priv->eee_enabled = enable;
+}

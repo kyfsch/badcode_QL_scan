@@ -1,0 +1,8 @@
+extern void ase_fw_ver(unsigned int *major, unsigned int *minor)
+{
+    ASSERT(major != NULL, "pointer is NULL");
+    ASSERT(minor != NULL, "pointer is NULL");
+
+    *major = FW_VER_ID->major;
+    *minor = FW_VER_ID->minor;
+}

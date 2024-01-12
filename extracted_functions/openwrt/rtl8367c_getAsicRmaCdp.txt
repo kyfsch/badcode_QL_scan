@@ -1,0 +1,24 @@
+ret_t rtl8367c_getAsicRmaCdp(rtl8367c_rma_t* pRmacfg)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+
+    retVal = rtl8367c_getAsicReg(RTL8367C_REG_RMA_CTRL_CDP, &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    pRmacfg->operation = ((regData >> 7) & 0x0003);
+    pRmacfg->discard_storm_filter = ((regData >> 6) & 0x0001);
+    pRmacfg->trap_priority = ((regData >> 3) & 0x0007);
+    pRmacfg->keep_format = ((regData >> 2) & 0x0001);
+    pRmacfg->vlan_leaky = ((regData >> 1) & 0x0001);
+    pRmacfg->portiso_leaky = (regData & 0x0001);
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_RMA_CTRL00, RTL8367C_TRAP_PRIORITY_MASK, &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    pRmacfg->trap_priority = regData;
+
+    return RT_ERR_OK;
+}

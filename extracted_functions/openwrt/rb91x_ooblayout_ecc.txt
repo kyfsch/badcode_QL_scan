@@ -1,0 +1,16 @@
+static int rb91x_ooblayout_ecc(struct mtd_info *mtd, int section,
+			       struct mtd_oob_region *oobregion)
+{
+	switch (section) {
+	case 0:
+		oobregion->offset = 8;
+		oobregion->length = 3;
+		return 0;
+	case 1:
+		oobregion->offset = 13;
+		oobregion->length = 3;
+		return 0;
+	default:
+		return -ERANGE;
+	}
+}

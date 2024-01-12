@@ -1,0 +1,23 @@
+static void fe_clean_tx(struct fe_priv *priv)
+{
+	int i;
+	struct device *dev = priv->dev;
+	struct fe_tx_ring *ring = &priv->tx_ring;
+
+	if (ring->tx_buf) {
+		for (i = 0; i < ring->tx_ring_size; i++)
+			fe_txd_unmap(dev, &ring->tx_buf[i]);
+		kfree(ring->tx_buf);
+		ring->tx_buf = NULL;
+	}
+
+	if (ring->tx_dma) {
+		dma_free_coherent(dev,
+				  ring->tx_ring_size * sizeof(*ring->tx_dma),
+				  ring->tx_dma,
+				  ring->tx_phys);
+		ring->tx_dma = NULL;
+	}
+
+	netdev_reset_queue(priv->netdev);
+}

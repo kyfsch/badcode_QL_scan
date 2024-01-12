@@ -1,0 +1,37 @@
+static int scan_mtd(void)
+{
+	struct mtd_info_user info;
+
+	if (ioctl(mtdfd, MEMGETINFO, &info)) {
+		return 0;
+	}
+
+	blocksize = info.erasesize;
+
+	num_sectors = info.size / TFFS_SECTOR_SIZE;
+	sectors = malloc((num_sectors + 7) / 8);
+	sector_ids = calloc(num_sectors, sizeof(uint32_t));
+	if (!sectors || !sector_ids) {
+		fprintf(stderr, "ERROR: memory allocation failed!\n");
+		exit(EXIT_FAILURE);
+	}
+	memset(sectors, 0xff, (num_sectors + 7) / 8);
+
+	uint32_t sector = 0, valid_blocks = 0;
+	uint8_t block_ok = 0;
+	for (off_t pos = 0; pos < info.size; sector++, pos += TFFS_SECTOR_SIZE) {
+		if (pos % info.erasesize == 0) {
+			block_ok = check_block(pos, sector);
+			/* first sector of the block contains metadata
+			   => handle it like a bad sector */
+			sector_mark_bad(sector);
+			if (block_ok) {
+				valid_blocks++;
+			}
+		} else if (!block_ok || !sector_get_good(sector) || !check_sector(pos)) {
+			sector_mark_bad(sector);
+		}
+	}
+
+	return valid_blocks;
+}

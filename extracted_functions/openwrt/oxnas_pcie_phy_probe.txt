@@ -1,0 +1,44 @@
+static int oxnas_pcie_phy_probe(struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
+	struct device_node *np = pdev->dev.of_node;
+	struct phy *generic_phy;
+	struct phy_provider *phy_provider;
+	struct oxnas_pcie_phy *pciephy;
+	struct regmap *sys_ctrl;
+	struct reset_control *rstc;
+	void __iomem *membase;
+
+	membase = of_iomap(np, 0);
+	if (IS_ERR(membase))
+		return PTR_ERR(membase);
+
+	sys_ctrl = syscon_regmap_lookup_by_compatible("oxsemi,ox820-sys-ctrl");
+	if (IS_ERR(sys_ctrl))
+		return PTR_ERR(sys_ctrl);
+
+	rstc = devm_reset_control_get_shared(dev, "phy");
+	if (IS_ERR(rstc))
+		return PTR_ERR(rstc);
+
+	pciephy = devm_kzalloc(dev, sizeof(*pciephy), GFP_KERNEL);
+	if (!pciephy)
+		return -ENOMEM;
+
+	pciephy->sys_ctrl = sys_ctrl;
+	pciephy->rstc = rstc;
+	pciephy->membase = membase;
+	pciephy->dev = dev;
+	pciephy->ops = &ops;
+
+	generic_phy = devm_phy_create(dev, dev->of_node, pciephy->ops);
+	if (IS_ERR(generic_phy)) {
+		dev_err(dev, "failed to create PHY\n");
+		return PTR_ERR(generic_phy);
+	}
+
+	phy_set_drvdata(generic_phy, pciephy);
+	phy_provider = devm_of_phy_provider_register(dev, of_phy_simple_xlate);
+
+	return PTR_ERR_OR_ZERO(phy_provider);
+}

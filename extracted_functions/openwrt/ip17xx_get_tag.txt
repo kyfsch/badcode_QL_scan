@@ -1,0 +1,11 @@
+static int ip17xx_get_tag(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	struct ip17xx_state *state = get_state(dev);
+	int vlan = val->port_vlan;
+
+	if (vlan < 0 || vlan >= MAX_VLANS)
+		return -EINVAL;
+
+	val->value.i = state->vlans[vlan].tag;
+	return 0;
+}

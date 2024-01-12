@@ -1,0 +1,6 @@
+static void udebug_printf_hook(int level, const char *fmt, va_list ap)
+{
+	udebug_entry_init(&ud_log);
+	udebug_entry_vprintf(&ud_log, fmt, ap);
+	udebug_entry_add(&ud_log);
+}

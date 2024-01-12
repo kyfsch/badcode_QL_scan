@@ -1,0 +1,4 @@
+static inline int rtl839x_tbl_access_data_0(int i)
+{
+	return RTL839X_TBL_ACCESS_DATA_0(i);
+}

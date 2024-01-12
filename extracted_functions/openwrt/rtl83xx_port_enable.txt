@@ -1,0 +1,39 @@
+static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
+				struct phy_device *phydev)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	u64 v;
+
+	pr_debug("%s: %x %d", __func__, (u32) priv, port);
+	priv->ports[port].enable = true;
+
+	/* enable inner tagging on egress, do not keep any tags */
+	priv->r->vlan_port_keep_tag_set(port, 0, 1);
+
+	if (dsa_is_cpu_port(ds, port))
+		return 0;
+
+	/* add port to switch mask of CPU_PORT */
+	priv->r->traffic_enable(priv->cpu_port, port);
+
+	if (priv->is_lagmember[port]) {
+		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
+		return 0;
+	}
+
+	/* add all other ports in the same bridge to switch mask of port */
+	v = priv->r->traffic_get(port);
+	v |= priv->ports[port].pm;
+	priv->r->traffic_set(port, v);
+
+	/* TODO: Figure out if this is necessary */
+	if (priv->family_id == RTL9300_FAMILY_ID) {
+		sw_w32_mask(0, BIT(port), RTL930X_L2_PORT_SABLK_CTRL);
+		sw_w32_mask(0, BIT(port), RTL930X_L2_PORT_DABLK_CTRL);
+	}
+
+	if (priv->ports[port].sds_num < 0)
+		priv->ports[port].sds_num = rtl93xx_get_sds(phydev);
+
+	return 0;
+}

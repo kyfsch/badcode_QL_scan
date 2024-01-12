@@ -1,0 +1,37 @@
+static int sprom_extract(struct ssb_fbs *priv, const u16 *in, u16 size)
+{
+	struct ssb_sprom *out = &priv->sprom;
+
+	memset(out, 0, sizeof(*out));
+
+	out->revision = in[size - 1] & 0x00FF;
+
+	switch (out->revision) {
+	case 1:
+	case 2:
+	case 3:
+		sprom_extract_r123(out, in);
+		break;
+	case 4:
+	case 5:
+		sprom_extract_r45(out, in);
+		break;
+	case 8:
+		sprom_extract_r8(out, in);
+		break;
+	default:
+		dev_warn(priv->dev,
+			 "Unsupported SPROM revision %d detected."
+			 " Will extract v1\n",
+			 out->revision);
+		out->revision = 1;
+		sprom_extract_r123(out, in);
+	}
+
+	if (out->boardflags_lo == 0xFFFF)
+		out->boardflags_lo = 0;  /* per specs */
+	if (out->boardflags_hi == 0xFFFF)
+		out->boardflags_hi = 0;  /* per specs */
+
+	return 0;
+}

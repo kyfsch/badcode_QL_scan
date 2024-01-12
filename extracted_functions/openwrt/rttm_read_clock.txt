@@ -1,0 +1,4 @@
+static u64 notrace rttm_read_clock(void)
+{
+	return (u64)rttm_get_counter(rttm_cs.to.of_base.base);
+}

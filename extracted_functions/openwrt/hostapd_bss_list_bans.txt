@@ -1,0 +1,17 @@
+hostapd_bss_list_bans(struct ubus_context *ctx, struct ubus_object *obj,
+		      struct ubus_request_data *req, const char *method,
+		      struct blob_attr *msg)
+{
+	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+	struct ubus_banned_client *ban;
+	void *c;
+
+	blob_buf_init(&b, 0);
+	c = blobmsg_open_array(&b, "clients");
+	avl_for_each_element(&hapd->ubus.banned, ban, avl)
+		blobmsg_add_macaddr(&b, NULL, ban->addr);
+	blobmsg_close_array(&b, c);
+	ubus_send_reply(ctx, req, b.head);
+
+	return 0;
+}

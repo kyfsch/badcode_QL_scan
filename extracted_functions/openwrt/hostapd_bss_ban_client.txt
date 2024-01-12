@@ -1,0 +1,26 @@
+hostapd_bss_ban_client(struct hostapd_data *hapd, u8 *addr, int time)
+{
+	struct ubus_banned_client *ban;
+
+	if (time < 0)
+		time = 0;
+
+	ban = avl_find_element(&hapd->ubus.banned, addr, ban, avl);
+	if (!ban) {
+		if (!time)
+			return;
+
+		ban = os_zalloc(sizeof(*ban));
+		memcpy(ban->addr, addr, sizeof(ban->addr));
+		ban->avl.key = ban->addr;
+		avl_insert(&hapd->ubus.banned, &ban->avl);
+	} else {
+		eloop_cancel_timeout(hostapd_bss_del_ban, ban, hapd);
+		if (!time) {
+			hostapd_bss_del_ban(ban, hapd);
+			return;
+		}
+	}
+
+	eloop_register_timeout(0, time * 1000, hostapd_bss_del_ban, ban, hapd);
+}

@@ -1,0 +1,20 @@
+rtk_api_ret_t rtk_svlan_servicePort_get(rtk_portmask_t *pSvlan_portmask)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 phyMbrPmask;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pSvlan_portmask)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicSvlanUplinkPortMask(&phyMbrPmask)) != RT_ERR_OK)
+        return retVal;
+
+    if(rtk_switch_portmask_P2L_get(phyMbrPmask, pSvlan_portmask) != RT_ERR_OK)
+        return RT_ERR_FAILED;
+
+
+    return RT_ERR_OK;
+}

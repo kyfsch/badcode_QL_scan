@@ -1,0 +1,72 @@
+static int ar934x_nfc_read_page(struct nand_chip *chip,
+				u8 *buf, int oob_required, int page)
+{
+	struct ar934x_nfc *nfc = chip->priv;
+	struct mtd_info *mtd = ar934x_nfc_to_mtd(nfc);
+	u32 ecc_ctrl;
+	int max_bitflips = 0;
+	bool ecc_failed;
+	bool ecc_corrected;
+	int err;
+
+	nfc_dbg(nfc, "read_page: page:%d oob:%d\n", page, oob_required);
+
+	ar934x_nfc_enable_hwecc(nfc);
+	err = ar934x_nfc_send_read(nfc, NAND_CMD_READ0, 0, page,
+				   mtd->writesize);
+	ar934x_nfc_disable_hwecc(nfc);
+
+	if (err)
+		return err;
+
+	/* TODO: optimize to avoid memcpy */
+	memcpy(buf, nfc->buf, mtd->writesize);
+
+	/* read the ECC status */
+	ecc_ctrl = ar934x_nfc_rr(nfc, AR934X_NFC_REG_ECC_CTRL);
+	ecc_failed = ecc_ctrl & AR934X_NFC_ECC_CTRL_ERR_UNCORRECT;
+	ecc_corrected = ecc_ctrl & AR934X_NFC_ECC_CTRL_ERR_CORRECT;
+
+	if (oob_required || ecc_failed) {
+		err = ar934x_nfc_send_read(nfc, NAND_CMD_READ0, mtd->writesize,
+					   page, mtd->oobsize);
+		if (err)
+			return err;
+
+		if (oob_required)
+			memcpy(chip->oob_poi, nfc->buf, mtd->oobsize);
+	}
+
+	if (ecc_failed) {
+		/*
+		 * The hardware ECC engine reports uncorrectable errors
+		 * on empty pages. Check the ECC bytes and the data. If
+		 * both contains 0xff bytes only, dont report a failure.
+		 *
+		 * TODO: prebuild a buffer with 0xff bytes and use memcmp
+		 * for better performance?
+		 */
+		if (!is_all_ff(&nfc->buf[nfc->ecc_oob_pos], chip->ecc.total) ||
+		    !is_all_ff(buf, mtd->writesize))
+				mtd->ecc_stats.failed++;
+	} else if (ecc_corrected) {
+		/*
+		 * The hardware does not report the exact count of the
+		 * corrected bitflips, use assumptions based on the
+		 * threshold.
+		 */
+		if (ecc_ctrl & AR934X_NFC_ECC_CTRL_ERR_OVER) {
+			/*
+			 * The number of corrected bitflips exceeds the
+			 * threshold. Assume the maximum.
+			 */
+			max_bitflips = chip->ecc.strength * chip->ecc.steps;
+		} else {
+			max_bitflips = nfc->ecc_thres * chip->ecc.steps;
+		}
+
+		mtd->ecc_stats.corrected += max_bitflips;
+	}
+
+	return max_bitflips;
+}

@@ -1,0 +1,11 @@
+void rtl9300_sds_rxcal_vth_manual(u32 sds_num, bool manual, u32 vth_list[])
+{
+	if (manual) {
+		rtl9300_sds_field_w(sds_num, 0x2e, 0x0f, 13, 13, 0x1);
+		rtl9300_sds_field_w(sds_num, 0x2e, 0x13,  5,  3, vth_list[0]);
+		rtl9300_sds_field_w(sds_num, 0x2e, 0x13,  2,  0, vth_list[1]);
+	} else {
+		rtl9300_sds_field_w(sds_num, 0x2e, 0x0f, 13, 13, 0x0);
+		mdelay(10);
+	}
+}

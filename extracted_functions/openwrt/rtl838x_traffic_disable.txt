@@ -1,0 +1,4 @@
+void rtl838x_traffic_disable(int source, int dest)
+{
+	rtl838x_mask_port_reg(BIT(dest), 0, rtl838x_port_iso_ctrl(source));
+}

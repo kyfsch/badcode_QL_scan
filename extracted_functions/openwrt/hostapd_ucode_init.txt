@@ -1,0 +1,51 @@
+int hostapd_ucode_init(struct hapd_interfaces *ifaces)
+{
+	static const uc_function_list_t global_fns[] = {
+		{ "printf",	uc_wpa_printf },
+		{ "getpid", uc_wpa_getpid },
+		{ "sha1", uc_wpa_sha1 },
+		{ "freq_info", uc_wpa_freq_info },
+		{ "add_iface", uc_hostapd_add_iface },
+		{ "remove_iface", uc_hostapd_remove_iface },
+		{ "udebug_set", uc_wpa_udebug_set },
+	};
+	static const uc_function_list_t bss_fns[] = {
+		{ "ctrl", uc_hostapd_bss_ctrl },
+		{ "set_config", uc_hostapd_bss_set_config },
+		{ "rename", uc_hostapd_bss_rename },
+		{ "delete", uc_hostapd_bss_delete },
+	};
+	static const uc_function_list_t iface_fns[] = {
+		{ "set_bss_order", uc_hostapd_iface_set_bss_order },
+		{ "add_bss", uc_hostapd_iface_add_bss },
+		{ "stop", uc_hostapd_iface_stop },
+		{ "start", uc_hostapd_iface_start },
+		{ "switch_channel", uc_hostapd_iface_switch_channel },
+	};
+	uc_value_t *data, *proto;
+
+	interfaces = ifaces;
+	vm = wpa_ucode_create_vm();
+
+	global_type = uc_type_declare(vm, "hostapd.global", global_fns, NULL);
+	bss_type = uc_type_declare(vm, "hostapd.bss", bss_fns, NULL);
+	iface_type = uc_type_declare(vm, "hostapd.iface", iface_fns, NULL);
+
+	bss_registry = ucv_array_new(vm);
+	uc_vm_registry_set(vm, "hostap.bss_registry", bss_registry);
+
+	iface_registry = ucv_array_new(vm);
+	uc_vm_registry_set(vm, "hostap.iface_registry", iface_registry);
+
+	global = wpa_ucode_global_init("hostapd", global_type);
+
+	if (wpa_ucode_run(HOSTAPD_UC_PATH "hostapd.uc"))
+		goto free_vm;
+	ucv_gc(vm);
+
+	return 0;
+
+free_vm:
+	wpa_ucode_free_vm();
+	return -1;
+}

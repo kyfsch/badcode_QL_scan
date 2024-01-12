@@ -1,0 +1,188 @@
+rtk_api_ret_t rtk_vlan_set(rtk_vlan_t vid, rtk_vlan_cfg_t *pVlanCfg)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 phyMbrPmask;
+    rtk_uint32 phyUntagPmask;
+    rtl8367c_user_vlan4kentry vlan4K;
+    rtl8367c_vlanconfiguser vlanMC;
+    rtk_uint32 idx;
+    rtk_uint32 empty_index = 0xffff;
+    rtk_uint32 update_evid = 0;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* vid must be 0~8191 */
+    if (vid > RTL8367C_EVIDMAX)
+        return RT_ERR_VLAN_VID;
+
+    /* Null pointer check */
+    if(NULL == pVlanCfg)
+        return RT_ERR_NULL_POINTER;
+
+    /* Check port mask valid */
+    RTK_CHK_PORTMASK_VALID(&(pVlanCfg->mbr));
+
+    if (vid <= RTL8367C_VIDMAX)
+    {
+        /* Check untag port mask valid */
+        RTK_CHK_PORTMASK_VALID(&(pVlanCfg->untag));
+    }
+
+    /* IVL_EN */
+    if(pVlanCfg->ivl_en >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    /* fid must be 0~15 */
+    if(pVlanCfg->fid_msti > RTL8367C_FIDMAX)
+        return RT_ERR_L2_FID;
+
+    /* Policing */
+    if(pVlanCfg->envlanpol >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    /* Meter ID */
+    if(pVlanCfg->meteridx > RTK_MAX_METER_ID)
+        return RT_ERR_INPUT;
+
+    /* VLAN based priority */
+    if(pVlanCfg->vbpen >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    /* Priority */
+    if(pVlanCfg->vbpri > RTL8367C_PRIMAX)
+        return RT_ERR_INPUT;
+
+    /* Get physical port mask */
+    if(rtk_switch_portmask_L2P_get(&(pVlanCfg->mbr), &phyMbrPmask) != RT_ERR_OK)
+        return RT_ERR_FAILED;
+
+    if(rtk_switch_portmask_L2P_get(&(pVlanCfg->untag), &phyUntagPmask) != RT_ERR_OK)
+        return RT_ERR_FAILED;
+
+    if (vid <= RTL8367C_VIDMAX)
+    {
+        /* update 4K table */
+        memset(&vlan4K, 0, sizeof(rtl8367c_user_vlan4kentry));
+        vlan4K.vid = vid;
+
+        vlan4K.mbr    = (phyMbrPmask & 0xFFFF);
+        vlan4K.untag  = (phyUntagPmask & 0xFFFF);
+
+        vlan4K.ivl_svl      = pVlanCfg->ivl_en;
+        vlan4K.fid_msti     = pVlanCfg->fid_msti;
+        vlan4K.envlanpol    = pVlanCfg->envlanpol;
+        vlan4K.meteridx     = pVlanCfg->meteridx;
+        vlan4K.vbpen        = pVlanCfg->vbpen;
+        vlan4K.vbpri        = pVlanCfg->vbpri;
+
+        if ((retVal = rtl8367c_setAsicVlan4kEntry(&vlan4K)) != RT_ERR_OK)
+            return retVal;
+
+        /* Update Member configuration if exist */
+        for (idx = 0; idx <= RTL8367C_CVIDXMAX; idx++)
+        {
+            if(vlan_mbrCfgUsage[idx] == MBRCFG_USED_BY_VLAN)
+            {
+                if(vlan_mbrCfgVid[idx] == vid)
+                {
+                    /* Found! Update */
+                    if(phyMbrPmask == 0x00)
+                    {
+                        /* Member port = 0x00, delete this VLAN from Member Configuration */
+                        memset(&vlanMC, 0x00, sizeof(rtl8367c_vlanconfiguser));
+                        if ((retVal = rtl8367c_setAsicVlanMemberConfig(idx, &vlanMC)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* Clear Database */
+                        vlan_mbrCfgUsage[idx] = MBRCFG_UNUSED;
+                        vlan_mbrCfgVid[idx]   = 0;
+                    }
+                    else
+                    {
+                        /* Normal VLAN config, update to member configuration */
+                        vlanMC.evid = vid;
+                        vlanMC.mbr = vlan4K.mbr;
+                        vlanMC.fid_msti = vlan4K.fid_msti;
+                        vlanMC.meteridx = vlan4K.meteridx;
+                        vlanMC.envlanpol= vlan4K.envlanpol;
+                        vlanMC.vbpen = vlan4K.vbpen;
+                        vlanMC.vbpri = vlan4K.vbpri;
+                        if ((retVal = rtl8367c_setAsicVlanMemberConfig(idx, &vlanMC)) != RT_ERR_OK)
+                            return retVal;
+                    }
+
+                    break;
+                }
+            }
+        }
+    }
+    else
+    {
+        /* vid > 4095 */
+        for (idx = 0; idx <= RTL8367C_CVIDXMAX; idx++)
+        {
+            if(vlan_mbrCfgUsage[idx] == MBRCFG_USED_BY_VLAN)
+            {
+                if(vlan_mbrCfgVid[idx] == vid)
+                {
+                    /* Found! Update */
+                    if(phyMbrPmask == 0x00)
+                    {
+                        /* Member port = 0x00, delete this VLAN from Member Configuration */
+                        memset(&vlanMC, 0x00, sizeof(rtl8367c_vlanconfiguser));
+                        if ((retVal = rtl8367c_setAsicVlanMemberConfig(idx, &vlanMC)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* Clear Database */
+                        vlan_mbrCfgUsage[idx] = MBRCFG_UNUSED;
+                        vlan_mbrCfgVid[idx]   = 0;
+                    }
+                    else
+                    {
+                        /* Normal VLAN config, update to member configuration */
+                        vlanMC.evid = vid;
+                        vlanMC.mbr = phyMbrPmask;
+                        vlanMC.fid_msti = pVlanCfg->fid_msti;
+                        vlanMC.meteridx = pVlanCfg->meteridx;
+                        vlanMC.envlanpol= pVlanCfg->envlanpol;
+                        vlanMC.vbpen = pVlanCfg->vbpen;
+                        vlanMC.vbpri = pVlanCfg->vbpri;
+                        if ((retVal = rtl8367c_setAsicVlanMemberConfig(idx, &vlanMC)) != RT_ERR_OK)
+                            return retVal;
+
+                        break;
+                    }
+
+                    update_evid = 1;
+                }
+            }
+
+            if(vlan_mbrCfgUsage[idx] == MBRCFG_UNUSED)
+            {
+                if(0xffff == empty_index)
+                    empty_index = idx;
+            }
+        }
+
+        /* doesn't find out same EVID entry and there is empty index in member configuration */
+        if( (phyMbrPmask != 0x00) && (update_evid == 0) && (empty_index != 0xFFFF) )
+        {
+            vlanMC.evid = vid;
+            vlanMC.mbr = phyMbrPmask;
+            vlanMC.fid_msti = pVlanCfg->fid_msti;
+            vlanMC.meteridx = pVlanCfg->meteridx;
+            vlanMC.envlanpol= pVlanCfg->envlanpol;
+            vlanMC.vbpen = pVlanCfg->vbpen;
+            vlanMC.vbpri = pVlanCfg->vbpri;
+            if ((retVal = rtl8367c_setAsicVlanMemberConfig(empty_index, &vlanMC)) != RT_ERR_OK)
+                return retVal;
+
+            vlan_mbrCfgUsage[empty_index] = MBRCFG_USED_BY_VLAN;
+            vlan_mbrCfgVid[empty_index] = vid;
+
+        }
+    }
+
+    return RT_ERR_OK;
+}

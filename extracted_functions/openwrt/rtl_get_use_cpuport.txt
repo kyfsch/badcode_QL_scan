@@ -1,0 +1,6 @@
+rtl_get_use_cpuport(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	struct rtl_priv *priv = to_rtl(dev);
+	val->value.i = priv->do_cpu;
+	return 0;
+}

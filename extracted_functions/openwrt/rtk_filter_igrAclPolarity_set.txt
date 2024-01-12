@@ -1,0 +1,9 @@
+rtk_api_ret_t rtk_filter_igrAclPolarity_set(rtk_uint32 polarity)
+{
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(polarity > 1)
+        return RT_ERR_OUT_OF_RANGE;
+    return rtl8367c_setAsicAclGpioPolarity(polarity);
+}

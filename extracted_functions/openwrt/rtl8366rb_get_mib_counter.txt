@@ -1,0 +1,47 @@
+static int rtl8366rb_get_mib_counter(struct rtl8366_smi *smi, int counter,
+				     int port, unsigned long long *val)
+{
+	int i;
+	int err;
+	u32 addr, data;
+	u64 mibvalue;
+
+	if (port > RTL8366RB_NUM_PORTS || counter >= RTL8366RB_MIB_COUNT)
+		return -EINVAL;
+
+	addr = RTL8366RB_MIB_COUNTER_BASE +
+	       RTL8366RB_MIB_COUNTER_PORT_OFFSET * (port) +
+	       rtl8366rb_mib_counters[counter].offset;
+
+	/*
+	 * Writing access counter address first
+	 * then ASIC will prepare 64bits counter wait for being retrived
+	 */
+	data = 0; /* writing data will be discard by ASIC */
+	err = rtl8366_smi_write_reg(smi, addr, data);
+	if (err)
+		return err;
+
+	/* read MIB control register */
+	err =  rtl8366_smi_read_reg(smi, RTL8366RB_MIB_CTRL_REG, &data);
+	if (err)
+		return err;
+
+	if (data & RTL8366RB_MIB_CTRL_BUSY_MASK)
+		return -EBUSY;
+
+	if (data & RTL8366RB_MIB_CTRL_RESET_MASK)
+		return -EIO;
+
+	mibvalue = 0;
+	for (i = rtl8366rb_mib_counters[counter].length; i > 0; i--) {
+		err = rtl8366_smi_read_reg(smi, addr + (i - 1), &data);
+		if (err)
+			return err;
+
+		mibvalue = (mibvalue << 16) | (data & 0xFFFF);
+	}
+
+	*val = mibvalue;
+	return 0;
+}

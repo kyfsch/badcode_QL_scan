@@ -1,0 +1,39 @@
+static void vr9_init(struct platform_device *pdev)
+{
+	volatile u32 *p;
+	unsigned int i;
+
+	/* setup pmu */
+	ltq_pmu_enable(IFX_PMU_MODULE_PPE_SLL01 |
+		IFX_PMU_MODULE_PPE_TC |
+		IFX_PMU_MODULE_PPE_EMA |
+		IFX_PMU_MODULE_PPE_QSB |
+		IFX_PMU_MODULE_AHBS |
+		IFX_PMU_MODULE_DSL_DFE);
+
+	vr9_reset_ppe(pdev);
+
+	/* pdma init */
+	IFX_REG_W32(0x08,       PDMA_CFG);
+	IFX_REG_W32(0x00203580, SAR_PDMA_RX_CMDBUF_CFG);
+	IFX_REG_W32(0x004035A0, SAR_PDMA_RX_FW_CMDBUF_CFG);
+
+	/* mailbox init */
+	IFX_REG_W32(0xFFFFFFFF, MBOX_IGU1_ISRC);
+	IFX_REG_W32(0x00000000, MBOX_IGU1_IER);
+	IFX_REG_W32(0xFFFFFFFF, MBOX_IGU3_ISRC);
+	IFX_REG_W32(0x00000000, MBOX_IGU3_IER);
+
+	/* tc init - clear sync state */
+	*SFSM_STATE0 = 0;
+	*SFSM_STATE1 = 0;
+
+	/* init shared buffer */
+	p = SB_RAM0_ADDR(0);
+	for ( i = 0; i < SB_RAM0_DWLEN + SB_RAM1_DWLEN + SB_RAM2_DWLEN + SB_RAM3_DWLEN; i++ )
+		IFX_REG_W32(0, p++);
+
+	p = SB_RAM6_ADDR(0);
+	for ( i = 0; i < SB_RAM6_DWLEN; i++ )
+		IFX_REG_W32(0, p++);
+}

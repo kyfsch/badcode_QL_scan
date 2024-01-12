@@ -1,0 +1,25 @@
+void AT91F_LowLevelInit(void)
+{
+	int i;
+
+	// Init Interrupt Controller
+	AT91F_AIC_Open(
+		AT91C_BASE_AIC,          // pointer to the AIC registers
+		AT91C_AIC_BRANCH_OPCODE, // IRQ exception vector
+		AT91F_UndefHandler,      // FIQ exception vector
+		AT91F_UndefHandler,      // AIC default handler
+		AT91F_SpuriousHandler,   // AIC spurious handler
+		0);                      // Protect mode
+
+	// Perform 8 End Of Interrupt Command to make sre AIC will not Lock out nIRQ 
+	for(i=0; i<8; i++)
+		AT91F_AIC_AcknowledgeIt(AT91C_BASE_AIC);
+
+	AT91F_AIC_SetExceptionVector((unsigned int *)0x0C, AT91F_FetchAbort);
+	AT91F_AIC_SetExceptionVector((unsigned int *)0x10, AT91F_DataAbort);
+	AT91F_AIC_SetExceptionVector((unsigned int *)0x4, AT91F_UndefHandler);
+
+	//Initialize SDRAM and Flash
+	AT91F_InitMemories();
+
+}

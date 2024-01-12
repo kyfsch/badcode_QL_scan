@@ -1,0 +1,27 @@
+void rtk_hal_dump_full_mib(void)
+{
+	rtk_port_t port;
+	rtk_stat_counter_t Cntr;
+	rtk_stat_port_type_t cntr_idx;
+
+	for (port = UTP_PORT0; port < (UTP_PORT0 + 5); port++) {
+		printk("\nPort%d\n", port);
+		for (cntr_idx = STAT_IfInOctets; cntr_idx < STAT_PORT_CNTR_END; cntr_idx ++) {
+			rtk_stat_port_get(port, cntr_idx, &Cntr);
+			printk("%8llu ", Cntr);
+			if (((cntr_idx%10) == 9))
+				printk("\n");
+		}
+	}
+
+	for (port = EXT_PORT0; port < (EXT_PORT0 + 2); port++) {
+		printk("\nPort%d\n", port);
+		for (cntr_idx = STAT_IfInOctets; cntr_idx < STAT_PORT_CNTR_END; cntr_idx ++) {
+			rtk_stat_port_get(port, cntr_idx, &Cntr);
+			printk("%8llu ", Cntr);
+			if (((cntr_idx%10) == 9))
+				printk("\n");
+		}
+	}
+	rtk_stat_global_reset();
+}

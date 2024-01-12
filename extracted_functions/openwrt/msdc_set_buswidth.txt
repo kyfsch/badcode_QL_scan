@@ -1,0 +1,25 @@
+static void msdc_set_buswidth(struct msdc_host *host, u32 width)
+{
+	void __iomem *base = host->base;
+	u32 val = sdr_read32(SDC_CFG);
+
+	val &= ~SDC_CFG_BUSWIDTH;
+
+	switch (width) {
+	default:
+	case MMC_BUS_WIDTH_1:
+		width = 1;
+		val |= (MSDC_BUS_1BITS << 16);
+		break;
+	case MMC_BUS_WIDTH_4:
+		val |= (MSDC_BUS_4BITS << 16);
+		break;
+	case MMC_BUS_WIDTH_8:
+		val |= (MSDC_BUS_8BITS << 16);
+		break;
+	}
+
+	sdr_write32(SDC_CFG, val);
+
+	N_MSG(CFG, "Bus Width = %d", width);
+}

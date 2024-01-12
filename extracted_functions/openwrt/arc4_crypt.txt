@@ -1,0 +1,8 @@
+static void arc4_crypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
+{
+        struct arc4_ctx *ctx = crypto_tfm_ctx(tfm);
+
+        _deu_arc4 (ctx, out, in, NULL, ARC4_BLOCK_SIZE,
+                    CRYPTO_DIR_DECRYPT, 0);
+
+}

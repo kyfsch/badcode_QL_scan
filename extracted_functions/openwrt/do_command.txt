@@ -1,0 +1,72 @@
+static int do_command(const struct wlc_call *cmd, char *arg)
+{
+	static char buf[BUFSIZE];
+	int set;
+	int ret = 0;
+	char *format, *end;
+	int intval;
+	void *ptr = (void *) buf;
+
+	if (debug >= 10) {
+		fprintf(stderr, "do_command %-16s\t'%s'\n", cmd->name, arg);
+	}
+	
+	if ((arg == NULL) && ((cmd->param & PARAM_TYPE) != NONE)) {
+		set = 0;
+		ret = cmd->handler(cmd->param | GET, (void *) &cmd->data, (void *) buf);
+		if (ret == 0) {
+			switch(cmd->param & PARAM_TYPE) {
+				case INT:
+					intval = *((int *) buf);
+					
+					if (intval > 65535)
+						format = "0x%08x\n";
+					else if (intval > 255)
+						format = "0x%04x\n";
+					else
+						format = "%d\n";
+					
+					fprintf(stdout, format, intval);
+					break;
+				case STRING:
+					fprintf(stdout, "%s\n", buf);
+					break;
+				case MAC:
+					my_ether_ntoa(buf, buf + 6);
+					fprintf(stdout, "%s\n", buf + 6);
+					break;
+			}
+		}
+	} else { /* SET */
+		set = 1;
+		switch(cmd->param & PARAM_TYPE) {
+			case INT:
+				intval = strtoul(arg, &end, 0);
+				if (end && !(*end)) {
+					memcpy(buf, &intval, sizeof(intval));
+				} else {
+					fprintf(stderr, "%s: Invalid argument\n", cmd->name);
+					return -1;
+				}
+				break;
+			case STRING:
+				strncpy(buf, arg, BUFSIZE);
+				buf[BUFSIZE - 1] = 0;
+				break;
+			case MAC:
+				ptr = ether_aton(arg);
+				if (!ptr) {
+					fprintf(stderr, "%s: Invalid mac address '%s'\n", cmd->name, arg);
+					return -1;
+				}
+				break;
+		}
+
+		ret = cmd->handler(cmd->param | SET, (void *) &cmd->data, ptr);
+	}
+	
+	if ((debug > 0) && (ret != 0)) 
+		fprintf(stderr, "Command '%s %s' failed: %d\n", (set == 1 ? "set" : "get"), cmd->name, ret);
+	
+	return ret;
+}

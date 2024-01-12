@@ -1,0 +1,9 @@
+static void __init br200_wp_setup_arch(void)
+{
+	if (ppc_md.progress)
+		ppc_md.progress("br200_wp_setup_arch()", 0);
+
+	fsl_pci_assign_primary();
+
+	pr_info("br200-wp board from Aerohive\n");
+}

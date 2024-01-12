@@ -1,0 +1,6 @@
+static int __init mtdsplit_uimage_init(void)
+{
+	register_mtd_parser(&uimage_generic_parser);
+
+	return 0;
+}

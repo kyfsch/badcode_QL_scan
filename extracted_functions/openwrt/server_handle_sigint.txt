@@ -1,0 +1,11 @@
+server_handle_sigint(int sig)
+{
+	struct ead_instance *in;
+	struct list_head *p, *tmp;
+
+	list_for_each_safe(p, tmp, &instances) {
+		in = list_entry(p, struct ead_instance, list);
+		stop_server(in, true);
+	}
+	exit(1);
+}

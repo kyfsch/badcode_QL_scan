@@ -1,0 +1,7 @@
+void mt7620_mdio_link_adjust(struct fe_priv *priv, int port)
+{
+	mt7620_print_link_state(priv, port, priv->link[port],
+				priv->phy->speed[port],
+				(priv->phy->duplex[port] == DUPLEX_FULL));
+	mt7620_handle_carrier(priv);
+}

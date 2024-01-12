@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicFlowControlJumboModeSize(rtk_uint32* pSize)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_FLOWCTRL_JUMBO_SIZE, RTL8367C_JUMBO_SIZE_MASK, pSize);
+}

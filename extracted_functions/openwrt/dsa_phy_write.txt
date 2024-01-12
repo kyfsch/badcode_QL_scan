@@ -1,0 +1,15 @@
+int dsa_phy_write(struct dsa_switch *ds, int phy_addr, int phy_reg, u16 val)
+{
+	u32 offset = 0;
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	if ((phy_addr >= 24) &&
+	    (phy_addr <= 27) &&
+	    (priv->ports[24].phy == PHY_RTL838X_SDS)) {
+		if (phy_addr == 26)
+			offset = 0x100;
+		sw_w32(val, RTL838X_SDS4_FIB_REG0 + offset + (phy_reg << 2));
+		return 0;
+	}
+	return write_phy(phy_addr, 0, phy_reg, val);
+}

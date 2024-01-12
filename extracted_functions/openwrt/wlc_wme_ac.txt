@@ -1,0 +1,62 @@
+static int wlc_wme_ac(wlc_param param, void *data, void *value)
+{
+	char *type = *((char **) data);
+	char *settings = (char *) value;
+	char cmd[100], *p, *val;
+	edcf_acparam_t params[AC_COUNT];
+	int ret;
+	int intval;
+	int cur = -1;
+	char *buf = wlbuf;
+
+	if ((param & PARAM_MODE) != SET)
+		return -1;
+	
+	memset(params, 0, sizeof(params));
+	ret = wl_iovar_get(interface, type, params, sizeof(params));
+	memset(buf, 0, BUFSIZE);
+	strcpy(buf, type);
+	buf += strlen(buf) + 1;
+	
+	foreach(cmd, settings, p) {
+		val = strchr(cmd, '=');
+		if (val == NULL) {
+			if (strcmp(cmd, "be") == 0)
+				cur = AC_BE;
+			else if (strcmp(cmd, "bk") == 0)
+				cur = AC_BK;
+			else if (strcmp(cmd, "vi") == 0)
+				cur = AC_VI;
+			else if (strcmp(cmd, "vo") == 0)
+				cur = AC_VO;
+			else
+				return -1;
+
+			/* just in case */
+			params[cur].ACI = (params[cur].ACI & (0x3 << 5)) | (cur << 5);
+		} else {
+			*(val++) = 0;
+			
+			intval = strtoul(val, NULL, 10);
+			if (strcmp(cmd, "cwmin") == 0)
+				params[cur].ECW = (params[cur].ECW & ~(0xf)) | cw2ecw(intval);
+			else if (strcmp(cmd, "ecwmin") == 0)
+				params[cur].ECW = (params[cur].ECW & ~(0xf)) | (intval & 0xf);
+			else if (strcmp(cmd, "cwmax") == 0)
+				params[cur].ECW = (params[cur].ECW & ~(0xf << 4)) | (cw2ecw(intval) << 4);
+			else if (strcmp(cmd, "ecwmax") == 0)
+				params[cur].ECW = (params[cur].ECW & ~(0xf << 4)) | ((intval & 0xf) << 4);
+			else if (strcmp(cmd, "aifsn") == 0)
+				params[cur].ACI = (params[cur].ACI & ~(0xf)) | (intval & 0xf);
+			else if (strcmp(cmd, "txop") == 0)
+				params[cur].TXOP = intval >> 5;
+			else if (strcmp(cmd, "force") == 0)
+				params[cur].ACI = (params[cur].ACI & ~(1 << 4)) | ((intval) ? (1 << 4) : 0);
+			else return -1;
+			
+			memcpy(buf, &params[cur], sizeof(edcf_acparam_t));
+			wl_ioctl(interface, WLC_SET_VAR, wlbuf, BUFSIZE);
+		}
+	}
+	return ret;
+}

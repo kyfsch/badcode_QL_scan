@@ -1,0 +1,26 @@
+struct symbol *sym_find(const char *name)
+{
+	struct symbol *symbol = NULL;
+	int hash = 0;
+
+	if (!name)
+		return NULL;
+
+	if (name[0] && !name[1]) {
+		switch (name[0]) {
+		case 'y': return &symbol_yes;
+		case 'm': return &symbol_mod;
+		case 'n': return &symbol_no;
+		}
+	}
+	hash = strhash(name) % SYMBOL_HASHSIZE;
+
+	for (symbol = symbol_hash[hash]; symbol; symbol = symbol->next) {
+		if (symbol->name &&
+		    !strcmp(symbol->name, name) &&
+		    !(symbol->flags & SYMBOL_CONST))
+				break;
+	}
+
+	return symbol;
+}

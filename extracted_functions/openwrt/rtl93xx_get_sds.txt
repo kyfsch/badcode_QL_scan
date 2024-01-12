@@ -1,0 +1,19 @@
+static int rtl93xx_get_sds(struct phy_device *phydev)
+{
+	struct device *dev = &phydev->mdio.dev;
+	struct device_node *dn;
+	u32 sds_num;
+
+	if (!dev)
+		return -1;
+	if (dev->of_node) {
+		dn = dev->of_node;
+		if (of_property_read_u32(dn, "sds", &sds_num))
+			sds_num = -1;
+	} else {
+		dev_err(dev, "No DT node.\n");
+		return -1;
+	}
+
+	return sds_num;
+}

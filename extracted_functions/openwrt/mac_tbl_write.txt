@@ -1,0 +1,8 @@
+static ssize_t mac_tbl_write(struct file *file,
+                            const char __user *buffer, size_t count,
+                            loff_t *data)
+{
+	rtk_hal_clear_table();
+
+        return count;
+}

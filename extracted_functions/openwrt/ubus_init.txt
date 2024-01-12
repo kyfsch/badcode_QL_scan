@@ -1,0 +1,17 @@
+void ubus_init() {
+	uloop_init();
+
+	ctx = ubus_connect(NULL);
+	if (!ctx)
+		return;
+
+	if (ubus_add_object(ctx, &dsl_object)) {
+		ubus_free(ctx);
+		ctx = NULL;
+		return;
+	}
+
+	ubus_add_uloop(ctx);
+
+	DSL_CPE_ThreadInit(&thread, "ubus", ubus_main, DSL_CPE_PIPE_STACK_SIZE, DSL_CPE_PIPE_PRIORITY, 0, 0);
+}

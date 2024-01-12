@@ -1,0 +1,25 @@
+static void dma_sdram_preload(void *sdram_data_tx_ptr, void *sdram_data_rx_ptr)
+{
+	int i;
+	int j;
+
+	u32 testaddr = (u32)sdram_data_tx_ptr;
+
+	for (i = 0; i < desc_num; i++) {
+		for (j = 0; j < dma_pkt_size; j = j + 4) {
+			REG32(testaddr + i * dma_pkt_size + j)
+				= DEFAULT_TEST_PATTEN;
+		}
+	}
+	pr_info("SDR Preload(0x55aa00ff) with data on TX location done\n");
+
+	testaddr = (u32)sdram_data_rx_ptr;
+	pr_info("RX Preload start address:0x%08x\n", (u32)(testaddr));
+
+	for (i = 0; i < desc_num; i++) {
+		for (j = 0; j < roundup(dma_pkt_size,
+			dma_burst << 2); j = j + 4)
+			REG32(testaddr + i * dma_pkt_size + j) = 0xcccccccc;
+	}
+	pr_info("SDR locations for Memcopy RX preset to 0xcccccccc done\n");
+}

@@ -1,0 +1,4 @@
+void rtl839x_traffic_set(int source, u64 dest_matrix)
+{
+	rtl839x_set_port_reg_be(dest_matrix, rtl839x_port_iso_ctrl(source));
+}

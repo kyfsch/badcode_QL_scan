@@ -1,0 +1,30 @@
+ead_pcap_reopen(bool first)
+{
+	static char errbuf[PCAP_ERRBUF_SIZE] = "";
+
+	if (pcap_fp_rx && (pcap_fp_rx != pcap_fp))
+		pcap_close(pcap_fp_rx);
+
+	if (pcap_fp)
+		pcap_close(pcap_fp);
+
+	pcap_fp_rx = NULL;
+	do {
+		if (instance->bridge[0]) {
+			pcap_fp_rx = ead_open_pcap(instance->bridge, errbuf, 1);
+			pcap_fp = ead_open_pcap(instance->ifname, errbuf, 0);
+		} else {
+			pcap_fp = ead_open_pcap(instance->ifname, errbuf, 1);
+		}
+
+		if (!pcap_fp_rx)
+			pcap_fp_rx = pcap_fp;
+		if (first && !pcap_fp) {
+			DEBUG(1, "WARNING: unable to open interface '%s'\n", instance->ifname);
+			first = false;
+		}
+		if (!pcap_fp)
+			sleep(1);
+	} while (!pcap_fp);
+	pcap_setfilter(pcap_fp_rx, &pktfilter);
+}

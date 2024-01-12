@@ -1,0 +1,7 @@
+static int rtl8367_led_op_select_parallel(struct rtl8366_smi *smi)
+{
+	int err;
+
+	REG_WR(smi, RTL8367_LED_SYS_CONFIG_REG, 0x1472);
+	return 0;
+}

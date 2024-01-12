@@ -1,0 +1,42 @@
+void set_ddr_timing(unsigned int w, unsigned int i)
+{
+	unsigned int reg;
+	unsigned int wnow = 16;
+	unsigned int inow = 32;
+
+	/* reset all timing controls to known value (31) */
+	writel(DDR_PHY_TIMING_W_RST | DDR_PHY_TIMING_I_RST, DDR_PHY_TIMING);
+	writel(DDR_PHY_TIMING_W_RST | DDR_PHY_TIMING_I_RST | DDR_PHY_TIMING_CK,
+	       DDR_PHY_TIMING);
+	writel(DDR_PHY_TIMING_W_RST | DDR_PHY_TIMING_I_RST, DDR_PHY_TIMING);
+
+	/* step up or down read delay to the requested value */
+	while (wnow != w) {
+		if (wnow < w) {
+			reg = DDR_PHY_TIMING_INC;
+			wnow++;
+		} else {
+			reg = 0;
+			wnow--;
+		}
+		writel(DDR_PHY_TIMING_W_CE | reg, DDR_PHY_TIMING);
+		writel(DDR_PHY_TIMING_CK | DDR_PHY_TIMING_W_CE | reg,
+		       DDR_PHY_TIMING);
+		writel(DDR_PHY_TIMING_W_CE | reg, DDR_PHY_TIMING);
+	}
+
+	/* now write delay */
+	while (inow != i) {
+		if (inow < i) {
+			reg = DDR_PHY_TIMING_INC;
+			inow++;
+		} else {
+			reg = 0;
+			inow--;
+		}
+		writel(DDR_PHY_TIMING_I_CE | reg, DDR_PHY_TIMING);
+		writel(DDR_PHY_TIMING_CK | DDR_PHY_TIMING_I_CE | reg,
+		       DDR_PHY_TIMING);
+		writel(DDR_PHY_TIMING_I_CE | reg, DDR_PHY_TIMING);
+	}
+}

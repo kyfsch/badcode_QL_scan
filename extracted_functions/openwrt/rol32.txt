@@ -1,0 +1,4 @@
+rol32(uint32_t word, int shift)
+{
+	return (word << shift) | (word >> (32 - shift));
+}

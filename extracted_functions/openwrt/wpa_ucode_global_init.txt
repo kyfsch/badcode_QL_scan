@@ -1,0 +1,22 @@
+uc_value_t *wpa_ucode_global_init(const char *name, uc_resource_type_t *global_type)
+{
+	uc_value_t *global = uc_resource_new(global_type, NULL);
+	uc_value_t *proto;
+
+	uc_vm_registry_set(&vm, "hostap.global", global);
+	proto = ucv_prototype_get(global);
+	ucv_object_add(proto, "data", ucv_get(ucv_object_new(&vm)));
+
+#define ADD_CONST(x) ucv_object_add(proto, #x, ucv_int64_new(x))
+	ADD_CONST(MSG_EXCESSIVE);
+	ADD_CONST(MSG_MSGDUMP);
+	ADD_CONST(MSG_DEBUG);
+	ADD_CONST(MSG_INFO);
+	ADD_CONST(MSG_WARNING);
+	ADD_CONST(MSG_ERROR);
+#undef ADD_CONST
+
+	ucv_object_add(uc_vm_scope_get(&vm), name, ucv_get(global));
+
+	return global;
+}

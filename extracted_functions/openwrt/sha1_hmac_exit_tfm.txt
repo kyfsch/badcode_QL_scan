@@ -1,0 +1,6 @@
+static void sha1_hmac_exit_tfm(struct crypto_tfm *tfm)
+{
+    struct sha1_hmac_ctx *sctx = crypto_tfm_ctx(tfm);
+    kfree(sctx->temp);
+    kfree(sctx->desc);
+}

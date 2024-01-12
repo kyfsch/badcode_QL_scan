@@ -1,0 +1,14 @@
+rtk_api_ret_t rtk_rldp_status_get(rtk_rldp_status_t *pStatus)
+{
+    rtk_api_ret_t retVal;
+    ether_addr_t seed;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if ((retVal = rtl8367c_getAsicRldpRandomNumber(&seed))!=RT_ERR_OK)
+        return retVal;
+    memcpy(&pStatus->id, &seed, sizeof(ether_addr_t));
+
+    return RT_ERR_OK;
+} /* end of rtk_rldp_status_get */

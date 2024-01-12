@@ -1,0 +1,15 @@
+BIGNUM *BN_new(void)
+	{
+	BIGNUM *ret;
+
+	if ((ret=(BIGNUM *)malloc(sizeof(BIGNUM))) == NULL)
+		{
+		return(NULL);
+		}
+	ret->flags=BN_FLG_MALLOCED;
+	ret->top=0;
+	ret->neg=0;
+	ret->dmax=0;
+	ret->d=NULL;
+	return(ret);
+	}

@@ -1,0 +1,12 @@
+rtk_api_ret_t rtk_mirror_override_set(rtk_enable_t rxMirror, rtk_enable_t txMirror, rtk_enable_t aclMirror)
+{
+    rtk_api_ret_t retVal;
+
+    if( (rxMirror >= RTK_ENABLE_END) || (txMirror >= RTK_ENABLE_END) || (aclMirror >= RTK_ENABLE_END))
+        return RT_ERR_ENABLE;
+
+    if ((retVal = rtl8367c_setAsicPortMirrorOverride((rtk_uint32)rxMirror, (rtk_uint32)txMirror, (rtk_uint32)aclMirror)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,7 @@
+void rtl931x_sds_fiber_disable(u32 sds)
+{
+	u32 v = 0x3F;
+	u32 asds = rtl931x_get_analog_sds(sds);
+
+	rtl9310_sds_field_w(asds, 0x1F, 0x9, 11, 6, v);
+}

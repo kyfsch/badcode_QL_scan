@@ -1,0 +1,18 @@
+static void rtl930x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
+{
+	u32 r[3];
+	struct table_reg *q = rtl_table_get(RTL9300_TBL_L2, 0);
+	u32 idx = (0 << 14) | (hash << 2) | pos; /* Access SRAM, with hash and at pos in bucket */
+
+	pr_debug("%s: hash %d, pos %d\n", __func__, hash, pos);
+	pr_debug("%s: index %d -> mac %02x:%02x:%02x:%02x:%02x:%02x\n", __func__, idx,
+		e->mac[0], e->mac[1], e->mac[2], e->mac[3],e->mac[4],e->mac[5]);
+
+	rtl930x_fill_l2_row(r, e);
+
+	for (int i = 0; i < 3; i++)
+		sw_w32(r[i], rtl_table_data(q, i));
+
+	rtl_table_write(q, idx);
+	rtl_table_release(q);
+}

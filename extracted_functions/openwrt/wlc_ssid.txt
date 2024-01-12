@@ -1,0 +1,35 @@
+static int wlc_ssid(wlc_param param, void *data, void *value)
+{
+	int ret = -1, ret2 = -1;
+	char *dest = (char *) value;
+	wlc_ssid_t ssid;
+	
+	if ((param & PARAM_MODE) == GET) {
+		ret = wl_bssiovar_get(interface, "ssid", vif, &ssid, sizeof(ssid));
+
+		if (ret)
+			/* if we can't get the ssid through the bssiovar, try WLC_GET_SSID */
+			ret = wl_ioctl(interface, WLC_GET_SSID, &ssid, sizeof(ssid));
+		
+		if (!ret) {
+			memcpy(dest, ssid.SSID, ssid.SSID_len);
+			dest[ssid.SSID_len] = 0;
+		}
+	} else if ((param & PARAM_MODE) == SET) {
+		strncpy(ssid.SSID, value, 32);
+		ssid.SSID_len = strlen(value);
+		
+		if (ssid.SSID_len > 32)
+			ssid.SSID_len = 32;
+		
+		if (vif == 0) {
+			/* for the main interface, also try the WLC_SET_SSID call */
+			ret2 = wl_ioctl(interface, WLC_SET_SSID, &ssid, sizeof(ssid));
+		}
+		
+		ret = wl_bssiovar_set(interface, "ssid", vif, &ssid, sizeof(ssid));
+		ret = (!ret2 ? 0 : ret);
+	}
+	
+	return ret;
+}

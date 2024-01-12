@@ -1,0 +1,46 @@
+int rtcl_register_clkhw(int clk_idx)
+{
+	int ret;
+	struct clk *clk;
+	struct clk_init_data hw_init = { };
+	struct rtcl_clk *rclk = &rtcl_ccu->clks[clk_idx];
+	struct clk_parent_data parent_data = { .fw_name = rtcl_clk_info[clk_idx].parent_name };
+
+	rclk->idx = clk_idx;
+	rclk->hw.init = &hw_init;
+
+	hw_init.num_parents = 1;
+	hw_init.ops = &rtcl_clk_ops;
+	hw_init.parent_data = &parent_data;
+	hw_init.name = rtcl_clk_info[clk_idx].name;
+
+	ret = of_clk_hw_register(rtcl_ccu->np, &rclk->hw);
+	if (ret)
+		return ret;
+
+	clk_hw_register_clkdev(&rclk->hw, rtcl_clk_info[clk_idx].name, NULL);
+
+	clk = clk_get(NULL, rtcl_clk_info[clk_idx].name);
+	rclk->startup = clk_get_rate(clk);
+	clk_put(clk);
+
+	switch (clk_idx) {
+	case CLK_CPU:
+		rclk->min = rtcl_round_set[rtcl_ccu->soc][clk_idx].min;
+		rclk->max = rtcl_round_set[rtcl_ccu->soc][clk_idx].max;
+		break;
+	default:
+/*
+ * TODO: This driver supports PLL reclocking and nothing else. Additional
+ * required steps for non CPU PLLs are missing. E.g. if we want to change memory
+ * clocks the right way we must adapt a lot of other settings. This includes
+ * MCR and DTRx timing registers (0xb80001000, 0xb8001008, ...) and a DLL reset
+ * so that hardware operates in the allowed limits. This is far too complex
+ * without official support. Avoid this for now.
+ */
+		rclk->min = rclk->max = rclk->startup;
+		break;
+	}
+
+	return 0;
+}

@@ -1,0 +1,24 @@
+ret_t rtl8367c_setAsicEee100M(rtk_uint32 port, rtk_uint32 enable)
+{
+    rtk_api_ret_t   retVal;
+    rtk_uint32      regData;
+
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    if (enable > 1)
+        return RT_ERR_INPUT;
+
+    if((retVal = rtl8367c_getAsicPHYOCPReg(port, EEE_OCP_PHY_ADDR, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    if(enable)
+        regData |= (0x0001 << 1);
+    else
+        regData &= ~(0x0001 << 1);
+
+    if((retVal = rtl8367c_setAsicPHYOCPReg(port, EEE_OCP_PHY_ADDR, regData)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

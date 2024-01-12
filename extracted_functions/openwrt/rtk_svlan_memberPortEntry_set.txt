@@ -1,0 +1,212 @@
+rtk_api_ret_t rtk_svlan_memberPortEntry_set(rtk_vlan_t svid, rtk_svlan_memberCfg_t *pSvlan_cfg)
+{
+    rtk_api_ret_t retVal;
+    rtk_int32 i;
+    rtk_uint32 empty_idx;
+    rtl8367c_svlan_memconf_t svlanMemConf;
+    rtk_uint32 phyMbrPmask;
+    rtk_vlan_cfg_t vlanCfg;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pSvlan_cfg)
+        return RT_ERR_NULL_POINTER;
+
+    if(svid > RTL8367C_VIDMAX)
+        return RT_ERR_SVLAN_VID;
+
+    RTK_CHK_PORTMASK_VALID(&(pSvlan_cfg->memberport));
+
+    RTK_CHK_PORTMASK_VALID(&(pSvlan_cfg->untagport));
+
+    if (pSvlan_cfg->fiden > ENABLED)
+        return RT_ERR_ENABLE;
+
+    if (pSvlan_cfg->fid > RTL8367C_FIDMAX)
+        return RT_ERR_L2_FID;
+
+    if (pSvlan_cfg->priority > RTL8367C_PRIMAX)
+        return RT_ERR_VLAN_PRIORITY;
+
+    if (pSvlan_cfg->efiden > ENABLED)
+        return RT_ERR_ENABLE;
+
+    if (pSvlan_cfg->efid > RTL8367C_EFIDMAX)
+        return RT_ERR_L2_FID;
+
+    if(SVLAN_LOOKUP_C4KVLAN == svlan_lookupType)
+    {
+        if ((retVal = rtk_vlan_get(svid, &vlanCfg)) != RT_ERR_OK)
+            return retVal;
+
+        vlanCfg.mbr = pSvlan_cfg->memberport;
+        vlanCfg.untag = pSvlan_cfg->untagport;
+
+        if ((retVal = rtk_vlan_set(svid, &vlanCfg)) != RT_ERR_OK)
+            return retVal;
+
+        empty_idx = 0xFF;
+
+        for (i = 0; i<= RTL8367C_SVIDXMAX; i++)
+        {
+            if (svid == svlan_mbrCfgVid[i] && TRUE == svlan_mbrCfgUsage[i])
+            {
+                memset(&svlanMemConf, 0, sizeof(rtl8367c_svlan_memconf_t));
+                svlanMemConf.vs_svid        = svid;
+                svlanMemConf.vs_efiden      = pSvlan_cfg->efiden;
+                svlanMemConf.vs_efid        = pSvlan_cfg->efid;
+                svlanMemConf.vs_priority    = pSvlan_cfg->priority;
+
+                /*for create check*/
+                if(0 == svlanMemConf.vs_efiden && 0 == svlanMemConf.vs_efid)
+                    svlanMemConf.vs_efid = 1;
+
+                if ((retVal = rtl8367c_setAsicSvlanMemberConfiguration(i, &svlanMemConf)) != RT_ERR_OK)
+                    return retVal;
+
+                return RT_ERR_OK;
+            }
+            else if (FALSE == svlan_mbrCfgUsage[i] && 0xFF == empty_idx)
+            {
+                empty_idx = i;
+            }
+        }
+
+        if (empty_idx != 0xFF)
+        {
+            svlan_mbrCfgUsage[empty_idx] = TRUE;
+            svlan_mbrCfgVid[empty_idx] = svid;
+
+            memset(&svlanMemConf, 0, sizeof(rtl8367c_svlan_memconf_t));
+            svlanMemConf.vs_svid        = svid;
+            svlanMemConf.vs_efiden      = pSvlan_cfg->efiden;
+            svlanMemConf.vs_efid        = pSvlan_cfg->efid;
+            svlanMemConf.vs_priority    = pSvlan_cfg->priority;
+
+            /*for create check*/
+            if(0 == svlanMemConf.vs_efiden && 0 == svlanMemConf.vs_efid)
+                svlanMemConf.vs_efid = 1;
+
+            if ((retVal = rtl8367c_setAsicSvlanMemberConfiguration(empty_idx, &svlanMemConf)) != RT_ERR_OK)
+                return retVal;
+
+        }
+
+        return RT_ERR_OK;
+    }
+
+
+    empty_idx = 0xFF;
+
+    for (i = 0; i<= RTL8367C_SVIDXMAX; i++)
+    {
+        /*
+        if ((retVal = rtl8367c_getAsicSvlanMemberConfiguration(i, &svlanMemConf)) != RT_ERR_OK)
+            return retVal;
+        */
+        if (svid == svlan_mbrCfgVid[i] && TRUE == svlan_mbrCfgUsage[i])
+        {
+            svlanMemConf.vs_svid = svid;
+
+            if(rtk_switch_portmask_L2P_get(&(pSvlan_cfg->memberport), &phyMbrPmask) != RT_ERR_OK)
+                return RT_ERR_FAILED;
+
+            svlanMemConf.vs_member = phyMbrPmask;
+
+            if(rtk_switch_portmask_L2P_get(&(pSvlan_cfg->untagport), &phyMbrPmask) != RT_ERR_OK)
+                return RT_ERR_FAILED;
+
+            svlanMemConf.vs_untag = phyMbrPmask;
+
+            svlanMemConf.vs_force_fid   = pSvlan_cfg->fiden;
+            svlanMemConf.vs_fid_msti    = pSvlan_cfg->fid;
+            svlanMemConf.vs_priority    = pSvlan_cfg->priority;
+            svlanMemConf.vs_efiden      = pSvlan_cfg->efiden;
+            svlanMemConf.vs_efid        = pSvlan_cfg->efid;
+
+            /*all items are reset means deleting*/
+            if( 0 == svlanMemConf.vs_member &&
+                0 == svlanMemConf.vs_untag &&
+                0 == svlanMemConf.vs_force_fid &&
+                0 == svlanMemConf.vs_fid_msti &&
+                0 == svlanMemConf.vs_priority &&
+                0 == svlanMemConf.vs_efiden &&
+                0 == svlanMemConf.vs_efid)
+            {
+                svlan_mbrCfgUsage[i] = FALSE;
+                svlan_mbrCfgVid[i] = 0;
+
+                /* Clear SVID also */
+                svlanMemConf.vs_svid = 0;
+            }
+            else
+            {
+                svlan_mbrCfgUsage[i] = TRUE;
+                svlan_mbrCfgVid[i] = svlanMemConf.vs_svid;
+
+                if(0 == svlanMemConf.vs_svid)
+                {
+                    /*for create check*/
+                    if(0 == svlanMemConf.vs_efiden && 0 == svlanMemConf.vs_efid)
+                    {
+                        svlanMemConf.vs_efid = 1;
+                    }
+                }
+            }
+
+            if ((retVal = rtl8367c_setAsicSvlanMemberConfiguration(i, &svlanMemConf)) != RT_ERR_OK)
+                return retVal;
+
+            return RT_ERR_OK;
+        }
+        else if (FALSE == svlan_mbrCfgUsage[i] && 0xFF == empty_idx)
+        {
+            empty_idx = i;
+        }
+    }
+
+    if (empty_idx != 0xFF)
+    {
+        memset(&svlanMemConf, 0, sizeof(rtl8367c_svlan_memconf_t));
+        svlanMemConf.vs_svid = svid;
+
+        if(rtk_switch_portmask_L2P_get(&(pSvlan_cfg->memberport), &phyMbrPmask) != RT_ERR_OK)
+            return RT_ERR_FAILED;
+
+        svlanMemConf.vs_member = phyMbrPmask;
+
+        if(rtk_switch_portmask_L2P_get(&(pSvlan_cfg->untagport), &phyMbrPmask) != RT_ERR_OK)
+            return RT_ERR_FAILED;
+
+        svlanMemConf.vs_untag = phyMbrPmask;
+
+        svlanMemConf.vs_force_fid   = pSvlan_cfg->fiden;
+        svlanMemConf.vs_fid_msti    = pSvlan_cfg->fid;
+        svlanMemConf.vs_priority    = pSvlan_cfg->priority;
+
+        svlanMemConf.vs_efiden      = pSvlan_cfg->efiden;
+        svlanMemConf.vs_efid        = pSvlan_cfg->efid;
+
+        /*change efid for empty svid 0*/
+        if(0 == svlanMemConf.vs_svid)
+        {   /*for create check*/
+            if(0 == svlanMemConf.vs_efiden && 0 == svlanMemConf.vs_efid)
+            {
+                svlanMemConf.vs_efid = 1;
+            }
+        }
+
+        svlan_mbrCfgUsage[empty_idx] = TRUE;
+        svlan_mbrCfgVid[empty_idx] = svlanMemConf.vs_svid;
+
+        if ((retVal = rtl8367c_setAsicSvlanMemberConfiguration(empty_idx, &svlanMemConf)) != RT_ERR_OK)
+        {
+            return retVal;
+        }
+
+        return RT_ERR_OK;
+    }
+
+    return RT_ERR_SVLAN_TABLE_FULL;
+}

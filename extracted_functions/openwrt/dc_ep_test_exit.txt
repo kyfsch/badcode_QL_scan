@@ -1,0 +1,24 @@
+static void __exit dc_ep_test_exit(void)
+{
+	int i;
+	int dev_num;
+	u32 func = ACA_ALL_EN;
+	struct dc_ep_dev *dev;
+
+	if (dc_ep_dev_num_get(&dev_num)) {
+		pr_err("%s failed to get total device number\n", __func__);
+		return;
+	}
+	pr_info("%s: total %d EPs found\n", __func__, dev_num);
+	for (i = 0; i < dev_num; i++) {
+		dev = &pcie_dev[i];
+		free_irq(dev->irq, dev);
+		dev->hw_ops->aca_stop(dev, &func, 1);
+		dev->hw_ops->clk_off(dev, PMU_EMA);
+		if (dc_ep_dev_info_release(i)) {
+			pr_info("%s failed to release pcie ep %d information\n",
+				__func__, i);
+		}
+		aca_soc_desc_free(i);
+	}
+}

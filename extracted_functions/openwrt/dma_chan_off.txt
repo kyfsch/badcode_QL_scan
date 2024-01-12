@@ -1,0 +1,6 @@
+static void dma_chan_off(struct dc_ep_dev *dev, u8 cn)
+{
+	ep_wr32(cn, DMA_CS);
+	ep_wr32_mask(BIT(0), 0,  DMA_CCTRL);
+	udelay(10);
+}

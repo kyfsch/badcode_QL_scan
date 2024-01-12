@@ -1,0 +1,13 @@
+rtk_api_ret_t rtk_i2c_gpioPinGroup_get( rtk_I2C_gpio_pin_t * pPins_group )
+{
+    rtk_uint32 retVal;
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pPins_group)
+        return RT_ERR_NULL_POINTER;
+    if( (retVal = rtl8367c_getAsicI2CGpioPinGroup(pPins_group) ) != RT_ERR_OK )
+        return retVal;
+
+    return RT_ERR_OK;
+}

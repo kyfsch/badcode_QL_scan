@@ -1,0 +1,27 @@
+swconfig_trig_port_mask_store(struct device *dev, struct device_attribute *attr,
+			      const char *buf, size_t size)
+{
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+	struct swconfig_trig_data *trig_data = led_cdev->trigger_data;
+	unsigned long port_mask;
+	int ret;
+	bool changed;
+
+	ret = kstrtoul(buf, 0, &port_mask);
+	if (ret)
+		return ret;
+
+	write_lock(&trig_data->lock);
+	changed = (trig_data->port_mask != port_mask);
+	trig_data->port_mask = port_mask;
+	write_unlock(&trig_data->lock);
+
+	if (changed) {
+		if (port_mask == 0)
+			swconfig_trig_set_brightness(trig_data, LED_OFF);
+
+		swconfig_trig_update_port_mask(led_cdev->trigger);
+	}
+
+	return size;
+}

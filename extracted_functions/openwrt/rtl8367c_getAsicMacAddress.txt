@@ -1,0 +1,24 @@
+ret_t rtl8367c_getAsicMacAddress(ether_addr_t *pMac)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+    rtk_uint8 *accessPtr;
+    rtk_uint32 i;
+
+
+    accessPtr = (rtk_uint8*)pMac;
+
+    for(i = 0; i <= 2; i++)
+    {
+        retVal = rtl8367c_getAsicReg(RTL8367C_REG_SWITCH_MAC2 - i, &regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        *accessPtr = (regData & 0xFF00) >> 8;
+        accessPtr ++;
+        *accessPtr = regData & 0xFF;
+        accessPtr ++;
+    }
+
+    return retVal;
+}

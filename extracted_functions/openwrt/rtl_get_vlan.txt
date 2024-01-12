@@ -1,0 +1,5 @@
+rtl_get_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	val->value.i = rtl_get(dev, RTL_REG_VLAN_ENABLE);
+	return 0;
+}

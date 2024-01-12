@@ -1,0 +1,17 @@
+static int rtcl_probe_late(struct platform_device *pdev)
+{
+	int ret;
+
+	if (!rtcl_ccu) {
+		dev_err(&pdev->dev, "early initialization not run");
+		return -ENXIO;
+	}
+	rtcl_ccu->pdev = pdev;
+	ret = rtcl_init_sram();
+	if (ret)
+		return ret;
+
+	rtcl_ccu_log_late();
+
+	return 0;
+}

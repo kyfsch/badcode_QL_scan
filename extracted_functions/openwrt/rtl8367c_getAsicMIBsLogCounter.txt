@@ -1,0 +1,50 @@
+ret_t rtl8367c_getAsicMIBsLogCounter(rtk_uint32 index, rtk_uint32 *pCounter)
+{
+    ret_t retVal;
+    rtk_uint32 regAddr;
+    rtk_uint32 regData;
+    rtk_uint32 mibAddr;
+    rtk_uint16 i;
+    rtk_uint64 mibCounter;
+
+    if(index > RTL8367C_MIB_MAX_LOG_CNT_IDX)
+        return RT_ERR_ENTRY_INDEX;
+
+    mibAddr = RTL8367C_MIB_LOG_CNT_OFFSET + ((index / 2) * 4);
+
+    retVal = rtl8367c_setAsicReg(RTL8367C_REG_MIB_ADDRESS, (mibAddr >> 2));
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    /*read MIB control register*/
+    retVal = rtl8367c_getAsicReg(RTL8367C_MIB_CTRL_REG, &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    if(regData & RTL8367C_MIB_CTRL0_BUSY_FLAG_MASK)
+        return RT_ERR_BUSYWAIT_TIMEOUT;
+
+    if(regData & RTL8367C_RESET_FLAG_MASK)
+        return RT_ERR_STAT_CNTR_FAIL;
+
+    mibCounter = 0;
+    if((index % 2) == 1)
+        regAddr = RTL8367C_MIB_COUNTER_BASE_REG + 3;
+    else
+        regAddr = RTL8367C_MIB_COUNTER_BASE_REG + 1;
+
+    for(i = 0; i <= 1; i++)
+    {
+        retVal = rtl8367c_getAsicReg(regAddr, &regData);
+
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        mibCounter = (mibCounter << 16) | (regData & 0xFFFF);
+
+        regAddr --;
+    }
+
+    *pCounter = mibCounter;
+    return RT_ERR_OK;
+}

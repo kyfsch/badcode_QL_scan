@@ -1,0 +1,8 @@
+BigIntegerCheckPrime(n)
+     BigInteger n;
+{
+  BN_CTX * ctx = BN_CTX_new();
+  int rv = BN_is_prime(n, 25, NULL, ctx, NULL);
+  BN_CTX_free(ctx);
+  return rv;
+}

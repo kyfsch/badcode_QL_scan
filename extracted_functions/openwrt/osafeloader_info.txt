@@ -1,0 +1,65 @@
+static int osafeloader_info(int argc, char **argv) {
+	FILE *safeloader;
+	struct safeloader_header hdr;
+	MD5_CTX ctx;
+	size_t bytes, imagesize;
+	uint8_t buf[1024];
+	uint8_t md5[16];
+	char name[32];
+	int base, size, i;
+	int err = 0;
+
+	if (argc < 3) {
+		fprintf(stderr, "No SafeLoader file passed\n");
+		err = -EINVAL;
+		goto out;
+	}
+	safeloader_path = argv[2];
+
+	safeloader = fopen(safeloader_path, "r");
+	if (!safeloader) {
+		fprintf(stderr, "Couldn't open %s\n", safeloader_path);
+		err = -EACCES;
+		goto out;
+	}
+
+	bytes = fread(&hdr, 1, sizeof(hdr), safeloader);
+	if (bytes != sizeof(hdr)) {
+		fprintf(stderr, "Couldn't read %s header\n", safeloader_path);
+		err =  -EIO;
+		goto err_close;
+	}
+	imagesize = be32_to_cpu(hdr.imagesize);
+
+	MD5_Init(&ctx);
+	MD5_Update(&ctx, md5_salt, sizeof(md5_salt));
+	while ((bytes = fread(buf, 1, osafeloader_min(sizeof(buf), imagesize), safeloader)) > 0) {
+		MD5_Update(&ctx, buf, bytes);
+		imagesize -= bytes;
+	}
+	MD5_Final(md5, &ctx);
+
+	if (memcmp(md5, hdr.md5, 16)) {
+		fprintf(stderr, "Broken SafeLoader file with invalid MD5\n");
+		err =  -EIO;
+		goto err_close;
+	}
+
+	printf("%10s: %d\n", "Image size", be32_to_cpu(hdr.imagesize));
+	printf("%10s: ", "MD5");
+	for (i = 0; i < 16; i++)
+		printf("%02x", md5[i]);
+	printf("\n");
+
+	/* Skip header & vendor info */
+	fseek(safeloader, 0x1014, SEEK_SET);
+
+	while (fscanf(safeloader, "fwup-ptn %s base 0x%x size 0x%x\t\r\n", name, &base, &size) == 3) {
+		printf("%10s: %s (0x%x - 0x%x)\n", "Partition", name, base, base + size);
+	}
+
+err_close:
+	fclose(safeloader);
+out:
+	return err;
+}

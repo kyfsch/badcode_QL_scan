@@ -1,0 +1,9 @@
+static int adm6996_gpio_remove(struct platform_device *pdev)
+{
+	struct adm6996_priv *priv = platform_get_drvdata(pdev);
+
+	if (priv && (priv->model == ADM6996M || priv->model == ADM6996L))
+		unregister_switch(&priv->dev);
+
+	return 0;
+}

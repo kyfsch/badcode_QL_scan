@@ -1,0 +1,21 @@
+ret_t rtl8367c_getAsicAclPortRange(rtk_uint32 index, rtk_uint32* pType, rtk_uint32* pUpperPort, rtk_uint32* pLowerPort)
+{
+    ret_t retVal;
+
+    if(index > RTL8367C_ACLRANGEMAX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_ACL_SDPORT_RANGE_ENTRY0_CTRL2 + index*3, RTL8367C_ACL_SDPORT_RANGE_ENTRY0_CTRL2_MASK, pType);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    retVal = rtl8367c_getAsicReg(RTL8367C_REG_ACL_SDPORT_RANGE_ENTRY0_CTRL1 + index*3, pUpperPort);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    retVal = rtl8367c_getAsicReg(RTL8367C_REG_ACL_SDPORT_RANGE_ENTRY0_CTRL0 + index*3, pLowerPort);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

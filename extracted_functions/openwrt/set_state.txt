@@ -1,0 +1,38 @@
+set_state(int nstate)
+{
+	if (state == nstate)
+		return;
+
+	if (nstate < state) {
+		if ((nstate < EAD_TYPE_GET_PRIME) &&
+			(state >= EAD_TYPE_GET_PRIME)) {
+			t_serverclose(ts);
+			ts = NULL;
+		}
+		goto done;
+	}
+
+	switch(state) {
+	case EAD_TYPE_SET_USERNAME:
+		if (!prepare_password())
+			goto error;
+		ts = t_serveropenraw(&tpe, tce);
+		if (!ts)
+			goto error;
+		break;
+	case EAD_TYPE_GET_PRIME:
+		B = t_servergenexp(ts);
+		break;
+	case EAD_TYPE_SEND_A:
+		skey = t_servergetkey(ts, &A);
+		if (!skey)
+			goto error;
+
+		ead_set_key(skey);
+		break;
+	}
+done:
+	state = nstate;
+error:
+	return;
+}

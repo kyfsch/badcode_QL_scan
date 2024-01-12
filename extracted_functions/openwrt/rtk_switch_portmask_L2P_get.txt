@@ -1,0 +1,27 @@
+rtk_api_ret_t rtk_switch_portmask_L2P_get(rtk_portmask_t *pLogicalPmask, rtk_uint32 *pPhysicalPortmask)
+{
+    rtk_uint32 log_port, phy_port;
+
+    if(init_state != INIT_COMPLETED)
+        return RT_ERR_NOT_INIT;
+
+    if(NULL == pLogicalPmask)
+        return RT_ERR_NULL_POINTER;
+
+    if(NULL == pPhysicalPortmask)
+        return RT_ERR_NULL_POINTER;
+
+    if(rtk_switch_isPortMaskValid(pLogicalPmask) != RT_ERR_OK)
+        return RT_ERR_PORT_MASK;
+
+    /* reset physical port mask */
+    *pPhysicalPortmask = 0;
+
+    RTK_PORTMASK_SCAN((*pLogicalPmask), log_port)
+    {
+        phy_port = rtk_switch_port_L2P_get((rtk_port_t)log_port);
+        *pPhysicalPortmask |= (0x0001 << phy_port);
+    }
+
+    return RT_ERR_OK;
+}

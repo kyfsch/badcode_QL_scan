@@ -1,0 +1,21 @@
+ar8xxx_probe_switch(struct ar8xxx_priv *priv)
+{
+	const struct ar8xxx_chip *chip;
+	struct switch_dev *swdev;
+	int ret;
+
+	chip = priv->chip;
+
+	swdev = &priv->dev;
+	swdev->cpu_port = AR8216_PORT_CPU;
+	swdev->name = chip->name;
+	swdev->vlans = chip->vlans;
+	swdev->ports = chip->ports;
+	swdev->ops = chip->swops;
+
+	ret = ar8xxx_mib_init(priv);
+	if (ret)
+		return ret;
+
+	return 0;
+}

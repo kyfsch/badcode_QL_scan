@@ -1,0 +1,16 @@
+static int rtl8366s_sw_get_green(struct switch_dev *dev,
+			      const struct switch_attr *attr,
+			      struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	u32 data;
+	int err;
+
+	err = rtl8366_smi_read_reg(smi, RTL8366S_GREEN_ETHERNET_CTRL_REG, &data);
+	if (err)
+		return err;
+
+	val->value.i = ((data & (RTL8366S_GREEN_ETHERNET_TX_BIT | RTL8366S_GREEN_ETHERNET_RX_BIT)) != 0) ? 1 : 0;
+
+	return 0;
+}

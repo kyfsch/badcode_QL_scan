@@ -1,0 +1,27 @@
+struct switch_attr *swlib_lookup_attr(struct switch_dev *dev,
+		enum swlib_attr_group atype, const char *name)
+{
+	struct switch_attr *head;
+
+	if (!name || !dev)
+		return NULL;
+
+	switch(atype) {
+	case SWLIB_ATTR_GROUP_GLOBAL:
+		head = dev->ops;
+		break;
+	case SWLIB_ATTR_GROUP_PORT:
+		head = dev->port_ops;
+		break;
+	case SWLIB_ATTR_GROUP_VLAN:
+		head = dev->vlan_ops;
+		break;
+	}
+	while(head) {
+		if (!strcmp(name, head->name))
+			return head;
+		head = head->next;
+	}
+
+	return NULL;
+}

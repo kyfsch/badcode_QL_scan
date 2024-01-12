@@ -1,0 +1,6 @@
+BigIntegerModInt(d, m)
+     BigInteger d;
+     unsigned int m;
+{
+  return BN_mod_word(d, m);
+}

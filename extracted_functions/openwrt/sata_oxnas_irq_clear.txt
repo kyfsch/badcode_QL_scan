@@ -1,0 +1,8 @@
+static void sata_oxnas_irq_clear(struct ata_port *ap)
+{
+	struct sata_oxnas_port_priv *port_priv = ap->private_data;
+
+	/* clear pending interrupts */
+	iowrite32(~0, port_priv->port_base + INT_CLEAR);
+	iowrite32(COREINT_END, port_priv->core_base + CORE_INT_CLEAR);
+}

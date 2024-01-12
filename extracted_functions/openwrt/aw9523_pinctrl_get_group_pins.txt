@@ -1,0 +1,9 @@
+static int aw9523_pinctrl_get_group_pins(struct pinctrl_dev *pctldev,
+					 unsigned int selector,
+					 const unsigned int **pins,
+					 unsigned int *num_pins)
+{
+	*pins = &aw9523_pins[selector].number;
+	*num_pins = 1;
+	return 0;
+}

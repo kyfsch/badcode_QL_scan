@@ -1,0 +1,13 @@
+static void adm6996_gpio_adclk(struct adm6996_priv *priv, int clocks)
+{
+	int i;
+	for (i = 0; i < clocks; i++) {
+		/* Clock high */
+		gpio_set_value(priv->eesk, 1);
+		udelay(EECK_EDGE_TIME);
+
+		/* Clock low */
+		gpio_set_value(priv->eesk, 0);
+		udelay(EECK_EDGE_TIME);
+	}
+}

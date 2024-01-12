@@ -1,0 +1,17 @@
+void ag71xx_debugfs_update_int_stats(struct ag71xx *ag, u32 status)
+{
+	if (status)
+		ag->debug.int_stats.total++;
+	if (status & AG71XX_INT_TX_PS)
+		ag->debug.int_stats.tx_ps++;
+	if (status & AG71XX_INT_TX_UR)
+		ag->debug.int_stats.tx_ur++;
+	if (status & AG71XX_INT_TX_BE)
+		ag->debug.int_stats.tx_be++;
+	if (status & AG71XX_INT_RX_PR)
+		ag->debug.int_stats.rx_pr++;
+	if (status & AG71XX_INT_RX_OF)
+		ag->debug.int_stats.rx_of++;
+	if (status & AG71XX_INT_RX_BE)
+		ag->debug.int_stats.rx_be++;
+}

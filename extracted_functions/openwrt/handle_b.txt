@@ -1,0 +1,10 @@
+handle_b(void)
+{
+	struct ead_msg_number *num = EAD_DATA(msg, number);
+	int len = ntohl(msg->len) - sizeof(struct ead_msg_number);
+
+	B.data = bbuf;
+	B.len = len;
+	memcpy(bbuf, num->data, len);
+	return true;
+}

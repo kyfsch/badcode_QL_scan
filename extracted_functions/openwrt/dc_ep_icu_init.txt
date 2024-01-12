@@ -1,0 +1,15 @@
+void dc_ep_icu_init(struct dc_ep_priv *priv)
+{
+	/* Enable all interrupts in ICU level */
+	wr32(ICU_DMA_TX_ALL, ICU_DMA_TX_IMER);
+	wr32(ICU_DMA_RX_ALL, ICU_DMA_RX_IMER);
+	wr32(ICU_TOP_ALL, ICU_IMER);
+
+	if (priv->msi_mode == DC_EP_4_MSI_MODE)
+		wr32(PCI_MSI_4_MODE, RCU_MSI);
+	else
+		wr32(PCI_MSI_8_MODE, RCU_MSI);
+
+	/* PCIe app has to enable all MSI interrupts regardless of MSI mode */
+	wr32(PCIE_MSI_EN_ALL, PCIE_APPL_MSI_EN);
+}

@@ -1,0 +1,6 @@
+static int __init firebox_t10_probe(void)
+{
+	if (of_machine_is_compatible("watchguard,firebox-t10"))
+		return 1;
+	return 0;
+}

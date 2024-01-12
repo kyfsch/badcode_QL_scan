@@ -1,0 +1,20 @@
+rtl_set_page(struct rtl_priv *priv, unsigned int page)
+{
+	struct mii_bus *bus = priv->bus;
+	u16 pgsel;
+
+	if (priv->fixup)
+		return;
+
+	if (priv->page == page)
+		return;
+
+	BUG_ON(page > RTL8306_NUM_PAGES);
+	pgsel = bus->read(bus, 0, RTL8306_REG_PAGE);
+	pgsel &= ~(RTL8306_REG_PAGE_LO | RTL8306_REG_PAGE_HI);
+	if (page & (1 << 0))
+		pgsel |= RTL8306_REG_PAGE_LO;
+	if (!(page & (1 << 1))) /* bit is inverted */
+		pgsel |= RTL8306_REG_PAGE_HI;
+	bus->write(bus, 0, RTL8306_REG_PAGE, pgsel);
+}

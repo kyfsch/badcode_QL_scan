@@ -1,0 +1,20 @@
+int DSL_BSP_EventCBRegister(DSL_BSP_EventCallBack_t *p)
+{
+	if (!p) {
+                IFX_MEI_EMSG("Invalid parameter!\n");
+                return -EINVAL;
+	}
+        if (p->event > DSL_BSP_CB_LAST || p->event < DSL_BSP_CB_FIRST) {
+                IFX_MEI_EMSG("Invalid Event %d\n", p->event);
+                return -EINVAL;
+        }
+        if (dsl_bsp_event_callback[p->event].function) {
+                IFX_MEI_EMSG("Event %d already has a callback function registered!\n", p->event);
+                return -1;
+        } else {
+                dsl_bsp_event_callback[p->event].function = p->function;
+                dsl_bsp_event_callback[p->event].event    = p->event;
+                dsl_bsp_event_callback[p->event].pData    = p->pData;
+        }
+        return 0;
+}

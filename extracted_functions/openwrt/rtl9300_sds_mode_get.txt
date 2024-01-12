@@ -1,0 +1,14 @@
+u32 rtl9300_sds_mode_get(int sds_num)
+{
+	u32 v;
+
+	if (sds_num < 0 || sds_num > 11) {
+		pr_err("Wrong SerDes number: %d\n", sds_num);
+		return 0;
+	}
+
+	v = sw_r32(rtl9300_sds_regs[sds_num]);
+	v >>= rtl9300_sds_lsb[sds_num];
+
+	return v & 0x1f;
+}

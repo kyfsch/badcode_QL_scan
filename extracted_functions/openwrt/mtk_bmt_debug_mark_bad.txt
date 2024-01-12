@@ -1,0 +1,13 @@
+static int mtk_bmt_debug_mark_bad(void *data, u64 val)
+{
+	u32 block = val >> bmtd.blk_shift;
+	int cur_block;
+
+	cur_block = bmtd.ops->get_mapping_block(block);
+	if (cur_block < 0)
+		return -EIO;
+
+	mtk_bmt_remap_block(block, cur_block, bmtd.blk_size);
+
+	return 0;
+}

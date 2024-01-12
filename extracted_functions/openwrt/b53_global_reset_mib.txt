@@ -1,0 +1,16 @@
+static int b53_global_reset_mib(struct switch_dev *dev,
+				const struct switch_attr *attr,
+				struct switch_val *val)
+{
+	struct b53_device *priv = sw_to_b53(dev);
+	u8 gc;
+
+	b53_read8(priv, B53_MGMT_PAGE, B53_GLOBAL_CONFIG, &gc);
+
+	b53_write8(priv, B53_MGMT_PAGE, B53_GLOBAL_CONFIG, gc | GC_RESET_MIB);
+	mdelay(1);
+	b53_write8(priv, B53_MGMT_PAGE, B53_GLOBAL_CONFIG, gc & ~GC_RESET_MIB);
+	mdelay(1);
+
+	return 0;
+}

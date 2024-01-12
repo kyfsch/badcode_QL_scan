@@ -1,0 +1,48 @@
+rtk_api_ret_t rtk_trap_rmaKeepFormat_get(rtk_trap_type_t type, rtk_enable_t *pEnable)
+{
+    rtk_api_ret_t retVal;
+    rtl8367c_rma_t rmacfg;
+    rtk_uint32 tmp;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (type >= TRAP_END)
+        return RT_ERR_INPUT;
+
+    if(NULL == pEnable)
+        return RT_ERR_NULL_POINTER;
+
+    if (type >= 0 && type <= TRAP_UNDEF_GARP_2F)
+    {
+        if ((retVal = rtl8367c_getAsicRma(type, &rmacfg)) != RT_ERR_OK)
+            return retVal;
+
+        *pEnable = rmacfg.keep_format;
+    }
+    else if (type == TRAP_CDP)
+    {
+        if ((retVal = rtl8367c_getAsicRmaCdp(&rmacfg)) != RT_ERR_OK)
+            return retVal;
+
+        *pEnable = rmacfg.keep_format;
+    }
+    else if (type == TRAP_CSSTP)
+    {
+        if ((retVal = rtl8367c_getAsicRmaCsstp(&rmacfg)) != RT_ERR_OK)
+            return retVal;
+
+        *pEnable = rmacfg.keep_format;
+    }
+    else if (type == TRAP_LLDP)
+    {
+        if ((retVal = rtl8367c_getAsicRmaLldp(&tmp,&rmacfg)) != RT_ERR_OK)
+            return retVal;
+
+        *pEnable = rmacfg.keep_format;
+    }
+    else
+        return RT_ERR_INPUT;
+
+    return RT_ERR_OK;
+}

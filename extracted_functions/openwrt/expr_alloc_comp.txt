@@ -1,0 +1,8 @@
+struct expr *expr_alloc_comp(enum expr_type type, struct symbol *s1, struct symbol *s2)
+{
+	struct expr *e = xcalloc(1, sizeof(*e));
+	e->type = type;
+	e->left.sym = s1;
+	e->right.sym = s2;
+	return e;
+}

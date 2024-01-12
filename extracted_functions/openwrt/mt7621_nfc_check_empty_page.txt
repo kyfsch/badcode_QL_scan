@@ -1,0 +1,21 @@
+static int mt7621_nfc_check_empty_page(struct nand_chip *nand, const u8 *buf)
+{
+	struct mtd_info *mtd = nand_to_mtd(nand);
+	uint32_t i, j;
+	u8 *oobptr;
+
+	if (buf) {
+		for (i = 0; i < mtd->writesize; i++)
+			if (buf[i] != 0xff)
+				return 0;
+	}
+
+	for (i = 0; i < nand->ecc.steps; i++) {
+		oobptr = oob_fdm_ptr(nand, i);
+		for (j = 0; j < NFI_FDM_SIZE; j++)
+			if (oobptr[j] != 0xff)
+				return 0;
+	}
+
+	return 1;
+}

@@ -1,0 +1,11 @@
+static unsigned long msp430_blink_delay(unsigned long delay)
+{
+	unsigned long msp430_delay;
+
+	msp430_delay = delay + MSP430_LED_BLINK_MS / 2;
+	msp430_delay = msp430_delay / MSP430_LED_BLINK_MS;
+	if (msp430_delay == 0)
+		msp430_delay = 1;
+
+	return msp430_delay;
+}

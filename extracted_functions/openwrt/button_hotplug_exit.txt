@@ -1,0 +1,4 @@
+static void __exit button_hotplug_exit(void)
+{
+	input_unregister_handler(&button_hotplug_handler);
+}

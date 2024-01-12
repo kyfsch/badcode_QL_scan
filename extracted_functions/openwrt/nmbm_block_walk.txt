@@ -1,0 +1,9 @@
+static bool nmbm_block_walk(struct nmbm_instance *ni, bool ascending,
+			    uint32_t ba, uint32_t *nba, int32_t count,
+			    int32_t limit)
+{
+	if (ascending)
+		return nmbm_block_walk_asc(ni, ba, nba, count, limit);
+
+	return nmbm_block_walk_desc(ni, ba, nba, count, limit);
+}

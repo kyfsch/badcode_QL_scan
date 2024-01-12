@@ -1,0 +1,5 @@
+mvswitch_init(void)
+{
+	phy_register_fixup_for_id(PHY_ANY_ID, mvswitch_fixup);
+	return phy_driver_register(&mvswitch_driver, THIS_MODULE);
+}

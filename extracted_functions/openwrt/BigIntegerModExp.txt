@@ -1,0 +1,23 @@
+  BigIntegerModExp(S, res, b, n);
+  slen = BigIntegerToBytes(S, sbuf);
+
+  BigIntegerFree(S);
+  BigIntegerFree(res);
+  BigIntegerFree(b);
+  BigIntegerFree(n);
+
+  t_sessionkey(ts->session_key, sbuf, slen);
+  memset(sbuf, 0, slen);
+
+  SHA1Update(&ts->oldhash, ts->session_key, sizeof(ts->session_key));
+  SHA1Update(&ts->oldckhash, ts->session_key, sizeof(ts->session_key));
+  SHA1Update(&ts->ckhash, ts->session_key, sizeof(ts->session_key));
+
+  return ts->session_key;
+}
+
+_TYPE( int )
+t_serververify(ts, resp)
+    struct t_server * ts;
+    unsigned char * resp;
+{

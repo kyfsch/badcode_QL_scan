@@ -1,0 +1,15 @@
+static int oxnas_pcie_phy_power_on(struct phy *phy)
+{
+	struct oxnas_pcie_phy *pciephy = phy_get_drvdata(phy);
+
+	/* Enable PCIe Pre-Emphasis: What these value means? */
+	writel(ADDR_VAL(0x0014), pciephy->membase + PHY_ADDR);
+	writel(DATA_VAL(0xce10) | CAP_DATA, pciephy->membase + PHY_DATA);
+	writel(DATA_VAL(0xce10) | WRITE_EN, pciephy->membase + PHY_DATA);
+
+	writel(ADDR_VAL(0x2004), pciephy->membase + PHY_ADDR);
+	writel(DATA_VAL(0x82c7) | CAP_DATA, pciephy->membase + PHY_DATA);
+	writel(DATA_VAL(0x82c7) | WRITE_EN, pciephy->membase + PHY_DATA);
+
+	return 0;
+}

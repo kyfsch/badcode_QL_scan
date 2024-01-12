@@ -1,0 +1,16 @@
+static int mt7621_nfc_send_address(struct mt7621_nfc *nfc, const u8 *addr,
+				   unsigned int naddrs)
+{
+	int ret;
+
+	while (naddrs) {
+		ret = mt7621_nfc_send_address_byte(nfc, *addr);
+		if (ret)
+			return ret;
+
+		addr++;
+		naddrs--;
+	}
+
+	return 0;
+}

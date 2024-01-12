@@ -1,0 +1,12 @@
+ar8327_led_work_func(struct work_struct *work)
+{
+	struct ar8327_led *aled;
+	u8 pattern;
+
+	aled = container_of(work, struct ar8327_led, led_work);
+
+	pattern = aled->pattern;
+
+	ar8327_set_led_pattern(aled->sw_priv, aled->led_num,
+			       pattern);
+}

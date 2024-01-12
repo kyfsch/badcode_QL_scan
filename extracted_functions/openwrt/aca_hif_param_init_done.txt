@@ -1,0 +1,15 @@
+static void aca_hif_param_init_done(struct dc_ep_priv *priv)
+{
+	u32 addr;
+	struct aca_hif_params *hif_params = to_hif_params(priv);
+	struct aca_fw_param *fw_param = to_aca_fw_param(priv);
+
+	/* wr32(ACA_HIF_PARAM_ADDR, ACA_HIF_LOC_POS);*/
+	/* addr = rd32(ACA_HIF_LOC_POS);*/
+
+	addr = fw_param->init_addr;
+	dev_dbg(priv->dev, "init_addr: %x\n", addr);
+	memcpy_toio(priv->mem + addr, hif_params, sizeof(*hif_params));
+	kzfree(hif_params);
+	dev_dbg(priv->dev, "%s\n", __func__);
+}

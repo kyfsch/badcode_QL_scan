@@ -1,0 +1,16 @@
+int ifxdeu_init_md5_hmac (void)
+{
+
+    int ret = -ENOSYS;
+
+
+    if ((ret = crypto_register_shash(&ifxdeu_md5_hmac_alg)))
+        goto md5_hmac_err;
+
+    printk (KERN_NOTICE "IFX DEU MD5_HMAC initialized%s.\n", disable_deudma ? "" : " (DMA)");
+    return ret;
+
+md5_hmac_err:
+    printk(KERN_ERR "IFX DEU MD5_HMAC initialization failed!\n");
+    return ret;
+}

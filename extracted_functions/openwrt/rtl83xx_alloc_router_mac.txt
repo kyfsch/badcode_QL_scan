@@ -1,0 +1,39 @@
+static int rtl83xx_alloc_router_mac(struct rtl838x_switch_priv *priv, u64 mac)
+{
+	int free_mac = -1;
+	struct rtl93xx_rt_mac m;
+
+	mutex_lock(&priv->reg_mutex);
+	for (int i = 0; i < MAX_ROUTER_MACS; i++) {
+		priv->r->get_l3_router_mac(i, &m);
+		if (free_mac < 0 && !m.valid) {
+			free_mac = i;
+			continue;
+		}
+		if (m.valid && m.mac == mac) {
+			free_mac = i;
+			break;
+		}
+	}
+
+	if (free_mac < 0) {
+		pr_err("No free router MACs, cannot offload\n");
+		mutex_unlock(&priv->reg_mutex);
+		return -1;
+	}
+
+	m.valid = true;
+	m.mac = mac;
+	m.p_type = 0; /* An individual port, not a trunk port */
+	m.p_id = 0x3f;			/* Listen on any port */
+	m.p_id_mask = 0;
+	m.vid = 0;			/* Listen on any VLAN... */
+	m.vid_mask = 0; 		/* ... so mask needs to be 0 */
+	m.mac_mask = 0xffffffffffffULL;	/* We want an exact match of the interface MAC */
+	m.action = L3_FORWARD;		/* Route the packet */
+	priv->r->set_l3_router_mac(free_mac, &m);
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}

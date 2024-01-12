@@ -1,0 +1,4 @@
+int     BN_pseudo_rand(BIGNUM *rnd, int bits, int top, int bottom)
+	{
+	return bnrand(1, rnd, bits, top, bottom);
+	}

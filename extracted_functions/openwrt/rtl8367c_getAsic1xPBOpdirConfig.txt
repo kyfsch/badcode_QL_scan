@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsic1xPBOpdirConfig(rtk_uint32 port, rtk_uint32* pOpdir)
+{
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    return rtl8367c_getAsicRegBit(RTL8367C_DOT1X_PORT_OPDIR_REG, port, pOpdir);
+}

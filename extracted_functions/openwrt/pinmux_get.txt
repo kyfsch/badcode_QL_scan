@@ -1,0 +1,9 @@
+static inline int pinmux_get(struct dc_ep_dev *dev, u32 gpio, int *func)
+{
+	if (WARN_ON(!dev || !func))
+		return -EINVAL;
+	if (WARN_ON(!dev->priv))
+		return -EINVAL;
+
+	return dc_ep_pinmux_get(dev->priv, gpio, func);
+}

@@ -1,0 +1,19 @@
+ret_t rtl8367c_getReservedVidAction(rtk_uint32 *pVid0Action, rtk_uint32 *pVid4095Action)
+{
+    ret_t   retVal;
+
+    if(pVid0Action == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    if(pVid4095Action == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    if((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_VLAN_EXT_CTRL, RTL8367C_VLAN_VID0_TYPE_OFFSET, pVid0Action)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_VLAN_EXT_CTRL, RTL8367C_VLAN_VID4095_TYPE_OFFSET, pVid4095Action)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+
+}

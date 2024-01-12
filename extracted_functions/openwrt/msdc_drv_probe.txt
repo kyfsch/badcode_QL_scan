@@ -1,0 +1,150 @@
+static int msdc_drv_probe(struct platform_device *pdev)
+{
+	struct resource *res;
+	__iomem void *base;
+	struct mmc_host *mmc;
+	struct msdc_host *host;
+	struct msdc_hw *hw;
+	int ret;
+
+	//FIXME: this should be done by pinconf and not by the sd driver
+	if ((ralink_soc == MT762X_SOC_MT7688 ||
+	     ralink_soc == MT762X_SOC_MT7628AN) &&
+	    (!(rt_sysc_r32(0x60) & BIT(15))))
+		rt_sysc_m32(0xf << 17, 0xf << 17, 0x3c);
+
+	hw = &msdc0_hw;
+
+	if (of_property_read_bool(pdev->dev.of_node, "mtk,wp-en"))
+		msdc0_hw.flags |= MSDC_WP_PIN_EN;
+
+	/* Allocate MMC host for this device */
+	mmc = mmc_alloc_host(sizeof(struct msdc_host), &pdev->dev);
+	if (!mmc)
+		return -ENOMEM;
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	base = devm_ioremap_resource(&pdev->dev, res);
+	if (IS_ERR(base)) {
+		ret = PTR_ERR(base);
+		goto host_free;
+	}
+
+	/* Set host parameters to mmc */
+	mmc->ops        = &mt_msdc_ops;
+	mmc->f_min      = HOST_MIN_MCLK;
+	mmc->f_max      = HOST_MAX_MCLK;
+	mmc->ocr_avail  = MSDC_OCR_AVAIL;
+
+	mmc->caps   = MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED;
+
+	//TODO: read this as bus-width from dt (via mmc_of_parse)
+	mmc->caps  |= MMC_CAP_4_BIT_DATA;
+
+	cd_active_low = !of_property_read_bool(pdev->dev.of_node, "mediatek,cd-high");
+
+	if (of_property_read_bool(pdev->dev.of_node, "mediatek,cd-poll"))
+		mmc->caps |= MMC_CAP_NEEDS_POLL;
+
+	/* MMC core transfer sizes tunable parameters */
+	mmc->max_segs      = MAX_HW_SGMTS;
+
+	mmc->max_seg_size  = MAX_SGMT_SZ;
+	mmc->max_blk_size  = HOST_MAX_BLKSZ;
+	mmc->max_req_size  = MAX_REQ_SZ;
+	mmc->max_blk_count = mmc->max_req_size;
+
+	host = mmc_priv(mmc);
+	host->hw        = hw;
+	host->mmc       = mmc;
+	host->id        = pdev->id;
+	if (host->id < 0 || host->id >= 4)
+		host->id = 0;
+	host->error     = 0;
+
+	host->irq       = platform_get_irq(pdev, 0);
+	if (host->irq < 0) {
+		ret = -EINVAL;
+		goto host_free;
+	}
+
+	host->base      = base;
+	host->mclk      = 0;                   /* mclk: the request clock of mmc sub-system */
+	host->hclk      = hclks[hw->clk_src];  /* hclk: clock of clock source to msdc controller */
+	host->sclk      = 0;                   /* sclk: the really clock after divition */
+	host->pm_state  = PMSG_RESUME;
+	host->suspend   = 0;
+	host->core_clkon = 0;
+	host->card_clkon = 0;
+	host->core_power = 0;
+	host->power_mode = MMC_POWER_OFF;
+//    host->card_inserted = hw->flags & MSDC_REMOVABLE ? 0 : 1;
+	host->timeout_ns = 0;
+	host->timeout_clks = DEFAULT_DTOC * 65536;
+
+	host->mrq = NULL;
+	//init_MUTEX(&host->sem); /* we don't need to support multiple threads access */
+
+	dma_coerce_mask_and_coherent(mmc_dev(mmc), DMA_BIT_MASK(32));
+
+	/* using dma_alloc_coherent*/  /* todo: using 1, for all 4 slots */
+	host->dma.gpd = dma_alloc_coherent(&pdev->dev,
+					   MAX_GPD_NUM * sizeof(struct gpd),
+					   &host->dma.gpd_addr, GFP_KERNEL);
+	host->dma.bd =  dma_alloc_coherent(&pdev->dev,
+					   MAX_BD_NUM  * sizeof(struct bd),
+					   &host->dma.bd_addr,  GFP_KERNEL);
+	if (!host->dma.gpd || !host->dma.bd) {
+		ret = -ENOMEM;
+		goto release_mem;
+	}
+	msdc_init_gpd_bd(host, &host->dma);
+
+	INIT_DELAYED_WORK(&host->card_delaywork, msdc_tasklet_card);
+	spin_lock_init(&host->lock);
+	msdc_init_hw(host);
+
+	/* TODO check weather flags 0 is correct, the mtk-sd driver uses
+	 * IRQF_TRIGGER_LOW | IRQF_ONESHOT for flags
+	 *
+	 * for flags 0 the trigger polarity is determined by the
+	 * device tree, but not the oneshot flag, but maybe it is also
+	 * not needed because the soc could be oneshot safe.
+	 */
+	ret = devm_request_irq(&pdev->dev, host->irq, msdc_irq, 0, pdev->name,
+			       host);
+	if (ret)
+		goto release;
+
+	platform_set_drvdata(pdev, mmc);
+
+	ret = mmc_add_host(mmc);
+	if (ret)
+		goto release;
+
+	/* Config card detection pin and enable interrupts */
+	if (hw->flags & MSDC_CD_PIN_EN) {  /* set for card */
+		msdc_enable_cd_irq(host, 1);
+	} else {
+		msdc_enable_cd_irq(host, 0);
+	}
+
+	return 0;
+
+release:
+	platform_set_drvdata(pdev, NULL);
+	msdc_deinit_hw(host);
+	cancel_delayed_work_sync(&host->card_delaywork);
+
+release_mem:
+	if (host->dma.gpd)
+		dma_free_coherent(&pdev->dev, MAX_GPD_NUM * sizeof(struct gpd),
+				  host->dma.gpd, host->dma.gpd_addr);
+	if (host->dma.bd)
+		dma_free_coherent(&pdev->dev, MAX_BD_NUM * sizeof(struct bd),
+				  host->dma.bd, host->dma.bd_addr);
+host_free:
+	mmc_free_host(mmc);
+
+	return ret;
+}

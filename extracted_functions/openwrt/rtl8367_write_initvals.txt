@@ -1,0 +1,12 @@
+static int rtl8367_write_initvals(struct rtl8366_smi *smi,
+				  const struct rtl8367_initval *initvals,
+				  int count)
+{
+	int err;
+	int i;
+
+	for (i = 0; i < count; i++)
+		REG_WR(smi, initvals[i].reg, initvals[i].val);
+
+	return 0;
+}

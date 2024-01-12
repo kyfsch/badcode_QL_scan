@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicEavEnable(rtk_uint32 port, rtk_uint32 enabled)
+{
+    if(port > RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_EAV_CTRL0, port, enabled);
+}

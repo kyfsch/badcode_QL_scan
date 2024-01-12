@@ -1,0 +1,5 @@
+ReadMbox (u32 * mboxarray, u32 size)
+{
+	IFX_MEI_DebugRead (&dsl_devices[0], OMBOX_BASE, mboxarray, size);
+	IFX_MEI_DMSG("read from %X\n", OMBOX_BASE);
+}

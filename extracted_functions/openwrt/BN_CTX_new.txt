@@ -1,0 +1,14 @@
+BN_CTX *BN_CTX_new(void)
+	{
+	BN_CTX *ret;
+
+	ret=(BN_CTX *)malloc(sizeof(BN_CTX));
+	if (ret == NULL)
+		{
+		return(NULL);
+		}
+
+	BN_CTX_init(ret);
+	ret->flags=BN_FLG_MALLOCED;
+	return(ret);
+	}

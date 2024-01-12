@@ -1,0 +1,19 @@
+rtk_api_ret_t rtk_dot1x_portBasedAuthStatus_set(rtk_port_t port, rtk_dot1x_auth_status_t port_auth)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+     if (port_auth >= AUTH_STATUS_END)
+        return RT_ERR_DOT1X_PORTBASEDAUTH;
+
+    if ((retVal = rtl8367c_setAsic1xPBAuthConfig(rtk_switch_port_L2P_get(port), port_auth)) != RT_ERR_OK)
+        return retVal;
+
+
+    return RT_ERR_OK;
+}

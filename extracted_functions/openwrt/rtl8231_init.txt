@@ -1,0 +1,33 @@
+int rtl8231_init(struct rtl8231_gpios *gpios)
+{
+	u32 ret;
+
+	pr_info("%s called, MDIO bus ID: %d\n", __func__, gpios->smi_bus_id);
+
+	gpios->reg_cached = 0;
+
+	if (soc_info.family == RTL8390_FAMILY_ID) {
+		/* RTL8390: Enable external gpio in global led control register */
+		sw_w32_mask(0x7 << 18, 0x4 << 18, RTL839X_LED_GLB_CTRL);
+	} else if (soc_info.family == RTL8380_FAMILY_ID) {
+		/* RTL8380: Enable RTL8231 indirect access mode */
+		sw_w32_mask(0, 1, RTL838X_EXTRA_GPIO_CTRL);
+		sw_w32_mask(3, 1, RTL838X_DMY_REG5);
+	}
+
+	ret = rtl8231_read(gpios, RTL8231_LED_FUNC1);
+	if ((ret & 0x80000000) || ((ret & RTL8231_READY_MASK) != RTL8231_READY_VALUE))
+		return -ENXIO;
+
+	/* Select GPIO functionality and force input direction for pins 0-36 */
+	rtl8231_write(gpios, RTL8231_GPIO_PIN_SEL(0), 0xffff);
+	rtl8231_write(gpios, RTL8231_GPIO_DIR(0), 0xffff);
+	rtl8231_write(gpios, RTL8231_GPIO_PIN_SEL(16), 0xffff);
+	rtl8231_write(gpios, RTL8231_GPIO_DIR(16), 0xffff);
+	rtl8231_write(gpios, RTL8231_GPIO_PIN_SEL(32), 0x03ff);
+
+	/* Set LED_Start to enable drivers for output mode */
+	rtl8231_write(gpios, RTL8231_LED_FUNC0, 1 << 1);
+
+	return 0;
+}

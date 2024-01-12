@@ -1,0 +1,6 @@
+static int rtl8366s_sw_get_port_stats(struct switch_dev *dev, int port,
+                                        struct switch_port_stats *stats)
+{
+	return (rtl8366_sw_get_port_stats(dev, port, stats,
+				RTL8366S_MIB_TXB_ID, RTL8366S_MIB_RXB_ID));
+}

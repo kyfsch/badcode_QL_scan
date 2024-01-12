@@ -1,0 +1,11 @@
+static void g997_line_status(int fd, DSL_AccessDir_t direction) {
+	IOCTL_DIR_DELT(DSL_G997_LineStatus_t, DSL_FIO_G997_LINE_STATUS_GET, direction, DSL_DELT_DATA_SHOWTIME);
+
+	// invalid value indicators taken from drv_dsl_cpe_api_g997.h
+	m_db("latn", out.data.LATN, 1271);
+	m_db("satn", out.data.SATN, 1271);
+	m_db("snr", out.data.SNR, -641);
+	m_db("actps", out.data.ACTPS, -901);
+	m_db("actatp", out.data.ACTATP, -512);
+	m_u32("attndr", out.data.ATTNDR);
+}

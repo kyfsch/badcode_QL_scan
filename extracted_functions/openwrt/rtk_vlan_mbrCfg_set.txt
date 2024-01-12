@@ -1,0 +1,67 @@
+rtk_api_ret_t rtk_vlan_mbrCfg_set(rtk_uint32 idx, rtk_vlan_mbrcfg_t *pMbrcfg)
+{
+    rtk_api_ret_t           retVal;
+    rtk_uint32              phyMbrPmask;
+    rtl8367c_vlanconfiguser mbrCfg;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Error check */
+    if(pMbrcfg == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    if(idx > RTL8367C_CVIDXMAX)
+        return RT_ERR_INPUT;
+
+    if(pMbrcfg->evid > RTL8367C_EVIDMAX)
+        return RT_ERR_INPUT;
+
+    if(pMbrcfg->fid_msti > RTL8367C_FIDMAX)
+        return RT_ERR_L2_FID;
+
+    if(pMbrcfg->envlanpol >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if(pMbrcfg->meteridx > RTK_MAX_METER_ID)
+        return RT_ERR_FILTER_METER_ID;
+
+    if(pMbrcfg->vbpen >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if(pMbrcfg->vbpri > RTL8367C_PRIMAX)
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    /* Check port mask valid */
+    RTK_CHK_PORTMASK_VALID(&(pMbrcfg->mbr));
+
+    mbrCfg.evid         = pMbrcfg->evid;
+    mbrCfg.fid_msti     = pMbrcfg->fid_msti;
+    mbrCfg.envlanpol    = pMbrcfg->envlanpol;
+    mbrCfg.meteridx     = pMbrcfg->meteridx;
+    mbrCfg.vbpen        = pMbrcfg->vbpen;
+    mbrCfg.vbpri        = pMbrcfg->vbpri;
+
+    if(rtk_switch_portmask_L2P_get(&(pMbrcfg->mbr), &phyMbrPmask) != RT_ERR_OK)
+        return RT_ERR_FAILED;
+
+    mbrCfg.mbr = phyMbrPmask;
+
+    if ((retVal = rtl8367c_setAsicVlanMemberConfig(idx, &mbrCfg)) != RT_ERR_OK)
+        return retVal;
+
+    /* Update Database */
+    if( (mbrCfg.evid == 0) && (mbrCfg.mbr == 0) )
+    {
+        vlan_mbrCfgUsage[idx] = MBRCFG_UNUSED;
+        vlan_mbrCfgVid[idx] = 0;
+    }
+    else
+    {
+        vlan_mbrCfgUsage[idx] = MBRCFG_USED_BY_VLAN;
+        vlan_mbrCfgVid[idx] = mbrCfg.evid;
+    }
+
+    return RT_ERR_OK;
+
+}

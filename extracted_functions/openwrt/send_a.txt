@@ -1,0 +1,9 @@
+send_a(void)
+{
+	struct ead_msg_number *num = EAD_DATA(msg, number);
+	A = t_clientgenexp(tc);
+	msg->type = htonl(EAD_TYPE_SEND_A);
+	msg->len = htonl(sizeof(struct ead_msg_number) + A->len);
+	memcpy(num->data, A->data, A->len);
+	return send_packet(EAD_TYPE_SEND_B, handle_b, 1);
+}

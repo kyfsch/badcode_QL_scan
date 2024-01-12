@@ -1,0 +1,67 @@
+rtk_api_ret_t rtk_l2_mcastAddr_del(rtk_l2_mcastAddr_t *pMcastAddr)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 method;
+    rtl8367c_luttb l2Table;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pMcastAddr)
+        return RT_ERR_NULL_POINTER;
+
+    /* must be L2 multicast address */
+    if( (pMcastAddr->mac.octet[0] & 0x01) != 0x01)
+        return RT_ERR_MAC;
+
+    if(pMcastAddr->ivl == 1)
+    {
+        if (pMcastAddr->vid > RTL8367C_VIDMAX)
+            return RT_ERR_L2_VID;
+    }
+    else if(pMcastAddr->ivl == 0)
+    {
+        if (pMcastAddr->fid > RTL8367C_FIDMAX)
+            return RT_ERR_L2_FID;
+    }
+    else
+        return RT_ERR_INPUT;
+
+    memset(&l2Table, 0, sizeof(rtl8367c_luttb));
+
+    /* fill key (MAC,FID) to get L2 entry */
+    memcpy(l2Table.mac.octet, pMcastAddr->mac.octet, ETHER_ADDR_LEN);
+    l2Table.ivl_svl     = pMcastAddr->ivl;
+
+    if(pMcastAddr->ivl)
+        l2Table.cvid_fid    = pMcastAddr->vid;
+    else
+        l2Table.cvid_fid    = pMcastAddr->fid;
+
+    method = LUTREADMETHOD_MAC;
+    retVal = rtl8367c_getAsicL2LookupTb(method, &l2Table);
+    if (RT_ERR_OK == retVal)
+    {
+        memcpy(l2Table.mac.octet, pMcastAddr->mac.octet, ETHER_ADDR_LEN);
+        l2Table.ivl_svl     = pMcastAddr->ivl;
+
+        if(pMcastAddr->ivl)
+            l2Table.cvid_fid    = pMcastAddr->vid;
+        else
+            l2Table.cvid_fid    = pMcastAddr->fid;
+
+        l2Table.mbr         = 0;
+        l2Table.nosalearn   = 0;
+        l2Table.sa_block    = 0;
+        l2Table.l3lookup    = 0;
+        l2Table.lut_pri     = 0;
+        l2Table.fwd_en      = 0;
+        if((retVal = rtl8367c_setAsicL2LookupTb(&l2Table)) != RT_ERR_OK)
+            return retVal;
+
+        pMcastAddr->address = l2Table.address;
+        return RT_ERR_OK;
+    }
+    else
+        return retVal;
+}

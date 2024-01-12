@@ -1,0 +1,14 @@
+rtk_api_ret_t rtk_i2c_mode_get( rtk_I2C_16bit_mode_t * pI2cMode)
+{
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+    if(NULL == pI2cMode)
+        return RT_ERR_NULL_POINTER;
+    if(rtk_i2c_mode == I2C_70B_LSB_16BIT_MODE)
+        *pI2cMode = 1;
+    else if ((rtk_i2c_mode == I2C_LSB_16BIT_MODE))
+        *pI2cMode = 0;
+    else
+        return RT_ERR_FAILED;
+    return RT_ERR_OK;
+}

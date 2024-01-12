@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_mirror_isolationLeaky_set(rtk_enable_t txenable, rtk_enable_t rxenable)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if ((txenable >= RTK_ENABLE_END) ||(rxenable >= RTK_ENABLE_END))
+        return RT_ERR_ENABLE;
+
+    if ((retVal = rtl8367c_setAsicPortMirrorIsolationTxLeaky(txenable)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicPortMirrorIsolationRxLeaky(rxenable)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

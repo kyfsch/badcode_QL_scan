@@ -1,0 +1,18 @@
+ar8xxx_reg_wait(struct ar8xxx_priv *priv, u32 reg, u32 mask, u32 val,
+		unsigned timeout)
+{
+	int i;
+
+	for (i = 0; i < timeout; i++) {
+		u32 t;
+
+		t = ar8xxx_read(priv, reg);
+		if ((t & mask) == val)
+			return 0;
+
+		usleep_range(1000, 2000);
+		cond_resched();
+	}
+
+	return -ETIMEDOUT;
+}

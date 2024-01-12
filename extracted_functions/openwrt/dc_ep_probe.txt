@@ -1,0 +1,134 @@
+static int dc_ep_probe(struct pci_dev *pdev, const struct pci_device_id *id)
+{
+	int ret;
+	int nvec;
+	bool switch_exist;
+	int current_ep;
+	unsigned long phymem;
+	void __iomem *mem;
+	size_t memsize;
+	int msi_mode;
+	static int cards_found;
+#ifndef CONFIG_OF
+	struct pcie_ep_adapter *adapter;
+#endif
+	struct dc_ep_priv *priv;
+
+	ret = pci_enable_device(pdev);
+	if (ret) {
+		dev_err(&pdev->dev, "can't enable PCI device %d\n", ret);
+		goto err_pci;
+	}
+
+	/* Physical address */
+	ret = pci_request_region(pdev, DC_EP_BAR_NUM, dc_ep_driver_name);
+	if (ret) {
+		dev_err(&pdev->dev, "PCI MMIO reservation error: %d\n", ret);
+		goto err_device;
+	}
+
+	/* Target structures have a limit of 32 bit DMA pointers.
+	 * DMA pointers can be wider than 32 bits by default on some systems.
+	 */
+	ret = pci_set_dma_mask(pdev, DMA_BIT_MASK(32));
+	if (ret) {
+		dev_err(&pdev->dev, "32-bit DMA not available: %d\n", ret);
+		goto err_region;
+	}
+
+	ret = pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(32));
+	if (ret) {
+		dev_err(&pdev->dev, "cannot enable 32-bit consistent DMA\n");
+		goto err_region;
+	}
+
+	/* Set bus master bit in PCI_COMMAND to enable DMA */
+	pci_set_master(pdev);
+	/* NB, some delay may need due to BME reset */
+	udelay(1);
+
+	/* Arrange for access to Target SoC registers. */
+	mem = pci_iomap(pdev, DC_EP_BAR_NUM, 0);
+	if (!mem) {
+		dev_err(&pdev->dev, "PCI iomap error\n");
+		ret = -EIO;
+		goto err_master;
+	}
+	phymem = pci_resource_start(pdev, DC_EP_BAR_NUM);
+	memsize = pci_resource_len(pdev, DC_EP_BAR_NUM);
+
+	nvec = pci_msi_vec_num(pdev);
+	/* Overwrite maximum vector number according to
+	 * the specific requirement
+	 */
+	if ((DC_PCIE_SWITCH_ATTACH > 0) || pcie_switch_exist)
+		switch_exist = true;
+	else
+		switch_exist = false;
+	/* Always use 4 vector mode */
+	nvec = DC_EP_DEFAULT_MSI_VECTOR;
+	msi_mode = DC_EP_4_MSI_MODE;
+
+	current_ep = cards_found++;
+	priv = &g_dc_ep_info.pcie_ep[current_ep];
+	memset(priv, 0, sizeof(*priv));
+	pci_set_drvdata(pdev, priv);
+
+	/* Collect basic info for further operations */
+	spin_lock(&dc_ep_lock);
+	g_dc_ep_info.dev_num = cards_found;
+	atomic_set(&priv->refcnt, 0);
+	priv->pdev = pdev;
+	priv->device_id = pdev->device;
+	priv->dev = &pdev->dev;
+	priv->ep_idx = current_ep;
+	priv->mem = mem;
+	priv->phymem = phymem;
+	priv->memsize = memsize;
+	priv->irq_num = nvec;
+	priv->switch_attached = switch_exist;
+	priv->msi_mode = msi_mode;
+	spin_unlock(&dc_ep_lock);
+
+	ret = dc_ep_msi_enable(pdev, nvec);
+	if (ret)
+		goto err_iomap;
+
+	spin_lock(&dc_ep_lock);
+	priv->irq_base = pdev->irq;
+	spin_unlock(&dc_ep_lock);
+
+#ifndef CONFIG_OF
+	adapter = kmalloc(sizeof(struct pcie_ep_adapter), GFP_KERNEL);
+	if (adapter == NULL)
+		goto err_iomap;
+	pci_set_drvdata(pdev, adapter);
+	adapter->mei_dev = platform_device_register_data(&pdev->dev, "mei_cpe",
+							 PLATFORM_DEVID_AUTO,
+							 NULL, 0);
+	if (IS_ERR(adapter->mei_dev)) {
+		dev_err(&pdev->dev, "can not register mei device, err: %li, ignore this\n",
+			PTR_ERR(adapter->mei_dev));
+		goto err_msi;
+	}
+#endif
+	dc_ep_info_xchange(pdev, cards_found);
+	/* Disable output clock to save power */
+	dc_ep_clkod_disable(priv);
+	dc_aca_info_init(priv);
+	return 0;
+#ifndef CONFIG_OF
+err_msi:
+	kfree(adapter);
+#endif
+err_iomap:
+	pci_iounmap(pdev, mem);
+err_master:
+	pci_clear_master(pdev);
+err_region:
+	pci_release_region(pdev, DC_EP_BAR_NUM);
+err_device:
+	pci_disable_device(pdev);
+err_pci:
+	return ret;
+}

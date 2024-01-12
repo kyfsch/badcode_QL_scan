@@ -1,0 +1,70 @@
+static int line_statistics(struct ubus_context *ctx, struct ubus_object *obj,
+                   struct ubus_request_data *req, const char *method,
+                   struct blob_attr *msg)
+{
+	int fd;
+	void *c, *c2;
+
+#ifndef INCLUDE_DSL_CPE_API_DANUBE
+	fd = open(DSL_CPE_DEVICE_NAME "/0", O_RDWR, 0644);
+#else
+	fd = open(DSL_CPE_DEVICE_NAME, O_RDWR, 0644);
+#endif
+	if (fd < 0)
+		return UBUS_STATUS_UNKNOWN_ERROR;
+
+	blob_buf_init(&b, 0);
+
+	pilot_tones_status(fd);
+
+	c = blobmsg_open_table(&b, "bands");
+	c2 = blobmsg_open_table(&b, "downstream");
+	band_border_status(fd, DSL_DOWNSTREAM);
+	blobmsg_close_table(&b, c2);
+	c2 = blobmsg_open_table(&b, "upstream");
+	band_border_status(fd, DSL_UPSTREAM);
+	blobmsg_close_table(&b, c2);
+	blobmsg_close_table(&b, c);
+
+	c = blobmsg_open_table(&b, "bits");
+	c2 = blobmsg_open_table(&b, "downstream");
+	g977_get_bit_allocation(fd, DSL_DOWNSTREAM);
+	blobmsg_close_table(&b, c2);
+	c2 = blobmsg_open_table(&b, "upstream");
+	g977_get_bit_allocation(fd, DSL_UPSTREAM);
+	blobmsg_close_table(&b, c2);
+	blobmsg_close_table(&b, c);
+
+	c = blobmsg_open_table(&b, "snr");
+	c2 = blobmsg_open_table(&b, "downstream");
+	g977_get_snr(fd, DSL_DOWNSTREAM);
+	blobmsg_close_table(&b, c2);
+	c2 = blobmsg_open_table(&b, "upstream");
+	g977_get_snr(fd, DSL_UPSTREAM);
+	blobmsg_close_table(&b, c2);
+	blobmsg_close_table(&b, c);
+
+	c = blobmsg_open_table(&b, "qln");
+	c2 = blobmsg_open_table(&b, "downstream");
+	g977_get_qln(fd, DSL_DOWNSTREAM);
+	blobmsg_close_table(&b, c2);
+	c2 = blobmsg_open_table(&b, "upstream");
+	g977_get_qln(fd, DSL_UPSTREAM);
+	blobmsg_close_table(&b, c2);
+	blobmsg_close_table(&b, c);
+
+	c = blobmsg_open_table(&b, "hlog");
+	c2 = blobmsg_open_table(&b, "downstream");
+	g977_get_hlog(fd, DSL_DOWNSTREAM);
+	blobmsg_close_table(&b, c2);
+	c2 = blobmsg_open_table(&b, "upstream");
+	g977_get_hlog(fd, DSL_UPSTREAM);
+	blobmsg_close_table(&b, c2);
+	blobmsg_close_table(&b, c);
+
+	ubus_send_reply(ctx, req, b.head);
+
+	close(fd);
+
+	return 0;
+}

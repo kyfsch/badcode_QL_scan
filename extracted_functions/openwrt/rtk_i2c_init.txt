@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_i2c_init(void)
+{
+    rtk_uint32 retVal;
+  switch_chip_t ChipID;
+  /* probe switch */
+  if((retVal = rtk_switch_probe(&ChipID)) != RT_ERR_OK)
+      return retVal;
+
+  if( ChipID == CHIP_RTL8370B )
+  {
+   /*set GPIO8, GPIO9, OpenDrain as I2C, clock = 252KHZ   */
+      if((retVal = rtl8367c_setAsicReg(RTL8367C_REG_M_I2C_SYS_CTL, 0x5c3f)) != RT_ERR_OK)
+        return retVal;
+  }
+  else
+      return RT_ERR_FAILED;
+  return  RT_ERR_OK;
+}

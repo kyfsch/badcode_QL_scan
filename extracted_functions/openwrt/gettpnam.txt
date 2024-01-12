@@ -1,0 +1,20 @@
+gettpnam
+(user)
+     const char * user;
+{
+  struct t_pwent * tpptr;
+  struct t_confent * tcptr;
+
+  if(pwinit() < 0)
+    return NULL;
+  tpptr = t_getpwbyname(syspw, user);
+  if(tpptr == NULL)
+    return NULL;
+  tcptr =
+    gettcid
+    (tpptr->index);
+  if(tcptr == NULL)
+    return NULL;
+  pwsetup(&tpass, tpptr, tcptr);
+  return &tpass;
+}

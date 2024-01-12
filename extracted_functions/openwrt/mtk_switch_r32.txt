@@ -1,0 +1,4 @@
+u32 mtk_switch_r32(struct mt7620_gsw *gsw, unsigned reg)
+{
+	return ioread32(gsw->base + reg);
+}

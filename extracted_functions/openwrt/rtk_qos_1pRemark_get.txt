@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_qos_1pRemark_get(rtk_pri_t int_pri, rtk_pri_t *pDot1p_pri)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (int_pri > RTL8367C_PRIMAX )
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    if ((retVal = rtl8367c_getAsicRemarkingDot1pParameter(int_pri, pDot1p_pri)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

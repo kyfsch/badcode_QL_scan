@@ -1,0 +1,4 @@
+static inline int rbytes(void)
+{
+	return erasesize - (ofs % erasesize);
+}

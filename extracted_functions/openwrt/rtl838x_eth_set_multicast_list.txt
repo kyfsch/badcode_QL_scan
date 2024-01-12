@@ -1,0 +1,16 @@
+static void rtl838x_eth_set_multicast_list(struct net_device *ndev)
+{
+	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
+	 * CTRL_0_FULL = GENMASK(21, 0) = 0x3FFFFF
+	 */
+	if (!(ndev->flags & (IFF_PROMISC | IFF_ALLMULTI))) {
+		sw_w32(0x0, RTL838X_RMA_CTRL_0);
+		sw_w32(0x0, RTL838X_RMA_CTRL_1);
+	}
+	if (ndev->flags & IFF_ALLMULTI)
+		sw_w32(GENMASK(21, 0), RTL838X_RMA_CTRL_0);
+	if (ndev->flags & IFF_PROMISC) {
+		sw_w32(GENMASK(21, 0), RTL838X_RMA_CTRL_0);
+		sw_w32(0x7fff, RTL838X_RMA_CTRL_1);
+	}
+}

@@ -1,0 +1,97 @@
+static int ltq_atm_probe(struct platform_device *pdev)
+{
+	const struct of_device_id *match;
+	struct ltq_atm_ops *ops = NULL;
+	int ret;
+	int port_num;
+	struct port_cell_info port_cell = {0};
+	char ver_str[256];
+
+	match = of_match_device(ltq_atm_match, &pdev->dev);
+	if (!match) {
+		dev_err(&pdev->dev, "failed to find matching device\n");
+		return -ENOENT;
+	}
+	ops = (struct ltq_atm_ops *) match->data;
+
+	check_parameters();
+
+	ret = init_priv_data();
+	if ( ret != 0 ) {
+		pr_err("INIT_PRIV_DATA_FAIL\n");
+		goto INIT_PRIV_DATA_FAIL;
+	}
+
+	ops->init(pdev);
+	init_rx_tables();
+	init_tx_tables();
+
+	/*  create devices  */
+	for ( port_num = 0; port_num < ATM_PORT_NUMBER; port_num++ ) {
+		g_atm_priv_data.port[port_num].dev = atm_dev_register("ifxmips_atm", NULL, &g_ifx_atm_ops, -1, NULL);
+		if ( !g_atm_priv_data.port[port_num].dev ) {
+			pr_err("failed to register atm device %d!\n", port_num);
+			ret = -EIO;
+			goto ATM_DEV_REGISTER_FAIL;
+		} else {
+			g_atm_priv_data.port[port_num].dev->ci_range.vpi_bits = 8;
+			g_atm_priv_data.port[port_num].dev->ci_range.vci_bits = 16;
+			g_atm_priv_data.port[port_num].dev->link_rate = g_atm_priv_data.port[port_num].tx_max_cell_rate;
+			g_atm_priv_data.port[port_num].dev->dev_data = (void*)port_num;
+
+#if defined(CONFIG_IFXMIPS_DSL_CPE_MEI) || defined(CONFIG_IFXMIPS_DSL_CPE_MEI_MODULE)
+			atm_dev_signal_change(g_atm_priv_data.port[port_num].dev, ATM_PHY_SIG_LOST);
+#endif
+		}
+	}
+
+	/*  register interrupt handler  */
+	ret = request_irq(PPE_MAILBOX_IGU1_INT, mailbox_irq_handler, 0, "atm_mailbox_isr", &g_atm_priv_data);
+	if ( ret ) {
+		if ( ret == -EBUSY ) {
+			pr_err("IRQ may be occupied by other driver, please reconfig to disable it.\n");
+		} else {
+			pr_err("request_irq fail irq:%d\n", PPE_MAILBOX_IGU1_INT);
+		}
+		goto REQUEST_IRQ_PPE_MAILBOX_IGU1_INT_FAIL;
+	}
+	disable_irq(PPE_MAILBOX_IGU1_INT);
+
+
+	ret = ops->start(0);
+	if ( ret ) {
+		pr_err("ifx_pp32_start fail!\n");
+		goto PP32_START_FAIL;
+	}
+
+	port_cell.port_num = ATM_PORT_NUMBER;
+	ifx_mei_atm_showtime_check(&g_showtime, &port_cell, &g_xdata_addr);
+	if ( g_showtime ) {
+		atm_showtime_enter(&port_cell, &g_xdata_addr);
+	} else {
+		qsb_global_set();
+	}
+
+	validate_oam_htu_entry();
+
+	ifx_mei_atm_showtime_enter = atm_showtime_enter;
+	ifx_mei_atm_showtime_exit  = atm_showtime_exit;
+
+	ifx_atm_version(ops, ver_str);
+	printk(KERN_INFO "%s", ver_str);
+	platform_set_drvdata(pdev, ops);
+	printk("ifxmips_atm: ATM init succeed\n");
+
+	return 0;
+
+PP32_START_FAIL:
+	free_irq(PPE_MAILBOX_IGU1_INT, &g_atm_priv_data);
+REQUEST_IRQ_PPE_MAILBOX_IGU1_INT_FAIL:
+ATM_DEV_REGISTER_FAIL:
+	while ( port_num-- > 0 )
+		atm_dev_deregister(g_atm_priv_data.port[port_num].dev);
+INIT_PRIV_DATA_FAIL:
+	clear_priv_data();
+	printk("ifxmips_atm: ATM init failed\n");
+	return ret;
+}

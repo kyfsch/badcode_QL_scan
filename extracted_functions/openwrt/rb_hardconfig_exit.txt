@@ -1,0 +1,7 @@
+void rb_hardconfig_exit(void)
+{
+	kobject_put(hc_kobj);
+	hc_kobj = NULL;
+	kfree(hc_buf);
+	hc_buf = NULL;
+}

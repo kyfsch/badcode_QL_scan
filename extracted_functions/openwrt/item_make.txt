@@ -1,0 +1,38 @@
+static void item_make(struct menu *menu, char tag, const char *fmt, ...)
+{
+	va_list ap;
+
+	if (items_num > MAX_MENU_ITEMS-1)
+		return;
+
+	bzero(&k_menu_items[items_num], sizeof(k_menu_items[0]));
+	k_menu_items[items_num].tag = tag;
+	k_menu_items[items_num].usrptr = menu;
+	if (menu != NULL)
+		k_menu_items[items_num].is_visible =
+			menu_is_visible(menu);
+	else
+		k_menu_items[items_num].is_visible = 1;
+
+	va_start(ap, fmt);
+	vsnprintf(k_menu_items[items_num].str,
+		  sizeof(k_menu_items[items_num].str),
+		  fmt, ap);
+	va_end(ap);
+
+	if (!k_menu_items[items_num].is_visible)
+		memcpy(k_menu_items[items_num].str, "XXX", 3);
+
+	curses_menu_items[items_num] = new_item(
+			k_menu_items[items_num].str,
+			k_menu_items[items_num].str);
+	set_item_userptr(curses_menu_items[items_num],
+			&k_menu_items[items_num]);
+	/*
+	if (!k_menu_items[items_num].is_visible)
+		item_opts_off(curses_menu_items[items_num], O_SELECTABLE);
+	*/
+
+	items_num++;
+	curses_menu_items[items_num] = NULL;
+}

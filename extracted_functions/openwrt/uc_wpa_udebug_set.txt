@@ -1,0 +1,33 @@
+uc_value_t *uc_wpa_udebug_set(uc_vm_t *vm, size_t nargs)
+{
+	uc_value_t *name = uc_fn_arg(0);
+	uc_value_t *ubus = uc_fn_arg(1);
+	static bool enabled = false;
+	struct ubus_context *ctx;
+	bool cur_en;
+
+	cur_en = ucv_type(name) == UC_STRING;
+	ctx = ucv_resource_data(ubus, "ubus.connection");
+	if (!ctx)
+		cur_en = false;
+
+	if (enabled == cur_en)
+		return ucv_boolean_new(true);
+
+	enabled = cur_en;
+	if (enabled) {
+		udebug_service = strdup(ucv_string_get(name));
+		udebug_init(&ud);
+		udebug_auto_connect(&ud, NULL);
+		udebug_ubus_init(&ud_ubus, ctx, udebug_service, wpa_udebug_config);
+	} else {
+		udebug_ubus_free(&ud_ubus);
+		for (size_t i = 0; i < ARRAY_SIZE(udebug_rings); i++)
+			if (udebug_buf_valid(udebug_rings[i].buf))
+				udebug_buf_free(udebug_rings[i].buf);
+		udebug_free(&ud);
+		free(udebug_service);
+	}
+
+	return ucv_boolean_new(true);
+}

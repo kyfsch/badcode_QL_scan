@@ -1,0 +1,5 @@
+static int fe_mdio_reset(struct mii_bus *bus)
+{
+	/* TODO */
+	return 0;
+}

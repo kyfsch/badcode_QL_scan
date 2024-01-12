@@ -1,0 +1,23 @@
+static void g997_rate_adaptation_status(int fd, DSL_AccessDir_t direction) {
+#ifndef INCLUDE_DSL_CPE_API_DANUBE
+	IOCTL_DIR(DSL_G997_RateAdaptationStatus_t, DSL_FIO_G997_RATE_ADAPTATION_STATUS_GET, direction);
+
+	int map = RAMODE_MAP_UNKNOWN;
+	const char *str;
+	switch (out.data.RA_MODE) {
+	STR_CASE_MAP(DSL_G997_RA_MODE_MANUAL, "Manual", RAMODE_MAP_MANUAL)
+	STR_CASE_MAP(DSL_G997_RA_MODE_AT_INIT, "At initialization", RAMODE_MAP_AT_INIT)
+	STR_CASE_MAP(DSL_G997_RA_MODE_DYNAMIC, "Dynamic", RAMODE_MAP_DYNAMIC)
+	STR_CASE_MAP(DSL_G997_RA_MODE_DYNAMIC_SOS, "Dynamic with SOS", RAMODE_MAP_DYNAMIC_SOS)
+	default:
+		str = NULL;
+		break;
+	};
+
+	if (str)
+		m_str("ra_mode", str);
+
+	if (map != PSTATE_MAP_UNKNOWN)
+		m_u32("ra_mode_num", map);
+#endif
+}

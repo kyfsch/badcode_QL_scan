@@ -1,0 +1,35 @@
+ar8229_hw_init(struct ar8xxx_priv *priv)
+{
+	phy_interface_t phy_if_mode;
+
+	if (priv->initialized)
+		return 0;
+
+	ar8xxx_write(priv, AR8216_REG_CTRL, AR8216_CTRL_RESET);
+	ar8xxx_reg_wait(priv, AR8216_REG_CTRL, AR8216_CTRL_RESET, 0, 1000);
+
+	of_get_phy_mode(priv->pdev->of_node, &phy_if_mode);
+
+	if (phy_if_mode == PHY_INTERFACE_MODE_GMII) {
+		ar8xxx_write(priv, AR8229_REG_OPER_MODE0,
+				 AR8229_OPER_MODE0_MAC_GMII_EN);
+	} else if (phy_if_mode == PHY_INTERFACE_MODE_MII) {
+		ar8xxx_write(priv, AR8229_REG_OPER_MODE0,
+				 AR8229_OPER_MODE0_PHY_MII_EN);
+	} else {
+		pr_err("ar8229: unsupported mii mode\n");
+		return -EINVAL;
+	}
+
+	if (priv->port4_phy) {
+		ar8xxx_write(priv, AR8229_REG_OPER_MODE1,
+			     AR8229_REG_OPER_MODE1_PHY4_MII_EN);
+		/* disable port5 to prevent mii conflict */
+		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(5), 0);
+	}
+
+	ar8xxx_phy_init(priv);
+
+	priv->initialized = true;
+	return 0;
+}

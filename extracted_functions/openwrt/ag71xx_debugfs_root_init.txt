@@ -1,0 +1,11 @@
+int ag71xx_debugfs_root_init(void)
+{
+	if (ag71xx_debugfs_root)
+		return -EBUSY;
+
+	ag71xx_debugfs_root = debugfs_create_dir(KBUILD_MODNAME, NULL);
+	if (!ag71xx_debugfs_root)
+		return -ENOENT;
+
+	return 0;
+}

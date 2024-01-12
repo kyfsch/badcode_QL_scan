@@ -1,0 +1,34 @@
+void rtl9300_sds_tx_config(int sds, phy_interface_t phy_if)
+{
+	/* parameters: rtl9303_80G_txParam_s2 */
+	int impedance = 0x8;
+	int pre_amp = 0x2;
+	int main_amp = 0x9;
+	int post_amp = 0x2;
+	int pre_en = 0x1;
+	int post_en = 0x1;
+	int page;
+
+	switch(phy_if) {
+	case PHY_INTERFACE_MODE_1000BASEX:
+		page = 0x25;
+		break;
+	case PHY_INTERFACE_MODE_HSGMII:
+	case PHY_INTERFACE_MODE_2500BASEX:
+		page = 0x29;
+		break;
+	case PHY_INTERFACE_MODE_10GBASER:
+		page = 0x2f;
+		break;
+	default:
+		pr_err("%s: unsupported PHY mode\n", __func__);
+		return;
+	}
+
+	rtl9300_sds_field_w(sds, page, 0x01, 15, 11, pre_amp);
+	rtl9300_sds_field_w(sds, page, 0x06,  4,  0, post_amp);
+	rtl9300_sds_field_w(sds, page, 0x07,  0,  0, pre_en);
+	rtl9300_sds_field_w(sds, page, 0x07,  3,  3, post_en);
+	rtl9300_sds_field_w(sds, page, 0x07,  8,  4, main_amp);
+	rtl9300_sds_field_w(sds, page, 0x18, 15, 12, impedance);
+}

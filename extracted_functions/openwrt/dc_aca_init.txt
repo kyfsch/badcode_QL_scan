@@ -1,0 +1,35 @@
+int dc_aca_init(struct dc_ep_priv *priv, struct aca_param *param,
+	struct aca_modem_param *mdm)
+{
+	int ret;
+	struct dc_aca *aca = to_aca(priv);
+
+	dc_aca_clk_on(priv);
+	dc_aca_reset(priv);
+
+	ret = aca_fetch_fw(priv);
+	if (ret) {
+		dev_err(priv->dev,
+			"could not fetch firmware files %d\n", ret);
+		dc_aca_clk_off(priv);
+		return ret;
+	}
+
+	aca_mem_clear(priv);
+	aca_dma_init(priv);
+	aca_basic_init(priv);
+	aca_fw_download(priv);
+	aca_hif_param_init(priv);
+	aca_txin_init(priv, &param->aca_txin);
+	aca_txout_init(priv, &param->aca_txout);
+	aca_rxout_init(priv, &param->aca_rxout);
+	aca_rxin_init(priv, &param->aca_rxin);
+	aca_hif_param_init_done(priv);
+	aca_mdm_init(priv, mdm);
+#ifdef CONFIG_SOC_TYPE_XWAY
+	aca_grx330_init(priv);
+#endif
+	aca->initialized = true;
+	dev_info(priv->dev, "aca init done\n");
+	return 0;
+}

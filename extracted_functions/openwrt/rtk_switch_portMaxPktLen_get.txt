@@ -1,0 +1,21 @@
+rtk_api_ret_t rtk_switch_portMaxPktLen_get(rtk_port_t port, rtk_switch_maxPktLen_linkSpeed_t speed, rtk_uint32 *pCfgId)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if(speed >= MAXPKTLEN_LINK_SPEED_END)
+        return RT_ERR_INPUT;
+
+    if(NULL == pCfgId)
+        return RT_ERR_NULL_POINTER;
+
+    if((retVal = rtl8367c_getAsicMaxLength(rtk_switch_port_L2P_get(port), (rtk_uint32)speed, pCfgId)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

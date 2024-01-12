@@ -1,0 +1,23 @@
+void AT91F_MCI_Device_Handler(
+	AT91PS_MciDevice pMCI_Device,
+	unsigned int status)
+{
+	// If End of Tx Buffer Empty interrupt occurred
+	if ( status & AT91C_MCI_TXBUFE )
+    {
+		AT91C_BASE_MCI->MCI_IDR = AT91C_MCI_TXBUFE;
+ 		AT91C_BASE_PDC_MCI->PDC_PTCR = AT91C_PDC_TXTDIS;
+        	
+		pMCI_Device->pMCI_DeviceDesc->state = AT91C_MCI_IDLE;
+	}	// End of if AT91C_MCI_TXBUFF		
+	
+    // If End of Rx Buffer Full interrupt occurred
+    if ( status & AT91C_MCI_RXBUFF )
+    {        
+       	AT91C_BASE_MCI->MCI_IDR = AT91C_MCI_RXBUFF;
+ 		AT91C_BASE_PDC_MCI->PDC_PTCR = AT91C_PDC_RXTDIS;
+	
+		pMCI_Device->pMCI_DeviceDesc->state = AT91C_MCI_IDLE;
+	}	// End of if AT91C_MCI_RXBUFF
+
+}

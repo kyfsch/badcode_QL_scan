@@ -1,0 +1,19 @@
+static int rtl83xx_set_mac_eee(struct dsa_switch *ds, int port,
+			       struct ethtool_eee *e)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	if (e->eee_enabled && !priv->eee_enabled) {
+		pr_info("Globally enabling EEE\n");
+		priv->r->init_eee(priv, true);
+	}
+
+	priv->r->port_eee_set(priv, port, e->eee_enabled);
+
+	if (e->eee_enabled)
+		pr_info("Enabled EEE for port %d\n", port);
+	else
+		pr_info("Disabled EEE for port %d\n", port);
+
+	return 0;
+}

@@ -1,0 +1,26 @@
+static int show_matching_key_value(struct tffs_key_name_table *key_names)
+{
+	struct tffs_entry tmp;
+	const char *name;
+
+	for (uint32_t i = 0; i < key_names->size; i++) {
+		name = key_names->entries[i].val;
+
+		if (strcmp(name, name_filter) == 0) {
+			if (find_entry(key_names->entries[i].id, &tmp)) {
+				print_entry_value(&tmp);
+				printf("\n");
+				free(tmp.val);
+				return EXIT_SUCCESS;
+			} else {
+				fprintf(stderr,
+					"ERROR: no value found for name %s!\n",
+					name);
+				return EXIT_FAILURE;
+			}
+		}
+	}
+
+	fprintf(stderr, "ERROR: Unknown key name %s!\n", name_filter);
+	return EXIT_FAILURE;
+}

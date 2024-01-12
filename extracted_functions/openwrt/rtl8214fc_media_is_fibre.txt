@@ -1,0 +1,16 @@
+static bool rtl8214fc_media_is_fibre(struct phy_device *phydev)
+{
+	int mac = phydev->mdio.addr;
+
+	static int reg[] = {16, 19, 20, 21};
+	u32 val;
+
+	phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	val = phy_package_read_paged(phydev, RTL821X_PAGE_PORT, reg[mac % 4]);
+	phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+
+	if (val & BMCR_PDOWN)
+		return false;
+
+	return true;
+}

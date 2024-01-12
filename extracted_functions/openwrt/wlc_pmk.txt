@@ -1,0 +1,22 @@
+static int wlc_pmk(wlc_param param, void *data, void *value)
+{
+	int ret = -1;
+	char *str = (char *) value;
+	wsec_pmk_t pmk;
+	
+	/* driver doesn't support GET */
+
+	if ((param & PARAM_MODE) == SET) {
+		strncpy(pmk.key, str, WSEC_MAX_PSK_LEN);
+		pmk.key_len = strlen(str);
+
+		if (pmk.key_len > WSEC_MAX_PSK_LEN)
+			pmk.key_len = WSEC_MAX_PSK_LEN;
+
+		pmk.flags = WSEC_PASSPHRASE;
+
+		ret = wl_ioctl(interface, WLC_SET_WSEC_PMK, &pmk, sizeof(pmk));
+	}
+	
+	return ret;
+}

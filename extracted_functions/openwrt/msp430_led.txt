@@ -1,0 +1,43 @@
+static int msp430_led(struct spi_device *spi, struct device_node *nc, u8 id)
+{
+	struct device *dev = &spi->dev;
+	struct led_init_data init_data = {};
+	struct msp430_led *led;
+	enum led_default_state state;
+	int rc;
+
+	led = devm_kzalloc(dev, sizeof(*led), GFP_KERNEL);
+	if (!led)
+		return -ENOMEM;
+
+	led->id = id;
+	led->spi = spi;
+
+	init_data.fwnode = of_fwnode_handle(nc);
+
+	state = led_init_default_state_get(init_data.fwnode);
+	switch (state) {
+	case LEDS_DEFSTATE_ON:
+		led->cdev.brightness = MSP430_LED_BRIGHTNESS_MAX;
+		break;
+	default:
+		led->cdev.brightness = LED_OFF;
+		break;
+	}
+
+	msp430_brightness_set(&led->cdev, led->cdev.brightness);
+
+	led->cdev.blink_set = msp430_blink_set;
+	led->cdev.brightness_set_blocking = msp430_brightness_set;
+	led->cdev.max_brightness = MSP430_LED_BRIGHTNESS_MAX;
+	led->cdev.pattern_clear = msp430_pattern_clear;
+	led->cdev.pattern_set = msp430_pattern_set;
+
+	rc = devm_led_classdev_register_ext(dev, &led->cdev, &init_data);
+	if (rc < 0)
+		return rc;
+
+	dev_dbg(dev, "registered LED %s\n", led->cdev.name);
+
+	return 0;
+}

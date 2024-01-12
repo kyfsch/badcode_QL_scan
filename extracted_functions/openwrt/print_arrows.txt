@@ -1,0 +1,40 @@
+static void print_arrows(WINDOW * win, int item_no, int scroll, int y, int x,
+			 int height)
+{
+	int cur_y, cur_x;
+
+	getyx(win, cur_y, cur_x);
+
+	wmove(win, y, x);
+
+	if (scroll > 0) {
+		wattrset(win, dlg.uarrow.atr);
+		waddch(win, ACS_UARROW);
+		waddstr(win, "(-)");
+	} else {
+		wattrset(win, dlg.menubox.atr);
+		waddch(win, ACS_HLINE);
+		waddch(win, ACS_HLINE);
+		waddch(win, ACS_HLINE);
+		waddch(win, ACS_HLINE);
+	}
+
+	y = y + height + 1;
+	wmove(win, y, x);
+	wrefresh(win);
+
+	if ((height < item_no) && (scroll + height < item_no)) {
+		wattrset(win, dlg.darrow.atr);
+		waddch(win, ACS_DARROW);
+		waddstr(win, "(+)");
+	} else {
+		wattrset(win, dlg.menubox_border.atr);
+		waddch(win, ACS_HLINE);
+		waddch(win, ACS_HLINE);
+		waddch(win, ACS_HLINE);
+		waddch(win, ACS_HLINE);
+	}
+
+	wmove(win, cur_y, cur_x);
+	wrefresh(win);
+}

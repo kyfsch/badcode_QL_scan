@@ -1,0 +1,43 @@
+swconfig_trig_update_port_mask(struct led_trigger *trigger)
+{
+	struct list_head *entry;
+	struct switch_led_trigger *sw_trig;
+	u32 port_mask;
+
+	if (!trigger)
+		return;
+
+	sw_trig = (void *) trigger;
+
+	port_mask = 0;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,16,0)
+	spin_lock(&trigger->leddev_list_lock);
+#else
+	read_lock(&trigger->leddev_list_lock);
+#endif
+	list_for_each(entry, &trigger->led_cdevs) {
+		struct led_classdev *led_cdev;
+		struct swconfig_trig_data *trig_data;
+
+		led_cdev = list_entry(entry, struct led_classdev, trig_list);
+		trig_data = led_cdev->trigger_data;
+		if (trig_data) {
+			read_lock(&trig_data->lock);
+			port_mask |= trig_data->port_mask;
+			read_unlock(&trig_data->lock);
+		}
+	}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,16,0)
+	spin_unlock(&trigger->leddev_list_lock);
+#else
+	read_unlock(&trigger->leddev_list_lock);
+#endif
+
+	sw_trig->port_mask = port_mask;
+
+	if (port_mask)
+		schedule_delayed_work(&sw_trig->sw_led_work,
+				      SWCONFIG_LED_TIMER_INTERVAL);
+	else
+		cancel_delayed_work_sync(&sw_trig->sw_led_work);
+}

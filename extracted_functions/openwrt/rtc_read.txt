@@ -1,0 +1,31 @@
+static ssize_t rtc_read(UNUSED struct file *filp, char *buf, size_t count,
+                        loff_t *ppos)
+{
+	char wbuf[23];
+	struct rtc_time tm;
+	ssize_t len;
+
+	if (count == 0 || *ppos != 0)
+		return 0;
+
+	get_rtc_time(&tm);
+
+	len = sprintf(wbuf, "%04d:%02d:%02d:%d:%02d:%02d:%02d\n",
+		      tm.tm_year + RTC_EPOCH,
+		      tm.tm_mon + 1,
+		      tm.tm_mday,
+		      tm.tm_wday,
+		      tm.tm_hour,
+		      tm.tm_min,
+		      tm.tm_sec);
+
+	if (len > (ssize_t)count)
+		len = count;
+
+	if (copy_to_user(buf, wbuf, len))
+		return -EFAULT;
+
+	*ppos += len;
+
+	return len;
+}

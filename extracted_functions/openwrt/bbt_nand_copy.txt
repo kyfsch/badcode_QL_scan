@@ -1,0 +1,44 @@
+int bbt_nand_copy(u16 dest_blk, u16 src_blk, loff_t max_offset)
+{
+	int pages = bmtd.blk_size >> bmtd.pg_shift;
+	loff_t src = (loff_t)src_blk << bmtd.blk_shift;
+	loff_t dest = (loff_t)dest_blk << bmtd.blk_shift;
+	loff_t offset = 0;
+	uint8_t oob[64];
+	int i, ret;
+
+	for (i = 0; i < pages; i++) {
+		struct mtd_oob_ops rd_ops = {
+			.mode = MTD_OPS_PLACE_OOB,
+			.oobbuf = oob,
+			.ooblen = min_t(int, bmtd.mtd->oobsize / pages, sizeof(oob)),
+			.datbuf = bmtd.data_buf,
+			.len = bmtd.pg_size,
+		};
+		struct mtd_oob_ops wr_ops = {
+			.mode = MTD_OPS_PLACE_OOB,
+			.oobbuf = oob,
+			.datbuf = bmtd.data_buf,
+			.len = bmtd.pg_size,
+		};
+
+		if (offset >= max_offset)
+			break;
+
+		ret = bmtd._read_oob(bmtd.mtd, src + offset, &rd_ops);
+		if (ret < 0 && !mtd_is_bitflip(ret))
+			return ret;
+
+		if (!rd_ops.retlen)
+			break;
+
+		ret = bmtd._write_oob(bmtd.mtd, dest + offset, &wr_ops);
+		if (ret < 0)
+			return ret;
+
+		wr_ops.ooblen = rd_ops.oobretlen;
+		offset += rd_ops.retlen;
+	}
+
+	return 0;
+}

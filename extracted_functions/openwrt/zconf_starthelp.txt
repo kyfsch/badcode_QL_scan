@@ -1,0 +1,6 @@
+void zconf_starthelp(void)
+{
+	new_string();
+	last_ts = first_ts = 0;
+	BEGIN(HELP);
+}

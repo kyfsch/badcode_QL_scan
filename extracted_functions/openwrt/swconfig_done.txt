@@ -1,0 +1,4 @@
+swconfig_done(struct netlink_callback *cb)
+{
+	return 0;
+}

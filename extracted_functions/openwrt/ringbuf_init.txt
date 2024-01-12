@@ -1,0 +1,22 @@
+struct ringbuf * ringbuf_init(uint32_t num_item, uint16_t len_item)
+{
+	static struct ringbuf r;
+
+	if (len_item <= 0)
+		return NULL;
+
+	r.buf = malloc(num_item * (len_item + sizeof(struct ringbuf_entry)));
+
+	if (r.buf)
+	{
+		r.len = num_item;
+		r.fill = 0;
+		r.slen = (len_item + sizeof(struct ringbuf_entry));
+
+		memset(r.buf, 0, num_item * len_item);
+
+		return &r;
+	}
+
+	return NULL;
+}

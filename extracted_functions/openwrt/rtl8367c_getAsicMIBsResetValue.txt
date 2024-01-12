@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicMIBsResetValue(rtk_uint32* value)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_MIB_CTRL0, RTL8367C_RESET_VALUE_OFFSET, value);
+}

@@ -1,0 +1,8 @@
+static int aw9523_pmx_get_groups(struct pinctrl_dev *pctl, unsigned int sel,
+				 const char * const **groups,
+				 unsigned int * const num_groups)
+{
+	*groups = aw9523_pmx[sel].grps;
+	*num_groups = aw9523_pmx[sel].num_grps;
+	return 0;
+}

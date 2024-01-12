@@ -1,0 +1,13 @@
+hostapd_rrm_nr_clear(struct hostapd_data *hapd)
+{
+	struct hostapd_neighbor_entry *nr;
+
+restart:
+	dl_list_for_each(nr, &hapd->nr_db, struct hostapd_neighbor_entry, list) {
+		if (!memcmp(nr->bssid, hapd->own_addr, ETH_ALEN))
+			continue;
+
+		hostapd_neighbor_remove(hapd, nr->bssid, &nr->ssid);
+		goto restart;
+	}
+}

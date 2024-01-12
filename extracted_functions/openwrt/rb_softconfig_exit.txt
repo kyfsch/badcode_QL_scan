@@ -1,0 +1,7 @@
+void rb_softconfig_exit(void)
+{
+	kobject_put(sc_kobj);
+	sc_kobj = NULL;
+	kfree(sc_buf);
+	sc_buf = NULL;
+}

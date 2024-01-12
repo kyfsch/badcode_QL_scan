@@ -1,0 +1,16 @@
+static irqreturn_t bcm6348_emac_isr_mac(int irq, void *dev_id)
+{
+	struct net_device *ndev = dev_id;
+	struct bcm6348_emac *emac = netdev_priv(ndev);
+	u32 stat;
+
+	stat = emac_readl(emac, ENET_IR_REG);
+	if (!(stat & ENET_IR_MIB))
+		return IRQ_NONE;
+
+	/* clear & mask interrupt */
+	emac_writel(emac, ENET_IR_MIB, ENET_IR_REG);
+	emac_writel(emac, 0, ENET_IRMASK_REG);
+
+	return IRQ_HANDLED;
+}

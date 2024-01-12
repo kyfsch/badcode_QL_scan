@@ -1,0 +1,4 @@
+static void rtl8380_phy_reset(struct phy_device *phydev)
+{
+	phy_modify(phydev, 0, BMCR_RESET, BMCR_RESET);
+}

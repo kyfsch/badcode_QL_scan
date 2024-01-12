@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicLutIpLookupMethod(rtk_uint32 type)
+{
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_LUT_CFG, RTL8367C_LUT_IPMC_LOOKUP_OP_OFFSET, type);
+}

@@ -1,0 +1,14 @@
+static void memcopy_data_check(u32 rx_data_addr)
+{
+	int i, j;
+	u32 read_data;
+
+	for (i = 0; i < desc_num; i++) {
+		for (j = 0; j < dma_pkt_size; j = j + 4) {
+			read_data = REG32(rx_data_addr + i * dma_pkt_size + j);
+			if (read_data != ___swab32(DEFAULT_TEST_PATTEN))
+				pr_info("Memcopy ERROR at addr 0x%08x data 0x%08x\n",
+				(rx_data_addr + j), read_data);
+		}
+	}
+}

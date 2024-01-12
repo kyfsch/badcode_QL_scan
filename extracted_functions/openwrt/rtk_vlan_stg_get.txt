@@ -1,0 +1,24 @@
+rtk_api_ret_t rtk_vlan_stg_get(rtk_vlan_t vid, rtk_stp_msti_id_t *pStg)
+{
+    rtk_api_ret_t retVal;
+    rtl8367c_user_vlan4kentry vlan4K;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* vid must be 0~4095 */
+    if (vid > RTL8367C_VIDMAX)
+        return RT_ERR_VLAN_VID;
+
+    if(NULL == pStg)
+        return RT_ERR_NULL_POINTER;
+
+    /* update 4K table */
+    vlan4K.vid = vid;
+    if ((retVal = rtl8367c_getAsicVlan4kEntry(&vlan4K)) != RT_ERR_OK)
+        return retVal;
+
+    *pStg = vlan4K.fid_msti;
+
+    return RT_ERR_OK;
+}

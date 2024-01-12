@@ -1,0 +1,35 @@
+rtk_api_ret_t rtk_port_macStatus_get(rtk_port_t port, rtk_port_mac_ability_t *pPortstatus)
+{
+    rtk_api_ret_t retVal;
+    rtl8367c_port_status_t status;
+    rtk_uint32 hsgsel;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if(NULL == pPortstatus)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicPortStatus(rtk_switch_port_L2P_get(port), &status)) != RT_ERR_OK)
+        return retVal;
+
+
+    pPortstatus->duplex    = status.duplex;
+    pPortstatus->link      = status.link;
+    pPortstatus->nway      = status.nway;
+    pPortstatus->txpause   = status.txpause;
+    pPortstatus->rxpause   = status.rxpause;
+
+    if( (retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_MAC8_SEL_HSGMII_OFFSET, &hsgsel)) != RT_ERR_OK)
+            return retVal;
+
+    if( (rtk_switch_isHsgPort(port) == RT_ERR_OK) && (hsgsel == 1) )
+        pPortstatus->speed = PORT_SPEED_2500M;
+    else
+        pPortstatus->speed = status.speed;
+
+    return RT_ERR_OK;
+}

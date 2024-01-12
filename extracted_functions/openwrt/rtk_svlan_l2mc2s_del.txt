@@ -1,0 +1,37 @@
+rtk_api_ret_t rtk_svlan_l2mc2s_del(rtk_mac_t mac, rtk_mac_t macMsk)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 i;
+    rtk_uint32 l2add, l2Mask;
+    rtl8367c_svlan_mc2s_t svlanMC2SConf;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (mac.octet[0]!= 1&&mac.octet[1]!=0)
+        return RT_ERR_INPUT;
+
+    l2add = (mac.octet[2] << 24) | (mac.octet[3] << 16) | (mac.octet[4] << 8) | mac.octet[5];
+    l2Mask = (macMsk.octet[2] << 24) | (macMsk.octet[3] << 16) | (macMsk.octet[4] << 8) | macMsk.octet[5];
+
+    for (i = 0; i <= RTL8367C_MC2SIDXMAX; i++)
+    {
+        if ((retVal = rtl8367c_getAsicSvlanMC2SConf(i, &svlanMC2SConf)) != RT_ERR_OK)
+            return retVal;
+
+        if (TRUE == svlanMC2SConf.valid)
+        {
+            if (svlanMC2SConf.format == SVLAN_MC2S_MODE_MAC &&
+                svlanMC2SConf.sdata==l2add&&
+                svlanMC2SConf.smask==l2Mask)
+            {
+                memset(&svlanMC2SConf, 0, sizeof(rtl8367c_svlan_mc2s_t));
+                if ((retVal = rtl8367c_setAsicSvlanMC2SConf(i, &svlanMC2SConf)) != RT_ERR_OK)
+                    return retVal;
+                return RT_ERR_OK;
+            }
+        }
+    }
+
+    return RT_ERR_OUT_OF_RANGE;
+}

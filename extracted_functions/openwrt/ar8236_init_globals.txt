@@ -1,0 +1,24 @@
+ar8236_init_globals(struct ar8xxx_priv *priv)
+{
+	/* enable jumbo frames */
+	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+		   AR8316_GCTRL_MTU, 9018 + 8 + 2);
+
+	/* enable cpu port to receive arp frames */
+	ar8xxx_reg_set(priv, AR8216_REG_ATU_CTRL,
+		   AR8236_ATU_CTRL_RES);
+
+	/*
+	 * Enable Broadcast/unknown multicast and unicast frames
+	 * transmitted to the CPU port.
+	 */
+	ar8xxx_reg_set(priv, AR8216_REG_FLOOD_MASK,
+		       AR8229_FLOOD_MASK_BC_DP(0) |
+		       AR8229_FLOOD_MASK_MC_DP(0) |
+		       AR8229_FLOOD_MASK_UC_DP(0));
+
+	/* Enable MIB counters */
+	ar8xxx_rmw(priv, AR8216_REG_MIB_FUNC, AR8216_MIB_FUNC | AR8236_MIB_EN,
+		   (AR8216_MIB_FUNC_NO_OP << AR8216_MIB_FUNC_S) |
+		   AR8236_MIB_EN);
+}

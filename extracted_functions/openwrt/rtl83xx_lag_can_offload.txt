@@ -1,0 +1,18 @@
+static bool rtl83xx_lag_can_offload(struct dsa_switch *ds,
+				      struct net_device *lag,
+				      struct netdev_lag_upper_info *info)
+{
+	int id;
+
+	id = dsa_lag_id(ds->dst, lag);
+	if (id < 0 || id >= ds->num_lag_ids)
+		return false;
+
+	if (info->tx_type != NETDEV_LAG_TX_TYPE_HASH) {
+		return false;
+	}
+	if (info->hash_type != NETDEV_LAG_HASH_L2 && info->hash_type != NETDEV_LAG_HASH_L23)
+		return false;
+
+	return true;
+}

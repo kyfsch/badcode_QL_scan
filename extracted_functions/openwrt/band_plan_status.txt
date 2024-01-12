@@ -1,0 +1,56 @@
+static void band_plan_status(int fd, profile_t *profile) {
+#if (INCLUDE_DSL_CPE_API_VDSL_SUPPORT == 1)
+	IOCTL(DSL_BandPlanStatus_t, DSL_FIO_BAND_PLAN_STATUS_GET)
+
+	switch (out.data.nProfile) {
+	case DSL_PROFILE_8A:
+		*profile = PROFILE_8A;
+		break;
+	case DSL_PROFILE_8B:
+		*profile = PROFILE_8B;
+		break;
+	case DSL_PROFILE_8C:
+		*profile = PROFILE_8C;
+		break;
+	case DSL_PROFILE_8D:
+		*profile = PROFILE_8D;
+		break;
+	case DSL_PROFILE_12A:
+		*profile = PROFILE_12A;
+		break;
+	case DSL_PROFILE_12B:
+		*profile = PROFILE_12B;
+		break;
+	case DSL_PROFILE_17A:
+		*profile = PROFILE_17A;
+		break;
+	case DSL_PROFILE_30A:
+		*profile = PROFILE_30A;
+		break;
+	case DSL_PROFILE_35B:
+		*profile = PROFILE_35B;
+		break;
+	default:
+		*profile = PROFILE_UNKNOWN;
+		break;
+	};
+
+	const char *str;
+	switch (*profile) {
+	STR_CASE(PROFILE_8A, "8a")
+	STR_CASE(PROFILE_8B, "8b")
+	STR_CASE(PROFILE_8C, "8c")
+	STR_CASE(PROFILE_8D, "8d")
+	STR_CASE(PROFILE_12A, "12a")
+	STR_CASE(PROFILE_12B, "12b")
+	STR_CASE(PROFILE_17A, "17a")
+	STR_CASE(PROFILE_30A, "30a")
+	STR_CASE(PROFILE_35B, "35b")
+	default:
+		str = NULL;
+		break;
+	};
+	if (str)
+		m_str("profile", str);
+#endif
+}

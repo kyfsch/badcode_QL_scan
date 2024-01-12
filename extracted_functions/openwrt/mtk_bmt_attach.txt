@@ -1,0 +1,54 @@
+int mtk_bmt_attach(struct mtd_info *mtd)
+{
+	struct device_node *np;
+	int ret = 0;
+
+	if (bmtd.mtd)
+		return -ENOSPC;
+
+	np = mtd_get_of_node(mtd);
+	if (!np)
+		return 0;
+
+	if (of_property_read_bool(np, "mediatek,bmt-v2"))
+		bmtd.ops = &mtk_bmt_v2_ops;
+	else if (of_property_read_bool(np, "mediatek,nmbm"))
+		bmtd.ops = &mtk_bmt_nmbm_ops;
+	else if (of_property_read_bool(np, "mediatek,bbt"))
+		bmtd.ops = &mtk_bmt_bbt_ops;
+	else
+		return 0;
+
+	bmtd.remap_range = of_get_property(np, "mediatek,bmt-remap-range",
+					   &bmtd.remap_range_len);
+	bmtd.remap_range_len /= 8;
+
+	bmtd.mtd = mtd;
+	mtk_bmt_replace_ops(mtd);
+
+	bmtd.blk_size = mtd->erasesize;
+	bmtd.blk_shift = ffs(bmtd.blk_size) - 1;
+	bmtd.pg_size = mtd->writesize;
+	bmtd.pg_shift = ffs(bmtd.pg_size) - 1;
+	bmtd.total_blks = mtd->size >> bmtd.blk_shift;
+
+	bmtd.data_buf = kzalloc(bmtd.pg_size + bmtd.mtd->oobsize, GFP_KERNEL);
+	if (!bmtd.data_buf) {
+		pr_info("nand: FATAL ERR: allocate buffer failed!\n");
+		ret = -1;
+		goto error;
+	}
+
+	memset(bmtd.data_buf, 0xff, bmtd.pg_size + bmtd.mtd->oobsize);
+
+	ret = bmtd.ops->init(np);
+	if (ret)
+		goto error;
+
+	mtk_bmt_add_debugfs();
+	return 0;
+
+error:
+	mtk_bmt_detach(mtd);
+	return ret;
+}

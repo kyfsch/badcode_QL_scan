@@ -1,0 +1,5 @@
+static bool aw9523_readable_reg(struct device *dev, unsigned int reg)
+{
+	/* All available registers (minus holes) can be read */
+	return !aw9523_is_reg_hole(reg);
+}

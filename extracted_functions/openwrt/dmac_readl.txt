@@ -1,0 +1,4 @@
+static inline u32 dmac_readl(struct bcm6348_iudma *iudma, u32 off, int chan)
+{
+	return __raw_readl(iudma->dma_chan + chan * DMA_CHAN_WIDTH + off);
+}

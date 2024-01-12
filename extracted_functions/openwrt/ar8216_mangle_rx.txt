@@ -1,0 +1,35 @@
+ar8216_mangle_rx(struct net_device *dev, struct sk_buff *skb)
+{
+	struct ar8xxx_priv *priv;
+	unsigned char *buf;
+	int port, vlan;
+
+	priv = dev->phy_ptr;
+	if (!priv)
+		return;
+
+	/* don't strip the header if vlan mode is disabled */
+	if (!priv->vlan)
+		return;
+
+	/* strip header, get vlan id */
+	buf = skb->data;
+	skb_pull(skb, 2);
+
+	/* check for vlan header presence */
+	if ((buf[12 + 2] != 0x81) || (buf[13 + 2] != 0x00))
+		return;
+
+	port = buf[0] & 0x7;
+
+	/* no need to fix up packets coming from a tagged source */
+	if (priv->vlan_tagged & (1 << port))
+		return;
+
+	/* lookup port vid from local table, the switch passes an invalid vlan id */
+	vlan = priv->vlan_id[priv->pvid[port]];
+
+	buf[14 + 2] &= 0xf0;
+	buf[14 + 2] |= vlan >> 8;
+	buf[15 + 2] = vlan & 0xff;
+}

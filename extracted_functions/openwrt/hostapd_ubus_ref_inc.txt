@@ -1,0 +1,4 @@
+static void hostapd_ubus_ref_inc(void)
+{
+	ctx_ref++;
+}

@@ -1,0 +1,36 @@
+static void md5_transform(struct md5_ctx *mctx, u32 *hash, u32 const *in)
+{
+    int i;
+    volatile struct deu_hash_t *hashs = (struct deu_hash_t *) HASH_START;
+    unsigned long flag;
+
+    CRTCL_SECT_HASH_START;
+
+    MD5_HASH_INIT;
+
+    if (mctx->started) { 
+        hashs->D1R = *((u32 *) hash + 0);
+        hashs->D2R = *((u32 *) hash + 1);
+        hashs->D3R = *((u32 *) hash + 2);
+        hashs->D4R = *((u32 *) hash + 3);
+    }
+
+    for (i = 0; i < 16; i++) {
+        hashs->MR = in[i];
+//      printk("in[%d]: %08x\n", i, in[i]);
+    };
+
+    //wait for processing
+    while (hashs->controlr.BSY) {
+        // this will not take long
+    }
+
+    *((u32 *) hash + 0) = hashs->D1R;
+    *((u32 *) hash + 1) = hashs->D2R;
+    *((u32 *) hash + 2) = hashs->D3R;
+    *((u32 *) hash + 3) = hashs->D4R;
+
+    CRTCL_SECT_HASH_END;
+
+    mctx->started = 1;
+}

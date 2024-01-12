@@ -1,0 +1,14 @@
+swconfig_get_link(struct switch_dev *dev, const struct switch_attr *attr,
+			struct switch_val *val)
+{
+	struct switch_port_link *link = val->value.link;
+
+	if (val->port_vlan >= dev->ports)
+		return -EINVAL;
+
+	if (!dev->ops->get_port_link)
+		return -EOPNOTSUPP;
+
+	memset(link, 0, sizeof(*link));
+	return dev->ops->get_port_link(dev, val->port_vlan, link);
+}

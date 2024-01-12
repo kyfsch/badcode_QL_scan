@@ -1,0 +1,8 @@
+static int ar934x_nfc_hw_reset_assert(struct ar934x_nfc *nfc)
+{
+	int err;
+
+	err = reset_control_assert(nfc->rst);
+	udelay(250);
+	return err;
+}

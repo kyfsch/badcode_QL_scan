@@ -1,0 +1,6 @@
+static int __init mtdsplit_elf_init(void)
+{
+	register_mtd_parser(&mtdsplit_elf_parser);
+
+	return 0;
+}

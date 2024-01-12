@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicRemarkingDot1pAbility(rtk_uint32 port, rtk_uint32* pEnabled)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_PORT_MISC_CFG_REG(port), RTL8367C_1QREMARK_ENABLE_OFFSET, pEnabled);
+}

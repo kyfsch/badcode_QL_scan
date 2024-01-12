@@ -1,0 +1,297 @@
+mtd_write(int imagefd, const char *mtd, char *fis_layout, size_t part_offset)
+{
+	char *next = NULL;
+	char *str = NULL;
+	int fd, result;
+	ssize_t r, w, e;
+	ssize_t skip = 0;
+	uint32_t offset = 0;
+	int buflen_raw = 0;
+	int jffs2_replaced = 0;
+	int skip_bad_blocks = 0;
+
+#ifdef FIS_SUPPORT
+	static struct fis_part new_parts[MAX_ARGS];
+	static struct fis_part old_parts[MAX_ARGS];
+	struct fis_part *cur_part = NULL;
+	int n_new = 0, n_old = 0;
+
+	if (fis_layout) {
+		const char *tmp = mtd;
+		char *word, *brkt;
+		int ret;
+
+		memset(&old_parts, 0, sizeof(old_parts));
+		memset(&new_parts, 0, sizeof(new_parts));
+		if (!part_offset)
+			cur_part = new_parts;
+
+		do {
+			next = strchr(tmp, ':');
+			if (!next)
+				next = (char *) tmp + strlen(tmp);
+
+			memcpy(old_parts[n_old].name, tmp, next - tmp);
+
+			n_old++;
+			tmp = next + 1;
+		} while(*next);
+
+		for (word = strtok_r(fis_layout, ",", &brkt);
+		     word;
+			 word = strtok_r(NULL, ",", &brkt)) {
+
+			tmp = strtok(word, ":");
+			strncpy((char *) new_parts[n_new].name, tmp, sizeof(new_parts[n_new].name) - 1);
+
+			tmp = strtok(NULL, ":");
+			if (!tmp)
+				goto next;
+
+			new_parts[n_new].size = strtoul(tmp, NULL, 0);
+
+			tmp = strtok(NULL, ":");
+			if (!tmp)
+				goto next;
+
+			new_parts[n_new].loadaddr = strtoul(tmp, NULL, 16);
+next:
+			n_new++;
+		}
+		ret = fis_validate(old_parts, n_old, new_parts, n_new);
+		if (ret < 0) {
+			fprintf(stderr, "Failed to validate the new FIS partition table\n");
+			exit(1);
+		}
+		if (ret == 0)
+			fis_layout = NULL;
+	}
+#endif
+
+	if (strchr(mtd, ':')) {
+		str = strdup(mtd);
+		mtd = str;
+	}
+
+	r = 0;
+
+resume:
+	next = strchr(mtd, ':');
+	if (next) {
+		*next = 0;
+		next++;
+	}
+
+	fd = mtd_check_open(mtd);
+	if(fd < 0) {
+		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
+		exit(1);
+	}
+	if (part_offset > 0) {
+		fprintf(stderr, "Seeking on mtd device '%s' to: %zu\n", mtd, part_offset);
+		lseek(fd, part_offset, SEEK_SET);
+	}
+
+	/* Write TP-Link recovery flag */
+	if (tpl_uboot_args_part && mtd_tpl_recoverflag_write) {
+		if (quiet < 2)
+			fprintf(stderr, "Writing recovery flag to %s\n", tpl_uboot_args_part);
+		result = mtd_tpl_recoverflag_write(tpl_uboot_args_part, true);
+		if (result < 0) {
+			fprintf(stderr, "Could not write TP-Link recovery flag to %s: %i", mtd, result);
+			exit(1);
+		}
+	}
+
+	indicate_writing(mtd);
+
+	w = e = 0;
+	for (;;) {
+		/* buffer may contain data already (from trx check or last mtd partition write attempt) */
+		while (buflen < erasesize) {
+			r = read(imagefd, buf + buflen, erasesize - buflen);
+			if (r < 0) {
+				if ((errno == EINTR) || (errno == EAGAIN))
+					continue;
+				else {
+					perror("read");
+					break;
+				}
+			}
+
+			if (r == 0)
+				break;
+
+			buflen += r;
+		}
+
+		if (buflen_raw == 0)
+			buflen_raw = buflen;
+
+		if (buflen == 0)
+			break;
+
+		if (buflen < erasesize) {
+			/* Pad block to eraseblock size */
+			memset(&buf[buflen], 0xff, erasesize - buflen);
+			buflen = erasesize;
+		}
+
+		if (skip > 0) {
+			skip -= buflen;
+			buflen_raw = 0;
+			buflen = 0;
+			if (skip <= 0)
+				indicate_writing(mtd);
+
+			continue;
+		}
+
+		if (jffs2file && w >= jffs2_skip_bytes) {
+			if (memcmp(buf, JFFS2_EOF, sizeof(JFFS2_EOF) - 1) == 0) {
+				if (!quiet)
+					fprintf(stderr, "\b\b\b   ");
+				if (quiet < 2)
+					fprintf(stderr, "\nAppending jffs2 data from %s to %s..\n.", jffs2file, mtd);
+				/* got an EOF marker - this is the place to add some jffs2 data */
+				skip = mtd_replace_jffs2(mtd, fd, e, jffs2file);
+				jffs2_replaced = 1;
+
+				/* don't add it again */
+				jffs2file = NULL;
+
+				w += skip;
+				e += skip;
+				skip -= buflen;
+				buflen_raw = 0;
+				buflen = 0;
+				offset = 0;
+				continue;
+			}
+			/* no EOF marker, make sure we figure out the last inode number
+			 * before appending some data */
+			mtd_parse_jffs2data(buf, jffs2dir);
+		}
+
+		/* need to erase the next block before writing data to it */
+		if(!no_erase)
+		{
+			while (w + buflen > e - skip_bad_blocks) {
+				if (!quiet)
+					fprintf(stderr, "\b\b\b[e]");
+
+				if (mtd_block_is_bad(fd, e)) {
+					if (!quiet)
+						fprintf(stderr, "\nSkipping bad block at 0x%08zx   ", e);
+
+					skip_bad_blocks += erasesize;
+					e += erasesize;
+
+					// Move the file pointer along over the bad block.
+					lseek(fd, erasesize, SEEK_CUR);
+					continue;
+				}
+
+				if (mtd_erase_block(fd, e + part_offset) < 0) {
+					if (next) {
+						if (w < e) {
+							write(fd, buf + offset, e - w);
+							offset = e - w;
+						}
+						w = 0;
+						e = 0;
+						close(fd);
+						mtd = next;
+						fprintf(stderr, "\b\b\b   \n");
+						goto resume;
+					} else {
+						fprintf(stderr, "Failed to erase block\n");
+						exit(1);
+					}
+				}
+
+				/* erase the chunk */
+				e += erasesize;
+			}
+		}
+
+		if (!quiet)
+			fprintf(stderr, "\b\b\b[w]");
+
+		if ((result = write(fd, buf + offset, buflen)) < buflen) {
+			if (result < 0) {
+				fprintf(stderr, "Error writing image.\n");
+				exit(1);
+			} else {
+				fprintf(stderr, "Insufficient space.\n");
+				exit(1);
+			}
+		}
+		w += buflen;
+
+#ifdef FIS_SUPPORT
+		if (cur_part && cur_part->size
+		&& cur_part < &new_parts[MAX_ARGS - 1]
+		&& cur_part->length + buflen_raw > cur_part->size)
+			cur_part++;
+		if (cur_part) {
+			cur_part->length += buflen_raw;
+			cur_part->crc = crc32(cur_part->crc, buf, buflen_raw);
+		}
+#endif
+		buflen_raw = 0;
+		buflen = 0;
+		offset = 0;
+	}
+
+	if (jffs2_replaced) {
+		switch (imageformat) {
+		case MTD_IMAGE_FORMAT_TRX:
+			if (trx_fixup)
+				trx_fixup(fd, mtd);
+			break;
+		case MTD_IMAGE_FORMAT_SEAMA:
+			if (mtd_fixseama)
+				mtd_fixseama(mtd, 0, 0);
+			break;
+		case MTD_IMAGE_FORMAT_WRG:
+			if (mtd_fixwrg)
+				mtd_fixwrg(mtd, 0, 0);
+			break;
+		case MTD_IMAGE_FORMAT_WRGG03:
+			if (mtd_fixwrgg)
+				mtd_fixwrgg(mtd, 0, 0);
+			break;
+		default:
+			break;
+		}
+	}
+
+	if (!quiet)
+		fprintf(stderr, "\b\b\b\b    ");
+
+	if (quiet < 2)
+		fprintf(stderr, "\n");
+
+#ifdef FIS_SUPPORT
+	if (fis_layout) {
+		if (fis_remap(old_parts, n_old, new_parts, n_new) < 0)
+			fprintf(stderr, "Failed to update the FIS partition table\n");
+	}
+#endif
+
+	close(fd);
+
+	/* Clear TP-Link recovery flag */
+	if (tpl_uboot_args_part && mtd_tpl_recoverflag_write) {
+		if (quiet < 2)
+			fprintf(stderr, "Removing recovery flag from %s\n", tpl_uboot_args_part);
+		result = mtd_tpl_recoverflag_write(tpl_uboot_args_part, false);
+		if (result < 0) {
+			fprintf(stderr, "Could not clear TP-Link recovery flag to %s: %i", mtd, result);
+			exit(1);
+		}
+	}
+
+	return 0;
+}

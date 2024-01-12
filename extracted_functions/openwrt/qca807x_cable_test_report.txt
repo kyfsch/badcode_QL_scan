@@ -1,0 +1,34 @@
+static int qca807x_cable_test_report(struct phy_device *phydev)
+{
+	int pair0, pair1, pair2, pair3;
+	int ret;
+
+	ret = phy_read_mmd(phydev, MDIO_MMD_PCS, QCA807X_CDT_MMD3_STATUS);
+	if (ret < 0)
+		return ret;
+
+	pair0 = FIELD_GET(QCA807X_CDT_MDI0_STATUS_MASK, ret);
+	pair1 = FIELD_GET(QCA807X_CDT_MDI1_STATUS_MASK, ret);
+	pair2 = FIELD_GET(QCA807X_CDT_MDI2_STATUS_MASK, ret);
+	pair3 = FIELD_GET(QCA807X_CDT_MDI3_STATUS_MASK, ret);
+
+	ethnl_cable_test_result(phydev, ETHTOOL_A_CABLE_PAIR_A,
+				qca807x_cable_test_report_trans(pair0));
+	ethnl_cable_test_result(phydev, ETHTOOL_A_CABLE_PAIR_B,
+				qca807x_cable_test_report_trans(pair1));
+	ethnl_cable_test_result(phydev, ETHTOOL_A_CABLE_PAIR_C,
+				qca807x_cable_test_report_trans(pair2));
+	ethnl_cable_test_result(phydev, ETHTOOL_A_CABLE_PAIR_D,
+				qca807x_cable_test_report_trans(pair3));
+
+	if (qca807x_distance_valid(pair0))
+		qca807x_report_length(phydev, 0, qca807x_cable_test_report_trans(pair0));
+	if (qca807x_distance_valid(pair1))
+		qca807x_report_length(phydev, 1, qca807x_cable_test_report_trans(pair1));
+	if (qca807x_distance_valid(pair2))
+		qca807x_report_length(phydev, 2, qca807x_cable_test_report_trans(pair2));
+	if (qca807x_distance_valid(pair3))
+		qca807x_report_length(phydev, 3, qca807x_cable_test_report_trans(pair3));
+
+	return 0;
+}

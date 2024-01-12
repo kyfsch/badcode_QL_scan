@@ -1,0 +1,36 @@
+static void aca_txin_init(struct dc_ep_priv *priv,
+	struct aca_cfg_param *aca_txin)
+{
+	u32 val = 0;
+	struct aca_mem_layout *mem_layout = to_mem_layout(priv);
+	struct aca_hif_params *hif_params = to_hif_params(priv);
+	struct aca_hif_param *txin_param = &hif_params->txin;
+
+	if (aca_txin->byteswap)
+		val = BYTE_SWAP_EN;
+
+	val |= (aca_txin->hd_size_in_dw - 1)
+		| SM((aca_txin->pd_size_in_dw - 1), PD_DESC_IN_DW);
+	wr32(val, TXIN_CONV_CFG);
+
+	/* SoC cumulative counter address */
+	wr32(aca_txin->soc_cmlt_cnt_addr, GNRC_TXIN_CMLT_CNT_ADDR);
+
+
+	/* SoC descriptors */
+	txin_param->soc_desc_base = aca_txin->soc_desc_base;
+	txin_param->soc_desc_num = aca_txin->soc_desc_num;
+
+	/* Ping/pong buffer */
+	txin_param->pp_buf_base = priv->phymem
+		+ mem_layout->txin_host_desc_base;
+
+	txin_param->pp_buf_num = mem_layout->txin_host_dnum;
+
+	/* PD ring */
+	txin_param->pd_desc_base = priv->phymem
+		+ aca_txin->pd_desc_base;
+	txin_param->pd_desc_num = aca_txin->pd_desc_num;
+
+	dev_dbg(priv->dev, "aca txin init done\n");
+}

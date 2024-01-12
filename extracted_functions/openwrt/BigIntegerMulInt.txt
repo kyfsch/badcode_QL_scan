@@ -1,0 +1,10 @@
+BigIntegerMulInt(result, m1, m2)
+     BigInteger result, m1;
+     unsigned int m2;
+{
+  BN_CTX * ctx = BN_CTX_new();
+  BIGNUM * m = BN_new();
+  BN_set_word(m, m2);
+  BN_mul(result, m1, m, ctx);
+  BN_CTX_free(ctx);
+}

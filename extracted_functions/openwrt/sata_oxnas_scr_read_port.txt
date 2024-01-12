@@ -1,0 +1,6 @@
+static int sata_oxnas_scr_read_port(struct ata_port *ap, unsigned int sc_reg,
+					u32 *val)
+{
+	*val = sata_oxnas_link_read(ap, 0x20 + (sc_reg*4));
+	return 0;
+}

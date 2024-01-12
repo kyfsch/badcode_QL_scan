@@ -1,0 +1,23 @@
+static ssize_t rtl838x_common_read(char __user *buffer, size_t count,
+					loff_t *ppos, unsigned int value)
+{
+	char *buf;
+	ssize_t len;
+
+	if (*ppos != 0)
+		return 0;
+
+	buf = kasprintf(GFP_KERNEL, "0x%08x\n", value);
+	if (!buf)
+		return -ENOMEM;
+
+	if (count < strlen(buf)) {
+		kfree(buf);
+		return -ENOSPC;
+	}
+
+	len = simple_read_from_buffer(buffer, count, ppos, buf, strlen(buf));
+	kfree(buf);
+
+	return len;
+}

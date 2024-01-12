@@ -1,0 +1,4 @@
+static inline uint8_t sector_get_good(int num)
+{
+	return sectors[num / 8] & 0x80 >> (num % 8);
+};

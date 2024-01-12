@@ -1,0 +1,39 @@
+static int qca807x_config(struct phy_device *phydev)
+{
+	struct device_node *node = phydev->mdio.dev.of_node;
+	int control_dac, ret = 0;
+	u32 of_control_dac;
+
+	/* Check for Combo port */
+	if (phy_read(phydev, QCA807X_CHIP_CONFIGURATION)) {
+		int psgmii_serdes;
+
+		/* Prevent PSGMII going into hibernation via PSGMII self test */
+		psgmii_serdes = phy_read_mmd(phydev, MDIO_MMD_PCS, PSGMII_MMD3_SERDES_CONTROL);
+		psgmii_serdes &= ~BIT(1);
+		ret = phy_write_mmd(phydev, MDIO_MMD_PCS,
+				    PSGMII_MMD3_SERDES_CONTROL,
+				    psgmii_serdes);
+	}
+
+	if (!of_property_read_u32(node, "qcom,control-dac", &of_control_dac)) {
+		control_dac = phy_read_mmd(phydev, MDIO_MMD_AN,
+					   QCA807X_MMD7_1000BASE_T_POWER_SAVE_PER_CABLE_LENGTH);
+		control_dac &= ~QCA807X_CONTROL_DAC_MASK;
+		control_dac |= FIELD_PREP(QCA807X_CONTROL_DAC_MASK, of_control_dac);
+		ret = phy_write_mmd(phydev, MDIO_MMD_AN,
+				    QCA807X_MMD7_1000BASE_T_POWER_SAVE_PER_CABLE_LENGTH,
+				    control_dac);
+	}
+
+	/* Optionally configure LED-s */
+	if (IS_ENABLED(CONFIG_GPIOLIB)) {
+		/* Check whether PHY-s pins are used as GPIO-s */
+		if (!of_property_read_bool(node, "gpio-controller"))
+			ret = qca807x_led_config(phydev);
+	} else {
+		ret = qca807x_led_config(phydev);
+	}
+
+	return ret;
+}

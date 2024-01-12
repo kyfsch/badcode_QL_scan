@@ -1,0 +1,5 @@
+static inline void rb91x_nand_rst_key_poll_disable(struct rb91x_nand_drvdata *drvdata,
+						   int disable)
+{
+	gpiod_set_value_cansleep(drvdata->gpio[RB91X_NAND_PDIS], disable);
+}

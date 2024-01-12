@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_port_rtctDisable_set(rtk_portmask_t *pPortmask)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Mask Valid */
+    RTK_CHK_PORTMASK_VALID_ONLY_UTP(pPortmask);
+
+    if ((retVal = rtl8367c_setAsicPortRTCTDisable(pPortmask->bits[0]))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,14 @@
+ret_t rtl8367c_setAsicLedGroupMode(rtk_uint32 mode)
+{
+    ret_t retVal;
+
+    /* Invalid input parameter */
+    if(mode >= RTL8367C_LED_MODE_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_LED_CONFIGURATION, RTL8367C_LED_CONFIG_SEL_OFFSET, 1);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_LED_CONFIGURATION, RTL8367C_DATA_LED_MASK, mode);
+}

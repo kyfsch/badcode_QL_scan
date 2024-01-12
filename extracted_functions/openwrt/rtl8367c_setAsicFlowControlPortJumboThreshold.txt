@@ -1,0 +1,16 @@
+ret_t rtl8367c_setAsicFlowControlPortJumboThreshold(rtk_uint32 onThreshold, rtk_uint32 offThreshold)
+{
+    ret_t retVal;
+
+    if((onThreshold >= RTL8367C_PAGE_NUMBER) || (offThreshold >= RTL8367C_PAGE_NUMBER))
+        return RT_ERR_OUT_OF_RANGE;
+
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_FLOWCTRL_JUMBO_PORT_OFF, RTL8367C_FLOWCTRL_JUMBO_PORT_OFF_MASK, offThreshold);
+
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_FLOWCTRL_JUMBO_PORT_ON, RTL8367C_FLOWCTRL_JUMBO_PORT_ON_MASK, onThreshold);
+
+    return retVal;
+}

@@ -1,0 +1,13 @@
+static unsigned char *rt2880_speed_str(struct fe_priv *priv)
+{
+	switch (priv->phy->speed[0]) {
+	case SPEED_1000:
+		return "1000";
+	case SPEED_100:
+		return "100";
+	case SPEED_10:
+		return "10";
+	}
+
+	return "?";
+}

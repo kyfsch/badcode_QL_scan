@@ -1,0 +1,29 @@
+rtk_api_ret_t rtk_l2_ipMcastAddrLookup_get(rtk_l2_ipmc_lookup_type_t *pType)
+{
+    rtk_api_ret_t       retVal;
+    rtk_uint32          enabled, vid_lookup;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pType)
+        return RT_ERR_NULL_POINTER;
+
+    if((retVal = rtl8367c_getAsicLutIpMulticastLookup(&enabled)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicLutIpMulticastVidLookup(&vid_lookup))!=RT_ERR_OK)
+        return retVal;
+
+    if(enabled == ENABLED)
+    {
+        if(vid_lookup == ENABLED)
+            *pType = LOOKUP_IP_VID;
+        else
+            *pType = LOOKUP_IP;
+    }
+    else
+        *pType = LOOKUP_MAC;
+
+    return RT_ERR_OK;
+}

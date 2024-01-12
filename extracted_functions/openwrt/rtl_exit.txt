@@ -1,0 +1,4 @@
+rtl_exit(void)
+{
+	phy_driver_unregister(&rtl8306_driver);
+}

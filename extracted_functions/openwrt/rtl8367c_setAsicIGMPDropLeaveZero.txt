@@ -1,0 +1,10 @@
+ret_t rtl8367c_setAsicIGMPDropLeaveZero(rtk_uint32 drop)
+{
+    ret_t   retVal;
+
+    retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_IGMP_MLD_CFG1, RTL8367C_DROP_LEAVE_ZERO_OFFSET, drop);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

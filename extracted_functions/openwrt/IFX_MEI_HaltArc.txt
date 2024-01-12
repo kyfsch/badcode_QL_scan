@@ -1,0 +1,18 @@
+IFX_MEI_HaltArc (DSL_DEV_Device_t * pDev)
+{
+	u32 arc_debug_data = 0x0;
+
+	//      Switch arc control from JTAG mode to MEI mode
+	IFX_MEI_ControlModeSet (pDev, MEI_MASTER_MODE);
+	_IFX_MEI_DBGLongWordRead (pDev, MEI_DEBUG_DEC_AUX_MASK,
+					ARC_DEBUG, &arc_debug_data);
+	arc_debug_data |= ARC_DEBUG_HALT;
+	_IFX_MEI_DBGLongWordWrite (pDev, MEI_DEBUG_DEC_AUX_MASK,
+					 ARC_DEBUG, arc_debug_data);
+	//      Switch arc control from MEI mode to JTAG mode
+	IFX_MEI_ControlModeSet (pDev, JTAG_MASTER_MODE);
+
+	MEI_WAIT (10);
+
+	return DSL_DEV_MEI_ERR_SUCCESS;
+}

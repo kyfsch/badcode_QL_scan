@@ -1,0 +1,47 @@
+static struct symbol *sym_check_sym_deps(struct symbol *sym)
+{
+	struct symbol *sym2;
+	struct property *prop;
+	struct dep_stack stack;
+
+	dep_stack_insert(&stack, sym);
+
+	stack.expr = &sym->dir_dep.expr;
+	sym2 = sym_check_expr_deps(sym->dir_dep.expr);
+	if (sym2)
+		goto out;
+
+	stack.expr = &sym->rev_dep.expr;
+	sym2 = sym_check_expr_deps(sym->rev_dep.expr);
+	if (sym2)
+		goto out;
+
+	stack.expr = &sym->implied.expr;
+	sym2 = sym_check_expr_deps(sym->implied.expr);
+	if (sym2)
+		goto out;
+
+	stack.expr = NULL;
+
+	for (prop = sym->prop; prop; prop = prop->next) {
+		if (prop->type == P_CHOICE || prop->type == P_SELECT ||
+		    prop->type == P_IMPLY)
+			continue;
+		stack.prop = prop;
+		sym2 = sym_check_expr_deps(prop->visible.expr);
+		if (sym2)
+			break;
+		if (prop->type != P_DEFAULT || sym_is_choice(sym))
+			continue;
+		stack.expr = &prop->expr;
+		sym2 = sym_check_expr_deps(prop->expr);
+		if (sym2)
+			break;
+		stack.expr = NULL;
+	}
+
+out:
+	dep_stack_remove();
+
+	return sym2;
+}

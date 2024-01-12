@@ -1,0 +1,21 @@
+int at91_serial_getc()
+{
+	while(1) {
+#if 0
+		if (!port_detected) {
+			if (us == usa[0]) {
+				us = usa[1];
+			}
+			else {
+				us = usa[0];
+			}
+		}
+#endif
+		if(AT91F_US_RxReady((AT91PS_USART)us)) {
+#if 0
+			port_detected = 1;
+#endif
+			return((int)AT91F_US_GetChar((AT91PS_USART)us));
+		}
+	}
+}

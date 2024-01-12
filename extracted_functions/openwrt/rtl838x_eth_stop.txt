@@ -1,0 +1,16 @@
+static int rtl838x_eth_stop(struct net_device *ndev)
+{
+	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
+
+	pr_info("in %s\n", __func__);
+
+	phylink_stop(priv->phylink);
+	rtl838x_hw_stop(priv);
+
+	for (int i = 0; i < priv->rxrings; i++)
+		napi_disable(&priv->rx_qs[i].napi);
+
+	netif_tx_stop_all_queues(ndev);
+
+	return 0;
+}

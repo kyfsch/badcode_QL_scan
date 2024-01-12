@@ -1,0 +1,28 @@
+ar8327_led_blink_set(struct led_classdev *led_cdev,
+		     unsigned long *delay_on,
+		     unsigned long *delay_off)
+{
+	struct ar8327_led *aled = led_cdev_to_ar8327_led(led_cdev);
+
+	if (*delay_on == 0 && *delay_off == 0) {
+		*delay_on = 125;
+		*delay_off = 125;
+	}
+
+	if (*delay_on != 125 || *delay_off != 125) {
+		/*
+		 * The hardware only supports blinking at 4Hz. Fall back
+		 * to software implementation in other cases.
+		 */
+		return -EINVAL;
+	}
+
+	spin_lock(&aled->lock);
+
+	aled->enable_hw_mode = false;
+	ar8327_led_schedule_change(aled, AR8327_LED_PATTERN_BLINK);
+
+	spin_unlock(&aled->lock);
+
+	return 0;
+}

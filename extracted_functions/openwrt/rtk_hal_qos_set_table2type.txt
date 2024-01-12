@@ -1,0 +1,41 @@
+void rtk_hal_qos_set_table2type(struct ra_switch_ioctl_data *data)
+{
+	rtk_api_ret_t ret;
+	rtk_priority_select_t PriDec;
+
+	/* write all pri to 0 */
+	PriDec.port_pri = 0;
+    PriDec.dot1q_pri = 0;
+    PriDec.acl_pri = 0;
+    PriDec.cvlan_pri = 0;
+    PriDec.svlan_pri = 0;
+    PriDec.dscp_pri = 0;
+    PriDec.dmac_pri = 0;
+    PriDec.smac_pri = 0;
+
+	if (data->qos_type == 0)
+		PriDec.port_pri = 1;
+	else if (data->qos_type == 1)
+		PriDec.dot1q_pri = 1;
+	else if (data->qos_type == 2)
+		PriDec.acl_pri = 1;
+	else if (data->qos_type == 3)
+		PriDec.dscp_pri = 1;
+	else if (data->qos_type == 4)
+		PriDec.cvlan_pri = 1;
+	else if (data->qos_type == 5)
+		PriDec.svlan_pri = 1;
+	else if (data->qos_type == 6)
+		PriDec.dmac_pri = 1;
+	else if (data->qos_type == 7)
+		PriDec.smac_pri = 1;
+
+	if (data->qos_table_idx == 0)
+		ret = rtk_qos_priSel_set(PRIDECTBL_IDX0, &PriDec);
+	else
+		ret = rtk_qos_priSel_set(PRIDECTBL_IDX1, &PriDec);
+
+	if (ret != 0)
+		printk("rtk_qos_priSel_set failed\n");
+
+}

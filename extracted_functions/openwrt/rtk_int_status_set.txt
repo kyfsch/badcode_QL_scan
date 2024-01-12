@@ -1,0 +1,21 @@
+rtk_api_ret_t rtk_int_status_set(rtk_int_status_t *pStatusMask)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pStatusMask)
+        return RT_ERR_NULL_POINTER;
+
+    if(pStatusMask->value[0] & (0x0001 << INT_TYPE_RESERVED))
+        return RT_ERR_INPUT;
+
+    if(pStatusMask->value[0] >= (0x0001 << INT_TYPE_END))
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicInterruptStatus((rtk_uint32)pStatusMask->value[0]))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

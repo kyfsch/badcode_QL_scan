@@ -1,0 +1,29 @@
+static int ar934x_nfc_attach_chip(struct nand_chip *nand)
+{
+	struct mtd_info *mtd = nand_to_mtd(nand);
+	struct ar934x_nfc *nfc = nand_get_controller_data(nand);
+	struct device *dev = mtd->dev.parent;
+	int ret;
+
+	ret = ar934x_nfc_init_tail(mtd);
+	if (ret)
+		return ret;
+
+	if (nand->ecc.engine_type == NAND_ECC_ENGINE_TYPE_ON_HOST) {
+		if (mtd->writesize == 2048)
+			nand->options |= NAND_NO_SUBPAGE_WRITE;
+
+		ret = ar934x_nfc_setup_hwecc(nfc);
+		if (ret)
+			return ret;
+	} else if (nand->ecc.engine_type != NAND_ECC_ENGINE_TYPE_SOFT) {
+		dev_err(dev, "unknown ECC mode %d\n", nand->ecc.engine_type);
+		return -EINVAL;
+	} else if ((nand->ecc.algo != NAND_ECC_ALGO_BCH) &&
+		   (nand->ecc.algo != NAND_ECC_ALGO_HAMMING)) {
+		dev_err(dev, "unknown software ECC algo %d\n", nand->ecc.algo);
+		return -EINVAL;
+	}
+
+	return 0;
+}

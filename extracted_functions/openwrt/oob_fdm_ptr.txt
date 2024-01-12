@@ -1,0 +1,4 @@
+static inline u8 *oob_fdm_ptr(struct nand_chip *nand, int sect)
+{
+	return nand->oob_poi + sect * NFI_FDM_SIZE;
+}

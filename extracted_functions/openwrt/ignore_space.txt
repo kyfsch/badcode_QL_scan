@@ -1,0 +1,40 @@
+static inline void ignore_space(char **, int *);
+
+
+
+/*
+ * ####################################
+ *            Local Variable
+ * ####################################
+ */
+
+
+
+/*
+ * ####################################
+ *            Local Function
+ * ####################################
+ */
+
+static inline void proc_file_create(void)
+{
+    struct proc_dir_entry *res;
+
+    res = create_proc_entry("driver/ifx_ptm/mem",
+                            0,
+                            NULL);
+    if ( res != NULL )
+        res->write_proc = proc_write_mem;
+    else
+        printk("%s:%s:%d: failed to create proc mem!", __FILE__, __func__, __LINE__);
+
+    res = create_proc_entry("driver/ifx_ptm/pp32",
+                            0,
+                            NULL);
+    if ( res != NULL ) {
+        res->read_proc = proc_read_pp32;
+        res->write_proc = proc_write_pp32;
+    }
+    else
+        printk("%s:%s:%d: failed to create proc pp32!", __FILE__, __func__, __LINE__);
+}

@@ -1,0 +1,8 @@
+static int rtl9300_i2c_remove(struct platform_device *pdev)
+{
+	struct rtl9300_i2c *i2c = platform_get_drvdata(pdev);
+
+	i2c_del_adapter(&i2c->adap);
+
+	return 0;
+}

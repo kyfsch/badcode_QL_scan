@@ -1,0 +1,15 @@
+static const char * pbc_status_enum_str(enum pbc_status status)
+{
+	switch (status) {
+	case WPS_PBC_STATUS_DISABLE:
+		return "Disabled";
+	case WPS_PBC_STATUS_ACTIVE:
+		return "Active";
+	case WPS_PBC_STATUS_TIMEOUT:
+		return "Timed-out";
+	case WPS_PBC_STATUS_OVERLAP:
+		return "Overlap";
+	default:
+		return "Unknown";
+	}
+}

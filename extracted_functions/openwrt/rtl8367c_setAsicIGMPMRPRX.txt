@@ -1,0 +1,22 @@
+ret_t rtl8367c_setAsicIGMPMRPRX(rtk_uint32 port, rtk_uint32 allow_mrp)
+{
+    ret_t   retVal;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(port < 8)
+    {
+    /* Allow Multicast Routing Protocol */
+        retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_IGMP_PORT0_CONTROL + port, RTL8367C_IGMP_PORT0_CONTROL_ALLOW_MRP_MASK, allow_mrp);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+    }
+    else
+    {
+        retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_IGMP_PORT8_CONTROL + port - 8, RTL8367C_IGMP_PORT0_CONTROL_ALLOW_MRP_MASK, allow_mrp);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+    }
+    return RT_ERR_OK;
+}

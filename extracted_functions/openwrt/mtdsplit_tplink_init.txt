@@ -1,0 +1,6 @@
+static int __init mtdsplit_tplink_init(void)
+{
+	register_mtd_parser(&mtdsplit_tplink_parser);
+
+	return 0;
+}

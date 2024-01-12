@@ -1,0 +1,9 @@
+static void dma_ctrl_rst(struct dc_ep_dev *dev)
+{
+	ep_wr32_mask(ACA_PMU_DMA | ACA_PMU_EMA, 0, ACA_PMU_CTRL);
+
+	udelay(10);
+	ep_wr32_mask(0, 1, DMA_CTRL);
+	udelay(10);
+	ep_wr32(0, DMA_CLC);
+}

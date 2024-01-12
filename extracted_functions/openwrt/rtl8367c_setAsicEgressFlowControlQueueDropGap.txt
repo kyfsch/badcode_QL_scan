@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicEgressFlowControlQueueDropGap(rtk_uint32 gap)
+{
+    if(gap >= RTL8367C_PAGE_NUMBER)
+        return RT_ERR_OUT_OF_RANGE;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_FLOWCTRL_QUEUE_GAP, RTL8367C_FLOWCTRL_QUEUE_GAP_MASK, gap);
+}

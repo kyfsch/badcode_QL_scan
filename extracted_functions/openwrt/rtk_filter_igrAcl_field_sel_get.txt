@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_filter_igrAcl_field_sel_get(rtk_uint32 index, rtk_field_sel_t *pFormat, rtk_uint32 *pOffset)
+{
+    rtk_api_ret_t ret;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pFormat || NULL == pOffset)
+        return RT_ERR_NULL_POINTER;
+
+    if(index >= RTL8367C_FIELDSEL_FORMAT_NUMBER)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if((ret = rtl8367c_getAsicFieldSelector(index, pFormat, pOffset)) != RT_ERR_OK)
+       return ret;
+
+    return RT_ERR_OK;
+}

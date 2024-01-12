@@ -1,0 +1,33 @@
+IFX_MEI_DFEMemoryFree (DSL_DEV_Device_t * pDev, int type)
+{
+        int idx = 0;
+        smmu_mem_info_t *adsl_mem_info =
+                DSL_DEV_PRIVATE(pDev)->adsl_mem_info;
+
+        for (idx = 0; idx < MAX_BAR_REGISTERS; idx++) {
+                if (type == FREE_ALL ||adsl_mem_info[idx].type == type) {
+                        if (adsl_mem_info[idx].size > 0) {
+                                IFX_MEI_DMSG ("Freeing memory %p (%s)\n", adsl_mem_info[idx].org_address, free_str[adsl_mem_info[idx].type]);
+                                if ( idx == XDATA_REGISTER ) {
+                                    g_xdata_addr = NULL;
+                                    if ( ifx_mei_atm_showtime_exit )
+                                        ifx_mei_atm_showtime_exit();
+                                }
+				kfree (adsl_mem_info[idx].org_address);
+                                adsl_mem_info[idx].org_address = 0;
+                                adsl_mem_info[idx].address = 0;
+                                adsl_mem_info[idx].size = 0;
+                                adsl_mem_info[idx].type = 0;
+                                adsl_mem_info[idx].nCopy = 0;
+                        }
+                }
+        }
+
+	if(mei_arc_swap_buff != NULL){
+                IFX_MEI_DMSG("free %dKB swap buff memory at: 0x%p\n", ksize(mei_arc_swap_buff)/1024, mei_arc_swap_buff);
+		kfree(mei_arc_swap_buff);
+		mei_arc_swap_buff=NULL;
+	}
+
+        return 0;
+}

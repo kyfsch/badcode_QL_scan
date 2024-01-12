@@ -1,0 +1,12 @@
+int bcm6348_iudma_drivers_register(struct platform_device *pdev);
+
+static inline u32 dma_readl(struct bcm6348_iudma *iudma, u32 off)
+{
+	u32 val;
+
+	spin_lock(&iudma->dma_base_lock);
+	val = __raw_readl(iudma->dma_base + off);
+	spin_unlock(&iudma->dma_base_lock);
+
+	return val;
+}

@@ -1,0 +1,9 @@
+BigIntegerAddInt(result, a1, a2)
+     BigInteger result, a1;
+     unsigned int a2;
+{
+  BIGNUM * a = BN_new();
+  BN_set_word(a, a2);
+  BN_add(result, a1, a);
+  BN_free(a);
+}

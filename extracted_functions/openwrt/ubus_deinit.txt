@@ -1,0 +1,9 @@
+void ubus_deinit() {
+	if (!ctx)
+		return;
+
+	ubus_free(ctx);
+	uloop_done();
+
+	DSL_CPE_ThreadShutdown(&thread, 1000);
+}

@@ -1,0 +1,7 @@
+static void pilot_tones_status(int fd) {
+#ifndef INCLUDE_DSL_CPE_API_DANUBE
+	IOCTL(DSL_PilotTonesStatus_t, DSL_FIO_PILOT_TONES_STATUS_GET);
+
+	m_array_u16("pilot_tones", out.data.nPilotTone, out.data.nNumData);
+#endif
+}

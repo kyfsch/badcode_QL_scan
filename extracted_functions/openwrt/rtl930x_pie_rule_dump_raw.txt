@@ -1,0 +1,19 @@
+void rtl930x_pie_rule_dump_raw(u32 r[])
+{
+	pr_info("Raw IACL table entry:\n");
+	pr_info("r 0 - 7: %08x %08x %08x %08x %08x %08x %08x %08x\n",
+		r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7]);
+	pr_info("r 8 - 15: %08x %08x %08x %08x %08x %08x %08x %08x\n",
+		r[8], r[9], r[10], r[11], r[12], r[13], r[14], r[15]);
+	pr_info("r 16 - 18: %08x %08x %08x\n", r[16], r[17], r[18]);
+	pr_info("Match  : %08x %08x %08x %08x %08x %08x\n", r[0], r[1], r[2], r[3], r[4], r[5]);
+	pr_info("Fixed  : %06x\n", r[6] >> 8);
+	pr_info("Match M: %08x %08x %08x %08x %08x %08x\n",
+		(r[6] << 24) | (r[7] >> 8), (r[7] << 24) | (r[8] >> 8), (r[8] << 24) | (r[9] >> 8),
+		(r[9] << 24) | (r[10] >> 8), (r[10] << 24) | (r[11] >> 8),
+		(r[11] << 24) | (r[12] >> 8));
+	pr_info("R[13]:   %08x\n", r[13]);
+	pr_info("Fixed M: %06x\n", ((r[12] << 16) | (r[13] >> 16)) & 0xffffff);
+	pr_info("Valid / not / and1 / and2 : %1x\n", (r[13] >> 12) & 0xf);
+	pr_info("r 13-16: %08x %08x %08x %08x\n", r[13], r[14], r[15], r[16]);
+}

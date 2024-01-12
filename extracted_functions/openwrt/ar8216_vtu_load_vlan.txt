@@ -1,0 +1,7 @@
+ar8216_vtu_load_vlan(struct ar8xxx_priv *priv, u32 vid, u32 port_mask)
+{
+	u32 op;
+
+	op = AR8216_VTU_OP_LOAD | (vid << AR8216_VTU_VID_S);
+	ar8216_vtu_op(priv, op, port_mask);
+}

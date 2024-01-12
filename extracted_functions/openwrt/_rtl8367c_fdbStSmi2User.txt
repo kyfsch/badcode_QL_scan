@@ -1,0 +1,81 @@
+static void _rtl8367c_fdbStSmi2User( rtl8367c_luttb *pLutSt, rtk_uint16 *pFdbSmi)
+{
+    /*L3 lookup*/
+    if(pFdbSmi[3] & 0x1000)
+    {
+        if(pFdbSmi[3] & 0x2000)
+        {
+            pLutSt->sip             = pFdbSmi[0] | (pFdbSmi[1] << 16);
+            pLutSt->dip             = pFdbSmi[2] | ((pFdbSmi[3] & 0x0FFF) << 16);
+
+            pLutSt->mbr             = (pFdbSmi[4] & 0x00FF) | (((pFdbSmi[3] & 0xC000) >> 14) << 8) | (((pFdbSmi[5] & 0x0080) >> 7) << 10);
+            pLutSt->l3_vid          = ((pFdbSmi[4] & 0xFF00) >> 8) | (pFdbSmi[5] & 0x000F);
+
+            pLutSt->l3lookup        = (pFdbSmi[3] & 0x1000) >> 12;
+            pLutSt->l3vidlookup     = (pFdbSmi[3] & 0x2000) >> 13;
+            pLutSt->nosalearn       = (pFdbSmi[5] & 0x0020) >> 5;
+        }
+        else
+        {
+            pLutSt->sip             = pFdbSmi[0] | (pFdbSmi[1] << 16);
+            pLutSt->dip             = pFdbSmi[2] | ((pFdbSmi[3] & 0x0FFF) << 16);
+
+            pLutSt->lut_pri         = (pFdbSmi[5] & 0x000E) >> 1;
+            pLutSt->fwd_en          = (pFdbSmi[5] & 0x0010) >> 4;
+
+            pLutSt->mbr             = (pFdbSmi[4] & 0x00FF) | (((pFdbSmi[3] & 0xC000) >> 14) << 8) | (((pFdbSmi[5] & 0x0080) >> 7) << 10);
+            pLutSt->igmpidx         = (pFdbSmi[4] & 0xFF00) >> 8;
+
+            pLutSt->igmp_asic       = (pFdbSmi[5] & 0x0001);
+            pLutSt->l3lookup        = (pFdbSmi[3] & 0x1000) >> 12;
+            pLutSt->nosalearn       = (pFdbSmi[5] & 0x0020) >> 5;
+        }
+    }
+    else if(pFdbSmi[2] & 0x0100) /*Multicast L2 Lookup*/
+    {
+        pLutSt->mac.octet[0]    = (pFdbSmi[2] & 0xFF00) >> 8;
+        pLutSt->mac.octet[1]    = (pFdbSmi[2] & 0x00FF);
+        pLutSt->mac.octet[2]    = (pFdbSmi[1] & 0xFF00) >> 8;
+        pLutSt->mac.octet[3]    = (pFdbSmi[1] & 0x00FF);
+        pLutSt->mac.octet[4]    = (pFdbSmi[0] & 0xFF00) >> 8;
+        pLutSt->mac.octet[5]    = (pFdbSmi[0] & 0x00FF);
+
+        pLutSt->cvid_fid        = pFdbSmi[3] & 0x0FFF;
+        pLutSt->lut_pri         = (pFdbSmi[5] & 0x000E) >> 1;
+        pLutSt->fwd_en          = (pFdbSmi[5] & 0x0010) >> 4;
+
+        pLutSt->mbr             = (pFdbSmi[4] & 0x00FF) | (((pFdbSmi[3] & 0xC000) >> 14) << 8) | (((pFdbSmi[5] & 0x0080) >> 7) << 10);
+        pLutSt->igmpidx         = (pFdbSmi[4] & 0xFF00) >> 8;
+
+        pLutSt->igmp_asic       = (pFdbSmi[5] & 0x0001);
+        pLutSt->l3lookup        = (pFdbSmi[3] & 0x1000) >> 12;
+        pLutSt->ivl_svl         = (pFdbSmi[3] & 0x2000) >> 13;
+        pLutSt->nosalearn       = (pFdbSmi[5] & 0x0020) >> 5;
+    }
+    else /*Asic auto-learning*/
+    {
+        pLutSt->mac.octet[0]    = (pFdbSmi[2] & 0xFF00) >> 8;
+        pLutSt->mac.octet[1]    = (pFdbSmi[2] & 0x00FF);
+        pLutSt->mac.octet[2]    = (pFdbSmi[1] & 0xFF00) >> 8;
+        pLutSt->mac.octet[3]    = (pFdbSmi[1] & 0x00FF);
+        pLutSt->mac.octet[4]    = (pFdbSmi[0] & 0xFF00) >> 8;
+        pLutSt->mac.octet[5]    = (pFdbSmi[0] & 0x00FF);
+
+        pLutSt->cvid_fid        = pFdbSmi[3] & 0x0FFF;
+        pLutSt->lut_pri         = (pFdbSmi[5] & 0x000E) >> 1;
+        pLutSt->fwd_en          = (pFdbSmi[5] & 0x0010) >> 4;
+
+        pLutSt->sa_en           = (pFdbSmi[4] & 0x0080) >> 7;
+        pLutSt->auth            = (pFdbSmi[4] & 0x4000) >> 14;
+        pLutSt->spa             = ((pFdbSmi[4] & 0x0700) >> 8) | (((pFdbSmi[3] & 0x8000) >> 15) << 3);
+        pLutSt->age             = (pFdbSmi[4] & 0x3800) >> 11;
+        pLutSt->fid             = (pFdbSmi[4] & 0x0078) >> 3;
+        pLutSt->efid            = (pFdbSmi[4] & 0x0007);
+        pLutSt->sa_block        = (pFdbSmi[4] & 0x8000) >> 15;
+
+        pLutSt->da_block        = (pFdbSmi[5] & 0x0001);
+        pLutSt->l3lookup        = (pFdbSmi[3] & 0x1000) >> 12;
+        pLutSt->ivl_svl         = (pFdbSmi[3] & 0x2000) >> 13;
+        pLutSt->nosalearn       = (pFdbSmi[3] & 0x0020) >> 5;
+    }
+}

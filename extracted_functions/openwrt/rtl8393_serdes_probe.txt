@@ -1,0 +1,13 @@
+static int rtl8393_serdes_probe(struct phy_device *phydev)
+{
+	int addr = phydev->mdio.addr;
+
+	pr_info("%s: id: %d\n", __func__, addr);
+	if (soc_info.family != RTL8390_FAMILY_ID)
+		return -ENODEV;
+
+	if (addr < 24)
+		return -ENODEV;
+
+	return rtl8390_configure_serdes(phydev);
+}

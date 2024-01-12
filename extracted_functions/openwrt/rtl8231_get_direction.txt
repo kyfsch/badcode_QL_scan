@@ -1,0 +1,12 @@
+static int rtl8231_get_direction(struct gpio_chip *gc, unsigned int offset)
+{
+	u32 v = 0;
+	struct rtl8231_gpios *gpios = gpiochip_get_data(gc);
+
+	pr_debug("%s: %d\n", __func__, offset);
+	mutex_lock(&miim_lock);
+	rtl8231_pin_dir_get(gpios, offset, &v);
+	mutex_unlock(&miim_lock);
+
+	return v;
+}

@@ -1,0 +1,5 @@
+void rtl9300_do_rx_calibration_5(u32 sds_num, phy_interface_t phy_mode)
+{
+	if (phy_mode == PHY_INTERFACE_MODE_10GBASER) /* dfeTap1_4Enable true */
+		rtl9300_do_rx_calibration_5_2(sds_num);
+}

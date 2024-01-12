@@ -1,0 +1,27 @@
+ar8216_mangle_tx(struct net_device *dev, struct sk_buff *skb)
+{
+	struct ar8xxx_priv *priv = dev->phy_ptr;
+	unsigned char *buf;
+
+	if (unlikely(!priv))
+		goto error;
+
+	if (!priv->vlan)
+		goto send;
+
+	if (unlikely(skb_headroom(skb) < 2)) {
+		if (pskb_expand_head(skb, 2, 0, GFP_ATOMIC) < 0)
+			goto error;
+	}
+
+	buf = skb_push(skb, 2);
+	buf[0] = 0x10;
+	buf[1] = 0x80;
+
+send:
+	return skb;
+
+error:
+	dev_kfree_skb_any(skb);
+	return NULL;
+}

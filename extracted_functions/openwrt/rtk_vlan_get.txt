@@ -1,0 +1,71 @@
+rtk_api_ret_t rtk_vlan_get(rtk_vlan_t vid, rtk_vlan_cfg_t *pVlanCfg)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 phyMbrPmask;
+    rtk_uint32 phyUntagPmask;
+    rtl8367c_user_vlan4kentry vlan4K;
+    rtl8367c_vlanconfiguser vlanMC;
+    rtk_uint32 idx;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* vid must be 0~8191 */
+    if (vid > RTL8367C_EVIDMAX)
+        return RT_ERR_VLAN_VID;
+
+    /* Null pointer check */
+    if(NULL == pVlanCfg)
+        return RT_ERR_NULL_POINTER;
+
+    if (vid <= RTL8367C_VIDMAX)
+    {
+        vlan4K.vid = vid;
+
+        if ((retVal = rtl8367c_getAsicVlan4kEntry(&vlan4K)) != RT_ERR_OK)
+            return retVal;
+
+        phyMbrPmask   = vlan4K.mbr;
+        phyUntagPmask = vlan4K.untag;
+        if(rtk_switch_portmask_P2L_get(phyMbrPmask, &(pVlanCfg->mbr)) != RT_ERR_OK)
+            return RT_ERR_FAILED;
+
+        if(rtk_switch_portmask_P2L_get(phyUntagPmask, &(pVlanCfg->untag)) != RT_ERR_OK)
+            return RT_ERR_FAILED;
+
+        pVlanCfg->ivl_en    = vlan4K.ivl_svl;
+        pVlanCfg->fid_msti  = vlan4K.fid_msti;
+        pVlanCfg->envlanpol = vlan4K.envlanpol;
+        pVlanCfg->meteridx  = vlan4K.meteridx;
+        pVlanCfg->vbpen     = vlan4K.vbpen;
+        pVlanCfg->vbpri     = vlan4K.vbpri;
+    }
+    else
+    {
+        for (idx = 0; idx <= RTL8367C_CVIDXMAX; idx++)
+        {
+            if(vlan_mbrCfgUsage[idx] == MBRCFG_USED_BY_VLAN)
+            {
+                if(vlan_mbrCfgVid[idx] == vid)
+                {
+                    if ((retVal = rtl8367c_getAsicVlanMemberConfig(idx, &vlanMC)) != RT_ERR_OK)
+                        return retVal;
+
+                    phyMbrPmask   = vlanMC.mbr;
+                    if(rtk_switch_portmask_P2L_get(phyMbrPmask, &(pVlanCfg->mbr)) != RT_ERR_OK)
+                        return RT_ERR_FAILED;
+
+                    pVlanCfg->untag.bits[0] = 0;
+                    pVlanCfg->ivl_en    = 0;
+                    pVlanCfg->fid_msti  = vlanMC.fid_msti;
+                    pVlanCfg->envlanpol = vlanMC.envlanpol;
+                    pVlanCfg->meteridx  = vlanMC.meteridx;
+                    pVlanCfg->vbpen     = vlanMC.vbpen;
+                    pVlanCfg->vbpri     = vlanMC.vbpri;
+                }
+            }
+        }
+    }
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,11 @@
+void print_header(void)
+{
+	int i;
+
+	printf("vectors in header\n");
+	for (i = 0; i < NUMBER_VECTORS; i++) {
+		printf("%d:0x%08x\n", i, img_header.start_vector[i]);
+	}
+	printf("length:%8x\nimg_CRC:0x%08x\nHeader CRC:0x%08x\n",
+		img_header.length, img_header.img_CRC, img_header.CRC);
+}

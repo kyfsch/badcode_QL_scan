@@ -1,0 +1,4 @@
+static inline uint8_t read_uint8(void *buf, ptrdiff_t off)
+{
+	return *(uint8_t *)(buf + off);
+}

@@ -1,0 +1,16 @@
+static void soc_type_to_str(u32 soc)
+{
+	memset(soc_str, 0, sizeof(soc_str));
+
+	if ((soc & ACA_SOC_XRX300))
+		strcat(soc_str, "xrx300 ");
+
+	if ((soc & ACA_SOC_XRX500))
+		strcat(soc_str, "xrx500 ");
+
+	if ((soc & ACA_SOC_PUMA))
+		strcat(soc_str, "puma ");
+
+	if ((soc & ACA_SOC_3RD_PARTY))
+		strcat(soc_str, "third party SoC ");
+}

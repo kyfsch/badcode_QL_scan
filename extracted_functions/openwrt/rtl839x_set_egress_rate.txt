@@ -1,0 +1,24 @@
+int rtl839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate)
+{
+	u32 old_rate;
+
+	pr_debug("%s: Setting egress rate on port %d to %d\n", __func__, port, rate);
+	if (port >= priv->cpu_port)
+		return -1;
+
+	mutex_lock(&priv->reg_mutex);
+
+	rtl839x_read_scheduling_table(port);
+
+	old_rate = sw_r32(RTL839X_TBL_ACCESS_DATA_2(7)) & 0xff;
+	old_rate <<= 12;
+	old_rate |= sw_r32(RTL839X_TBL_ACCESS_DATA_2(8)) >> 20;
+	sw_w32_mask(0xff, (rate >> 12) & 0xff, RTL839X_TBL_ACCESS_DATA_2(7));
+	sw_w32_mask(0xfff << 20, rate << 20, RTL839X_TBL_ACCESS_DATA_2(8));
+
+	rtl839x_write_scheduling_table(port);
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return old_rate;
+}

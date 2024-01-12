@@ -1,0 +1,31 @@
+int dc_ep_gpio_pupd_set(struct dc_ep_priv *priv, u32 gpio, u32 val)
+{
+	struct dc_aca *aca = to_aca(priv);
+
+	if (gpio > aca->max_gpio)
+		return -EINVAL;
+
+	/* Not support for both enabled */
+	if (val >= GPIO_PUPD_BOTH)
+		return -EINVAL;
+
+	mutex_lock(&aca->pin_lock);
+	switch (val) {
+	case GPIO_PUPD_DISABLE:
+		padc_clearbit(gpio, PADC_PUEN);
+		padc_clearbit(gpio, PADC_PDEN);
+		break;
+	case GPIO_PULL_UP:
+		padc_setbit(gpio, PADC_PUEN);
+		padc_clearbit(gpio, PADC_PDEN);
+		break;
+	case GPIO_PULL_DOWN:
+		padc_setbit(gpio, PADC_PDEN);
+		padc_clearbit(gpio, PADC_PUEN);
+		break;
+	default:
+		break;
+	}
+	mutex_unlock(&aca->pin_lock);
+	return 0;
+}

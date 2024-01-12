@@ -1,0 +1,9 @@
+void rtk_hal_switch_init(void)
+{
+	if(rtk_switch_init() != 0)
+        printk("rtk_switch_init failed\n");
+	mdelay(500);
+	/*vlan init */
+	if (rtk_vlan_init() != 0)
+        printk("rtk_vlan_init failed\n");
+}

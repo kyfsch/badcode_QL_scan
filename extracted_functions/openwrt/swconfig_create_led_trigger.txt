@@ -1,0 +1,1 @@
+swconfig_create_led_trigger(struct switch_dev *swdev) { return 0; }

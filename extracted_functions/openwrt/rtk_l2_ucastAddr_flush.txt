@@ -1,0 +1,106 @@
+rtk_api_ret_t rtk_l2_ucastAddr_flush(rtk_l2_flushCfg_t *pConfig)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(pConfig == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    if(pConfig->flushByVid >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if(pConfig->flushByFid >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if(pConfig->flushByPort >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if(pConfig->flushByMac >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if(pConfig->flushStaticAddr >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if(pConfig->flushAddrOnAllPorts >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if(pConfig->vid > RTL8367C_VIDMAX)
+        return RT_ERR_VLAN_VID;
+
+    if(pConfig->fid > RTL8367C_FIDMAX)
+        return RT_ERR_INPUT;
+
+    /* check port valid */
+    RTK_CHK_PORT_VALID(pConfig->port);
+
+    if(pConfig->flushByVid == ENABLED)
+    {
+        if ((retVal = rtl8367c_setAsicLutFlushMode(FLUSHMDOE_VID)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicLutFlushVid(pConfig->vid)) != RT_ERR_OK)
+                return retVal;
+
+        if ((retVal = rtl8367c_setAsicLutFlushType((pConfig->flushStaticAddr == ENABLED) ? FLUSHTYPE_BOTH : FLUSHTYPE_DYNAMIC)) != RT_ERR_OK)
+            return retVal;
+
+        if(pConfig->flushAddrOnAllPorts == ENABLED)
+        {
+            if ((retVal = rtl8367c_setAsicLutForceFlush(RTL8367C_PORTMASK)) != RT_ERR_OK)
+                return retVal;
+        }
+        else if(pConfig->flushByPort == ENABLED)
+        {
+            if ((retVal = rtl8367c_setAsicLutForceFlush(1 << rtk_switch_port_L2P_get(pConfig->port))) != RT_ERR_OK)
+                return retVal;
+        }
+        else
+            return RT_ERR_INPUT;
+    }
+    else if(pConfig->flushByFid == ENABLED)
+    {
+        if ((retVal = rtl8367c_setAsicLutFlushMode(FLUSHMDOE_FID)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicLutFlushFid(pConfig->fid)) != RT_ERR_OK)
+                return retVal;
+
+        if ((retVal = rtl8367c_setAsicLutFlushType((pConfig->flushStaticAddr == ENABLED) ? FLUSHTYPE_BOTH : FLUSHTYPE_DYNAMIC)) != RT_ERR_OK)
+            return retVal;
+
+        if(pConfig->flushAddrOnAllPorts == ENABLED)
+        {
+            if ((retVal = rtl8367c_setAsicLutForceFlush(RTL8367C_PORTMASK)) != RT_ERR_OK)
+                return retVal;
+        }
+        else if(pConfig->flushByPort == ENABLED)
+        {
+            if ((retVal = rtl8367c_setAsicLutForceFlush(1 << rtk_switch_port_L2P_get(pConfig->port))) != RT_ERR_OK)
+                return retVal;
+        }
+        else
+            return RT_ERR_INPUT;
+    }
+    else if(pConfig->flushByPort == ENABLED)
+    {
+        if ((retVal = rtl8367c_setAsicLutFlushType((pConfig->flushStaticAddr == ENABLED) ? FLUSHTYPE_BOTH : FLUSHTYPE_DYNAMIC)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicLutFlushMode(FLUSHMDOE_PORT)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicLutForceFlush(1 << rtk_switch_port_L2P_get(pConfig->port))) != RT_ERR_OK)
+            return retVal;
+    }
+    else if(pConfig->flushByMac == ENABLED)
+    {
+        /* Should use API "rtk_l2_addr_del" to remove a specified entry*/
+        return RT_ERR_CHIP_NOT_SUPPORTED;
+    }
+    else
+        return RT_ERR_INPUT;
+
+    return RT_ERR_OK;
+}

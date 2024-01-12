@@ -1,0 +1,7 @@
+static void rtl839x_pie_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rule *pr)
+{
+	int idx = pr->id;
+
+	rtl839x_pie_rule_del(priv, idx, idx);
+	clear_bit(idx, priv->pie_use_bm);
+}

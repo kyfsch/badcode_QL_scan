@@ -1,0 +1,10 @@
+static void routerboot_mtd_notifier_remove(struct mtd_info *mtd)
+{
+	if (mtd->type != MTD_NORFLASH)
+		return;
+
+	if (!strcmp(mtd->name, RB_MTD_HARD_CONFIG))
+		rb_hardconfig_exit();
+	else if (!strcmp(mtd->name, RB_MTD_SOFT_CONFIG))
+		rb_softconfig_exit();
+}

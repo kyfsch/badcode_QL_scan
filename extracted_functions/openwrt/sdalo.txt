@@ -1,0 +1,5 @@
+static inline void sdalo(void)
+{
+	gpio_direction_output(sda_index, 1);
+	udelay(ADAP_DELAY);
+}

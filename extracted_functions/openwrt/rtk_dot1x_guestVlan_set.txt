@@ -1,0 +1,20 @@
+rtk_api_ret_t rtk_dot1x_guestVlan_set(rtk_vlan_t vid)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 index;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* vid must be 0~4095 */
+    if (vid > RTL8367C_VIDMAX)
+        return RT_ERR_VLAN_VID;
+
+    if((retVal = rtk_vlan_checkAndCreateMbr(vid, &index)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsic1xGuestVidx(index)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

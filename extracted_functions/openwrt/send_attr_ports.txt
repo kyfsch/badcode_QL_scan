@@ -1,0 +1,32 @@
+send_attr_ports(struct nl_msg *msg, struct switch_val *val)
+{
+	struct nlattr *n;
+	int i;
+
+	/* TODO implement multipart? */
+	if (val->len == 0)
+		goto done;
+	n = nla_nest_start(msg, SWITCH_ATTR_OP_VALUE_PORTS);
+	if (!n)
+		goto nla_put_failure;
+	for (i = 0; i < val->len; i++) {
+		struct switch_port *port = &val->value.ports[i];
+		struct nlattr *np;
+
+		np = nla_nest_start(msg, SWITCH_ATTR_PORT);
+		if (!np)
+			goto nla_put_failure;
+
+		NLA_PUT_U32(msg, SWITCH_PORT_ID, port->id);
+		if (port->flags & SWLIB_PORT_FLAG_TAGGED)
+			NLA_PUT_FLAG(msg, SWITCH_PORT_FLAG_TAGGED);
+
+		nla_nest_end(msg, np);
+	}
+	nla_nest_end(msg, n);
+done:
+	return 0;
+
+nla_put_failure:
+	return -1;
+}

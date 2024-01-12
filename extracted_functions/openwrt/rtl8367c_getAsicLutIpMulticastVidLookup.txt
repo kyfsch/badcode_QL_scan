@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicLutIpMulticastVidLookup(rtk_uint32* pEnabled)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_LUT_CFG2, RTL8367C_LUT_IPMC_VID_HASH_OFFSET, pEnabled);
+}

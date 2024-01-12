@@ -1,0 +1,13 @@
+define_machine(firebox_t10) {
+	.name			= "P1010 RDB",
+	.probe			= firebox_t10_probe,
+	.setup_arch		= firebox_t10_setup_arch,
+	.init_IRQ		= firebox_t10_pic_init,
+#ifdef CONFIG_PCI
+	.pcibios_fixup_bus	= fsl_pcibios_fixup_bus,
+	.pcibios_fixup_phb      = fsl_pcibios_fixup_phb,
+#endif
+	.get_irq		= mpic_get_irq,
+	.calibrate_decr		= generic_calibrate_decr,
+	.progress		= udbg_progress,
+};

@@ -1,0 +1,59 @@
+uc_hostapd_iface_add_bss(uc_vm_t *vm, size_t nargs)
+{
+	struct hostapd_iface *iface = uc_fn_thisval("hostapd.iface");
+	struct hostapd_bss_config *bss;
+	struct hostapd_config *conf;
+	struct hostapd_data *hapd;
+	uc_value_t *file = uc_fn_arg(0);
+	uc_value_t *index = uc_fn_arg(1);
+	unsigned int idx = 0;
+	uc_value_t *ret = NULL;
+
+	if (!iface || ucv_type(file) != UC_STRING)
+		goto out;
+
+	if (ucv_type(index) == UC_INTEGER)
+		idx = ucv_int64_get(index);
+
+	conf = interfaces->config_read_cb(ucv_string_get(file));
+	if (!conf || idx > conf->num_bss || !conf->bss[idx])
+		goto out;
+
+	bss = conf->bss[idx];
+	hapd = hostapd_alloc_bss_data(iface, iface->conf, bss);
+	if (!hapd)
+		goto out;
+
+	hapd->driver = iface->bss[0]->driver;
+	hapd->drv_priv = iface->bss[0]->drv_priv;
+	if (interfaces->ctrl_iface_init &&
+	    interfaces->ctrl_iface_init(hapd) < 0)
+		goto free_hapd;
+
+	if (iface->state == HAPD_IFACE_ENABLED &&
+	    hostapd_setup_bss(hapd, -1, true))
+		goto deinit_ctrl;
+
+	iface->bss = os_realloc_array(iface->bss, iface->num_bss + 1,
+				      sizeof(*iface->bss));
+	iface->bss[iface->num_bss++] = hapd;
+
+	iface->conf->bss = os_realloc_array(iface->conf->bss,
+					    iface->conf->num_bss + 1,
+					    sizeof(*iface->conf->bss));
+	iface->conf->bss[iface->conf->num_bss] = bss;
+	conf->bss[idx] = NULL;
+	ret = hostapd_ucode_bss_get_uval(hapd);
+	hostapd_ucode_update_interfaces();
+	goto out;
+
+deinit_ctrl:
+	if (interfaces->ctrl_iface_deinit)
+		interfaces->ctrl_iface_deinit(hapd);
+free_hapd:
+	hostapd_free_hapd_data(hapd);
+	os_free(hapd);
+out:
+	hostapd_config_free(conf);
+	return ret;
+}

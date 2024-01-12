@@ -1,0 +1,8 @@
+static int ctr_aes_encrypt (struct ablkcipher_request *areq)
+{
+    struct crypto_ablkcipher *cipher = crypto_ablkcipher_reqtfm(areq);
+    struct aes_ctx *ctx = crypto_ablkcipher_ctx(cipher);
+   
+    return lq_aes_queue_mgr(ctx, areq, areq->info, CRYPTO_DIR_ENCRYPT, 4);
+
+}

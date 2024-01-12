@@ -1,0 +1,4 @@
+static int mt7621_nfc_read_oob_hwecc(struct nand_chip *nand, int page)
+{
+	return mt7621_nfc_read_page_hwecc(nand, NULL, 1, page);
+}

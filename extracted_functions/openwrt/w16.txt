@@ -1,0 +1,4 @@
+w16(struct adm6996_priv *priv, enum admreg reg, u16 val)
+{
+	priv->write(priv, reg, val);
+}

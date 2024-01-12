@@ -1,0 +1,22 @@
+static int rb4xx_cpld_read_nand(struct rb4xx_cpld *cpld, void *rx_buf,
+				unsigned int len)
+{
+	struct spi_message m;
+	static const u8 cmd[2] = {
+		CPLD_CMD_READ_NAND, 0
+	};
+	struct spi_transfer t[2] = {
+		{
+			.tx_buf = &cmd,
+			.len = sizeof(cmd),
+		}, {
+			.rx_buf = rx_buf,
+			.len = len,
+		},
+	};
+
+	spi_message_init(&m);
+	spi_message_add_tail(&t[0], &m);
+	spi_message_add_tail(&t[1], &m);
+	return spi_sync(cpld->spi, &m);
+}

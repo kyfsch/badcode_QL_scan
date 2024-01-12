@@ -1,0 +1,12 @@
+uc_bpf_map_create(int fd, unsigned int key_size, unsigned int val_size, bool close)
+{
+	struct uc_bpf_map *uc_map;
+
+	uc_map = xalloc(sizeof(*uc_map));
+	uc_map->fd.fd = fd;
+	uc_map->key_size = key_size;
+	uc_map->val_size = val_size;
+	uc_map->fd.close = close;
+
+	return uc_resource_new(map_type, uc_map);
+}

@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_qos_1pPriRemap_get(rtk_pri_t dot1p_pri, rtk_pri_t *pInt_pri)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (dot1p_pri > RTL8367C_PRIMAX)
+        return  RT_ERR_QOS_INT_PRIORITY;
+
+    if ((retVal = rtl8367c_getAsicPriorityDot1qRemapping(dot1p_pri, pInt_pri)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

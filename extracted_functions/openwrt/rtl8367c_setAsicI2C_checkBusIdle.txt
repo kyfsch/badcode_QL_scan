@@ -1,0 +1,13 @@
+ret_t rtl8367c_setAsicI2C_checkBusIdle(void)
+{
+    rtk_uint32 regData;
+    ret_t retVal;
+
+    if ((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_M_I2C_CTL_STA_REG, RTL8367C_M_I2C_BUS_IDLE_OFFSET, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    if(regData == 0x0001)
+        return RT_ERR_OK; /*i2c is idle*/
+    else
+        return RT_ERR_BUSYWAIT_TIMEOUT; /*i2c is busy*/
+}

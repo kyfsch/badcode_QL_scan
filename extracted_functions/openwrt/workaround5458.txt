@@ -1,0 +1,15 @@
+void workaround5458(struct ata_host *ah)
+{
+	struct sata_oxnas_host_priv *hd = ah->private_data;
+	void __iomem *phy_base = hd->phy_base;
+	u16 rx_control;
+	unsigned i;
+
+	for (i = 0; i < 2; i++) {
+		rx_control = read_cr(phy_base, 0x201d + (i << 8));
+		rx_control &= ~(PH_GAIN_MASK | FR_GAIN_MASK);
+		rx_control |= PH_GAIN << PH_GAIN_OFFSET;
+		rx_control |= (FR_GAIN << FR_GAIN_OFFSET) | USE_INT_SETTING;
+		write_cr(phy_base, rx_control, 0x201d+(i<<8));
+	}
+}

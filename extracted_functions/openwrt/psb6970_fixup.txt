@@ -1,0 +1,15 @@
+static int psb6970_fixup(struct phy_device *dev)
+{
+	struct mii_bus *bus = dev->mdio.bus;
+	u16 reg;
+
+	/* look for the switch on the bus */
+	reg = bus->read(bus, PHYADDR(PSB6970_CI1)) & PSB6970_CI1_MASK;
+	if (reg != PSB6970_CI1_VAL)
+		return 0;
+
+	dev->phy_id = (reg << 16);
+	dev->phy_id |= bus->read(bus, PHYADDR(PSB6970_CI0)) & PSB6970_CI0_MASK;
+
+	return 0;
+}

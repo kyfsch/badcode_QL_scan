@@ -1,0 +1,10 @@
+static void esw_set_vlan_id(struct rt305x_esw *esw, unsigned vlan, unsigned vid)
+{
+	unsigned s;
+
+	s = RT305X_ESW_VLANI_VID_S * (vlan % 2);
+	esw_rmw(esw,
+		       RT305X_ESW_REG_VLANI(vlan / 2),
+		       RT305X_ESW_VLANI_VID_M << s,
+		       (vid & RT305X_ESW_VLANI_VID_M) << s);
+}

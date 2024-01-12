@@ -1,0 +1,6 @@
+static u16 psb6970_mii_read(struct phy_device *phydev, int reg)
+{
+	struct mii_bus *bus = phydev->mdio.bus;
+
+	return bus->read(bus, PHYADDR(reg));
+}

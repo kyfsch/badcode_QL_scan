@@ -1,0 +1,43 @@
+static void rtk_hal_enable_igmpsnoop(int hw_on)
+{
+        rtk_api_ret_t ret;
+        rtk_portmask_t pmask;
+
+        ret = rtk_igmp_init();
+        if (hw_on == 1) {
+                RTK_PORTMASK_CLEAR(pmask);
+                RTK_PORTMASK_PORT_SET(pmask, EXT_PORT0);
+                ret |= rtk_igmp_static_router_port_set(&pmask);
+                ret |= rtk_igmp_protocol_set(UTP_PORT4, PROTOCOL_IGMPv1, IGMP_ACTION_FORWARD);
+                ret |= rtk_igmp_protocol_set(UTP_PORT4, PROTOCOL_IGMPv2, IGMP_ACTION_FORWARD);
+                ret |= rtk_igmp_protocol_set(UTP_PORT4, PROTOCOL_MLDv1, IGMP_ACTION_FORWARD);
+                ret |= rtk_igmp_protocol_set(EXT_PORT1, PROTOCOL_IGMPv1, IGMP_ACTION_FORWARD);
+                ret |= rtk_igmp_protocol_set(EXT_PORT1, PROTOCOL_IGMPv2, IGMP_ACTION_FORWARD);
+                ret |= rtk_igmp_protocol_set(EXT_PORT1, PROTOCOL_MLDv1, IGMP_ACTION_FORWARD);
+                ret |= rtk_igmp_protocol_set(UTP_PORT0, PROTOCOL_IGMPv3, IGMP_ACTION_ASIC);
+                ret |= rtk_igmp_protocol_set(UTP_PORT1, PROTOCOL_IGMPv3, IGMP_ACTION_ASIC);
+                ret |= rtk_igmp_protocol_set(UTP_PORT2, PROTOCOL_IGMPv3, IGMP_ACTION_ASIC);
+                ret |= rtk_igmp_protocol_set(UTP_PORT3, PROTOCOL_IGMPv3, IGMP_ACTION_ASIC);
+                ret |= rtk_igmp_protocol_set(EXT_PORT0, PROTOCOL_IGMPv3, IGMP_ACTION_ASIC);
+
+                ret |= rtk_leaky_vlan_set(LEAKY_IPMULTICAST, ENABLED);
+                ret |= rtk_l2_ipMcastForwardRouterPort_set(DISABLED);
+                /* drop unknown multicast packets*/
+                /* ret |= rtk_trap_unknownMcastPktAction_set(UTP_PORT4, MCAST_IPV4, MCAST_ACTION_DROP);*/
+        } else {
+		RTK_PORTMASK_CLEAR(pmask);
+		RTK_PORTMASK_PORT_SET(pmask, EXT_PORT0);
+		RTK_PORTMASK_PORT_SET(pmask, EXT_PORT1);
+                ret |= rtk_igmp_protocol_set(UTP_PORT0, PROTOCOL_IGMPv3, IGMP_ACTION_ASIC);
+                ret |= rtk_igmp_protocol_set(UTP_PORT1, PROTOCOL_IGMPv3, IGMP_ACTION_ASIC);
+                ret |= rtk_igmp_protocol_set(UTP_PORT2, PROTOCOL_IGMPv3, IGMP_ACTION_ASIC);
+                ret |= rtk_igmp_protocol_set(UTP_PORT3, PROTOCOL_IGMPv3, IGMP_ACTION_ASIC);
+                ret |= rtk_igmp_protocol_set(EXT_PORT0, PROTOCOL_IGMPv3, IGMP_ACTION_ASIC);
+
+                ret |= rtk_igmp_static_router_port_set(&pmask);
+        }
+
+        if(ret != RT_ERR_OK)
+                printk("enable switch igmpsnoop failed\n");
+
+}

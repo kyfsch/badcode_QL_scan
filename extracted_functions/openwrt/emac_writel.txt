@@ -1,0 +1,4 @@
+static inline void emac_writel(struct bcm6348_emac *emac, u32 val, u32 off)
+{
+	__raw_writel(val, emac->base + off);
+}

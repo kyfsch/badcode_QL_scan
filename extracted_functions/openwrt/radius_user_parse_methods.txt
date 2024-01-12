@@ -1,0 +1,41 @@
+radius_user_parse_methods(struct eap_user *eap, struct blob_attr *data)
+{
+	struct blob_attr *cur;
+	int rem, n = 0;
+
+	if (!data)
+		return;
+
+	blobmsg_for_each_attr(cur, data, rem) {
+		const char *method;
+
+		if (blobmsg_type(cur) != BLOBMSG_TYPE_STRING)
+			continue;
+
+		if (n == EAP_MAX_METHODS)
+			break;
+
+		method = blobmsg_get_string(cur);
+		eap->methods[n].method = eap_server_get_type(method, &eap->methods[n].vendor);
+		if (eap->methods[n].vendor == EAP_VENDOR_IETF &&
+		    eap->methods[n].method == EAP_TYPE_NONE) {
+			if (!strcmp(method, "TTLS-PAP")) {
+				eap->ttls_auth |= EAP_TTLS_AUTH_PAP;
+				continue;
+			}
+			if (!strcmp(method, "TTLS-CHAP")) {
+				eap->ttls_auth |= EAP_TTLS_AUTH_CHAP;
+				continue;
+			}
+			if (!strcmp(method, "TTLS-MSCHAP")) {
+				eap->ttls_auth |= EAP_TTLS_AUTH_MSCHAP;
+				continue;
+			}
+			if (!strcmp(method, "TTLS-MSCHAPV2")) {
+				eap->ttls_auth |= EAP_TTLS_AUTH_MSCHAPV2;
+				continue;
+			}
+		}
+		n++;
+	}
+}

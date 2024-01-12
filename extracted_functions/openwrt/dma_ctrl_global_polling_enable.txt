@@ -1,0 +1,10 @@
+static void dma_ctrl_global_polling_enable(struct dc_ep_dev *dev, int interval)
+{
+	u32 reg = 0;
+
+	reg |= (1 << 31);
+	reg |= (interval << 4);
+
+	ep_wr32_mask(DMA_CPOLL_CNT_MASK,
+		reg,  DMA_CPOLL);
+}

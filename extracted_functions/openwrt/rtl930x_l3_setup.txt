@@ -1,0 +1,55 @@
+int rtl930x_l3_setup(struct rtl838x_switch_priv *priv)
+{
+	/* Setup MTU with id 0 for default interface */
+	for (int i = 0; i < MAX_INTF_MTUS; i++)
+		priv->intf_mtu_count[i] = priv->intf_mtus[i] = 0;
+
+	priv->intf_mtu_count[0] = 0; /* Needs to stay forever */
+	priv->intf_mtus[0] = DEFAULT_MTU;
+	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP_MTU_CTRL(0));
+	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP6_MTU_CTRL(0));
+	priv->intf_mtus[1] = DEFAULT_MTU;
+	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP_MTU_CTRL(0));
+	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP6_MTU_CTRL(0));
+
+	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP_MTU_CTRL(1));
+	sw_w32_mask(0xffff, DEFAULT_MTU, RTL930X_L3_IP6_MTU_CTRL(1));
+	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP_MTU_CTRL(1));
+	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP6_MTU_CTRL(1));
+
+	/* Clear all source port MACs */
+	for (int i = 0; i < MAX_SMACS; i++)
+		rtl930x_set_l3_egress_mac(L3_EGRESS_DMACS + i, 0ULL);
+
+	/* Configure the default L3 hash algorithm */
+	sw_w32_mask(BIT(2), 0, RTL930X_L3_HOST_TBL_CTRL);  /* Algorithm selection 0 = 0 */
+	sw_w32_mask(0, BIT(3), RTL930X_L3_HOST_TBL_CTRL);  /* Algorithm selection 1 = 1 */
+
+	pr_info("L3_IPUC_ROUTE_CTRL %08x, IPMC_ROUTE %08x, IP6UC_ROUTE %08x, IP6MC_ROUTE %08x\n",
+		sw_r32(RTL930X_L3_IPUC_ROUTE_CTRL), sw_r32(RTL930X_L3_IPMC_ROUTE_CTRL),
+		sw_r32(RTL930X_L3_IP6UC_ROUTE_CTRL), sw_r32(RTL930X_L3_IP6MC_ROUTE_CTRL));
+	sw_w32_mask(0, 1, RTL930X_L3_IPUC_ROUTE_CTRL);
+	sw_w32_mask(0, 1, RTL930X_L3_IP6UC_ROUTE_CTRL);
+	sw_w32_mask(0, 1, RTL930X_L3_IPMC_ROUTE_CTRL);
+	sw_w32_mask(0, 1, RTL930X_L3_IP6MC_ROUTE_CTRL);
+
+	sw_w32(0x00002001, RTL930X_L3_IPUC_ROUTE_CTRL);
+	sw_w32(0x00014581, RTL930X_L3_IP6UC_ROUTE_CTRL);
+	sw_w32(0x00000501, RTL930X_L3_IPMC_ROUTE_CTRL);
+	sw_w32(0x00012881, RTL930X_L3_IP6MC_ROUTE_CTRL);
+
+	pr_info("L3_IPUC_ROUTE_CTRL %08x, IPMC_ROUTE %08x, IP6UC_ROUTE %08x, IP6MC_ROUTE %08x\n",
+		sw_r32(RTL930X_L3_IPUC_ROUTE_CTRL), sw_r32(RTL930X_L3_IPMC_ROUTE_CTRL),
+		sw_r32(RTL930X_L3_IP6UC_ROUTE_CTRL), sw_r32(RTL930X_L3_IP6MC_ROUTE_CTRL));
+
+	/* Trap non-ip traffic to the CPU-port (e.g. ARP so we stay reachable) */
+	sw_w32_mask(0x3 << 8, 0x1 << 8, RTL930X_L3_IP_ROUTE_CTRL);
+	pr_info("L3_IP_ROUTE_CTRL %08x\n", sw_r32(RTL930X_L3_IP_ROUTE_CTRL));
+
+	/* PORT_ISO_RESTRICT_ROUTE_CTRL? */
+
+	/* Do not use prefix route 0 because of HW limitations */
+	set_bit(0, priv->route_use_bm);
+
+	return 0;
+}

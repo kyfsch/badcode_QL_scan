@@ -1,0 +1,18 @@
+static inline u32 nmbm_crc32(u32 crcval, const void *buf, size_t size)
+{
+	unsigned int chksz;
+	const unsigned char *p = buf;
+
+	while (size) {
+		if (size > UINT_MAX)
+			chksz = UINT_MAX;
+		else
+			chksz = (uint)size;
+
+		crcval = crc32_le(crcval, p, chksz);
+		size -= chksz;
+		p += chksz;
+	}
+
+	return crcval;
+}

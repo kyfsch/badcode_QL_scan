@@ -1,0 +1,5 @@
+void rtl_table_init(void)
+{
+	for (int i = 0; i < RTL_TBL_END; i++)
+		mutex_init(&rtl838x_tbl_regs[i].lock);
+}

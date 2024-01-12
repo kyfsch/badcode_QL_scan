@@ -1,0 +1,33 @@
+static int bcm63xx_read_image_tag(struct mtd_info *master, loff_t offset,
+				  struct bcm_tag *hdr)
+{
+	int ret;
+	size_t retlen;
+	u32 computed_crc;
+
+	ret = mtd_read(master, offset, sizeof(*hdr), &retlen, (void *) hdr);
+	if (ret)
+		return ret;
+
+	if (retlen != sizeof(*hdr))
+		return -EIO;
+
+	computed_crc = crc32_le(IMAGETAG_CRC_START, (u8 *)hdr,
+				offsetof(struct bcm_tag, header_crc));
+	if (computed_crc == hdr->header_crc) {
+	    STR_NULL_TERMINATE(hdr->board_id);
+	    STR_NULL_TERMINATE(hdr->tag_version);
+
+		pr_info("CFE image tag found at 0x%llx with version %s, "
+			"board type %s\n", offset, hdr->tag_version,
+			hdr->board_id);
+
+		return 0;
+	} else {
+		pr_err("CFE image tag at 0x%llx CRC invalid "
+		       "(expected %08x, actual %08x)\n",
+		       offset, hdr->header_crc, computed_crc);
+
+		return 1;
+	}
+}

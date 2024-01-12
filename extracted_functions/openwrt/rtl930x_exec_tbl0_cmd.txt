@@ -1,0 +1,5 @@
+inline void rtl930x_exec_tbl0_cmd(u32 cmd)
+{
+	sw_w32(cmd, RTL930X_TBL_ACCESS_CTRL_0);
+	do { } while (sw_r32(RTL930X_TBL_ACCESS_CTRL_0) & (1 << 17));
+}

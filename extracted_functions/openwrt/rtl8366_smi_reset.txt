@@ -1,0 +1,7 @@
+static void rtl8366_smi_reset(struct rtl8366_smi *smi, bool active)
+{
+	if (active)
+		reset_control_assert(smi->reset);
+	else
+		reset_control_deassert(smi->reset);
+}

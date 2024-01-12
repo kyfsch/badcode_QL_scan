@@ -1,0 +1,18 @@
+static int mt7621_ecc_decoder_wait_done(struct mt7621_nfc *nfc, u32 sect)
+{
+	struct device *dev = nfc->dev;
+	u32 val;
+	int ret;
+
+	ret = readw_poll_timeout_atomic(nfc->ecc_regs + ECC_DECDONE, val,
+					val & (1 << sect), 10,
+					ECC_ENGINE_TIMEOUT);
+
+	if (ret) {
+		dev_warn(dev, "ECC decoder for sector %d timed out\n",
+			 sect);
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}

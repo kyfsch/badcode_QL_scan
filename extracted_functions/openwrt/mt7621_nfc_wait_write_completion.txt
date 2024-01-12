@@ -1,0 +1,18 @@
+static int mt7621_nfc_wait_write_completion(struct mt7621_nfc *nfc,
+					    struct nand_chip *nand)
+{
+	struct device *dev = nfc->dev;
+	u16 val;
+	int ret;
+
+	ret = readw_poll_timeout_atomic(nfc->nfi_regs + NFI_ADDRCNTR, val,
+		((val & SEC_CNTR_M) >> SEC_CNTR_S) >= nand->ecc.steps, 10,
+		NFI_CORE_TIMEOUT);
+
+	if (ret) {
+		dev_warn(dev, "NFI core write operation timed out\n");
+		return -ETIMEDOUT;
+	}
+
+	return ret;
+}

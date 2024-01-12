@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicPriorityDot1qRemapping(rtk_uint32 srcpriority, rtk_uint32 priority )
+{
+    if((srcpriority > RTL8367C_PRIMAX) || (priority > RTL8367C_PRIMAX))
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_QOS_1Q_PRIORITY_REMAPPING_REG(srcpriority), RTL8367C_QOS_1Q_PRIORITY_REMAPPING_MASK(srcpriority),priority);
+}

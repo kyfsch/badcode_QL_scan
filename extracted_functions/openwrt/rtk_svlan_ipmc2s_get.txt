@@ -1,0 +1,35 @@
+rtk_api_ret_t rtk_svlan_ipmc2s_get(ipaddr_t ipmc, ipaddr_t ipmcMsk, rtk_vlan_t *pSvid)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 i;
+    rtl8367c_svlan_memconf_t svlanMemConf;
+    rtl8367c_svlan_mc2s_t svlanMC2SConf;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pSvid)
+        return RT_ERR_NULL_POINTER;
+
+    if ((ipmc&0xF0000000)!=0xE0000000)
+        return RT_ERR_INPUT;
+
+    for (i = 0; i <= RTL8367C_MC2SIDXMAX; i++)
+    {
+        if ((retVal = rtl8367c_getAsicSvlanMC2SConf(i, &svlanMC2SConf)) != RT_ERR_OK)
+            return retVal;
+
+        if (TRUE == svlanMC2SConf.valid &&
+            svlanMC2SConf.format == SVLAN_MC2S_MODE_IP &&
+            svlanMC2SConf.sdata == ipmc &&
+            svlanMC2SConf.smask == ipmcMsk)
+        {
+            if ((retVal = rtl8367c_getAsicSvlanMemberConfiguration(svlanMC2SConf.svidx, &svlanMemConf)) != RT_ERR_OK)
+                return retVal;
+            *pSvid = svlanMemConf.vs_svid;
+            return RT_ERR_OK;
+        }
+    }
+
+    return RT_ERR_OUT_OF_RANGE;
+}

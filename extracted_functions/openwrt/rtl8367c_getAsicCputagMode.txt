@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicCputagMode(rtk_uint32 *pMode)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_CPU_CTRL, RTL8367C_CPU_TAG_FORMAT_OFFSET, pMode);
+}

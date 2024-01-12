@@ -1,0 +1,34 @@
+t_random(data, size)
+     unsigned char * data;
+     unsigned size;
+{
+  if(!initialized)
+    t_initrand();
+
+  if(size <= 0)         /* t_random(NULL, 0) forces seed initialization */
+    return;
+
+  while(size > outpos) {
+    if(outpos > 0) {
+      memcpy(data, randout + (sizeof(randout) - outpos), outpos);
+      data += outpos;
+      size -= outpos;
+    }
+
+    /* Recycle */
+    SHA1Init(&randctxt);
+    SHA1Update(&randctxt, randpool, sizeof(randpool));
+    SHA1Final(randout, &randctxt);
+    SHA1Init(&randctxt);
+    SHA1Update(&randctxt, (unsigned char *) &randcnt, sizeof(randcnt));
+    SHA1Update(&randctxt, randpool, sizeof(randpool));
+    SHA1Final(randpool, &randctxt);
+    ++randcnt;
+    outpos = sizeof(randout);
+  }
+
+  if(size > 0) {
+    memcpy(data, randout + (sizeof(randout) - outpos), size);
+    outpos -= size;
+  }
+}

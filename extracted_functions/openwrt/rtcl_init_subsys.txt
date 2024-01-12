@@ -1,0 +1,4 @@
+static int __init rtcl_init_subsys(void)
+{
+	return platform_driver_register(&rtcl_platform_driver);
+}

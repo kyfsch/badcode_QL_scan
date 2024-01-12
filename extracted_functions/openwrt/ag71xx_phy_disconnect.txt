@@ -1,0 +1,4 @@
+void ag71xx_phy_disconnect(struct ag71xx *ag)
+{
+	phy_disconnect(ag->phy_dev);
+}

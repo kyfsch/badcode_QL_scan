@@ -1,0 +1,25 @@
+static ssize_t rtl838x_common_write(const char __user *buffer, size_t count,
+				 loff_t *ppos, unsigned int *value)
+{
+	char b[32];
+	ssize_t len;
+	int ret;
+
+	if (*ppos != 0)
+		return -EINVAL;
+
+	if (count >= sizeof(b))
+		return -ENOSPC;
+
+	len = simple_write_to_buffer(b, sizeof(b) - 1, ppos,
+				     buffer, count);
+	if (len < 0)
+		return len;
+
+	b[len] = '\0';
+	ret = kstrtouint(b, 16, value);
+	if (ret)
+		return -EIO;
+
+	return len;
+}

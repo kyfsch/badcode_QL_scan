@@ -1,0 +1,4 @@
+struct menu *menu_get_root_menu(struct menu *menu)
+{
+	return &rootmenu;
+}

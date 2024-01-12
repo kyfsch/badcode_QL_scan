@@ -1,0 +1,11 @@
+static int gpio_button_get_value(struct gpio_keys_button_data *bdata)
+{
+	int val;
+
+	if (bdata->can_sleep)
+		val = !!gpiod_get_value_cansleep(bdata->gpiod);
+	else
+		val = !!gpiod_get_value(bdata->gpiod);
+
+	return val;
+}

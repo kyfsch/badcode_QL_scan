@@ -1,0 +1,17 @@
+static void nct5104d_gpio_set(struct gpio_chip *chip, unsigned offset, int value);
+
+#define NCT5104D_GPIO_BANK(_base, _ngpio, _regbase)			\
+	{								\
+		.chip = {						\
+			.label            = DRVNAME,			\
+			.owner            = THIS_MODULE,		\
+			.direction_input  = nct5104d_gpio_direction_in,	\
+			.get              = nct5104d_gpio_get,		\
+			.direction_output = nct5104d_gpio_direction_out,	\
+			.set              = nct5104d_gpio_set,		\
+			.base             = _base,			\
+			.ngpio            = _ngpio,			\
+			.can_sleep        = true,			\
+		},							\
+		.regbase = _regbase,					\
+	}

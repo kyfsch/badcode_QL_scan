@@ -1,0 +1,71 @@
+rtk_api_ret_t rtk_vlan_init(void)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 i;
+    rtl8367c_user_vlan4kentry vlan4K;
+    rtl8367c_vlanconfiguser vlanMC;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Clean Database */
+    memset(vlan_mbrCfgVid, 0x00, sizeof(rtk_vlan_t) * RTL8367C_CVIDXNO);
+    memset(vlan_mbrCfgUsage, 0x00, sizeof(vlan_mbrCfgType_t) * RTL8367C_CVIDXNO);
+
+    /* clean 32 VLAN member configuration */
+    for (i = 0; i <= RTL8367C_CVIDXMAX; i++)
+    {
+        vlanMC.evid = 0;
+        vlanMC.mbr = 0;
+        vlanMC.fid_msti = 0;
+        vlanMC.envlanpol = 0;
+        vlanMC.meteridx = 0;
+        vlanMC.vbpen = 0;
+        vlanMC.vbpri = 0;
+        if ((retVal = rtl8367c_setAsicVlanMemberConfig(i, &vlanMC)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    /* Set a default VLAN with vid 1 to 4K table for all ports */
+    memset(&vlan4K, 0, sizeof(rtl8367c_user_vlan4kentry));
+    vlan4K.vid = 1;
+    vlan4K.mbr = RTK_PHY_PORTMASK_ALL;
+    vlan4K.untag = RTK_PHY_PORTMASK_ALL;
+    vlan4K.fid_msti = 0;
+    if ((retVal = rtl8367c_setAsicVlan4kEntry(&vlan4K)) != RT_ERR_OK)
+        return retVal;
+
+    /* Also set the default VLAN to 32 member configuration index 0 */
+    memset(&vlanMC, 0, sizeof(rtl8367c_vlanconfiguser));
+    vlanMC.evid = 1;
+    vlanMC.mbr = RTK_PHY_PORTMASK_ALL;
+    vlanMC.fid_msti = 0;
+    if ((retVal = rtl8367c_setAsicVlanMemberConfig(0, &vlanMC)) != RT_ERR_OK)
+            return retVal;
+
+    /* Set all ports PVID to default VLAN and tag-mode to original */
+    RTK_SCAN_ALL_PHY_PORTMASK(i)
+    {
+        if ((retVal = rtl8367c_setAsicVlanPortBasedVID(i, 0, 0)) != RT_ERR_OK)
+            return retVal;
+        if ((retVal = rtl8367c_setAsicVlanEgressTagMode(i, EG_TAG_MODE_ORI)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    /* Updata Databse */
+    vlan_mbrCfgUsage[0] = MBRCFG_USED_BY_VLAN;
+    vlan_mbrCfgVid[0] = 1;
+
+    /* Enable Ingress filter */
+    RTK_SCAN_ALL_PHY_PORTMASK(i)
+    {
+        if ((retVal = rtl8367c_setAsicVlanIngressFilter(i, ENABLED)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    /* enable VLAN */
+    if ((retVal = rtl8367c_setAsicVlanFilter(ENABLED)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

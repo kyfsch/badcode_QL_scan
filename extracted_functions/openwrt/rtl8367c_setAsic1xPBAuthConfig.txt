@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsic1xPBAuthConfig(rtk_uint32 port, rtk_uint32 auth)
+{
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    return rtl8367c_setAsicRegBit(RTL8367C_DOT1X_PORT_AUTH_REG, port, auth);
+}

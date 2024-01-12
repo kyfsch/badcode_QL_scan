@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_dot1x_macBasedEnable_set(rtk_port_t port, rtk_enable_t enable)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if (enable >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if ((retVal = rtl8367c_setAsic1xMBEnConfig(rtk_switch_port_L2P_get(port),enable)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

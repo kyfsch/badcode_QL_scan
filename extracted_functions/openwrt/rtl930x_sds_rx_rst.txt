@@ -1,0 +1,11 @@
+void rtl930x_sds_rx_rst(int sds_num, phy_interface_t phy_if)
+{
+	int page = 0x2e; /* 10GR and USXGMII */
+
+	if (phy_if == PHY_INTERFACE_MODE_1000BASEX)
+		page = 0x24;
+
+	rtl9300_sds_field_w(sds_num, page, 0x15, 4, 4, 0x1);
+	mdelay(5);
+	rtl9300_sds_field_w(sds_num, page, 0x15, 4, 4, 0x0);
+}

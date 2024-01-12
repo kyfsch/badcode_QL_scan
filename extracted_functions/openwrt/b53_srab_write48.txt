@@ -1,0 +1,21 @@
+static int b53_srab_write48(struct b53_device *dev, u8 page, u8 reg,
+				    u64 value)
+{
+	u8 __iomem *regs = dev->priv;
+	int ret = 0;
+
+	ret = b53_srab_request_grant(dev);
+	if (ret)
+		goto err;
+
+	writel((u32)value, regs + B53_SRAB_WD_L);
+	writel((u16)(value >> 32), regs + B53_SRAB_WD_H);
+
+	ret = b53_srab_op(dev, page, reg, B53_SRAB_CMDSTAT_WRITE);
+
+err:
+	b53_srab_release_grant(dev);
+
+	return ret;
+
+}

@@ -1,0 +1,29 @@
+static void dma_tx_ch_cfg(struct dc_ep_dev *dev, int ch, u32 desc_base,
+	u32 desc_phys, dma_addr_t data_base, int desc_num)
+{
+	int i;
+	struct tx_desc_2dw *tx_desc;
+
+	for (i = 0; i < desc_num; i++) {
+		tx_desc = (struct tx_desc_2dw *)
+			(desc_base + (i * sizeof(*tx_desc)));
+		tx_desc->data_pointer = (((u32)(data_base +
+			(i * dma_pkt_size))) & 0xfffffff8);
+		tx_desc->status.word = 0;
+		tx_desc->status.field.byte_offset = 0;
+		tx_desc->status.field.data_len = dma_pkt_size;
+
+		tx_desc->status.field.sop = 1;
+		tx_desc->status.field.eop = 1;
+		tx_desc->status.field.own = 1;
+		wmb();
+	#if 0
+		pr_info("Tx desc num %d word 0x%08x data pointer 0x%08x\n",
+			i, tx_desc->status.word, tx_desc->data_pointer);
+	#endif
+	}
+	ep_wr32(ch, DMA_CS);
+	ep_wr32(desc_phys, DMA_CDBA);
+	ep_wr32(desc_num, DMA_CDLEN);
+	ep_wr32(0, DMA_CIE);
+}

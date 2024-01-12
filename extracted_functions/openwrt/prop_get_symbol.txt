@@ -1,0 +1,7 @@
+struct symbol *prop_get_symbol(struct property *prop)
+{
+	if (prop->expr && (prop->expr->type == E_SYMBOL ||
+			   prop->expr->type == E_LIST))
+		return prop->expr->left.sym;
+	return NULL;
+}

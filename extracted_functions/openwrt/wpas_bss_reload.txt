@@ -1,0 +1,11 @@
+wpas_bss_reload(struct ubus_context *ctx, struct ubus_object *obj,
+		struct ubus_request_data *req, const char *method,
+		struct blob_attr *msg)
+{
+	struct wpa_supplicant *wpa_s = get_wpas_from_object(obj);
+
+	if (wpa_supplicant_reload_configuration(wpa_s))
+		return UBUS_STATUS_UNKNOWN_ERROR;
+	else
+		return 0;
+}

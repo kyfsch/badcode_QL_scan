@@ -1,0 +1,36 @@
+static u16 upload_bmt(struct bbbt *bbt, int n)
+{
+	u16 block;
+
+retry:
+	if (n < 0 || bmt_tbl(bbt)[n].mapped == NORMAL_MAPPED) {
+		pr_info("nand: FATAL ERR: no space to store BMT!\n");
+		return (u16)-1;
+	}
+
+	block = bmt_tbl(bbt)[n].block;
+	BBT_LOG("n = 0x%x, block = 0x%x", n, block);
+	if (bbt_nand_erase(block)) {
+		bmt_tbl(bbt)[n].block = 0;
+		/* erase failed, try the previous block: bmt_tbl[n - 1].block */
+		n--;
+		goto retry;
+	}
+
+	/* The signature offset is fixed set to 0,
+	 * oob signature offset is fixed set to 1
+	 */
+	memcpy(bbt->signature + MAIN_SIGNATURE_OFFSET, "BMT", 3);
+	bbt->version = BBMT_VERSION;
+
+	if (write_bmt(block, (unsigned char *)bbt)) {
+		bmt_tbl(bbt)[n].block = 0;
+
+		/* write failed, try the previous block in bmt_tbl[n - 1] */
+		n--;
+		goto retry;
+	}
+
+	/* Return the current index(n) of BMT pool (bmt_tbl[n]) */
+	return n;
+}

@@ -1,0 +1,54 @@
+rtk_api_ret_t rtk_mirror_portBased_get(rtk_port_t *pMirroring_port, rtk_portmask_t *pMirrored_rx_portmask, rtk_portmask_t *pMirrored_tx_portmask)
+{
+    rtk_api_ret_t retVal;
+    rtk_port_t source_port;
+    rtk_enable_t mirRx, mirTx;
+    rtk_uint32 sport, mport, pmask;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pMirrored_rx_portmask)
+        return RT_ERR_NULL_POINTER;
+
+    if(NULL == pMirrored_tx_portmask)
+        return RT_ERR_NULL_POINTER;
+
+    if(NULL == pMirroring_port)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicPortMirror(&sport, &mport)) != RT_ERR_OK)
+        return retVal;
+    source_port = rtk_switch_port_P2L_get(sport);
+    *pMirroring_port = rtk_switch_port_P2L_get(mport);
+
+    if ((retVal = rtl8367c_getAsicPortMirrorRxFunction((rtk_uint32*)&mirRx)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicPortMirrorTxFunction((rtk_uint32*)&mirTx)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicPortMirrorMask(&pmask)) != RT_ERR_OK)
+        return retVal;
+
+    if (DISABLED == mirRx)
+        pMirrored_rx_portmask->bits[0]=0;
+    else
+    {
+        if ((retVal = rtk_switch_portmask_P2L_get(pmask, pMirrored_rx_portmask)) != RT_ERR_OK)
+            return retVal;
+        pMirrored_rx_portmask->bits[0] |= 1<<source_port;
+    }
+
+     if (DISABLED == mirTx)
+        pMirrored_tx_portmask->bits[0]=0;
+    else
+    {
+        if ((retVal = rtk_switch_portmask_P2L_get(pmask, pMirrored_tx_portmask)) != RT_ERR_OK)
+            return retVal;
+        pMirrored_tx_portmask->bits[0] |= 1<<source_port;
+    }
+
+    return RT_ERR_OK;
+
+}

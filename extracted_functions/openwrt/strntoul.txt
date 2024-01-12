@@ -1,0 +1,12 @@
+static uint32_t strntoul(char *str, char **endptr, int base, size_t len) {
+  char *newstr;
+  uint32_t res = 0;
+
+  newstr = calloc(len + 1, sizeof(char));
+  if (newstr) {
+	strncpy(newstr, str, len); 
+	res = strtoul(newstr, endptr, base);
+	free(newstr);
+  }
+  return res;
+}

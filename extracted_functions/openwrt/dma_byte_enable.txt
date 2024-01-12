@@ -1,0 +1,7 @@
+static void dma_byte_enable(struct dc_ep_dev *dev, int enable)
+{
+	if (enable)
+		ep_wr32_mask(0, BIT(9), DMA_CTRL);
+	else
+		ep_wr32_mask(BIT(9), 0, DMA_CTRL);
+}

@@ -1,0 +1,8 @@
+static int rtl83xx_set_ageing_time(struct dsa_switch *ds, unsigned int msec)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	priv->r->set_ageing_time(msec);
+
+	return 0;
+}

@@ -1,0 +1,22 @@
+static u32 scr_read(int device, unsigned int sc_reg)
+{
+	/* Setup adr of required register. std regs start eight into async region */
+	*(sata_regs_base[device] + SATA_LINK_RD_ADDR) = sc_reg
+		* 4+ SATA_STD_ASYNC_REGS_OFF;
+
+	/* Wait for data to be available */
+	int loops = MAX_SRC_READ_LOOPS;
+	do {
+		if (*(sata_regs_base[device] + SATA_LINK_CONTROL) & 1UL) {
+			break;
+		}
+		udelay(10);
+	} while (--loops);
+
+	if (!loops) {
+		printf("scr_read() Timed out of wait for read completion\n");
+	}
+
+	/* Read the data from the async register */
+	return *(sata_regs_base[device] + SATA_LINK_DATA);
+}

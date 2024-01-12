@@ -1,0 +1,4 @@
+int putchar(c)
+{
+	return putc(c);
+}

@@ -1,0 +1,16 @@
+gettcid
+(id)
+     int id;
+{
+	struct t_preconf *tcp;
+
+	if (id <= 0 || id > t_getprecount()) {
+		return NULL;
+	}
+	tcp = t_getpreparam(id - 1);
+	sysconf.index = id;
+	sysconf.modulus = tcp->modulus;
+	sysconf.generator = tcp->generator;
+
+	return &sysconf;
+}

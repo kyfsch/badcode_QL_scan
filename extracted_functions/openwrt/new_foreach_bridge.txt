@@ -1,0 +1,21 @@
+static int new_foreach_bridge(int (*iterator)(const char *name, void *),
+			      void *arg)
+{
+	struct dirent **namelist;
+	int i, count = 0;
+
+	count = scandir(SYSFS_CLASS_NET, &namelist, isbridge, alphasort);
+	if (count < 0)
+		return -1;
+
+	for (i = 0; i < count; i++) {
+		if (iterator(namelist[i]->d_name, arg))
+			break;
+	}
+
+	for (i = 0; i < count; i++)
+		free(namelist[i]);
+	free(namelist);
+
+	return count;
+}

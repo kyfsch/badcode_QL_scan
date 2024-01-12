@@ -1,0 +1,4 @@
+void hostapd_ucode_free_iface(struct hostapd_iface *iface)
+{
+	wpa_ucode_registry_remove(iface_registry, iface->ucode.idx);
+}

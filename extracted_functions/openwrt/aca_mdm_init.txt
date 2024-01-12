@@ -1,0 +1,23 @@
+static void aca_mdm_init(struct dc_ep_priv *priv, struct aca_modem_param *mdm)
+{
+	struct aca_proj_param *param;
+
+	if (!mdm)
+		return;
+
+	param = &mdm->mdm_txout;
+	wr32(param->stat | priv->phymem, GNRC_TXOUT_TGT_STAT);
+	wr32(param->pd | priv->phymem, GNRC_TXOUT_TGT_PD_OFF);
+	wr32(param->acc_cnt | priv->phymem, GNRC_TXOUT_TGT_ACCM_CNT);
+
+	param = &mdm->mdm_rxin;
+	wr32(param->stat | priv->phymem, GNRC_RXIN_TGT_STAT);
+	wr32(param->pd | priv->phymem, GNRC_RXIN_TGT_PD_OFF);
+	wr32(param->acc_cnt | priv->phymem, GNRC_RXIN_TGT_ACCM_CNT);
+
+	param = &mdm->mdm_rxout;
+	wr32(param->stat | priv->phymem, GNRC_RXOUT_TGT_STAT);
+	wr32(param->pd | priv->phymem, GNRC_RXOUT_TGT_PD_OFF);
+	wr32(param->acc_cnt | priv->phymem, GNRC_RXOUT_TGT_ACCM_CNT);
+	dev_dbg(priv->dev, "aca mdm init done\n");
+}

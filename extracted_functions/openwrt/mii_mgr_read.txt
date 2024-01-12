@@ -1,0 +1,12 @@
+unsigned int mii_mgr_read(unsigned int phy_addr,unsigned int phy_register,unsigned int *read_data)
+{
+	struct mii_bus *bus = _gsw->bus;
+
+	mutex_lock_nested(&bus->mdio_lock, MDIO_MUTEX_NESTED);
+
+	*read_data = bus->read(bus, phy_addr, phy_register);
+
+	mutex_unlock(&bus->mdio_lock);
+
+	return 0;
+}

@@ -1,0 +1,13 @@
+static int rtl8214fc_get_eee(struct phy_device *phydev,
+			     struct ethtool_eee *e)
+{
+	int addr = phydev->mdio.addr;
+
+	pr_debug("In %s port %d, enabled %d\n", __func__, addr, e->eee_enabled);
+	if (rtl8214fc_media_is_fibre(phydev)) {
+		netdev_err(phydev->attached_dev, "Port %d configured for FIBRE", addr);
+		return -ENOTSUPP;
+	}
+
+	return rtl8218b_get_eee(phydev, e);
+}

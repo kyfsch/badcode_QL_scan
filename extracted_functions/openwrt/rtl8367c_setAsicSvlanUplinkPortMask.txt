@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicSvlanUplinkPortMask(rtk_uint32 portMask)
+{
+    return rtl8367c_setAsicReg(RTL8367C_REG_SVLAN_UPLINK_PORTMASK, portMask);
+}

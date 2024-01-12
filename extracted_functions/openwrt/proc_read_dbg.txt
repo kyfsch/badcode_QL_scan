@@ -1,0 +1,33 @@
+  static int proc_read_dbg(char *, char **, off_t, int, int *, void *);
+  static int proc_write_dbg(struct file *, const char *, unsigned long, void *);
+#endif
+
+/*
+ *  Proc Help Functions
+ */
+static INLINE int stricmp(const char *, const char *);
+#if defined(ENABLE_DBG_PROC) && ENABLE_DBG_PROC
+  static INLINE int strincmp(const char *, const char *, int);
+#endif
+static INLINE int ifx_ptm_version(char *);
+
+/*
+ *  Init & clean-up functions
+ */
+static INLINE void check_parameters(void);
+static INLINE int init_priv_data(void);
+static INLINE void clear_priv_data(void);
+static INLINE void init_tables(void);
+
+/*
+ *  Exteranl Function
+ */
+#if defined(CONFIG_IFXMIPS_DSL_CPE_MEI) || defined(CONFIG_IFXMIPS_DSL_CPE_MEI_MODULE)
+  extern int ifx_mei_atm_showtime_check(int *is_showtime, struct port_cell_info *port_cell, void **xdata_addr);
+#else
+  static inline int ifx_mei_atm_showtime_check(int *is_showtime, struct port_cell_info *port_cell, void **xdata_addr)
+  {
+    if ( is_showtime != NULL )
+        *is_showtime = 0;
+    return 0;
+  }

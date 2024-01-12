@@ -1,0 +1,11 @@
+static u16 get_bmt_index(struct bbmt *bmt)
+{
+	int i = 0;
+
+	while (bmt[i].block != BMT_TBL_DEF_VAL) {
+		if (bmt[i].mapped == BMT_MAPPED)
+			return i;
+		i++;
+	}
+	return 0;
+}

@@ -1,0 +1,6 @@
+instance_handle_sigchld(int sig)
+{
+	int pid = 0;
+	wait(&pid);
+	child_pending = false;
+}

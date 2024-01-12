@@ -1,0 +1,66 @@
+int AT91F_DataflashInit(void)
+{
+	int i;
+	int dfcode;
+	int Nb_device = 0;
+		
+	AT91F_SpiInit();
+
+	for (i = 0; i < CFG_MAX_DATAFLASH_BANKS; i++) {
+		dataflash_info[i].id = 0;
+		dataflash_info[i].Device.pages_number = 0;
+		dfcode = AT91F_DataflashProbe (cs[i][1], &dataflash_info[i].Desc);
+
+		switch (dfcode) {
+		case AT45DB161:
+			dataflash_info[i].Device.pages_number = 4096;
+			dataflash_info[i].Device.pages_size = 528;
+			dataflash_info[i].Device.page_offset = 10;
+			dataflash_info[i].Device.byte_mask = 0x300;
+			dataflash_info[i].Device.cs = cs[i][1];
+			dataflash_info[i].Desc.DataFlash_state = IDLE;
+			dataflash_info[i].logical_address = cs[i][0];
+			dataflash_info[i].id = dfcode;
+			Nb_device++;
+			break;
+
+		case AT45DB321:
+			dataflash_info[i].Device.pages_number = 8192;
+			dataflash_info[i].Device.pages_size = 528;
+			dataflash_info[i].Device.page_offset = 10;
+			dataflash_info[i].Device.byte_mask = 0x300;
+			dataflash_info[i].Device.cs = cs[i][1];
+			dataflash_info[i].Desc.DataFlash_state = IDLE;
+			dataflash_info[i].logical_address = cs[i][0];
+			dataflash_info[i].id = dfcode;
+			Nb_device++;
+			break;
+
+		case AT45DB642:
+			dataflash_info[i].Device.pages_number = 8192;
+			dataflash_info[i].Device.pages_size = 1056;
+			dataflash_info[i].Device.page_offset = 11;
+			dataflash_info[i].Device.byte_mask = 0x700;
+			dataflash_info[i].Device.cs = cs[i][1];
+			dataflash_info[i].Desc.DataFlash_state = IDLE;
+			dataflash_info[i].logical_address = cs[i][0];
+			dataflash_info[i].id = dfcode;
+			Nb_device++;
+			break;
+		case AT45DB128:
+			dataflash_info[i].Device.pages_number = 16384;
+			dataflash_info[i].Device.pages_size = 1056;
+			dataflash_info[i].Device.page_offset = 11;
+			dataflash_info[i].Device.byte_mask = 0x700;
+			dataflash_info[i].Device.cs = cs[i][1];
+			dataflash_info[i].Desc.DataFlash_state = IDLE;
+			dataflash_info[i].logical_address = cs[i][0];
+			dataflash_info[i].id = dfcode;
+			Nb_device++;
+			break;
+		default:
+			break;
+		}
+	}			
+	return (Nb_device);
+}

@@ -1,0 +1,4 @@
+static inline void rttm_set_period(void __iomem *base, unsigned int period)
+{
+	iowrite32(period, base + RTTM_DATA);
+}

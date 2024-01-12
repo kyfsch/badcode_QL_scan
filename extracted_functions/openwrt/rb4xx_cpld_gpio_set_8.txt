@@ -1,0 +1,6 @@
+static int rb4xx_cpld_gpio_set_8(struct rb4xx_cpld *cpld, u8 value)
+{
+	/* GPIO 8 uses dedicated high/low commands */
+	u8 cmd = CPLD_CMD_GPIO8_HIGH | !!(value);
+	return rb4xx_cpld_cmd(cpld, &cmd, 1);
+}

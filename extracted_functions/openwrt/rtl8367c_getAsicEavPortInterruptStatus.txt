@@ -1,0 +1,21 @@
+ret_t rtl8367c_getAsicEavPortInterruptStatus(rtk_uint32 port, rtk_uint32* pIms)
+{
+
+    if(port > RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+    if(port < 5)
+        return rtl8367c_getAsicRegBits(RTL8367C_EAV_PORT_CFG_REG(port), RTL8367C_PTP_INTR_MASK, pIms);
+    else if(port == 5)
+        return rtl8367c_getAsicRegBits(RTL8367C_REG_P5_EAV_CFG, RTL8367C_PTP_INTR_MASK, pIms);
+    else if(port == 6)
+        return rtl8367c_getAsicRegBits(RTL8367C_REG_P6_EAV_CFG, RTL8367C_PTP_INTR_MASK,pIms);
+    else if(port == 7)
+        return rtl8367c_getAsicRegBits(RTL8367C_REG_P7_EAV_CFG, RTL8367C_PTP_INTR_MASK,pIms);
+    else if(port == 8)
+        return rtl8367c_getAsicRegBits(RTL8367C_REG_P8_EAV_CFG, RTL8367C_PTP_INTR_MASK,pIms);
+    else if(port == 9)
+        return rtl8367c_getAsicRegBits(RTL8367C_REG_P9_EAV_CFG, RTL8367C_PTP_INTR_MASK,pIms);
+
+    return RT_ERR_OK;
+
+}

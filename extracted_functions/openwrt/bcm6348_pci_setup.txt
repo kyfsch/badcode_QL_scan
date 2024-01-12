@@ -1,0 +1,91 @@
+static void bcm6348_pci_setup(struct bcm6348_pci *priv)
+{
+	u32 val;
+
+	/* Setup local bus to PCI access (PCI memory) */
+	val = bcm6348_pci_mem_resource.start & MPI_L2P_BASE_MASK;
+	__raw_writel(val, priv->pci + MPI_L2PMEMBASE1_REG);
+	__raw_writel(~(resource_size(&bcm6348_pci_mem_resource) - 1),
+		     priv->pci + MPI_L2PMEMRANGE1_REG);
+	__raw_writel(val | MPI_L2PREMAP_ENABLED_MASK,
+		     priv->pci + MPI_L2PMEMREMAP1_REG);
+
+	/* Set Cardbus IDSEL (type 0 cfg access on primary bus for
+	 * this IDSEL will be done on Cardbus instead) */
+	val = __raw_readl(priv->pcmcia + PCMCIA_C1_REG);
+	val &= ~PCMCIA_C1_CBIDSEL_MASK;
+	val |= (CARDBUS_PCI_IDSEL << PCMCIA_C1_CBIDSEL_SHIFT);
+	__raw_writel(val, priv->pcmcia + PCMCIA_C1_REG);
+
+#ifdef CONFIG_CARDBUS
+	/* setup local bus to PCI access (Cardbus memory) */
+	val = bcm6348_cb_mem_resource.start & MPI_L2P_BASE_MASK;
+	__raw_writel(val, priv->pci + MPI_L2PMEMBASE2_REG);
+	__raw_writel(~(resource_size(&bcm6348_cb_mem_resource) - 1),
+		     priv->pci + MPI_L2PMEMRANGE2_REG);
+	val |= MPI_L2PREMAP_ENABLED_MASK | MPI_L2PREMAP_IS_CARDBUS_MASK;
+	__raw_writel(val, priv->pci + MPI_L2PMEMREMAP2_REG);
+#else
+	/* disable second access windows */
+	__raw_writel(0, priv->pci + MPI_L2PMEMREMAP2_REG);
+#endif
+
+	/* setup local bus to PCI access (IO memory), we have only 1
+	 * IO window for both PCI and cardbus, but it cannot handle
+	 * both at the same time, assume standard PCI for now, if
+	 * cardbus card has IO zone, PCI fixup will change window to
+	 * cardbus */
+	val = bcm6348_pci_io_resource.start & MPI_L2P_BASE_MASK;
+	__raw_writel(val, priv->pci + MPI_L2PIOBASE_REG);
+	__raw_writel(~(resource_size(&bcm6348_pci_io_resource) - 1),
+		     priv->pci + MPI_L2PIORANGE_REG);
+	__raw_writel(val | MPI_L2PREMAP_ENABLED_MASK,
+		     priv->pci + MPI_L2PIOREMAP_REG);
+
+	/* Enable PCI related GPIO pins */
+	__raw_writel(MPI_LOCBUSCTL_EN_PCI_GPIO_MASK,
+		     priv->pci + MPI_LOCBUSCTL_REG);
+
+	/* Setup PCI to local bus access, used by PCI device to target
+	 * local RAM while bus mastering */
+	bcm6348_int_cfg_writel(0, PCI_BASE_ADDRESS_3);
+	if (priv->remap)
+		val = MPI_SP0_REMAP_ENABLE_MASK;
+	else
+		val = 0;
+	__raw_writel(val, priv->pci + MPI_SP0_REMAP_REG);
+
+	bcm6348_int_cfg_writel(0, PCI_BASE_ADDRESS_4);
+	__raw_writel(0, priv->pci + MPI_SP1_REMAP_REG);
+
+	/* Setup sp0 range to local RAM size */
+	__raw_writel(~(memblock_phys_mem_size() - 1),
+		     priv->pci + MPI_SP0_RANGE_REG);
+	__raw_writel(0, priv->pci + MPI_SP1_RANGE_REG);
+
+	/* Change host bridge retry counter to infinite number of
+	 * retries, needed for some broadcom wifi cards with Silicon
+	 * Backplane bus where access to srom seems very slow */
+	val = bcm6348_int_cfg_readl(BCMPCI_REG_TIMERS);
+	val &= ~REG_TIMER_RETRY_MASK;
+	bcm6348_int_cfg_writel(val, BCMPCI_REG_TIMERS);
+
+	/* EEnable memory decoder and bus mastering */
+	val = bcm6348_int_cfg_readl(PCI_COMMAND);
+	val |= (PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER);
+	bcm6348_int_cfg_writel(val, PCI_COMMAND);
+
+	/* Enable read prefetching & disable byte swapping for bus
+	 * mastering transfers */
+	val = __raw_readl(priv->pci + MPI_PCIMODESEL_REG);
+	val &= ~MPI_PCIMODESEL_BAR1_NOSWAP_MASK;
+	val &= ~MPI_PCIMODESEL_BAR2_NOSWAP_MASK;
+	val &= ~MPI_PCIMODESEL_PREFETCH_MASK;
+	val |= (8 << MPI_PCIMODESEL_PREFETCH_SHIFT);
+	__raw_writel(val, priv->pci + MPI_PCIMODESEL_REG);
+
+	/* Enable pci interrupt */
+	val = __raw_readl(priv->pci + MPI_LOCINT_REG);
+	val |= MPI_LOCINT_MASK(MPI_LOCINT_EXT_PCI_INT);
+	__raw_writel(val, priv->pci + MPI_LOCINT_REG);
+}

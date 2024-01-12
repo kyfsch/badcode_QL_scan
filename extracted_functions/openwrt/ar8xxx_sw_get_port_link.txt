@@ -1,0 +1,8 @@
+ar8xxx_sw_get_port_link(struct switch_dev *dev, int port,
+			struct switch_port_link *link)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+
+	ar8216_read_port_link(priv, port, link);
+	return 0;
+}

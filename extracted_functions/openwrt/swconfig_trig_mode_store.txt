@@ -1,0 +1,42 @@
+static ssize_t swconfig_trig_mode_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t size)
+{
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+	struct swconfig_trig_data *trig_data = led_cdev->trigger_data;
+	char copybuf[128];
+	int new_mode = -1;
+	char *p, *token;
+
+	/* take a copy since we don't want to trash the inbound buffer when using strsep */
+	strncpy(copybuf, buf, sizeof(copybuf));
+	copybuf[sizeof(copybuf) - 1] = 0;
+	p = copybuf;
+
+	while ((token = strsep(&p, " \t\n")) != NULL) {
+		if (!*token)
+			continue;
+
+		if (new_mode < 0)
+			new_mode = 0;
+
+		if (!strcmp(token, "none"))
+			new_mode = 0;
+		else if (!strcmp(token, "tx"))
+			new_mode |= SWCONFIG_LED_MODE_TX;
+		else if (!strcmp(token, "rx"))
+			new_mode |= SWCONFIG_LED_MODE_RX;
+		else if (!strcmp(token, "link"))
+			new_mode |= SWCONFIG_LED_MODE_LINK;
+		else
+			return -EINVAL;
+	}
+
+	if (new_mode < 0)
+		return -EINVAL;
+
+	write_lock(&trig_data->lock);
+	trig_data->mode = (u8)new_mode;
+	write_unlock(&trig_data->lock);
+
+	return size;
+}

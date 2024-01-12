@@ -1,0 +1,8 @@
+uc_bpf_tc_detach(uc_vm_t *vm, size_t nargs)
+{
+	uc_value_t *ifname = uc_fn_arg(0);
+	uc_value_t *type = uc_fn_arg(1);
+	uc_value_t *prio = uc_fn_arg(2);
+
+	return uc_bpf_set_tc_hook(ifname, type, prio, -1);
+}

@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicUnknownMulticastTrapPriority(rtk_uint32 *pPriority)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_QOS_TRAP_PRIORITY_CTRL0_REG, RTL8367C_UNKNOWN_MC_PRIORTY_MASK, pPriority);
+}

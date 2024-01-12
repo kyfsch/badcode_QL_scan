@@ -1,0 +1,11 @@
+void rtk_hal_qos_set_queue_weight(struct ra_switch_ioctl_data *data)
+{
+	rtk_api_ret_t ret;
+	rtk_qos_queue_weights_t qweights;
+
+	ret = rtk_qos_schedulingQueue_get(data->port, &qweights);
+	qweights.weights[data->qos_queue_num] = data->qos_weight;
+	ret = rtk_qos_schedulingQueue_set(data->port, &qweights);
+	if (ret != 0)
+		printk("rtk_qos_schedulingQueue_set failed\n");
+}

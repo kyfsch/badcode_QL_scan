@@ -1,0 +1,6 @@
+static int __init mtdsplit_fit_init(void)
+{
+	register_mtd_parser(&uimage_parser);
+
+	return 0;
+}

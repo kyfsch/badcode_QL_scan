@@ -1,0 +1,27 @@
+static int ltq_ptm_remove(struct platform_device *pdev)
+{
+    int i;
+	ifx_mei_atm_showtime_enter = NULL;
+	ifx_mei_atm_showtime_exit  = NULL;
+
+
+    ifx_pp32_stop(0);
+
+    free_irq(PPE_MAILBOX_IGU1_INT, &g_ptm_priv_data);
+
+    for ( i = 0; i < ARRAY_SIZE(g_net_dev); i++ )
+        unregister_netdev(g_net_dev[i]);
+
+    for ( i = 0; i < ARRAY_SIZE(g_net_dev); i++ ) {
+        free_netdev(g_net_dev[i]);
+        g_net_dev[i] = NULL;
+    }
+
+    clear_tables();
+
+    ifx_ptm_uninit_chip();
+
+    clear_priv_data();
+
+    return 0;
+}

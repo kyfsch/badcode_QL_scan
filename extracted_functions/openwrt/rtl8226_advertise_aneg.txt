@@ -1,0 +1,39 @@
+static int rtl8226_advertise_aneg(struct phy_device *phydev)
+{
+	int ret = 0;
+	u32 v;
+
+	pr_info("In %s\n", __func__);
+
+	v = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_ADVERTISE);
+	if (v < 0)
+		goto out;
+
+	v |= ADVERTISE_10HALF;
+	v |= ADVERTISE_10FULL;
+	v |= ADVERTISE_100HALF;
+	v |= ADVERTISE_100FULL;
+
+	ret = phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_ADVERTISE, v);
+
+	/* Allow 1GBit */
+	v = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA412);
+	if (v < 0)
+		goto out;
+	v |= ADVERTISE_1000FULL;
+
+	ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, 0xA412, v);
+	if (ret < 0)
+		goto out;
+
+	/* Allow 2.5G */
+	v = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_10GBT_CTRL);
+	if (v < 0)
+		goto out;
+
+	v |= MDIO_AN_10GBT_CTRL_ADV2_5G;
+	ret = phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_10GBT_CTRL, v);
+
+out:
+	return ret;
+}

@@ -1,0 +1,40 @@
+static int rtl8226_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
+{
+	int port = phydev->mdio.addr;
+	u64 poll_state;
+	bool an_enabled;
+	u32 val;
+
+	pr_info("In %s, port %d, enabled %d\n", __func__, port, e->eee_enabled);
+
+	poll_state = disable_polling(port);
+
+	/* Remember aneg state */
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_CTRL1);
+	an_enabled = !!(val & MDIO_AN_CTRL1_ENABLE);
+
+	/* Setup 100/1000MBit */
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV);
+	if (e->eee_enabled)
+		val |= (MDIO_EEE_100TX | MDIO_EEE_1000T);
+	else
+		val &= (MDIO_EEE_100TX | MDIO_EEE_1000T);
+	phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, val);
+
+	/* Setup 2.5GBit */
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV2);
+	if (e->eee_enabled)
+		val |= MDIO_EEE_2_5GT;
+	else
+		val &= MDIO_EEE_2_5GT;
+	phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV2, val);
+
+	/* RestartAutoNegotiation */
+	val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA400);
+	val |= MDIO_AN_CTRL1_RESTART;
+	phy_write_mmd(phydev, MDIO_MMD_VEND2, 0xA400, val);
+
+	resume_polling(poll_state);
+
+	return 0;
+}

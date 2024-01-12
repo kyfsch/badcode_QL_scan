@@ -1,0 +1,15 @@
+int quality(const struct iwinfo_ops *iw, const char *ifname)
+{
+	int qual;
+
+	if ( ! iw ) return -1;
+
+	if (qual_max < 1)
+		if (iw->quality_max(ifname, &qual_max))
+			return -1;
+
+	if (iw->quality(ifname, &qual))
+		return -1;
+
+	return ( qual * 100 ) / qual_max ;
+}

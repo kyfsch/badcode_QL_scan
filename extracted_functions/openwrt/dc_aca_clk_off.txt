@@ -1,0 +1,4 @@
+static void dc_aca_clk_off(struct dc_ep_priv *priv)
+{
+	dc_ep_clk_off(priv, PMU_ADMA);
+}

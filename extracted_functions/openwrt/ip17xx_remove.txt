@@ -1,0 +1,8 @@
+static void ip17xx_remove(struct phy_device *pdev)
+{
+	struct ip17xx_state *state = pdev->priv;
+
+	if (state->registered)
+		unregister_switch(&state->dev);
+	kfree(state);
+}

@@ -1,0 +1,14 @@
+DSL_BSP_DriverHandleGet (int maj, int num)
+{
+	DSL_DEV_Device_t *pDev;
+
+	if (num > BSP_MAX_DEVICES)
+		return NULL;
+
+	pDev = &dsl_devices[num];
+	if (!try_module_get(pDev->owner))
+		return NULL;
+
+	pDev->nInUse++;
+	return pDev;
+}

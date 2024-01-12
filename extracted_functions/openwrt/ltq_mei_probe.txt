@@ -1,0 +1,25 @@
+static int ltq_mei_probe(struct platform_device *pdev)
+{
+	int i = 0;
+	static struct class *dsl_class;
+
+	pr_info("IFX MEI Version %ld.%02ld.%02ld\n", bsp_mei_version.major, bsp_mei_version.minor, bsp_mei_version.revision);
+
+	for (i = 0; i < BSP_MAX_DEVICES; i++) {
+		if (IFX_MEI_InitDevice (i) != 0) {
+			IFX_MEI_EMSG("Init device fail!\n");
+			return -EIO;
+		}
+		IFX_MEI_InitDevNode (i);
+	}
+		for (i = 0; i <= DSL_BSP_CB_LAST ; i++)
+		dsl_bsp_event_callback[i].function = NULL;
+
+#ifdef CONFIG_LTQ_MEI_FW_LOOPBACK
+	IFX_MEI_DMSG("Start loopback test...\n");
+	DFE_Loopback_Test ();
+#endif
+	dsl_class = class_create(THIS_MODULE, "ifx_mei");
+	device_create(dsl_class, NULL, MKDEV(MEI_MAJOR, 0), NULL, "ifx_mei");
+	return 0;
+}

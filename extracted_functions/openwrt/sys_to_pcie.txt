@@ -1,0 +1,4 @@
+static inline struct oxnas_pcie *sys_to_pcie(struct pci_sys_data *sys)
+{
+	return sys->private_data;
+}

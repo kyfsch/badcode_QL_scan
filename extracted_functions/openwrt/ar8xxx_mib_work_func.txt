@@ -1,0 +1,21 @@
+ar8xxx_mib_work_func(struct work_struct *work)
+{
+	struct ar8xxx_priv *priv;
+	int err, i;
+
+	priv = container_of(work, struct ar8xxx_priv, mib_work.work);
+
+	mutex_lock(&priv->mib_lock);
+
+	err = ar8xxx_mib_capture(priv);
+	if (err)
+		goto next_attempt;
+
+	for (i = 0; i < priv->dev.ports; i++)
+		ar8xxx_mib_fetch_port_stat(priv, i, false);
+
+next_attempt:
+	mutex_unlock(&priv->mib_lock);
+	schedule_delayed_work(&priv->mib_work,
+			      msecs_to_jiffies(priv->mib_poll_interval));
+}

@@ -1,0 +1,15 @@
+__hostapd_bss_mgmt_enable(struct hostapd_data *hapd, uint32_t flags)
+{
+	bool update = false;
+	int i;
+
+	for (i = 0; i < __BSS_MGMT_EN_MAX; i++) {
+		if (!(flags & (1 << i)))
+			continue;
+
+		update |= __hostapd_bss_mgmt_enable_f(hapd, i);
+	}
+
+	if (update)
+		ieee802_11_update_beacons(hapd->iface);
+}

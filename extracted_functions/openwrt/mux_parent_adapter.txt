@@ -1,0 +1,28 @@
+static struct device_node *mux_parent_adapter(struct device *dev, struct rtl9300_mux *mux)
+{
+	struct device_node *node = dev->of_node;
+	struct device_node *parent_np;
+	struct i2c_adapter *parent;
+
+	parent_np = of_parse_phandle(node, "i2c-parent", 0);
+	if (!parent_np) {
+		dev_err(dev, "Cannot parse i2c-parent\n");
+		return ERR_PTR(-ENODEV);
+	}
+	parent = of_find_i2c_adapter_by_node(parent_np);
+	of_node_put(parent_np);
+	if (!parent)
+		return ERR_PTR(-EPROBE_DEFER);
+
+	if (!(of_device_is_compatible(parent_np, "realtek,rtl9300-i2c") ||
+	    of_device_is_compatible(parent_np, "realtek,rtl9310-i2c"))){
+		dev_err(dev, "I2C parent not an RTL9300 I2C controller\n");
+		return ERR_PTR(-ENODEV);
+	}
+
+	mux->parent = parent;
+	mux->i2c = (struct rtl9300_i2c *)i2c_get_adapdata(parent);
+	mux->base = mux->i2c->base;
+
+	return parent_np;
+}

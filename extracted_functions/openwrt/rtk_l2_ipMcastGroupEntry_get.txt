@@ -1,0 +1,37 @@
+rtk_api_ret_t rtk_l2_ipMcastGroupEntry_get(ipaddr_t ip_addr, rtk_uint32 vid, rtk_portmask_t *pPortmask)
+{
+    rtk_int32       index;
+    ipaddr_t        group_addr;
+    rtk_uint32      group_vid;
+    rtk_uint32      valid;
+    rtk_uint32      pmask;
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if((ip_addr & 0xF0000000) != 0xE0000000)
+        return RT_ERR_INPUT;
+
+    if (vid > RTL8367C_VIDMAX)
+        return RT_ERR_L2_VID;
+
+    if(NULL == pPortmask)
+        return RT_ERR_NULL_POINTER;
+
+    for(index = 0; index <= RTL8367C_LUT_IPMCGRP_TABLE_MAX; index++)
+    {
+        if ((retVal = rtl8367c_getAsicLutIPMCGroup((rtk_uint32)index, &group_addr, &group_vid, &pmask, &valid))!=RT_ERR_OK)
+            return retVal;
+
+        if( (valid == ENABLED) && (group_addr == ip_addr) && (group_vid == vid) )
+        {
+            if ((retVal = rtk_switch_portmask_P2L_get(pmask, pPortmask))!=RT_ERR_OK)
+                return retVal;
+
+            return RT_ERR_OK;
+        }
+    }
+
+    return RT_ERR_FAILED;
+}

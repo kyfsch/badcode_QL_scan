@@ -1,0 +1,5 @@
+static void _deu_arc4_ecb(void *ctx, uint8_t *dst, const uint8_t *src,
+                uint8_t *iv, size_t nbytes, int encdec, int inplace)
+{
+        _deu_arc4 (ctx, dst, src, NULL, nbytes, encdec, 0);
+}

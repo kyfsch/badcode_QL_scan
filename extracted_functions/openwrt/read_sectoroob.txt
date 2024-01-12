@@ -1,0 +1,14 @@
+static int read_sectoroob(off_t pos)
+{
+	struct mtd_oob_buf oob = {
+		.start = pos,
+		.length = TFFS_SECTOR_OOB_SIZE,
+		.ptr = oobbuf
+	};
+
+	if (ioctl(mtdfd, MEMREADOOB, &oob) < 0)	{
+		return -1;
+	}
+
+	return 0;
+}

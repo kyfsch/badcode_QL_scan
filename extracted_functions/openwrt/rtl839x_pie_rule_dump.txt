@@ -1,0 +1,9 @@
+void rtl839x_pie_rule_dump(struct  pie_rule *pr)
+{
+	pr_info("Drop: %d, fwd: %d, ovid: %d, ivid: %d, flt: %d, log: %d, rmk: %d, meter: %d tagst: %d, mir: %d, nopri: %d, cpupri: %d, otpid: %d, itpid: %d, shape: %d\n",
+		pr->drop, pr->fwd_sel, pr->ovid_sel, pr->ivid_sel, pr->flt_sel, pr->log_sel, pr->rmk_sel, pr->log_sel, pr->tagst_sel, pr->mir_sel, pr->nopri_sel,
+		pr->cpupri_sel, pr->otpid_sel, pr->itpid_sel, pr->shaper_sel);
+	if (pr->fwd_sel)
+		pr_info("FWD: %08x\n", pr->fwd_data);
+	pr_info("TID: %x, %x\n", pr->tid, pr->tid_m);
+}

@@ -1,0 +1,33 @@
+rtl8306_read_status(struct phy_device *pdev)
+{
+	struct rtl_priv *priv = pdev->priv;
+	struct switch_dev *dev = &priv->dev;
+
+	if (pdev->mdio.addr == 4) {
+		/* WAN */
+		pdev->speed = rtl_get(dev, RTL_PORT_REG(4, SPEED)) ? SPEED_100 : SPEED_10;
+		pdev->duplex = rtl_get(dev, RTL_PORT_REG(4, DUPLEX)) ? DUPLEX_FULL : DUPLEX_HALF;
+		pdev->link = !!rtl_get(dev, RTL_PORT_REG(4, LINK));
+	} else {
+		/* LAN */
+		pdev->speed = SPEED_100;
+		pdev->duplex = DUPLEX_FULL;
+		pdev->link = 1;
+	}
+
+	/*
+	 * Bypass generic PHY status read,
+	 * it doesn't work with this switch
+	 */
+	if (pdev->link) {
+		pdev->state = PHY_RUNNING;
+		netif_carrier_on(pdev->attached_dev);
+		pdev->adjust_link(pdev->attached_dev);
+	} else {
+		pdev->state = PHY_NOLINK;
+		netif_carrier_off(pdev->attached_dev);
+		pdev->adjust_link(pdev->attached_dev);
+	}
+
+	return 0;
+}

@@ -1,0 +1,42 @@
+static int fe_alloc_tx(struct fe_priv *priv)
+{
+	int i;
+	struct fe_tx_ring *ring = &priv->tx_ring;
+
+	ring->tx_free_idx = 0;
+	ring->tx_next_idx = 0;
+	ring->tx_thresh = max((unsigned long)ring->tx_ring_size >> 2,
+			      MAX_SKB_FRAGS);
+
+	ring->tx_buf = kcalloc(ring->tx_ring_size, sizeof(*ring->tx_buf),
+			GFP_KERNEL);
+	if (!ring->tx_buf)
+		goto no_tx_mem;
+
+	ring->tx_dma = dma_alloc_coherent(priv->dev,
+			ring->tx_ring_size * sizeof(*ring->tx_dma),
+			&ring->tx_phys,
+			GFP_ATOMIC | __GFP_ZERO);
+	if (!ring->tx_dma)
+		goto no_tx_mem;
+
+	for (i = 0; i < ring->tx_ring_size; i++) {
+		if (priv->soc->tx_dma)
+			priv->soc->tx_dma(&ring->tx_dma[i]);
+		ring->tx_dma[i].txd2 = TX_DMA_DESP2_DEF;
+	}
+	/* make sure that all changes to the dma ring are flushed before we
+	 * continue
+	 */
+	wmb();
+
+	fe_reg_w32(ring->tx_phys, FE_REG_TX_BASE_PTR0);
+	fe_reg_w32(ring->tx_ring_size, FE_REG_TX_MAX_CNT0);
+	fe_reg_w32(0, FE_REG_TX_CTX_IDX0);
+	fe_reg_w32(FE_PST_DTX_IDX0, FE_REG_PDMA_RST_CFG);
+
+	return 0;
+
+no_tx_mem:
+	return -ENOMEM;
+}

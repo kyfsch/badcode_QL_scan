@@ -1,0 +1,19 @@
+static void rtl931x_sds_rx_rst(u32 sds)
+{
+	u32 asds = rtl931x_get_analog_sds(sds);
+
+	if (sds < 2)
+		return;
+
+	rtl931x_write_sds_phy(asds, 0x2e, 0x12, 0x2740);
+	rtl931x_write_sds_phy(asds, 0x2f, 0x0, 0x0);
+	rtl931x_write_sds_phy(asds, 0x2f, 0x2, 0x2010);
+	rtl931x_write_sds_phy(asds, 0x20, 0x0, 0xc10);
+
+	rtl931x_write_sds_phy(asds, 0x2e, 0x12, 0x27c0);
+	rtl931x_write_sds_phy(asds, 0x2f, 0x0, 0xc000);
+	rtl931x_write_sds_phy(asds, 0x2f, 0x2, 0x6010);
+	rtl931x_write_sds_phy(asds, 0x20, 0x0, 0xc30);
+
+	mdelay(50);
+}

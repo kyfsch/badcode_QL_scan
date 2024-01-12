@@ -1,0 +1,10 @@
+void dc_aca_info_init(struct dc_ep_priv *priv)
+{
+	struct dc_aca *aca = to_aca(priv);
+
+	aca->initialized = false;
+	spin_lock_init(&aca->clk_lock);
+	spin_lock_init(&aca->rcu_lock);
+	mutex_init(&aca->pin_lock);
+	aca->max_gpio = aca_max_gpio(priv);
+}

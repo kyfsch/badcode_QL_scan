@@ -1,0 +1,15 @@
+static int msdc_check_busy(struct mmc_host *mmc, struct msdc_host *host)
+{
+	u32 err = 0;
+	u32 status = 0;
+
+	do {
+		err = msdc_get_card_status(mmc, host, &status);
+		if (err)
+			return err;
+		/* need cmd12? */
+		ERR_MSG("cmd<13> resp<0x%x>", status);
+	} while (R1_CURRENT_STATE(status) == 7);
+
+	return err;
+}

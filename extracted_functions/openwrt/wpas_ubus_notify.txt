@@ -1,0 +1,69 @@
+void wpas_ubus_notify(struct wpa_supplicant *wpa_s, const struct wps_credential *cred)
+{
+	u16 auth_type;
+	char *ifname, *encryption, *ssid, *key;
+	size_t ifname_len;
+
+	if (!cred)
+		return;
+
+	auth_type = cred->auth_type;
+
+	if (auth_type == (WPS_AUTH_WPAPSK | WPS_AUTH_WPA2PSK))
+		auth_type = WPS_AUTH_WPA2PSK;
+
+	if (auth_type != WPS_AUTH_OPEN &&
+	    auth_type != WPS_AUTH_WPAPSK &&
+	    auth_type != WPS_AUTH_WPA2PSK) {
+		wpa_printf(MSG_DEBUG, "WPS: Ignored credentials for "
+			   "unsupported authentication type 0x%x",
+			   auth_type);
+		return;
+	}
+
+	if (auth_type == WPS_AUTH_WPAPSK || auth_type == WPS_AUTH_WPA2PSK) {
+		if (cred->key_len < 8 || cred->key_len > 2 * PMK_LEN) {
+			wpa_printf(MSG_ERROR, "WPS: Reject PSK credential with "
+				   "invalid Network Key length %lu",
+				   (unsigned long) cred->key_len);
+			return;
+		}
+	}
+
+	blob_buf_init(&b, 0);
+
+	ifname_len = strlen(wpa_s->ifname);
+	ifname = blobmsg_alloc_string_buffer(&b, "ifname", ifname_len + 1);
+	memcpy(ifname, wpa_s->ifname, ifname_len + 1);
+	ifname[ifname_len] = '\0';
+	blobmsg_add_string_buffer(&b);
+
+	switch (auth_type) {
+		case WPS_AUTH_WPA2PSK:
+			encryption = "psk2";
+			break;
+		case WPS_AUTH_WPAPSK:
+			encryption = "psk";
+			break;
+		default:
+			encryption = "none";
+			break;
+	}
+
+	blobmsg_add_string(&b, "encryption", encryption);
+
+	ssid = blobmsg_alloc_string_buffer(&b, "ssid", cred->ssid_len + 1);
+	memcpy(ssid, cred->ssid, cred->ssid_len);
+	ssid[cred->ssid_len] = '\0';
+	blobmsg_add_string_buffer(&b);
+
+	if (cred->key_len > 0) {
+		key = blobmsg_alloc_string_buffer(&b, "key", cred->key_len + 1);
+		memcpy(key, cred->key, cred->key_len);
+		key[cred->key_len] = '\0';
+		blobmsg_add_string_buffer(&b);
+	}
+
+//	ubus_notify(ctx, &wpa_s->ubus.obj, "wps_credentials", b.head, -1);
+	ubus_send_event(ctx, "wps_credentials", b.head);
+}

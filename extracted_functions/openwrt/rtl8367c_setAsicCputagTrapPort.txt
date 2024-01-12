@@ -1,0 +1,17 @@
+ret_t rtl8367c_setAsicCputagTrapPort(rtk_uint32 port)
+{
+    ret_t retVal;
+
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_CPU_CTRL, RTL8367C_CPU_TRAP_PORT_MASK, port & 7);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_CPU_CTRL, RTL8367C_CPU_TRAP_PORT_EXT_MASK, (port>>3) & 1);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

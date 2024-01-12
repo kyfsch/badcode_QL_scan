@@ -1,0 +1,7 @@
+rtk_uint32 rtk_switch_maxLutAddrNumber_get(void)
+{
+    if(init_state != INIT_COMPLETED)
+        return 0x00;
+
+    return (halCtrl->max_lut_addr_num);
+}

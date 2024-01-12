@@ -1,0 +1,32 @@
+rtk_api_ret_t rtk_rate_igrBandwidthCtrlRate_set(rtk_port_t port, rtk_rate_t rate, rtk_enable_t ifg_include, rtk_enable_t fc_enable)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if(ifg_include >= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if(fc_enable >= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if(rtk_switch_isHsgPort(port) == RT_ERR_OK)
+    {
+        if ((rate > RTL8367C_QOS_RATE_INPUT_MAX_HSG) || (rate < RTL8367C_QOS_RATE_INPUT_MIN))
+            return RT_ERR_QOS_EBW_RATE ;
+    }
+    else
+    {
+        if ((rate > RTL8367C_QOS_RATE_INPUT_MAX) || (rate < RTL8367C_QOS_RATE_INPUT_MIN))
+            return RT_ERR_QOS_EBW_RATE ;
+    }
+
+    if ((retVal = rtl8367c_setAsicPortIngressBandwidth(rtk_switch_port_L2P_get(port), rate>>3, ifg_include,fc_enable)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

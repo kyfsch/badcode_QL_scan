@@ -1,0 +1,76 @@
+swconfig_set_attr(struct sk_buff *skb, struct genl_info *info)
+{
+	const struct switch_attr *attr;
+	struct switch_dev *dev;
+	struct switch_val val;
+	int err = -EINVAL;
+
+	if (!capable(CAP_NET_ADMIN))
+		return -EPERM;
+
+	dev = swconfig_get_dev(info);
+	if (!dev)
+		return -EINVAL;
+
+	memset(&val, 0, sizeof(val));
+	attr = swconfig_lookup_attr(dev, info, &val);
+	if (!attr || !attr->set)
+		goto error;
+
+	val.attr = attr;
+	switch (attr->type) {
+	case SWITCH_TYPE_NOVAL:
+		break;
+	case SWITCH_TYPE_INT:
+		if (!info->attrs[SWITCH_ATTR_OP_VALUE_INT])
+			goto error;
+		val.value.i =
+			nla_get_u32(info->attrs[SWITCH_ATTR_OP_VALUE_INT]);
+		break;
+	case SWITCH_TYPE_STRING:
+		if (!info->attrs[SWITCH_ATTR_OP_VALUE_STR])
+			goto error;
+		val.value.s =
+			nla_data(info->attrs[SWITCH_ATTR_OP_VALUE_STR]);
+		break;
+	case SWITCH_TYPE_PORTS:
+		val.value.ports = dev->portbuf;
+		memset(dev->portbuf, 0,
+			sizeof(struct switch_port) * dev->ports);
+
+		/* TODO: implement multipart? */
+		if (info->attrs[SWITCH_ATTR_OP_VALUE_PORTS]) {
+			err = swconfig_parse_ports(skb,
+				info->attrs[SWITCH_ATTR_OP_VALUE_PORTS],
+				&val, dev->ports);
+			if (err < 0)
+				goto error;
+		} else {
+			val.len = 0;
+			err = 0;
+		}
+		break;
+	case SWITCH_TYPE_LINK:
+		val.value.link = &dev->linkbuf;
+		memset(&dev->linkbuf, 0, sizeof(struct switch_port_link));
+
+		if (info->attrs[SWITCH_ATTR_OP_VALUE_LINK]) {
+			err = swconfig_parse_link(skb,
+						  info->attrs[SWITCH_ATTR_OP_VALUE_LINK],
+						  val.value.link);
+			if (err < 0)
+				goto error;
+		} else {
+			val.len = 0;
+			err = 0;
+		}
+		break;
+	default:
+		goto error;
+	}
+
+	err = attr->set(dev, attr, &val);
+error:
+	swconfig_put_dev(dev);
+	return err;
+}

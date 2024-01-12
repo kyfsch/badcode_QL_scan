@@ -1,0 +1,23 @@
+uc_bpf_open_map(uc_vm_t *vm, size_t nargs)
+{
+	struct bpf_map_info info;
+	uc_value_t *path = uc_fn_arg(0);
+	__u32 len = sizeof(info);
+	int err;
+	int fd;
+
+	if (ucv_type(path) != UC_STRING)
+		err_return(EINVAL, "module path");
+
+	fd = bpf_obj_get(ucv_string_get(path));
+	if (fd < 0)
+		err_return(errno, NULL);
+
+	err = bpf_obj_get_info_by_fd(fd, &info, &len);
+	if (err) {
+		close(fd);
+		err_return(errno, NULL);
+	}
+
+	return uc_bpf_map_create(fd, info.key_size, info.value_size, true);
+}

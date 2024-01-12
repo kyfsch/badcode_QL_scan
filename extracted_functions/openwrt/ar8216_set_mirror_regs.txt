@@ -1,0 +1,35 @@
+ar8216_set_mirror_regs(struct ar8xxx_priv *priv)
+{
+	int port;
+
+	/* reset all mirror registers */
+	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CPUPORT,
+		   AR8216_GLOBAL_CPUPORT_MIRROR_PORT,
+		   (0xF << AR8216_GLOBAL_CPUPORT_MIRROR_PORT_S));
+	for (port = 0; port < AR8216_NUM_PORTS; port++) {
+		ar8xxx_reg_clear(priv, AR8216_REG_PORT_CTRL(port),
+			   AR8216_PORT_CTRL_MIRROR_RX);
+
+		ar8xxx_reg_clear(priv, AR8216_REG_PORT_CTRL(port),
+			   AR8216_PORT_CTRL_MIRROR_TX);
+	}
+
+	/* now enable mirroring if necessary */
+	if (priv->source_port >= AR8216_NUM_PORTS ||
+	    priv->monitor_port >= AR8216_NUM_PORTS ||
+	    priv->source_port == priv->monitor_port) {
+		return;
+	}
+
+	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CPUPORT,
+		   AR8216_GLOBAL_CPUPORT_MIRROR_PORT,
+		   (priv->monitor_port << AR8216_GLOBAL_CPUPORT_MIRROR_PORT_S));
+
+	if (priv->mirror_rx)
+		ar8xxx_reg_set(priv, AR8216_REG_PORT_CTRL(priv->source_port),
+			   AR8216_PORT_CTRL_MIRROR_RX);
+
+	if (priv->mirror_tx)
+		ar8xxx_reg_set(priv, AR8216_REG_PORT_CTRL(priv->source_port),
+			   AR8216_PORT_CTRL_MIRROR_TX);
+}

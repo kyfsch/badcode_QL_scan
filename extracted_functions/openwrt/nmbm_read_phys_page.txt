@@ -1,0 +1,30 @@
+static int nmbm_read_phys_page(struct nmbm_instance *ni, uint64_t addr,
+			       void *data, void *oob)
+{
+	int tries, ret;
+
+	for (tries = 0; tries < NMBM_TRY_COUNT; tries++) {
+		struct mtd_oob_ops ops = {
+			.mode = MTD_OPS_PLACE_OOB,
+			.oobbuf = oob,
+			.datbuf = data,
+		};
+
+		if (data)
+			ops.len = bmtd.pg_size;
+		if (oob)
+			ops.ooblen = mtd_oobavail(bmtd.mtd, &ops);
+
+		ret = bmtd._read_oob(bmtd.mtd, addr, &ops);
+		if (ret == -EUCLEAN)
+			return min_t(u32, bmtd.mtd->bitflip_threshold + 1,
+				     bmtd.mtd->ecc_strength);
+		if (ret >= 0)
+			return 0;
+	}
+
+	if (ret != -EBADMSG)
+		nlog_err(ni, "Page read failed at address 0x%08llx\n", addr);
+
+	return ret;
+}

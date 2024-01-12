@@ -1,0 +1,17 @@
+static int __init ar8216_init(void)
+{
+	int ret;
+
+	ret = phy_drivers_register(ar8xxx_phy_driver,
+				   ARRAY_SIZE(ar8xxx_phy_driver),
+				   THIS_MODULE);
+	if (ret)
+		return ret;
+
+	ret = mdio_driver_register(&ar8xxx_mdio_driver);
+	if (ret)
+		phy_drivers_unregister(ar8xxx_phy_driver,
+				       ARRAY_SIZE(ar8xxx_phy_driver));
+
+	return ret;
+}

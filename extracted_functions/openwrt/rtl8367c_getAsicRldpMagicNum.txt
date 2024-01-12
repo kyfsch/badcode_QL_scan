@@ -1,0 +1,21 @@
+ret_t rtl8367c_getAsicRldpMagicNum(ether_addr_t *pSeed)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+    rtk_uint16 *accessPtr;
+    rtk_uint32 i;
+
+    accessPtr = (rtk_uint16*)pSeed;
+
+    for(i = 0; i < 3; i++)
+    {
+        retVal = rtl8367c_getAsicReg(RTL8367C_RLDP_MAGIC_NUM_REG_BASE + i, &regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        *accessPtr = regData;
+        accessPtr++;
+    }
+
+    return retVal;
+}

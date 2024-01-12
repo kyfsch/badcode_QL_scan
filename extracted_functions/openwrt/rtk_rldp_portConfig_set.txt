@@ -1,0 +1,35 @@
+rtk_api_ret_t rtk_rldp_portConfig_set(rtk_port_t port, rtk_rldp_portConfig_t *pPortConfig)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 pmsk;
+    rtk_uint32 phy_port;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if (pPortConfig->tx_enable>= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    phy_port = rtk_switch_port_L2P_get(port);
+
+    if ((retVal = rtl8367c_getAsicRldpTxPortmask(&pmsk))!=RT_ERR_OK)
+        return retVal;
+
+    if (pPortConfig->tx_enable)
+    {
+         pmsk |=(1<<phy_port);
+    }
+    else
+    {
+         pmsk &= ~(1<<phy_port);
+    }
+
+    if ((retVal = rtl8367c_setAsicRldpTxPortmask(pmsk))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+
+} /* end of rtk_rldp_portConfig_set */

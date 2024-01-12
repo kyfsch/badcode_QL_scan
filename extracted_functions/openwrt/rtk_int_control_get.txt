@@ -1,0 +1,21 @@
+rtk_api_ret_t rtk_int_control_get(rtk_int_type_t type, rtk_enable_t *pEnable)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 mask;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pEnable)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicInterruptMask(&mask)) != RT_ERR_OK)
+        return retVal;
+
+    if (0 == (mask&(1<<type)))
+        *pEnable=DISABLED;
+    else
+        *pEnable=ENABLED;
+
+    return RT_ERR_OK;
+}

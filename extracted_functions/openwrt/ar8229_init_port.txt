@@ -1,0 +1,4 @@
+ar8229_init_port(struct ar8xxx_priv *priv, int port)
+{
+	__ar8216_init_port(priv, port, true, true);
+}

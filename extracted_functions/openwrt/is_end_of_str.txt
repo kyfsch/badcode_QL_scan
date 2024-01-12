@@ -1,0 +1,4 @@
+static bool is_end_of_str(char c)
+{
+	return !c;
+}

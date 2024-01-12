@@ -1,0 +1,24 @@
+rtk_api_ret_t rtk_filter_vidrange_set(rtk_uint32 index, rtk_filter_vidrange_t type, rtk_uint32 upperVid, rtk_uint32 lowerVid)
+{
+    rtk_api_ret_t ret;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(index > RTL8367C_ACLRANGEMAX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if(type >= VIDRANGE_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if(lowerVid > upperVid)
+        return RT_ERR_INPUT;
+
+    if( (upperVid > RTL8367C_VIDMAX) || (lowerVid > RTL8367C_VIDMAX))
+        return RT_ERR_OUT_OF_RANGE;
+
+    if((ret = rtl8367c_setAsicAclVidRange(index, type, upperVid, lowerVid)) != RT_ERR_OK)
+       return ret;
+
+    return RT_ERR_OK;
+}

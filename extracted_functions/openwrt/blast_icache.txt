@@ -1,0 +1,10 @@
+static __inline__ void blast_icache(unsigned long size, unsigned long lsize)
+{
+	unsigned long start = KSEG0;
+	unsigned long end = (start + size);
+
+	while(start < end) {
+		cache_unroll(start,Index_Invalidate_I);
+		start += lsize;
+	}
+}

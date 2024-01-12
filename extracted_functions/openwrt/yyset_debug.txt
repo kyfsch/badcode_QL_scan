@@ -1,0 +1,73 @@
+void yyset_debug ( int debug_flag  );
+
+YY_EXTRA_TYPE yyget_extra ( void );
+
+void yyset_extra ( YY_EXTRA_TYPE user_defined  );
+
+FILE *yyget_in ( void );
+
+void yyset_in  ( FILE * _in_str  );
+
+FILE *yyget_out ( void );
+
+void yyset_out  ( FILE * _out_str  );
+
+			int yyget_leng ( void );
+
+char *yyget_text ( void );
+
+int yyget_lineno ( void );
+
+void yyset_lineno ( int _line_number  );
+
+/* Macros after this point can all be overridden by user definitions in
+ * section 1.
+ */
+
+#ifndef YY_SKIP_YYWRAP
+#ifdef __cplusplus
+extern "C" int yywrap ( void );
+#else
+extern int yywrap ( void );
+#endif
+#endif
+
+#ifndef YY_NO_UNPUT
+    
+    static void yyunput ( int c, char *buf_ptr  );
+    
+#endif
+
+#ifndef yytext_ptr
+static void yy_flex_strncpy ( char *, const char *, int );
+#endif
+
+#ifdef YY_NEED_STRLEN
+static int yy_flex_strlen ( const char * );
+#endif
+
+#ifndef YY_NO_INPUT
+#ifdef __cplusplus
+static int yyinput ( void );
+#else
+static int input ( void );
+#endif
+
+#endif
+
+/* Amount of stuff to slurp up with each read. */
+#ifndef YY_READ_BUF_SIZE
+#ifdef __ia64__
+/* On IA-64, the buffer size is 16k, not 8k */
+#define YY_READ_BUF_SIZE 16384
+#else
+#define YY_READ_BUF_SIZE 8192
+#endif /* __ia64__ */
+#endif
+
+/* Copy whatever the last rule matched to the standard output. */
+#ifndef ECHO
+/* This used to be an fputs(), but since the string might contain NUL's,
+ * we now use fwrite().
+ */
+#define ECHO do { if (fwrite( yytext, (size_t) yyleng, 1, yyout )) {} } while (0)

@@ -1,0 +1,32 @@
+int rtk_hal_set_vlan(struct ra_switch_ioctl_data *data)
+{
+	rtk_vlan_cfg_t vlan;
+	rtk_api_ret_t ret;
+	int i;
+
+	/* clear vlan entry first */
+	memset(&vlan, 0x00, sizeof(rtk_vlan_cfg_t));
+	RTK_PORTMASK_CLEAR(vlan.mbr);
+	RTK_PORTMASK_CLEAR(vlan.untag);
+	rtk_vlan_set(data->vid, &vlan);
+
+	memset(&vlan, 0x00, sizeof(rtk_vlan_cfg_t));
+	for (i = 0; i < 5; i++) {
+		if (data->port_map & (1 << i)) {
+			RTK_PORTMASK_PORT_SET(vlan.mbr, i);
+			RTK_PORTMASK_PORT_SET(vlan.untag, i);
+			rtk_vlan_portPvid_set(i, data->vid, 0);
+		}
+	}
+	for (i = 0; i < 2; i++) {
+		if (data->port_map & (1 << (i + 5))) {
+			RTK_PORTMASK_PORT_SET(vlan.mbr, (i + EXT_PORT0));
+			RTK_PORTMASK_PORT_SET(vlan.untag, (i + EXT_PORT0));
+			rtk_vlan_portPvid_set((i + EXT_PORT0), data->vid, 0);
+		}
+	}
+	vlan.ivl_en = 1;
+	ret = rtk_vlan_set(data->vid, &vlan);
+
+	return 0;
+}

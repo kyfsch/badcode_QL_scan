@@ -1,0 +1,32 @@
+static char *mt7530_print_arl_table_row(u32 atrd,
+					u32 mac1,
+					u32 mac2,
+					char *buf,
+					size_t *size)
+{
+	int ret;
+	size_t port;
+	size_t i;
+	u8 port_map;
+	u8 mac[ETH_ALEN];
+
+	mac1 = ntohl(mac1);
+	mac2 = ntohl(mac2);
+	port_map = (u8)((atrd & REG_ATRD_PORT_MASK) >> 4);
+	memcpy(mac, &mac1, sizeof(mac1));
+	memcpy(mac + sizeof(mac1), &mac2, sizeof(mac) - sizeof(mac1));
+	for (port = 0, i = 1; port < MT7530_NUM_PORTS; ++port, i <<= 1) {
+		if (port_map & i) {
+			ret = snprintf(buf, *size, "Port %d: MAC %pM\n", port, mac);
+			if (ret >= *size || ret <= 0) {
+				*buf = 0;
+				buf = NULL;
+				goto out;
+			}
+			buf += ret;
+			*size = *size - ret;
+		}
+	}
+out:
+	return buf;
+}

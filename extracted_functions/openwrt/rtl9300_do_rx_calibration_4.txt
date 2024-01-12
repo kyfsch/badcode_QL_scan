@@ -1,0 +1,5 @@
+void rtl9300_do_rx_calibration_4(u32 sds_num)
+{
+	rtl9300_do_rx_calibration_4_1(sds_num);
+	rtl9300_do_rx_calibration_4_2(sds_num);
+}

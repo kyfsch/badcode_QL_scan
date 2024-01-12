@@ -1,0 +1,70 @@
+swconfig_led_work_func(struct work_struct *work)
+{
+	struct switch_led_trigger *sw_trig;
+	struct switch_dev *swdev;
+	u32 port_mask;
+	u32 link;
+	int i;
+
+	sw_trig = container_of(work, struct switch_led_trigger,
+			       sw_led_work.work);
+
+	port_mask = sw_trig->port_mask;
+	swdev = sw_trig->swdev;
+
+	link = 0;
+	for (i = 0; i < SWCONFIG_LED_NUM_PORTS; i++) {
+		u32 port_bit;
+
+		sw_trig->link_speed[i] = 0;
+
+		port_bit = BIT(i);
+		if ((port_mask & port_bit) == 0)
+			continue;
+
+		if (swdev->ops->get_port_link) {
+			struct switch_port_link port_link;
+
+			memset(&port_link, '\0', sizeof(port_link));
+			swdev->ops->get_port_link(swdev, i, &port_link);
+
+			if (port_link.link) {
+				link |= port_bit;
+				switch (port_link.speed) {
+				case SWITCH_PORT_SPEED_UNKNOWN:
+					sw_trig->link_speed[i] =
+						SWCONFIG_LED_PORT_SPEED_NA;
+					break;
+				case SWITCH_PORT_SPEED_10:
+					sw_trig->link_speed[i] =
+						SWCONFIG_LED_PORT_SPEED_10;
+					break;
+				case SWITCH_PORT_SPEED_100:
+					sw_trig->link_speed[i] =
+						SWCONFIG_LED_PORT_SPEED_100;
+					break;
+				case SWITCH_PORT_SPEED_1000:
+					sw_trig->link_speed[i] =
+						SWCONFIG_LED_PORT_SPEED_1000;
+					break;
+				}
+			}
+		}
+
+		if (swdev->ops->get_port_stats) {
+			struct switch_port_stats port_stats;
+
+			memset(&port_stats, '\0', sizeof(port_stats));
+			swdev->ops->get_port_stats(swdev, i, &port_stats);
+			sw_trig->port_tx_traffic[i] = port_stats.tx_bytes;
+			sw_trig->port_rx_traffic[i] = port_stats.rx_bytes;
+		}
+	}
+
+	sw_trig->port_link = link;
+
+	swconfig_trig_update_leds(sw_trig);
+
+	schedule_delayed_work(&sw_trig->sw_led_work,
+			      SWCONFIG_LED_TIMER_INTERVAL);
+}

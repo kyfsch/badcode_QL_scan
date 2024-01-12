@@ -1,0 +1,12 @@
+static INLINE void mailbox_signal(unsigned int, int);
+#ifdef CONFIG_IFX_PTM_RX_TASKLET
+  static void do_ptm_tasklet(unsigned long);
+#endif
+
+/*
+ *  Debug Functions
+ */
+#if defined(DEBUG_DUMP_SKB) && DEBUG_DUMP_SKB
+  static void dump_skb(struct sk_buff *, u32, char *, int, int, int);
+#else
+  #define dump_skb(skb, len, title, port, ch, is_tx)    do {} while (0)

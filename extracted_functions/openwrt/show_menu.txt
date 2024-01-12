@@ -1,0 +1,47 @@
+static void show_menu(const char *prompt, const char *instructions,
+		int selected_index, int *last_top_row)
+{
+	int maxx, maxy;
+	WINDOW *menu_window;
+
+	current_instructions = instructions;
+
+	clear();
+	print_in_middle(stdscr, 1, getmaxx(stdscr),
+			menu_backtitle,
+			attr_main_heading);
+
+	wattrset(main_window, attr_main_menu_box);
+	box(main_window, 0, 0);
+	wattrset(main_window, attr_main_menu_heading);
+	mvwprintw(main_window, 0, 3, " %s ", prompt);
+	wattrset(main_window, attr_normal);
+
+	set_menu_items(curses_menu, curses_menu_items);
+
+	/* position the menu at the middle of the screen */
+	scale_menu(curses_menu, &maxy, &maxx);
+	maxx = min(maxx, mwin_max_cols-2);
+	maxy = mwin_max_lines;
+	menu_window = derwin(main_window,
+			maxy,
+			maxx,
+			2,
+			(mwin_max_cols-maxx)/2);
+	keypad(menu_window, TRUE);
+	set_menu_win(curses_menu, menu_window);
+	set_menu_sub(curses_menu, menu_window);
+
+	/* must reassert this after changing items, otherwise returns to a
+	 * default of 16
+	 */
+	set_menu_format(curses_menu, maxy, 1);
+	center_item(selected_index, last_top_row);
+	set_menu_format(curses_menu, maxy, 1);
+
+	print_function_line();
+
+	/* Post the menu */
+	post_menu(curses_menu);
+	refresh_all_windows(main_window);
+}

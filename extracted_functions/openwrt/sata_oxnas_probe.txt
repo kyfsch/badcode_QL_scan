@@ -1,0 +1,154 @@
+static int sata_oxnas_probe(struct platform_device *ofdev)
+{
+	int retval = -ENXIO;
+	int n_ports = 0;
+	void __iomem *port_base = NULL;
+	void __iomem *dmactl_base = NULL;
+	void __iomem *sgdma_base = NULL;
+	void __iomem *core_base = NULL;
+	void __iomem *phy_base = NULL;
+	struct reset_control *rstc;
+
+	struct resource res = {};
+	struct sata_oxnas_host_priv *host_priv = NULL;
+	int irq = 0;
+	struct ata_host *host = NULL;
+	struct clk *clk = NULL;
+
+	const struct ata_port_info *ppi[] = { &sata_oxnas_port_info, NULL };
+
+	of_property_read_u32(ofdev->dev.of_node, "nr-ports", &n_ports);
+	if (n_ports < 1 || n_ports > SATA_OXNAS_MAX_PORTS)
+		goto error_exit_with_cleanup;
+
+	port_base = of_iomap(ofdev->dev.of_node, 0);
+	if (!port_base)
+		goto error_exit_with_cleanup;
+
+	dmactl_base = of_iomap(ofdev->dev.of_node, 1);
+	if (!dmactl_base)
+		goto error_exit_with_cleanup;
+
+	sgdma_base = of_iomap(ofdev->dev.of_node, 2);
+	if (!sgdma_base)
+		goto error_exit_with_cleanup;
+
+	core_base = of_iomap(ofdev->dev.of_node, 3);
+	if (!core_base)
+		goto error_exit_with_cleanup;
+
+	phy_base = of_iomap(ofdev->dev.of_node, 4);
+	if (!phy_base)
+		goto error_exit_with_cleanup;
+
+	host_priv = devm_kzalloc(&ofdev->dev,
+					sizeof(struct sata_oxnas_host_priv),
+					GFP_KERNEL);
+	if (!host_priv)
+		goto error_exit_with_cleanup;
+
+	host_priv->port_base = port_base;
+	host_priv->dmactl_base = dmactl_base;
+	host_priv->sgdma_base = sgdma_base;
+	host_priv->core_base = core_base;
+	host_priv->phy_base = phy_base;
+	host_priv->n_ports = n_ports;
+	host_priv->current_ucode = UNKNOWN_MODE;
+
+	if (!of_address_to_resource(ofdev->dev.of_node, 5, &res)) {
+		host_priv->dma_base = res.start;
+		host_priv->dma_size = resource_size(&res);
+	}
+
+	irq = irq_of_parse_and_map(ofdev->dev.of_node, 0);
+	if (!irq) {
+		dev_err(&ofdev->dev, "invalid irq from platform\n");
+		goto error_exit_with_cleanup;
+	}
+	host_priv->irq = irq;
+
+	clk = of_clk_get(ofdev->dev.of_node, 0);
+	if (IS_ERR(clk)) {
+		retval = PTR_ERR(clk);
+		clk = NULL;
+		goto error_exit_with_cleanup;
+	}
+	host_priv->clk = clk;
+
+	rstc = devm_reset_control_get(&ofdev->dev, "sata");
+	if (IS_ERR(rstc)) {
+		retval = PTR_ERR(rstc);
+		goto error_exit_with_cleanup;
+	}
+	host_priv->rst_sata = rstc;
+
+	rstc = devm_reset_control_get(&ofdev->dev, "link");
+	if (IS_ERR(rstc)) {
+		retval = PTR_ERR(rstc);
+		goto error_exit_with_cleanup;
+	}
+	host_priv->rst_link = rstc;
+
+	rstc = devm_reset_control_get(&ofdev->dev, "phy");
+	if (IS_ERR(rstc)) {
+		retval = PTR_ERR(rstc);
+		goto error_exit_with_cleanup;
+	}
+	host_priv->rst_phy = rstc;
+
+	/* allocate host structure */
+	host = ata_host_alloc_pinfo(&ofdev->dev, ppi, n_ports);
+
+	if (!host) {
+		retval = -ENOMEM;
+		goto error_exit_with_cleanup;
+	}
+	host->private_data = host_priv;
+	host->iomap = port_base;
+
+	/* initialize core locking and queues */
+	init_waitqueue_head(&host_priv->fast_wait_queue);
+	init_waitqueue_head(&host_priv->scsi_wait_queue);
+	spin_lock_init(&host_priv->phy_lock);
+	spin_lock_init(&host_priv->core_lock);
+	host_priv->core_locked = 0;
+	host_priv->reentrant_port_no = -1;
+	host_priv->hw_lock_count = 0;
+	host_priv->direct_lock_count = 0;
+	host_priv->locker_uid = 0;
+	host_priv->current_locker_type = SATA_UNLOCKED;
+	host_priv->isr_arg = NULL;
+	host_priv->isr_callback = NULL;
+
+	/* initialize host controller */
+	retval = sata_oxnas_init_controller(host);
+	if (retval)
+		goto error_exit_with_cleanup;
+
+	/*
+	 * Now, register with libATA core, this will also initiate the
+	 * device discovery process, invoking our port_start() handler &
+	 * error_handler() to execute a dummy softreset EH session
+	 */
+	ata_host_activate(host, irq, sata_oxnas_interrupt, SATA_OXNAS_IRQ_FLAG,
+			  &sata_oxnas_sht);
+
+	return 0;
+
+error_exit_with_cleanup:
+	if (irq)
+		irq_dispose_mapping(host_priv->irq);
+	if (clk)
+		clk_put(clk);
+	if (host)
+		ata_host_detach(host);
+	if (port_base)
+		iounmap(port_base);
+	if (sgdma_base)
+		iounmap(sgdma_base);
+	if (core_base)
+		iounmap(core_base);
+	if (phy_base)
+		iounmap(phy_base);
+	return retval;
+}

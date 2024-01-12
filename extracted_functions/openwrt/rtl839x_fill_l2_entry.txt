@@ -1,0 +1,60 @@
+static void rtl839x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
+{
+	/* Table contains different entry types, we need to identify the right one:
+	 * Check for MC entries, first
+	 */
+	e->is_ip_mc = !!(r[2] & BIT(31));
+	e->is_ipv6_mc = !!(r[2] & BIT(30));
+	e->type = L2_INVALID;
+	if (!e->is_ip_mc && !e->is_ipv6_mc) {
+		e->mac[0] = (r[0] >> 12);
+		e->mac[1] = (r[0] >> 4);
+		e->mac[2] = ((r[1] >> 28) | (r[0] << 4));
+		e->mac[3] = (r[1] >> 20);
+		e->mac[4] = (r[1] >> 12);
+		e->mac[5] = (r[1] >> 4);
+
+		e->vid = (r[2] >> 4) & 0xfff;
+		e->rvid = (r[0] >> 20) & 0xfff;
+
+		/* Is it a unicast entry? check multicast bit */
+		if (!(e->mac[0] & 1)) {
+			e->is_static = !!((r[2] >> 18) & 1);
+			e->port = (r[2] >> 24) & 0x3f;
+			e->block_da = !!(r[2] & (1 << 19));
+			e->block_sa = !!(r[2] & (1 << 20));
+			e->suspended = !!(r[2] & (1 << 17));
+			e->next_hop = !!(r[2] & (1 << 16));
+			if (e->next_hop) {
+				pr_debug("Found next hop entry, need to read data\n");
+				e->nh_vlan_target = !!(r[2] & BIT(15));
+				e->nh_route_id = (r[2] >> 4) & 0x1ff;
+				e->vid = e->rvid;
+			}
+			e->age = (r[2] >> 21) & 3;
+			e->valid = true;
+			if (!(r[2] & 0xc0fd0000)) /* Check for valid entry */
+				e->valid = false;
+			else
+				e->type = L2_UNICAST;
+		} else {
+			e->valid = true;
+			e->type = L2_MULTICAST;
+			e->mc_portmask_index = (r[2] >> 6) & 0xfff;
+			e->vid = e->rvid;
+		}
+	} else { /* IPv4 and IPv6 multicast */
+		e->vid = e->rvid = (r[0] << 20) & 0xfff;
+		e->mc_gip = r[1];
+		e->mc_portmask_index = (r[2] >> 6) & 0xfff;
+	}
+	if (e->is_ip_mc) {
+		e->valid = true;
+		e->type = IP4_MULTICAST;
+	}
+	if (e->is_ipv6_mc) {
+		e->valid = true;
+		e->type = IP6_MULTICAST;
+	}
+	/* pr_info("%s: vid %d, rvid: %d\n", __func__, e->vid, e->rvid); */
+}

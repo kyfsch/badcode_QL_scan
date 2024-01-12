@@ -1,0 +1,83 @@
+static bool nmbm_update_info_table_once(struct nmbm_instance *ni, bool force)
+{
+	uint32_t table_start_ba, table_end_ba;
+	uint32_t main_table_limit;
+	bool success;
+
+	/* Do nothing if there is no change */
+	if (!nmbm_generate_info_table_cache(ni) && !force)
+		return true;
+
+	/* Check whether both two tables exist */
+	if (!ni->backup_table_ba) {
+		main_table_limit = ni->mapping_blocks_top_ba;
+		goto write_main_table;
+	}
+
+	/*
+	 * Write backup info table in its current range.
+	 * Note that limit is set to mapping_blocks_top_off to provide as many
+	 * spare blocks as possible for the backup table. If at last
+	 * unmapped blocks are used by backup table, mapping_blocks_off will
+	 * be adjusted.
+	 */
+	success = nmbm_write_info_table(ni, ni->backup_table_ba,
+					ni->mapping_blocks_top_ba,
+					&table_start_ba, &table_end_ba);
+	if (!success) {
+		/*
+		 * There is nothing to do if failed to write backup table.
+		 * Write the main table now.
+		 */
+		nlog_err(ni, "No room for backup table\n");
+		ni->mapping_blocks_ba = ni->backup_table_ba;
+		ni->backup_table_ba = 0;
+		main_table_limit = ni->mapping_blocks_top_ba;
+		goto write_main_table;
+	}
+
+	/* Backup table is successfully written, record its offset */
+	ni->backup_table_ba = table_start_ba;
+
+	/* Adjust mapping_blocks_off */
+	ni->mapping_blocks_ba = table_end_ba;
+
+	nmbm_mark_tables_clean(ni);
+
+	/* The normal limit of main table */
+	main_table_limit = ni->backup_table_ba;
+
+	nlog_table_update(ni, false, table_start_ba, table_end_ba);
+
+write_main_table:
+	if (!ni->main_table_ba)
+		goto rebuild_tables;
+
+	/* Write main info table in its current range */
+	success = nmbm_write_info_table(ni, ni->main_table_ba,
+					main_table_limit, &table_start_ba,
+					&table_end_ba);
+	if (!success) {
+		/* If failed to write main table, go rescue procedure */
+		if (!ni->backup_table_ba)
+			goto rebuild_tables;
+
+		return nmbm_rescue_main_info_table(ni);
+	}
+
+	/* Main info table is successfully written, record its offset */
+	ni->main_table_ba = table_start_ba;
+
+	/* Adjust mapping_blocks_off */
+	if (!ni->backup_table_ba)
+		ni->mapping_blocks_ba = table_end_ba;
+
+	nmbm_mark_tables_clean(ni);
+
+	nlog_table_update(ni, true, table_start_ba, table_end_ba);
+
+	return true;
+
+rebuild_tables:
+	return nmbm_rebuild_info_table(ni);
+}

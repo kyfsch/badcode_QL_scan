@@ -1,0 +1,104 @@
+static int fe_poll_rx(struct napi_struct *napi, int budget,
+		      struct fe_priv *priv, u32 rx_intr)
+{
+	struct net_device *netdev = priv->netdev;
+	struct net_device_stats *stats = &netdev->stats;
+	struct fe_soc_data *soc = priv->soc;
+	struct fe_rx_ring *ring = &priv->rx_ring;
+	int idx = ring->rx_calc_idx;
+	u32 checksum_bit;
+	struct sk_buff *skb;
+	u8 *data, *new_data;
+	struct fe_rx_dma *rxd, trxd;
+	int done = 0, pad;
+
+	if (netdev->features & NETIF_F_RXCSUM)
+		checksum_bit = soc->checksum_bit;
+	else
+		checksum_bit = 0;
+
+	if (priv->flags & FE_FLAG_RX_2B_OFFSET)
+		pad = 0;
+	else
+		pad = NET_IP_ALIGN;
+
+	while (done < budget) {
+		unsigned int pktlen;
+		dma_addr_t dma_addr;
+
+		idx = NEXT_RX_DESP_IDX(idx);
+		rxd = &ring->rx_dma[idx];
+		data = ring->rx_data[idx];
+
+		fe_get_rxd(&trxd, rxd);
+		if (!(trxd.rxd2 & RX_DMA_DONE))
+			break;
+
+		/* alloc new buffer */
+		new_data = page_frag_alloc(&ring->frag_cache, ring->frag_size,
+					   GFP_ATOMIC);
+		if (unlikely(!new_data)) {
+			stats->rx_dropped++;
+			goto release_desc;
+		}
+		dma_addr = dma_map_single(priv->dev,
+					  new_data + NET_SKB_PAD + pad,
+					  ring->rx_buf_size,
+					  DMA_FROM_DEVICE);
+		if (unlikely(dma_mapping_error(priv->dev, dma_addr))) {
+			skb_free_frag(new_data);
+			goto release_desc;
+		}
+
+		/* receive data */
+		skb = build_skb(data, ring->frag_size);
+		if (unlikely(!skb)) {
+			skb_free_frag(new_data);
+			goto release_desc;
+		}
+		skb_reserve(skb, NET_SKB_PAD + NET_IP_ALIGN);
+
+		dma_unmap_single(priv->dev, trxd.rxd1,
+				 ring->rx_buf_size, DMA_FROM_DEVICE);
+		pktlen = RX_DMA_GET_PLEN0(trxd.rxd2);
+		skb->dev = netdev;
+		skb_put(skb, pktlen);
+		if (trxd.rxd4 & checksum_bit)
+			skb->ip_summed = CHECKSUM_UNNECESSARY;
+		else
+			skb_checksum_none_assert(skb);
+		skb->protocol = eth_type_trans(skb, netdev);
+
+		if (netdev->features & NETIF_F_HW_VLAN_CTAG_RX &&
+		    RX_DMA_VID(trxd.rxd3))
+			__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q),
+					       RX_DMA_VID(trxd.rxd3));
+
+		stats->rx_packets++;
+		stats->rx_bytes += pktlen;
+
+		napi_gro_receive(napi, skb);
+
+		ring->rx_data[idx] = new_data;
+		rxd->rxd1 = (unsigned int)dma_addr;
+
+release_desc:
+		if (priv->flags & FE_FLAG_RX_SG_DMA)
+			rxd->rxd2 = RX_DMA_PLEN0(ring->rx_buf_size);
+		else
+			rxd->rxd2 = RX_DMA_LSO;
+
+		ring->rx_calc_idx = idx;
+		/* make sure that all changes to the dma ring are flushed before
+		 * we continue
+		 */
+		wmb();
+		fe_reg_w32(ring->rx_calc_idx, FE_REG_RX_CALC_IDX0);
+		done++;
+	}
+
+	if (done < budget)
+		fe_reg_w32(rx_intr, FE_REG_FE_INT_STATUS);
+
+	return done;
+}

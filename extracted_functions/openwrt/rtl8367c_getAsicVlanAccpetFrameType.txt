@@ -1,0 +1,14 @@
+ret_t rtl8367c_getAsicVlanAccpetFrameType(rtk_uint32 port, rtl8367c_accframetype *pFrameType)
+{
+    rtk_uint32 regData;
+    ret_t  retVal;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if((retVal = rtl8367c_getAsicRegBits(RTL8367C_VLAN_ACCEPT_FRAME_TYPE_REG(port), RTL8367C_VLAN_ACCEPT_FRAME_TYPE_MASK(port), &regData)) != RT_ERR_OK)
+        return retVal;
+
+    *pFrameType = (rtl8367c_accframetype)regData;
+    return RT_ERR_OK;
+}

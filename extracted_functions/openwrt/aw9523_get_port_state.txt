@@ -1,0 +1,17 @@
+static int aw9523_get_port_state(struct regmap *regmap, u8 pin,
+				   u8 regbit, unsigned int *state)
+{
+	u8 reg;
+	int dir;
+
+	dir = aw9523_get_pin_direction(regmap, pin, regbit);
+	if (dir < 0)
+		return dir;
+
+	if (dir == GPIO_LINE_DIRECTION_IN)
+		reg = AW9523_REG_IN_STATE(pin);
+	else
+		reg = AW9523_REG_OUT_STATE(pin);
+
+	return regmap_read(regmap, reg, state);
+}

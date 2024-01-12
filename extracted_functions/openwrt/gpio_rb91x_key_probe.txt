@@ -1,0 +1,45 @@
+static int gpio_rb91x_key_probe(struct platform_device *pdev)
+{
+	struct gpio_rb91x_key *drvdata;
+	struct gpio_chip *gc;
+	struct device *dev = &pdev->dev;
+	struct device_node *of_node = dev->of_node;
+	int r;
+
+	drvdata = devm_kzalloc(dev, sizeof(*drvdata), GFP_KERNEL);
+	if (!drvdata)
+		return -ENOMEM;
+
+	mutex_init(&drvdata->mutex);
+	mutex_init(&drvdata->poll_mutex);
+
+	drvdata->gpio = devm_gpiod_get(dev, NULL, GPIOD_OUT_LOW);
+	if (IS_ERR(drvdata->gpio)) {
+		if (PTR_ERR(drvdata->gpio) != -EPROBE_DEFER) {
+			dev_err(dev, "failed to get gpio: %ld\n",
+				PTR_ERR(drvdata->gpio));
+		}
+		return PTR_ERR(drvdata->gpio);
+	}
+
+	gc = &drvdata->gc;
+	gc->label = GPIO_RB91X_KEY_DRIVER_NAME;
+	gc->can_sleep = 1;
+	gc->base = -1;
+	gc->ngpio = GPIO_RB91X_KEY_NGPIOS;
+	gc->get = gpio_rb91x_key_get;
+	gc->set = gpio_rb91x_key_set;
+	gc->direction_output = gpio_rb91x_key_direction_output;
+	gc->direction_input = gpio_rb91x_key_direction_input;
+	gc->of_node = of_node;
+
+	platform_set_drvdata(pdev, drvdata);
+
+	r = gpiochip_add(&drvdata->gc);
+	if (r) {
+		dev_err(dev, "gpiochip_add() failed: %d\n", r);
+		return r;
+	}
+
+	return 0;
+}

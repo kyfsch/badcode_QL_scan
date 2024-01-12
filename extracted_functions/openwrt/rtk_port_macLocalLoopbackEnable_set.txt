@@ -1,0 +1,33 @@
+rtk_api_ret_t rtk_port_macLocalLoopbackEnable_set(rtk_port_t port, rtk_enable_t enable)
+{
+    rtk_api_ret_t   retVal;
+    rtk_uint32      data;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if(enable >= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicPortLoopback(rtk_switch_port_L2P_get(port), enable)) != RT_ERR_OK)
+        return retVal;
+
+    if(rtk_switch_isUtpPort(port) == RT_ERR_OK)
+    {
+        if ((retVal = rtl8367c_getAsicPHYReg(rtk_switch_port_L2P_get(port), PHY_CONTROL_REG, &data)) != RT_ERR_OK)
+            return retVal;
+
+        if(enable == ENABLED)
+            data |= (0x0001 << 14);
+        else
+            data &= ~(0x0001 << 14);
+
+        if ((retVal = rtl8367c_setAsicPHYReg(rtk_switch_port_L2P_get(port), PHY_CONTROL_REG, data)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    return RT_ERR_OK;
+}

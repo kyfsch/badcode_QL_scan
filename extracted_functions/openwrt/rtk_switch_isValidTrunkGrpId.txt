@@ -1,0 +1,11 @@
+rtk_uint32 rtk_switch_isValidTrunkGrpId(rtk_uint32 grpId)
+{
+    if(init_state != INIT_COMPLETED)
+        return 0x00;
+
+    if( (halCtrl->trunk_group_mask & (0x01 << grpId) ) != 0)
+        return RT_ERR_OK;
+    else
+        return RT_ERR_LA_TRUNK_ID;
+
+}

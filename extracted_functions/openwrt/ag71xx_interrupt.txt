@@ -1,0 +1,33 @@
+static irqreturn_t ag71xx_interrupt(int irq, void *dev_id)
+{
+	struct net_device *dev = dev_id;
+	struct ag71xx *ag = netdev_priv(dev);
+	u32 status;
+
+	status = ag71xx_rr(ag, AG71XX_REG_INT_STATUS);
+	ag71xx_dump_intr(ag, "raw", status);
+
+	if (unlikely(!status))
+		return IRQ_NONE;
+
+	if (unlikely(status & AG71XX_INT_ERR)) {
+		if (status & AG71XX_INT_TX_BE) {
+			ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_BE);
+			dev_err(&dev->dev, "TX BUS error\n");
+		}
+		if (status & AG71XX_INT_RX_BE) {
+			ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_BE);
+			dev_err(&dev->dev, "RX BUS error\n");
+		}
+	}
+
+	if (likely(status & AG71XX_INT_POLL)) {
+		ag71xx_int_disable(ag, AG71XX_INT_POLL);
+		DBG("%s: enable polling mode\n", dev->name);
+		napi_schedule(&ag->napi);
+	}
+
+	ag71xx_debugfs_update_int_stats(ag, status);
+
+	return IRQ_HANDLED;
+}

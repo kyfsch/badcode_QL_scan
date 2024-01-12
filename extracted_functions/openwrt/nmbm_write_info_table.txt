@@ -1,0 +1,8 @@
+static bool nmbm_write_info_table(struct nmbm_instance *ni, uint32_t ba,
+				  uint32_t limit, uint32_t *actual_start_ba,
+				  uint32_t *actual_end_ba)
+{
+	return nmbm_write_mgmt_range(ni, ba, limit, ni->info_table_cache,
+				     ni->info_table_size, actual_start_ba,
+				     actual_end_ba);
+}

@@ -1,0 +1,27 @@
+static int zyxel_bootconfig_read(struct zyxel_bootconfig *config, struct zyxel_bootconfig_mtd *mtd) {
+	char *args = NULL;
+	int ret = 0;
+
+	/* Allocate memory for reading boot-config partition */
+	args = calloc(1, mtd->mtd_info.erasesize);
+	if (!args) {
+		fprintf(stderr, "Could not allocate memory!\n");
+		ret = -1;
+		goto out;
+	}
+
+	/* Read bootconfig partition */
+	pread(mtd->fd, args, mtd->mtd_info.erasesize, 0);
+
+	/* Parse config */
+	memset(config, 0, sizeof(*config));
+
+	config->image0_status = (args[BOOTCONFIG_IMAGE_STATUS] & IMAGE_0_MASK) >> IMAGE_0_SHIFT;
+	config->image1_status = (args[BOOTCONFIG_IMAGE_STATUS] & IMAGE_1_MASK) >> IMAGE_1_SHIFT;
+	config->active_image = (args[BOOTCONFIG_ACTIVE_IMAGE] & ACTIVE_IMAGE_MASK);
+
+out:
+	if (args)
+		free(args);
+	return ret;
+}

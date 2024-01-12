@@ -1,0 +1,4 @@
+init_state_t rtk_switch_initialState_get(void)
+{
+    return init_state;
+}

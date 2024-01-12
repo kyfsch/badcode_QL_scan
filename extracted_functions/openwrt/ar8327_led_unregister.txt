@@ -1,0 +1,8 @@
+ar8327_led_unregister(struct ar8327_led *aled)
+{
+	if (aled->mode == AR8327_LED_MODE_HW)
+		device_remove_file(aled->cdev.dev, &dev_attr_enable_hw_mode);
+
+	led_classdev_unregister(&aled->cdev);
+	cancel_work_sync(&aled->led_work);
+}

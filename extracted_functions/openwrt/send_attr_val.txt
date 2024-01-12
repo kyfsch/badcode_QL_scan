@@ -1,0 +1,35 @@
+send_attr_val(struct nl_msg *msg, void *arg)
+{
+	struct switch_val *val = arg;
+	struct switch_attr *attr = val->attr;
+
+	if (send_attr(msg, arg))
+		goto nla_put_failure;
+
+	switch(attr->type) {
+	case SWITCH_TYPE_NOVAL:
+		break;
+	case SWITCH_TYPE_INT:
+		NLA_PUT_U32(msg, SWITCH_ATTR_OP_VALUE_INT, val->value.i);
+		break;
+	case SWITCH_TYPE_STRING:
+		if (!val->value.s)
+			goto nla_put_failure;
+		NLA_PUT_STRING(msg, SWITCH_ATTR_OP_VALUE_STR, val->value.s);
+		break;
+	case SWITCH_TYPE_PORTS:
+		if (send_attr_ports(msg, val) < 0)
+			goto nla_put_failure;
+		break;
+	case SWITCH_TYPE_LINK:
+		if (send_attr_link(msg, val))
+			goto nla_put_failure;
+		break;
+	default:
+		goto nla_put_failure;
+	}
+	return 0;
+
+nla_put_failure:
+	return -1;
+}

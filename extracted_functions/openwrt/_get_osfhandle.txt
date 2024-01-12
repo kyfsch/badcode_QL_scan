@@ -1,0 +1,11 @@
+    HANDLE handle = (HANDLE) _get_osfhandle(_fileno(stdin));
+    DWORD  mode;
+
+    GetConsoleMode( handle, &mode );
+    SetConsoleMode( handle, mode & ~ENABLE_ECHO_INPUT );
+
+    if(fputs(prompt, stdout) == EOF ||
+	fgets(buf, maxlen, stdin) == NULL) {
+	SetConsoleMode(handle,mode);
+	return -1;
+    }

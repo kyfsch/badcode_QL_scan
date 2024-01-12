@@ -1,0 +1,45 @@
+static void gpio_keys_handle_button(struct gpio_keys_button_data *bdata)
+{
+	unsigned int type = bdata->b->type ?: EV_KEY;
+	int state = gpio_button_get_value(bdata);
+	unsigned long seen = jiffies;
+
+	pr_debug(PFX "event type=%u, code=%u, pressed=%d\n",
+		 type, bdata->b->code, state);
+
+	/* is this the initialization state? */
+	if (bdata->last_state == -1) {
+		/*
+		 * Don't advertise unpressed buttons on initialization.
+		 * Just save their state and continue otherwise this
+		 * can cause OpenWrt to enter failsafe.
+		 */
+		if (type == EV_KEY && state == 0)
+			goto set_state;
+		/*
+		 * But we are very interested in pressed buttons and
+		 * initial switch state. These will be reported to
+		 * userland.
+		 */
+	} else if (bdata->last_state == state) {
+		/* reset asserted counter (only relevant for polled keys) */
+		bdata->count = 0;
+		return;
+	}
+
+	if (bdata->count < bdata->threshold) {
+		bdata->count++;
+		return;
+	}
+
+	if (bdata->seen == 0)
+		bdata->seen = seen;
+
+	button_hotplug_create_event(button_map[bdata->map_entry].name, type,
+				    (seen - bdata->seen) / HZ, state);
+	bdata->seen = seen;
+
+set_state:
+	bdata->last_state = state;
+	bdata->count = 0;
+}

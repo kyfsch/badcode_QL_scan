@@ -1,0 +1,26 @@
+ret_t rtl8367c_setAsicMLDv2Opeartion(rtk_uint32 port, rtk_uint32 mldv2_op)
+{
+    ret_t   retVal;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(mldv2_op >= PROTOCOL_OP_END)
+        return RT_ERR_INPUT;
+
+    /* MLDv2 operation */
+    if(port < 8)
+    {
+        retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_IGMP_PORT0_CONTROL + port, RTL8367C_IGMP_PORT0_CONTROL_MLDv2_OP_MASK, mldv2_op);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+    }
+    else
+    {
+        retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_IGMP_PORT8_CONTROL + port - 8, RTL8367C_IGMP_PORT0_CONTROL_MLDv2_OP_MASK, mldv2_op);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+    }
+
+    return RT_ERR_OK;
+}

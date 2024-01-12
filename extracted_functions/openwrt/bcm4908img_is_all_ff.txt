@@ -1,0 +1,12 @@
+static bool bcm4908img_is_all_ff(const void *buf, size_t length)
+{
+	const uint8_t *in = buf;
+	int i;
+
+	for (i = 0; i < length; i++) {
+		if (in[i] != 0xff)
+			return false;
+	}
+
+	return true;
+}

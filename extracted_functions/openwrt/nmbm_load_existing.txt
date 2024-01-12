@@ -1,0 +1,36 @@
+static bool nmbm_load_existing(struct nmbm_instance *ni)
+{
+	bool success;
+
+	/* Calculate the boundary of management blocks */
+	ni->mgmt_start_ba = ni->signature.mgmt_start_pb;
+
+	nlog_debug(ni, "NMBM management region starts at block %u [0x%08llx]\n",
+		  ni->mgmt_start_ba, ba2addr(ni, ni->mgmt_start_ba));
+
+	/* Look for info table(s) */
+	success = nmbm_load_info_table(ni, ni->mgmt_start_ba,
+		ni->signature_ba);
+	if (success) {
+		nlog_info(ni, "NMBM has been successfully attached\n");
+		return true;
+	}
+
+	if (!ni->force_create) {
+		printk("not creating NMBM table\n");
+		return false;
+	}
+
+	/* Fill block state table & mapping table */
+	nmbm_scan_badblocks(ni);
+	nmbm_build_mapping_table(ni);
+
+	/* Write info table(s) */
+	success = nmbm_create_info_table(ni);
+	if (success) {
+		nlog_info(ni, "NMBM has been successfully created\n");
+		return true;
+	}
+
+	return false;
+}

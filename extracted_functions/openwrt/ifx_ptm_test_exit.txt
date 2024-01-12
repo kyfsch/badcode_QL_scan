@@ -1,0 +1,4 @@
+static void __exit ifx_ptm_test_exit(void)
+{
+    proc_file_delete();
+}

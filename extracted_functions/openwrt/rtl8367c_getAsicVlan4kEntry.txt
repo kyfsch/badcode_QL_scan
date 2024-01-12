@@ -1,0 +1,75 @@
+ret_t rtl8367c_getAsicVlan4kEntry(rtl8367c_user_vlan4kentry *pVlan4kEntry )
+{
+    rtk_uint16                  vlan_4k_entry[RTL8367C_VLAN_4KTABLE_LEN];
+    rtk_uint32                  page_idx;
+    rtk_uint16                  *tableAddr;
+    ret_t                       retVal;
+    rtk_uint32                  regData;
+    rtk_uint32                  busyCounter;
+
+    if(pVlan4kEntry->vid > RTL8367C_VIDMAX)
+        return RT_ERR_VLAN_VID;
+
+    /* Polling status */
+    busyCounter = RTL8367C_VLAN_BUSY_CHECK_NO;
+    while(busyCounter)
+    {
+        retVal = rtl8367c_getAsicRegBit(RTL8367C_TABLE_ACCESS_STATUS_REG, RTL8367C_TABLE_LUT_ADDR_BUSY_FLAG_OFFSET,&regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        if(regData == 0)
+            break;
+
+        busyCounter --;
+        if(busyCounter == 0)
+            return RT_ERR_BUSYWAIT_TIMEOUT;
+    }
+
+    /* Write Address (VLAN_ID) */
+    regData = pVlan4kEntry->vid;
+    retVal = rtl8367c_setAsicReg(RTL8367C_TABLE_ACCESS_ADDR_REG, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    /* Read Command */
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_TABLE_ACCESS_CTRL_REG, RTL8367C_TABLE_TYPE_MASK | RTL8367C_COMMAND_TYPE_MASK, RTL8367C_TABLE_ACCESS_REG_DATA(TB_OP_READ,TB_TARGET_CVLAN));
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    /* Polling status */
+    busyCounter = RTL8367C_VLAN_BUSY_CHECK_NO;
+    while(busyCounter)
+    {
+        retVal = rtl8367c_getAsicRegBit(RTL8367C_TABLE_ACCESS_STATUS_REG, RTL8367C_TABLE_LUT_ADDR_BUSY_FLAG_OFFSET,&regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        if(regData == 0)
+            break;
+
+        busyCounter --;
+        if(busyCounter == 0)
+            return RT_ERR_BUSYWAIT_TIMEOUT;
+    }
+
+    /* Read VLAN data from register */
+    tableAddr = vlan_4k_entry;
+    for(page_idx = 0; page_idx < RTL8367C_VLAN_4KTABLE_LEN; page_idx++)
+    {
+        retVal = rtl8367c_getAsicReg(RTL8367C_TABLE_ACCESS_RDDATA_BASE + page_idx, &regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        *tableAddr = regData;
+        tableAddr++;
+    }
+
+    _rtl8367c_Vlan4kStSmi2User(vlan_4k_entry, pVlan4kEntry);
+
+#if defined(CONFIG_RTL8367C_ASICDRV_TEST)
+    memcpy(pVlan4kEntry, &Rtl8370sVirtualVlanTable[pVlan4kEntry->vid], sizeof(rtl8367c_user_vlan4kentry));
+#endif
+
+    return RT_ERR_OK;
+}

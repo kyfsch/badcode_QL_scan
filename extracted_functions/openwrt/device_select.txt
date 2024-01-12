@@ -1,0 +1,4 @@
+static inline void device_select(int device)
+{
+	/* master/slave has no meaning to SATA core */
+}

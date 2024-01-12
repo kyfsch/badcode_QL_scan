@@ -1,0 +1,11 @@
+static void psb6970_remove(struct phy_device *pdev)
+{
+	struct psb6970_priv *priv = pdev->priv;
+
+	if (!priv)
+		return;
+
+	if (pdev->mdio.addr == 0)
+		unregister_switch(&priv->dev);
+	kfree(priv);
+}

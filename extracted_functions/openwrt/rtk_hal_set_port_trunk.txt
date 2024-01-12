@@ -1,0 +1,21 @@
+void rtk_hal_set_port_trunk(struct ra_switch_ioctl_data *data)
+{
+
+	rtk_api_ret_t ret;
+	rtk_portmask_t member;
+	int i;
+
+	RTK_PORTMASK_CLEAR(member);
+	for (i = 0; i < 4; i++) {
+		if (data->port_map & (1 << i))
+			RTK_PORTMASK_PORT_SET(member, i);
+    }
+
+	ret = rtk_trunk_port_set(TRUNK_GROUP0, &member);
+	if (ret != RT_ERR_OK)
+		printk("rtk_trunk_port_set failed\n");
+
+	ret = rtk_trunk_distributionAlgorithm_set(RTK_WHOLE_SYSTEM, 0x7F);
+	if (ret != RT_ERR_OK)
+		printk("rtk_trunk_distributionAlgorithm_set failed\n");
+}

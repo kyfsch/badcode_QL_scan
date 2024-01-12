@@ -1,0 +1,28 @@
+static void dc_ep_remove(struct pci_dev *pdev)
+{
+	struct dc_ep_priv *priv = pci_get_drvdata(pdev);
+
+#ifndef CONFIG_OF
+	struct pcie_ep_adapter *adapter =
+		(struct pcie_ep_adapter *) pci_get_drvdata(pdev);
+
+	platform_device_unregister(adapter->mei_dev);
+#endif
+	if (priv == NULL)
+		return;
+
+	if (atomic_read(&priv->refcnt) != 0) {
+		dev_err(&pdev->dev, "%s still being used, can't remove\n",
+			__func__);
+		return;
+	}
+	dc_aca_free_fw_file(priv);
+	dc_aca_shutdown(priv);
+	dc_ep_icu_disable(priv);
+	pci_iounmap(pdev, priv->mem);
+	pci_release_region(pdev, DC_EP_BAR_NUM);
+	pci_disable_msi(pdev);
+	wmb();
+	pci_clear_master(pdev);
+	pci_disable_device(pdev);
+}

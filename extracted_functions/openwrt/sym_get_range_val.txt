@@ -1,0 +1,15 @@
+static long long sym_get_range_val(struct symbol *sym, int base)
+{
+	sym_calc_value(sym);
+	switch (sym->type) {
+	case S_INT:
+		base = 10;
+		break;
+	case S_HEX:
+		base = 16;
+		break;
+	default:
+		break;
+	}
+	return strtoll(sym->curr.val, NULL, base);
+}

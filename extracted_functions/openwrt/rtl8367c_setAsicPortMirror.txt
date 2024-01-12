@@ -1,0 +1,14 @@
+ret_t rtl8367c_setAsicPortMirror(rtk_uint32 source, rtk_uint32 monitor)
+{
+    ret_t retVal;
+
+    if((source > RTL8367C_PORTIDMAX) || (monitor > RTL8367C_PORTIDMAX))
+        return RT_ERR_PORT_ID;
+
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_MIRROR_CTRL_REG, RTL8367C_MIRROR_SOURCE_PORT_MASK, source);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+
+    return rtl8367c_setAsicRegBits(RTL8367C_MIRROR_CTRL_REG, RTL8367C_MIRROR_MONITOR_PORT_MASK, monitor);
+}

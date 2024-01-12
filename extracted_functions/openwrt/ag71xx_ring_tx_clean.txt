@@ -1,0 +1,31 @@
+static void ag71xx_ring_tx_clean(struct ag71xx *ag)
+{
+	struct ag71xx_ring *ring = &ag->tx_ring;
+	struct net_device *dev = ag->dev;
+	int ring_mask = BIT(ring->order) - 1;
+	u32 bytes_compl = 0, pkts_compl = 0;
+
+	while (ring->curr != ring->dirty) {
+		struct ag71xx_desc *desc;
+		u32 i = ring->dirty & ring_mask;
+
+		desc = ag71xx_ring_desc(ring, i);
+		if (!ag71xx_desc_empty(desc)) {
+			desc->ctrl = 0;
+			dev->stats.tx_errors++;
+		}
+
+		if (ring->buf[i].skb) {
+			bytes_compl += ring->buf[i].len;
+			pkts_compl++;
+			dev_kfree_skb_any(ring->buf[i].skb);
+		}
+		ring->buf[i].skb = NULL;
+		ring->dirty++;
+	}
+
+	/* flush descriptors */
+	wmb();
+
+	netdev_completed_queue(dev, pkts_compl, bytes_compl);
+}

@@ -1,0 +1,35 @@
+static int fe_open(struct net_device *dev)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+	unsigned long flags;
+	u32 val;
+	int err;
+
+	err = fe_init_dma(priv);
+	if (err) {
+		fe_free_dma(priv);
+		return err;
+	}
+
+	spin_lock_irqsave(&priv->page_lock, flags);
+
+	val = FE_TX_WB_DDONE | FE_RX_DMA_EN | FE_TX_DMA_EN;
+	if (priv->flags & FE_FLAG_RX_2B_OFFSET)
+		val |= FE_RX_2B_OFFSET;
+	val |= priv->soc->pdma_glo_cfg;
+	fe_reg_w32(val, FE_REG_PDMA_GLO_CFG);
+
+	spin_unlock_irqrestore(&priv->page_lock, flags);
+
+	if (priv->phy)
+		priv->phy->start(priv);
+
+	if (priv->soc->has_carrier && priv->soc->has_carrier(priv))
+		netif_carrier_on(dev);
+
+	napi_enable(&priv->rx_napi);
+	fe_int_enable(priv->soc->tx_int | priv->soc->rx_int);
+	netif_start_queue(dev);
+
+	return 0;
+}

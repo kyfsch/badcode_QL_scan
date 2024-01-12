@@ -1,0 +1,91 @@
+static int aes_crypto_thread (void *data)
+{
+    struct aes_container *aes_con = NULL;
+    struct ablkcipher_request *areq = NULL;
+    int err;
+    unsigned long queue_flag;
+    
+    daemonize("lq_aes_thread");
+    printk("AES Queue Manager Starting\n");
+
+    while (1)
+    {
+        DEU_WAIT_EVENT(deu_dma_priv.deu_thread_wait, AES_ASYNC_EVENT, 
+                       deu_dma_priv.aes_event_flags);
+
+        spin_lock_irqsave(&aes_queue->lock, queue_flag);
+   
+        /* wait to prevent starting a crypto session before
+        * exiting the dma interrupt thread.
+        */
+        if (aes_queue->hw_status == AES_STARTED) {
+            areq = ablkcipher_dequeue_request(&aes_queue->list);
+            aes_con = aes_container_cast(areq);
+            aes_queue->hw_status = AES_BUSY;
+        }
+        else if (aes_queue->hw_status == AES_IDLE) {
+            areq = ablkcipher_dequeue_request(&aes_queue->list);
+            aes_con = aes_container_cast(areq);
+            aes_queue->hw_status = AES_STARTED;
+        }
+        else if (aes_queue->hw_status == AES_BUSY) {
+            areq = ablkcipher_dequeue_request(&aes_queue->list);
+            aes_con = aes_container_cast(areq);
+	}
+        else if (aes_queue->hw_status == AES_COMPLETED) {
+            lq_sg_complete(aes_con);
+            aes_queue->hw_status = AES_IDLE;
+            areq->base.complete(&areq->base, 0);
+            spin_unlock_irqrestore(&aes_queue->lock, queue_flag);
+	    return 0;
+	}
+        //printk("debug ln: %d, bytes proc: %d\n", __LINE__, aes_con->bytes_processed);
+        spin_unlock_irqrestore(&aes_queue->lock, queue_flag);
+
+        if (!aes_con) {
+           printk("AES_CON return null\n");
+           goto aes_done;
+	}
+
+        if (aes_con->bytes_processed == 0) {
+            goto aes_done;
+        }
+       
+        /* Process new packet or the next packet in a scatterlist */
+        if (aes_con->flag & PROCESS_NEW_PACKET) {
+           aes_con->flag = PROCESS_SCATTER;
+           err = process_next_packet(aes_con, areq, PROCESS_NEW_PACKET);
+        }
+        else 
+            err = process_next_packet(aes_con, areq, PROCESS_SCATTER);
+ 
+        if (err == -EINVAL) {
+            areq->base.complete(&areq->base, err);
+            lq_sg_complete(aes_con);
+            printk("src/dst returned -EINVAL in func: %s\n", __func__);
+        }
+        else if (err > 0) {
+            printk("src/dst returned zero in func: %s\n", __func__);
+            goto aes_done; 
+        }
+        
+	continue;
+
+aes_done:
+        //printk("debug line - %d, func: %s, qlen: %d\n", __LINE__, __func__, aes_queue->list.qlen);
+        areq->base.complete(&areq->base, 0);    
+        lq_sg_complete(aes_con);
+
+        spin_lock_irqsave(&aes_queue->lock, queue_flag);
+        if (aes_queue->list.qlen > 0) {
+            spin_unlock_irqrestore(&aes_queue->lock, queue_flag);
+            tasklet_schedule(&aes_queue->aes_task); 
+        }
+        else {
+            aes_queue->hw_status = AES_IDLE;
+            spin_unlock_irqrestore(&aes_queue->lock, queue_flag);
+        }
+    } //while(1)
+    
+    return 0;
+} 

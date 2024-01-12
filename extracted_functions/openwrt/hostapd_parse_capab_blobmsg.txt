@@ -1,0 +1,16 @@
+hostapd_parse_capab_blobmsg(struct sta_info *sta)
+{
+	void *r, *v;
+
+	v = blobmsg_open_table(&b, "capabilities");
+
+	if (sta->vht_capabilities) {
+		r = blobmsg_open_table(&b, "vht");
+		hostapd_parse_vht_capab_blobmsg(sta->vht_capabilities);
+		blobmsg_close_table(&b, r);
+	}
+
+	/* ToDo: Add HT / HE capability parsing */
+
+	blobmsg_close_table(&b, v);
+}

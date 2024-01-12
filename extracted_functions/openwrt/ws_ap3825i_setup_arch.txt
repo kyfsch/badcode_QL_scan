@@ -1,0 +1,11 @@
+static void __init ws_ap3825i_setup_arch(void)
+{
+	if (ppc_md.progress)
+		ppc_md.progress("ws_ap3825i_setup_arch()", 0);
+
+	mpc85xx_smp_init();
+
+	fsl_pci_assign_primary();
+
+	pr_info("WS-AP3825i board from Extreme Networks\n");
+}

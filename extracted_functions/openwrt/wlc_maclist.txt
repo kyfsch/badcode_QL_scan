@@ -1,0 +1,52 @@
+static int wlc_maclist(wlc_param param, void *data, void *value)
+{
+	unsigned int *var = ((unsigned int *) data);
+	unsigned int ioc = *var;
+	int limit = (sizeof(wlbuf) - 4) / sizeof(struct ether_addr);
+	struct maclist *list = (struct maclist *) wlbuf;
+	char *str = (char *) value;
+	char astr[30], *p;
+	struct ether_addr *addr;
+	int isset = 0;
+	int ret;
+
+	if ((param & PARAM_MODE) == GET) {
+		list->count = limit;
+		ret = wl_ioctl(interface, (ioc >> 16) & 0xffff, wlbuf, sizeof(wlbuf));
+		
+		if (!ret) 
+			while (list->count) {
+				str += sprintf(str, "%s", ((((char *) value) == str) ? "" : " "));
+				str += my_ether_ntoa((unsigned char *) &list->ea[list->count-- - 1], str);
+			}
+		
+		return ret;
+	} else {
+		while (*str && isspace(*str))
+			*str++;
+		
+		if (*str == '+') {
+			str++;
+
+			list->count = limit;
+			if (wl_ioctl(interface, (ioc >> 16) & 0xffff, wlbuf, sizeof(wlbuf)) == 0)
+				isset = 1;
+
+			while (*str && isspace(*str))
+				str++;
+		}
+		
+		if (!isset)
+			memset(wlbuf, 0, sizeof(wlbuf));
+		
+		foreach(astr, str, p) {
+			if (list->count >= limit)
+				break;
+			
+			if ((addr = ether_aton(astr)) != NULL)
+				memcpy(&list->ea[list->count++], addr, sizeof(struct ether_addr));
+		}
+
+		return wl_ioctl(interface, ioc & 0xffff, wlbuf, sizeof(wlbuf));
+	}
+}

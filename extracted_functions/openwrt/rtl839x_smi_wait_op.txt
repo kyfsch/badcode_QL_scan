@@ -1,0 +1,12 @@
+static int rtl839x_smi_wait_op(int timeout)
+{
+	int ret = 0;
+	u32 val;
+
+	ret = readx_poll_timeout(sw_r32, RTL839X_PHYREG_ACCESS_CTRL,
+				 val, !(val & 0x1), 20, timeout);
+	if (ret)
+		pr_err("%s: timeout\n", __func__);
+
+	return ret;
+}

@@ -1,0 +1,4 @@
+int fit_partition(struct parsed_partitions *state) {
+	int slot = 0;
+	return parse_fit_partitions(state, 0, 0, &slot, 0);
+}

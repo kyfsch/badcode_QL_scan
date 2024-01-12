@@ -1,0 +1,14 @@
+ret_t rtl8367c_setAsicIGMPQueryInterval(rtk_uint32 interval)
+{
+    ret_t  retVal;
+
+    if(interval > RTL8367C_MAX_QUERY_INT)
+        return RT_ERR_OUT_OF_RANGE;
+
+    /* Query Interval */
+    retVal = rtl8367c_setAsicReg(RTL8367C_REG_IGMP_MLD_CFG2, interval);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

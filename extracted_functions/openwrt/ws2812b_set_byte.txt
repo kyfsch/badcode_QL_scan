@@ -1,0 +1,12 @@
+static void ws2812b_set_byte(struct ws2812b_priv *priv, size_t offset, u8 val)
+{
+	/* The lookup table for Bit 7-5 4-3 2-0 */
+	const u8 h3b[] = { 0x92, 0x93, 0x9a, 0x9b, 0xd2, 0xd3, 0xda, 0xdb };
+	const u8 m2b[] = { 0x49, 0x4d, 0x69, 0x6d };
+	const u8 l3b[] = { 0x24, 0x26, 0x34, 0x36, 0xa4, 0xa6, 0xb4, 0xb6 };
+	u8 *p = priv->data_buf + WS2812B_RESET_LEN + (offset * WS2812B_BYTES_PER_COLOR);
+
+	p[0] = h3b[val >> 5]; /* Bit 7-5 */
+	p[1] = m2b[(val >> 3) & 0x3]; /* Bit 4-3 */
+	p[2] = l3b[val & 0x7]; /* Bit 2-0 */
+}

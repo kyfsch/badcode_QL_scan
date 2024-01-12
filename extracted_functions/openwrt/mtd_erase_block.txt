@@ -1,0 +1,12 @@
+int mtd_erase_block(int fd, int offset)
+{
+	struct erase_info_user mtdEraseInfo;
+
+	mtdEraseInfo.start = offset;
+	mtdEraseInfo.length = erasesize;
+	ioctl(fd, MEMUNLOCK, &mtdEraseInfo);
+	if (ioctl (fd, MEMERASE, &mtdEraseInfo) < 0)
+		return -1;
+
+	return 0;
+}

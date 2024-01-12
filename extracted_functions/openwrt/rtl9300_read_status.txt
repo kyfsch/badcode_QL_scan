@@ -1,0 +1,49 @@
+static int rtl9300_read_status(struct phy_device *phydev)
+{
+	struct device *dev = &phydev->mdio.dev;
+	int phy_addr = phydev->mdio.addr;
+	struct device_node *dn;
+	u32 sds_num = 0, status, latch_status, mode;
+
+	if (dev->of_node) {
+		dn = dev->of_node;
+
+		if (of_property_read_u32(dn, "sds", &sds_num))
+			sds_num = -1;
+		pr_info("%s: Port %d, SerDes is %d\n", __func__, phy_addr, sds_num);
+	} else {
+		dev_err(dev, "No DT node.\n");
+		return -EINVAL;
+	}
+
+	if (sds_num < 0)
+		return 0;
+
+	mode = rtl9300_sds_mode_get(sds_num);
+	pr_info("%s got SDS mode %02x\n", __func__, mode);
+	if (mode == 0x1a) { /* 10GR mode */
+		status = rtl9300_sds_field_r(sds_num, 0x5, 0, 12, 12);
+		latch_status = rtl9300_sds_field_r(sds_num, 0x4, 1, 2, 2);
+		status |= rtl9300_sds_field_r(sds_num, 0x5, 0, 12, 12);
+		latch_status |= rtl9300_sds_field_r(sds_num, 0x4, 1, 2, 2);
+	} else {
+		status = rtl9300_sds_field_r(sds_num, 0x1, 29, 8, 0);
+		latch_status = rtl9300_sds_field_r(sds_num, 0x1, 30, 8, 0);
+		status |= rtl9300_sds_field_r(sds_num, 0x1, 29, 8, 0);
+		latch_status |= rtl9300_sds_field_r(sds_num, 0x1, 30, 8, 0);
+	}
+
+	pr_info("%s link status: status: %d, latch %d\n", __func__, status, latch_status);
+
+	if (latch_status) {
+		phydev->link = true;
+		if (mode == 0x1a)
+			phydev->speed = SPEED_10000;
+		else
+			phydev->speed = SPEED_1000;
+
+		phydev->duplex = DUPLEX_FULL;
+	}
+
+	return 0;
+}

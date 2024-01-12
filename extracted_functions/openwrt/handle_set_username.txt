@@ -1,0 +1,15 @@
+handle_set_username(struct ead_packet *pkt, int len, int *nstate)
+{
+	struct ead_msg *msg = &pkt->msg;
+	struct ead_msg_user *user = EAD_DATA(msg, user);
+
+	set_state(EAD_TYPE_SET_USERNAME); /* clear old state */
+	strncpy(username, user->username, sizeof(username));
+	username[sizeof(username) - 1] = 0;
+
+	msg = &pktbuf->msg;
+	msg->len = 0;
+
+	*nstate = EAD_TYPE_GET_PRIME;
+	return true;
+}

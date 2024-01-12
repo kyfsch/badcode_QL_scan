@@ -1,0 +1,12 @@
+void attr_clear(WINDOW * win, int height, int width, chtype attr)
+{
+	int i, j;
+
+	wattrset(win, attr);
+	for (i = 0; i < height; i++) {
+		wmove(win, i, 0);
+		for (j = 0; j < width; j++)
+			waddch(win, ' ');
+	}
+	touchwin(win);
+}

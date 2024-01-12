@@ -1,0 +1,14 @@
+static irqreturn_t bcm6348_emac_isr_dma(int irq, void *dev_id)
+{
+	struct net_device *ndev = dev_id;
+	struct bcm6348_emac *emac = netdev_priv(ndev);
+	struct bcm6348_iudma *iudma = emac->iudma;
+
+	/* mask rx/tx interrupts */
+	dmac_writel(iudma, 0, DMAC_IRMASK_REG, emac->rx_chan);
+	dmac_writel(iudma, 0, DMAC_IRMASK_REG, emac->tx_chan);
+
+	napi_schedule(&emac->napi);
+
+	return IRQ_HANDLED;
+}

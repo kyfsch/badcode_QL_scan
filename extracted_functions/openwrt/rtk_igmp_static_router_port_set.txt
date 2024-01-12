@@ -1,0 +1,22 @@
+rtk_api_ret_t rtk_igmp_static_router_port_set(rtk_portmask_t *pPortmask)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 pmask;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Valid port mask */
+    if(pPortmask == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    RTK_CHK_PORTMASK_VALID(pPortmask);
+
+    if ((retVal = rtk_switch_portmask_L2P_get(pPortmask, &pmask))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicIGMPStaticRouterPort(pmask))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

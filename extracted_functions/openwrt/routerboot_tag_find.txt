@@ -1,0 +1,51 @@
+int routerboot_tag_find(const u8 *bufhead, const size_t buflen, const u16 tag_id,
+			u16 *pld_ofs, u16 *pld_len)
+{
+	const u32 *datum, *bufend;
+	u32 node;
+	u16 id, len;
+	int ret;
+
+	if (!bufhead || !tag_id)
+		return -EINVAL;
+
+	ret = -ENOENT;
+	datum = (const u32 *)bufhead;
+	bufend = (const u32 *)(bufhead + buflen);
+
+	while (datum < bufend) {
+		node = *datum++;
+
+		/* Tag list ends with null node */
+		if (!node)
+			break;
+
+		id = node & 0xFFFF;
+		len = node >> 16;
+
+		if (tag_id == id) {
+			if (datum >= bufend)
+				break;
+
+			if (pld_ofs)
+				*pld_ofs = (u16)((u8 *)datum - bufhead);
+			if (pld_len)
+				*pld_len = len;
+
+			ret = 0;
+			break;
+		}
+
+		/*
+		 * The only known situation where len may not end on 32bit
+		 * boundary is within ERD data. Since we're only extracting
+		 * one tag (the first and only one) from that data, we should
+		 * never need to forcefully ALIGN(). Do it anyway, this is not a
+		 * performance path.
+		 */
+		len = ALIGN(len, sizeof(*datum));
+		datum += len / sizeof(*datum);
+	}
+
+	return ret;
+}

@@ -1,0 +1,10 @@
+static int b53_global_get_jumbo_enable(struct switch_dev *dev,
+				       const struct switch_attr *attr,
+				       struct switch_val *val)
+{
+	struct b53_device *priv = sw_to_b53(dev);
+
+	val->value.i = priv->enable_jumbo;
+
+	return 0;
+}

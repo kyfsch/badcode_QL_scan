@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsicIgmp(rtk_uint32 *ptr_enabled)
+{
+    ret_t retVal;
+
+    retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_IGMP_MLD_CFG0, RTL8367C_IGMP_MLD_EN_OFFSET, ptr_enabled);
+    return retVal;
+}

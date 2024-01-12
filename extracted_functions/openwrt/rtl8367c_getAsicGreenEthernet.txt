@@ -1,0 +1,20 @@
+ret_t rtl8367c_getAsicGreenEthernet(rtk_uint32 port, rtk_uint32* green)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+
+    /* 0xa436 = 0x8011 */
+    if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xA436, 0x8011)) != RT_ERR_OK)
+        return retVal;
+
+    /* wr 0xa438[15] = 0: disable, 1: enable */
+    if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xA438, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    if(regData & 0x8000)
+        *green = ENABLED;
+    else
+        *green = DISABLED;
+
+    return RT_ERR_OK;
+}

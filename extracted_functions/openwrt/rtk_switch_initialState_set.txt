@@ -1,0 +1,8 @@
+rtk_api_ret_t rtk_switch_initialState_set(init_state_t state)
+{
+    if(state >= INIT_STATE_END)
+        return RT_ERR_FAILED;
+
+    init_state = state;
+    return RT_ERR_OK;
+}

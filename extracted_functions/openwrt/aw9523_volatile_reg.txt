@@ -1,0 +1,8 @@
+static bool aw9523_volatile_reg(struct device *dev, unsigned int reg)
+{
+	return aw9523_is_reg_hole(reg) ||
+	       reg == AW9523_REG_IN_STATE(0) ||
+	       reg == AW9523_REG_IN_STATE(AW9523_PINS_PER_PORT) ||
+	       reg == AW9523_REG_CHIPID ||
+	       reg == AW9523_REG_SOFT_RESET;
+}

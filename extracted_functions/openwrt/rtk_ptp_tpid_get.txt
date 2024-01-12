@@ -1,0 +1,12 @@
+rtk_api_ret_t rtk_ptp_tpid_get(rtk_ptp_tpid_t *pOuterId, rtk_ptp_tpid_t *pInnerId)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if ((retVal = rtl8367c_getAsicEavTpid(pOuterId, pInnerId)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

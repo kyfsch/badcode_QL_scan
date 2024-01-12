@@ -1,0 +1,19 @@
+static int mtdsplit_elf_read_mtd(struct mtd_info *mtd, size_t offset,
+				 uint8_t *dst, size_t len)
+{
+	size_t retlen;
+	int ret;
+
+	ret = mtd_read(mtd, offset, len, &retlen, dst);
+	if (ret) {
+		pr_debug("read error in \"%s\"\n", mtd->name);
+		return ret;
+	}
+
+	if (retlen != len) {
+		pr_debug("short read in \"%s\"\n", mtd->name);
+		return -EIO;
+	}
+
+	return 0;
+}

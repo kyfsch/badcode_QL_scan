@@ -1,0 +1,4 @@
+bool conf_get_changed(void)
+{
+	return conf_changed;
+}

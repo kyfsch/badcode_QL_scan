@@ -1,0 +1,13 @@
+static void fe_pending_work(struct work_struct *work)
+{
+	struct fe_priv *priv = container_of(work, struct fe_priv, pending_work);
+	int i;
+	bool pending;
+
+	for (i = 0; i < ARRAY_SIZE(fe_work); i++) {
+		pending = test_and_clear_bit(fe_work[i].bitnr,
+					     priv->pending_flags);
+		if (pending)
+			fe_work[i].action(priv);
+	}
+}

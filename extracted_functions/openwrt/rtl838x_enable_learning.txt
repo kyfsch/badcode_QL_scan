@@ -1,0 +1,7 @@
+static void rtl838x_enable_learning(int port, bool enable)
+{
+	/* Limit learning to maximum: 16k entries */
+
+	sw_w32_mask(0x3fff << 2, enable ? (0x3fff << 2) : 0,
+		    RTL838X_L2_PORT_LRN_CONSTRT + (port << 2));
+}

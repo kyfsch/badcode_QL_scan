@@ -1,0 +1,14 @@
+static int read_byte(void *object, unsigned char **buffer, UInt32 *bufferSize)
+{
+	static unsigned int val;
+
+	if (((unsigned int)offset % 4) == 0) {
+		val = *(unsigned int *)data;
+		data += 4;
+	}
+	
+	*bufferSize = 1;
+	*buffer = ((unsigned char *)&val) + (offset++ & 3);
+	
+	return LZMA_RESULT_OK;
+}

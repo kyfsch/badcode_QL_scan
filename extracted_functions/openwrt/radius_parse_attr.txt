@@ -1,0 +1,44 @@
+radius_parse_attr(struct blob_attr *attr)
+{
+	static const struct blobmsg_policy policy[4] = {
+		{ .type = BLOBMSG_TYPE_INT32 },
+		{ .type = BLOBMSG_TYPE_INT32 },
+		{ .type = BLOBMSG_TYPE_STRING },
+		{ .type = BLOBMSG_TYPE_STRING },
+	};
+	static struct radius_parse_attr_data data;
+	struct blob_attr *tb[4];
+	const char *format;
+
+	blobmsg_parse_array(policy, ARRAY_SIZE(policy), tb, blobmsg_data(attr), blobmsg_len(attr));
+
+	if (!tb[0] || !tb[1] || !tb[2] || !tb[3])
+		return NULL;
+
+	format = blobmsg_get_string(tb[2]);
+	if (strlen(format) != 1)
+		return NULL;
+
+	data.vendor = blobmsg_get_u32(tb[0]);
+	data.type = blobmsg_get_u32(tb[1]);
+	data.format = format[0];
+	data.data = blobmsg_get_string(tb[3]);
+	data.size = strlen(data.data);
+
+	switch (data.format) {
+	case 's':
+		break;
+	case 'x':
+		if (data.size & 1)
+			return NULL;
+		data.size /= 2;
+		break;
+	case 'd':
+		data.size = 4;
+		break;
+	default:
+		return NULL;
+	}
+
+	return &data;
+}

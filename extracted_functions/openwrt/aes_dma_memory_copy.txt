@@ -1,0 +1,14 @@
+void aes_dma_memory_copy(u32 *outcopy, u32 *out_dma, u8 *out_arg, int nbytes);
+void des_dma_memory_copy(u32 *outcopy, u32 *out_dma, u8 *out_arg, int nbytes);
+
+void ifx_deu_des (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
+             u8 *iv_arg, u32 nbytes, int encdec, int mode);
+
+struct ifx_deu_des_ctx {
+        int controlr_M;
+        int key_length;
+        u8 iv[DES_BLOCK_SIZE];
+        u32 expkey[DES3_EDE_EXPKEY_WORDS];
+        struct des_ctx des_context;
+        struct des3_ede_ctx des3_ede_context;
+};

@@ -1,0 +1,4 @@
+handle_none(void)
+{
+	return true;
+}

@@ -1,0 +1,8 @@
+static inline void fe_set_txd(struct fe_tx_dma *txd, struct fe_tx_dma *dma_txd)
+{
+	dma_txd->txd1 = txd->txd1;
+	dma_txd->txd3 = txd->txd3;
+	dma_txd->txd4 = txd->txd4;
+	/* clean dma done flag last */
+	dma_txd->txd2 = txd->txd2;
+}

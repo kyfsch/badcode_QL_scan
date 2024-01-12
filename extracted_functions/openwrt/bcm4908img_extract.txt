@@ -1,0 +1,85 @@
+static int bcm4908img_extract(int argc, char **argv) {
+	struct bcm4908img_info info;
+	const char *pathname = NULL;
+	const char *type = NULL;
+	uint8_t buf[1024];
+	size_t offset;
+	size_t length;
+	size_t bytes;
+	FILE *fp;
+	int c;
+	int err = 0;
+
+	while ((c = getopt(argc, argv, "i:t:")) != -1) {
+		switch (c) {
+		case 'i':
+			pathname = optarg;
+			break;
+		case 't':
+			type = optarg;
+			break;
+		}
+	}
+
+	fp = bcm4908img_open(pathname, "r");
+	if (!fp) {
+		fprintf(stderr, "Failed to open BCM4908 image\n");
+		err = -EACCES;
+		goto err_out;
+	}
+
+	err = bcm4908img_parse(fp, &info);
+	if (err) {
+		fprintf(stderr, "Failed to parse BCM4908 image\n");
+		goto err_close;
+	}
+
+	if (!type) {
+		err = -EINVAL;
+		fprintf(stderr, "No data to extract specified\n");
+		goto err_close;
+	} else if (!strcmp(type, "cferom")) {
+		offset = info.cferom_offset;
+		length = info.bootfs_offset - offset;
+		if (!length) {
+			err = -ENOENT;
+			fprintf(stderr, "This BCM4908 image doesn't contain cferom\n");
+			goto err_close;
+		}
+	} else if (!strcmp(type, "bootfs")) {
+		offset = info.bootfs_offset;
+		length = (info.padding_offset ? info.padding_offset : info.rootfs_offset) - offset;
+	} else if (!strcmp(type, "rootfs")) {
+		offset = info.rootfs_offset;
+		length = info.tail_offset - offset;
+	} else if (!strcmp(type, "firmware")) {
+		offset = info.bootfs_offset;
+		length = info.tail_offset - offset;
+	} else {
+		err = -EINVAL;
+		fprintf(stderr, "Unsupported extract type: %s\n", type);
+		goto err_close;
+	}
+
+	if (!length) {
+		err = -EINVAL;
+		fprintf(stderr, "Failed to find requested data in input image\n");
+		goto err_close;
+	}
+
+	fseek(fp, offset, SEEK_SET);
+	while (length && (bytes = fread(buf, 1, bcm4908img_min(sizeof(buf), length), fp)) > 0) {
+		fwrite(buf, bytes, 1, stdout);
+		length -= bytes;
+	}
+	if (length) {
+		err = -EIO;
+		fprintf(stderr, "Failed to read last %zd B of data\n", length);
+		goto err_close;
+	}
+
+err_close:
+	bcm4908img_close(fp);
+err_out:
+	return err;
+}

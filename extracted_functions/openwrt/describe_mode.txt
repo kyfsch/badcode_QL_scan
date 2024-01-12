@@ -1,0 +1,82 @@
+static void describe_mode(standard_t standard, profile_t profile, vector_t vector) {
+	char buf[128];
+
+	switch (standard) {
+	case STD_T1_413:
+		strcpy(buf, "T1.413");
+		break;
+	case STD_TS_101_388:
+		strcpy(buf, "TS 101 388");
+		break;
+	case STD_G_992_1:
+		strcpy(buf, "G.992.1 (ADSL)");
+		break;
+	case STD_G_992_2:
+		strcpy(buf, "G.992.2 (ADSL lite)");
+		break;
+	case STD_G_992_3:
+		strcpy(buf, "G.992.3 (ADSL2)");
+		break;
+	case STD_G_992_4:
+		strcpy(buf, "G.992.4 (ADSL2 lite)");
+		break;
+	case STD_G_992_5:
+		strcpy(buf, "G.992.5 (ADSL2+)");
+		break;
+	case STD_G_993_1:
+		strcpy(buf, "G.993.1 (VDSL)");
+		break;
+	case STD_G_993_2:
+		strcpy(buf, "G.993.2 (VDSL2");
+
+		switch (profile) {
+		case PROFILE_8A:
+			strcat(buf, ", Profile 8a");
+			break;
+		case PROFILE_8B:
+			strcat(buf, ", Profile 8b");
+			break;
+		case PROFILE_8C:
+			strcat(buf, ", Profile 8c");
+			break;
+		case PROFILE_8D:
+			strcat(buf, ", Profile 8d");
+			break;
+		case PROFILE_12A:
+			strcat(buf, ", Profile 12a");
+			break;
+		case PROFILE_12B:
+			strcat(buf, ", Profile 12b");
+			break;
+		case PROFILE_17A:
+			strcat(buf, ", Profile 17a");
+			break;
+		case PROFILE_30A:
+			strcat(buf, ", Profile 30a");
+			break;
+		case PROFILE_35B:
+			strcat(buf, ", Profile 35b");
+			break;
+		default:
+			break;
+		};
+
+		switch (vector) {
+		case VECTOR_ON_DS:
+			strcat(buf, ", with downstream vectoring");
+			break;
+		case VECTOR_ON_DS_US:
+			strcat(buf, ", with down- and upstream vectoring");
+			break;
+		default:
+			break;
+		};
+
+		strcat(buf, ")");
+		break;
+	default:
+		return;
+	};
+
+	m_str("mode", buf);
+}

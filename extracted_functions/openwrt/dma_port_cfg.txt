@@ -1,0 +1,12 @@
+static void dma_port_cfg(struct dc_ep_dev *dev)
+{
+	u32 reg = 0;
+
+	reg |= (DMA_TX_PORT_DEFAULT_WEIGHT << 12);
+	reg |= (DMA_ENDIAN_TYPE0 << 10);
+	reg |= (DMA_ENDIAN_TYPE0 << 8);
+	reg |= (DMA_PKT_DROP_DISABLE << 6);
+	reg |= 0x3;
+	ep_wr32(0, DMA_PS);
+	ep_wr32(reg, DMA_PCTRL);
+}

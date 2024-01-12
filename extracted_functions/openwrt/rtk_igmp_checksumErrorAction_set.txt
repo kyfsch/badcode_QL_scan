@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_igmp_checksumErrorAction_set(rtk_igmp_checksumErrorAction_t action)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(action >= IGMP_CRC_ERR_OP_END)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicIGMPCRCErrOP((rtk_uint32)action))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

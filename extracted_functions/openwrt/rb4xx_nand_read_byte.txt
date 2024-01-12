@@ -1,0 +1,13 @@
+static u8 rb4xx_nand_read_byte(struct nand_chip *chip)
+{
+	struct rb4xx_nand *nand = chip->priv;
+	struct rb4xx_cpld *cpld = nand->cpld;
+	u8 data;
+	int ret;
+
+	ret = cpld->read_nand(cpld, &data, 1);
+	if (unlikely(ret))
+		return 0xff;
+
+	return data;
+}

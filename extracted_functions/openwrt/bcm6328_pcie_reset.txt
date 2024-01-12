@@ -1,0 +1,23 @@
+static void bcm6328_pcie_reset(struct bcm6328_pcie *priv)
+{
+	regmap_write_bits(priv->serdes, 0,
+			  SERDES_PCIE_EXD_EN | SERDES_PCIE_EN,
+			  SERDES_PCIE_EXD_EN | SERDES_PCIE_EN);
+
+	reset_control_assert(priv->reset);
+	reset_control_assert(priv->reset_core);
+	reset_control_assert(priv->reset_ext);
+	if (priv->reset_hard) {
+		reset_control_assert(priv->reset_hard);
+		mdelay(10);
+		reset_control_deassert(priv->reset_hard);
+	}
+	mdelay(10);
+
+	reset_control_deassert(priv->reset_core);
+	reset_control_deassert(priv->reset);
+	mdelay(10);
+
+	reset_control_deassert(priv->reset_ext);
+	mdelay(200);
+}

@@ -1,0 +1,22 @@
+static inline int msp430_check_workmode(struct spi_device *spi)
+{
+	struct device *dev = &spi->dev;
+	u8 tx[MSP430_CMD_BYTES] = {MSP430_CMD_MCU, MSP430_MCU_WM, 0, 0, 0, 0};
+	u8 rx[MSP430_CMD_BYTES];
+	int rc;
+
+	rc = msp430_cmd(spi, tx, rx);
+	if (rc)
+		return rc;
+
+	if ((rx[3] == 0xA5 && rx[4] == 'Z') ||
+	    (rx[4] == 0xA5 && rx[5] == 'Z') ||
+	    (rx[4] == '\b' && rx[5] == '\n')) {
+		dev_err(dev, "invalid workmode: "
+			"[%02x %02x %02x %02x %02x %02x]\n",
+			rx[0], rx[1], rx[2], rx[3], rx[4], rx[5]);
+		return -EINVAL;
+	}
+
+	return 0;
+}

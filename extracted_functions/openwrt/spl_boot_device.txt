@@ -1,0 +1,4 @@
+u32 spl_boot_device(void)
+{
+	return CONFIG_SPL_BOOT_DEVICE;
+}

@@ -1,0 +1,4 @@
+static inline int rtl8366_smi_probe_of(struct platform_device *pdev, struct rtl8366_smi *smi)
+{
+	return -ENODEV;
+}

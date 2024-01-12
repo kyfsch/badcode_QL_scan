@@ -1,0 +1,46 @@
+void rtl9300_sds_rxcal_tap_manual(u32 sds_num, int tap_id, bool manual, u32 tap_list[])
+{
+	if (manual) {
+		switch(tap_id) {
+		case 0:
+			/* ##REG0_LOAD_IN_INIT[0]=1; REG0_TAP0_INIT[5:0]=Tap0_Value */
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x0f, tap_id + 7, tap_id + 7, 0x1);
+			rtl9300_sds_field_w(sds_num, 0x2f, 0x03, 5, 5, tap_list[0]);
+			rtl9300_sds_field_w(sds_num, 0x2f, 0x03, 4, 0, tap_list[1]);
+			break;
+		case 1:
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x0f, tap_id + 7, tap_id + 7, 0x1);
+			rtl9300_sds_field_w(sds_num, 0x21, 0x07, 6, 6, tap_list[0]);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x09, 11, 6, tap_list[1]);
+			rtl9300_sds_field_w(sds_num, 0x21, 0x07, 5, 5, tap_list[2]);
+			rtl9300_sds_field_w(sds_num, 0x2f, 0x12, 5, 0, tap_list[3]);
+			break;
+		case 2:
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x0f, tap_id + 7, tap_id + 7, 0x1);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x09, 5, 5, tap_list[0]);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x09, 4, 0, tap_list[1]);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x0a, 11, 11, tap_list[2]);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x0a, 10, 6, tap_list[3]);
+			break;
+		case 3:
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x0f, tap_id + 7, tap_id + 7, 0x1);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x0a, 5, 5, tap_list[0]);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x0a, 4, 0, tap_list[1]);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x06, 5, 5, tap_list[2]);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x06, 4, 0, tap_list[3]);
+			break;
+		case 4:
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x0f, tap_id + 7, tap_id + 7, 0x1);
+			rtl9300_sds_field_w(sds_num, 0x2f, 0x01, 5, 5, tap_list[0]);
+			rtl9300_sds_field_w(sds_num, 0x2f, 0x01, 4, 0, tap_list[1]);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x06, 11, 11, tap_list[2]);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x06, 10, 6, tap_list[3]);
+			break;
+		default:
+			break;
+		}
+	} else {
+		rtl9300_sds_field_w(sds_num, 0x2e, 0x0f, tap_id + 7, tap_id + 7, 0x0);
+		mdelay(10);
+	}
+}

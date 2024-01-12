@@ -1,0 +1,11 @@
+ret_t rtl8367c_getAsicEavTpid(rtk_uint32* pOuterTag, rtk_uint32* pInnerTag)
+{
+    ret_t retVal;
+
+    if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_OTAG_TPID, pOuterTag)) != RT_ERR_OK)
+        return retVal;
+    if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_ITAG_TPID, pInnerTag)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,32 @@
+static ssize_t phyreg_ops(struct file *file,
+                            const char __user *buffer, size_t count,
+                            loff_t *data)
+{
+        char buf[64];
+	 unsigned int port;
+        unsigned int offset;
+        unsigned int val;
+
+        memset(buf, 0, 64);
+
+        if (copy_from_user(buf, buffer, count))
+                return -EFAULT;
+
+
+        if(buf[0] == 'w') {
+
+                if(sscanf(buf, "w %d %x %x", &port,&offset,&val) == -1)
+                        return -EFAULT;
+                else
+                        rtk_hal_set_phy_reg(port,offset,val);
+
+        } else {
+
+		if(sscanf(buf, "r %d %x",&port, &offset) == -1)
+                        return -EFAULT;
+                else
+                        rtk_hal_get_phy_reg(port,offset);
+        }
+
+        return count;
+}

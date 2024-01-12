@@ -1,0 +1,4 @@
+static inline void sata_oxnas_clear_raid_error(struct ata_host *ah)
+{
+	return;
+};

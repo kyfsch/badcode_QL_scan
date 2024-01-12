@@ -1,0 +1,25 @@
+static void ath79_set_pllval(struct ag71xx *ag)
+{
+	u32 pll_reg = ag->pllreg[1];
+	u32 pll_val;
+
+	if (!ag->pllregmap)
+		return;
+
+	switch (ag->speed) {
+	case SPEED_10:
+		pll_val = ag->plldata[2];
+		break;
+	case SPEED_100:
+		pll_val = ag->plldata[1];
+		break;
+	case SPEED_1000:
+		pll_val = ag->plldata[0];
+		break;
+	default:
+		BUG();
+	}
+
+	if (pll_val)
+		regmap_write(ag->pllregmap, pll_reg, pll_val);
+}

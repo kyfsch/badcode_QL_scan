@@ -1,0 +1,36 @@
+static irqreturn_t aw9523_irq_thread_func(int irq, void *dev_id)
+{
+	struct aw9523 *awi = (struct aw9523 *)dev_id;
+	unsigned long n, val = 0;
+	unsigned long changed_gpio;
+	unsigned int tmp, port_pin, i, ret;
+
+	for (i = 0; i < AW9523_NUM_PORTS; i++) {
+		port_pin = i * AW9523_PINS_PER_PORT;
+		ret = regmap_read(awi->regmap,
+				  AW9523_REG_IN_STATE(port_pin),
+				  &tmp);
+		if (ret)
+			return ret;
+		val |= (u8)tmp << (i * 8);
+	}
+
+	/* Handle GPIO input release interrupt as well */
+	changed_gpio = awi->irq->cached_gpio ^ val;
+	awi->irq->cached_gpio = val;
+
+	/*
+	 * To avoid up to four *slow* i2c reads from any driver hooked
+	 * up to our interrupts, just check for the irq_find_mapping
+	 * result: if the interrupt is not mapped, then we don't want
+	 * to care about it.
+	 */
+	for_each_set_bit(n, &changed_gpio, awi->gpio.ngpio) {
+		tmp = irq_find_mapping(awi->gpio.irq.domain, n);
+		if (tmp <= 0)
+			continue;
+		handle_nested_irq(tmp);
+	}
+
+	return IRQ_HANDLED;
+}

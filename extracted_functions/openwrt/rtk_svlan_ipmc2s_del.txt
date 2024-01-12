@@ -1,0 +1,33 @@
+rtk_api_ret_t rtk_svlan_ipmc2s_del(ipaddr_t ipmc, ipaddr_t ipmcMsk)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 i;
+    rtl8367c_svlan_mc2s_t svlanMC2SConf;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if ((ipmc&0xF0000000)!=0xE0000000)
+        return RT_ERR_INPUT;
+
+    for (i = 0; i <= RTL8367C_MC2SIDXMAX; i++)
+    {
+        if ((retVal = rtl8367c_getAsicSvlanMC2SConf(i, &svlanMC2SConf)) != RT_ERR_OK)
+            return retVal;
+
+        if (TRUE == svlanMC2SConf.valid)
+        {
+            if (svlanMC2SConf.format == SVLAN_MC2S_MODE_IP &&
+                svlanMC2SConf.sdata==ipmc&&
+                svlanMC2SConf.smask==ipmcMsk)
+            {
+                memset(&svlanMC2SConf, 0, sizeof(rtl8367c_svlan_mc2s_t));
+                if ((retVal = rtl8367c_setAsicSvlanMC2SConf(i, &svlanMC2SConf)) != RT_ERR_OK)
+                    return retVal;
+                return RT_ERR_OK;
+            }
+        }
+    }
+
+    return RT_ERR_OUT_OF_RANGE;
+}

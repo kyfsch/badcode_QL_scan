@@ -1,0 +1,64 @@
+static int oxnas_pcie_probe(struct platform_device *pdev)
+{
+	struct oxnas_pcie *pcie;
+	struct device_node *np = pdev->dev.of_node;
+	int ret;
+
+	pcie = devm_kzalloc(&pdev->dev, sizeof(struct oxnas_pcie),
+			    GFP_KERNEL);
+	if (!pcie)
+		return -ENOMEM;
+
+	pcie->pdev = pdev;
+	pcie->haslink = 1;
+	spin_lock_init(&pcie->lock);
+
+	pcie->sys_ctrl = syscon_regmap_lookup_by_compatible("oxsemi,ox820-sys-ctrl");
+	if (IS_ERR(pcie->sys_ctrl))
+		return PTR_ERR(pcie->sys_ctrl);
+
+	ret = oxnas_pcie_init_res(pdev, pcie, np);
+	if (ret)
+		return ret;
+	if (pcie->card_reset >= 0) {
+		ret = gpio_request_one(pcie->card_reset, GPIOF_DIR_IN,
+				       dev_name(&pdev->dev));
+		if (ret) {
+			dev_err(&pdev->dev, "cannot request gpio pin %d\n",
+				pcie->card_reset);
+			return ret;
+		}
+	}
+
+	ret = oxnas_pcie_map_registers(pdev, np, pcie);
+	if (ret) {
+		dev_err(&pdev->dev, "cannot map registers\n");
+		goto err_free_gpio;
+	}
+
+	ret = oxnas_pcie_shared_init(pdev, pcie);
+	if (ret)
+		goto err_free_gpio;
+
+	/* if hw not found, haslink cleared */
+	oxnas_pcie_init_hw(pdev, pcie);
+
+	if (pcie->haslink && oxnas_pcie_link_up(pcie)) {
+		pcie->haslink = 1;
+		dev_info(&pdev->dev, "link up\n");
+	} else {
+		pcie->haslink = 0;
+		dev_info(&pdev->dev, "link down\n");
+	}
+	/* should we register our controller even when pcie->haslink is 0 ? */
+	/* register the controller with framework */
+	oxnas_pcie_enable(&pdev->dev, pcie);
+
+	return 0;
+
+err_free_gpio:
+	if (pcie->card_reset)
+		gpio_free(pcie->card_reset);
+
+	return ret;
+}

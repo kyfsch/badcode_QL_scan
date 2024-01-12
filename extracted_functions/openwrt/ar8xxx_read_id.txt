@@ -1,0 +1,27 @@
+ar8xxx_read_id(struct ar8xxx_priv *priv)
+{
+	u32 val;
+	u16 id;
+	int i;
+
+	val = ar8xxx_read(priv, AR8216_REG_CTRL);
+	if (val == ~0)
+		return -ENODEV;
+
+	id = val & (AR8216_CTRL_REVISION | AR8216_CTRL_VERSION);
+	for (i = 0; i < AR8X16_PROBE_RETRIES; i++) {
+		u16 t;
+
+		val = ar8xxx_read(priv, AR8216_REG_CTRL);
+		if (val == ~0)
+			return -ENODEV;
+
+		t = val & (AR8216_CTRL_REVISION | AR8216_CTRL_VERSION);
+		if (t != id)
+			return -ENODEV;
+	}
+
+	priv->chip_ver = (id & AR8216_CTRL_VERSION) >> AR8216_CTRL_VERSION_S;
+	priv->chip_rev = (id & AR8216_CTRL_REVISION);
+	return 0;
+}

@@ -1,0 +1,21 @@
+rtk_api_ret_t rtk_qos_queueNum_set(rtk_port_t port, rtk_queue_num_t queue_num)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if ((0 == queue_num) || (queue_num > RTK_MAX_NUM_OF_QUEUE))
+        return RT_ERR_FAILED;
+
+    if (RTK_MAX_NUM_OF_QUEUE == queue_num)
+        queue_num = 0;
+
+    if ((retVal = rtl8367c_setAsicOutputQueueMappingIndex(rtk_switch_port_L2P_get(port), queue_num)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

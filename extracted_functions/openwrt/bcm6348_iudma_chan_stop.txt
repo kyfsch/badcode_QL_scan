@@ -1,0 +1,16 @@
+static void bcm6348_iudma_chan_stop(struct bcm6348_iudma *iudma, int chan)
+{
+	int limit = 1000;
+
+	dmac_writel(iudma, 0, DMAC_CHANCFG_REG, chan);
+
+	do {
+		u32 val;
+
+		val = dmac_readl(iudma, DMAC_CHANCFG_REG, chan);
+		if (!(val & DMAC_CHANCFG_EN_MASK))
+			break;
+
+		udelay(1);
+	} while (limit--);
+}

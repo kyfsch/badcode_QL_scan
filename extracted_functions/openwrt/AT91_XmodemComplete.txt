@@ -1,0 +1,6 @@
+static void AT91_XmodemComplete(AT91S_PipeStatus status, void *pVoid)
+{
+	/* stop the Xmodem tempo */
+	svcXmodem.tempo.Stop(&(svcXmodem.tempo));
+	XmodemComplete = 1;
+}

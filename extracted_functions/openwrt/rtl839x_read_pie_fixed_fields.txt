@@ -1,0 +1,35 @@
+static void rtl839x_read_pie_fixed_fields(u32 r[], struct pie_rule *pr)
+{
+	pr->spmmask_fix = (r[6] >> 30) & 0x3;
+	pr->spn = (r[6] >> 24) & 0x3f;
+	pr->mgnt_vlan = (r[6] >> 23) & 1;
+	pr->dmac_hit_sw = (r[6] >> 22) & 1;
+	pr->not_first_frag = (r[6] >> 21) & 1;
+	pr->frame_type_l4 = (r[6] >> 18) & 7;
+	pr->frame_type = (r[6] >> 16) & 3;
+	pr->otag_fmt = (r[6] >> 15) & 1;
+	pr->itag_fmt = (r[6] >> 14) & 1;
+	pr->otag_exist = (r[6] >> 13) & 1;
+	pr->itag_exist = (r[6] >> 12) & 1;
+	pr->frame_type_l2 = (r[6] >> 10) & 3;
+	pr->tid = (r[6] >> 8) & 3;
+
+	pr->spmmask_fix_m = (r[12] >> 6) & 0x3;
+	pr->spn_m = r[12]  & 0x3f;
+	pr->mgnt_vlan_m = (r[13] >> 31) & 1;
+	pr->dmac_hit_sw_m = (r[13] >> 30) & 1;
+	pr->not_first_frag_m = (r[13] >> 29) & 1;
+	pr->frame_type_l4_m = (r[13] >> 26) & 7;
+	pr->frame_type_m = (r[13] >> 24) & 3;
+	pr->otag_fmt_m = (r[13] >> 23) & 1;
+	pr->itag_fmt_m = (r[13] >> 22) & 1;
+	pr->otag_exist_m = (r[13] >> 21) & 1;
+	pr->itag_exist_m = (r[13] >> 20) & 1;
+	pr->frame_type_l2_m = (r[13] >> 18) & 3;
+	pr->tid_m = (r[13] >> 16) & 3;
+
+	pr->valid = r[13] & BIT(15);
+	pr->cond_not = r[13] & BIT(14);
+	pr->cond_and1 = r[13] & BIT(13);
+	pr->cond_and2 = r[13] & BIT(12);
+}

@@ -1,0 +1,5 @@
+static int adm6996_soft_reset(struct phy_device *phydev)
+{
+	/* we don't need an extra reset */
+	return 0;
+}

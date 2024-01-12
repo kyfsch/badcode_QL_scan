@@ -1,0 +1,23 @@
+static ssize_t rtl8366_read_debugfs_reg(struct file *file,
+					 char __user *user_buf,
+					 size_t count, loff_t *ppos)
+{
+	struct rtl8366_smi *smi = (struct rtl8366_smi *)file->private_data;
+	u32 t, reg = smi->dbg_reg;
+	int err, len = 0;
+	char *buf = smi->buf;
+
+	memset(buf, '\0', sizeof(smi->buf));
+
+	err = rtl8366_smi_read_reg(smi, reg, &t);
+	if (err) {
+		len += snprintf(buf, sizeof(smi->buf),
+				"Read failed (reg: 0x%04x)\n", reg);
+		return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+	}
+
+	len += snprintf(buf, sizeof(smi->buf), "reg = 0x%04x, val = 0x%04x\n",
+			reg, t);
+
+	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+}

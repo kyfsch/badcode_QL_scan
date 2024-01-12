@@ -1,0 +1,10 @@
+void put_array(const void *p, size_t l)
+{
+	const uint8_t *c = p;
+	size_t i;
+	for (i = 0; i < l; i++) {
+		put_u8(c[i]);
+		putchar(' ');
+	}
+	putchar('\n');
+}

@@ -1,0 +1,22 @@
+void AT91F_CfgDevice(void)
+{
+	// Init Device Structure
+
+	MCI_Device_Features.Relative_Card_Address 		= 0;
+	MCI_Device_Features.Card_Inserted 				= AT91C_CARD_REMOVED;
+	MCI_Device_Features.Max_Read_DataBlock_Length	= 0;
+	MCI_Device_Features.Max_Write_DataBlock_Length 	= 0;
+	MCI_Device_Features.Read_Partial 				= 0;
+	MCI_Device_Features.Write_Partial 				= 0;
+	MCI_Device_Features.Erase_Block_Enable 			= 0;
+	MCI_Device_Features.Sector_Size 				= 0;
+	MCI_Device_Features.Memory_Capacity 			= 0;
+	
+	MCI_Device_Desc.state							= AT91C_MCI_IDLE;
+	MCI_Device_Desc.SDCard_bus_width				= AT91C_MCI_SCDBUS;
+	
+	// Init AT91S_DataFlash Global Structure, by default AT45DB choosen !!!
+	MCI_Device.pMCI_DeviceDesc 		= &MCI_Device_Desc;
+	MCI_Device.pMCI_DeviceFeatures 	= &MCI_Device_Features;
+
+}

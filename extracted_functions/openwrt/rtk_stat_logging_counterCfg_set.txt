@@ -1,0 +1,27 @@
+rtk_api_ret_t rtk_stat_logging_counterCfg_set(rtk_uint32 idx, rtk_logging_counter_mode_t mode, rtk_logging_counter_type_t type)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(idx > RTL8367C_MIB_MAX_LOG_CNT_IDX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if((idx % 2) == 1)
+        return RT_ERR_INPUT;
+
+    if(mode >= LOGGING_MODE_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if(type >= LOGGING_TYPE_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if((retVal = rtl8367c_setAsicMIBsLoggingType((idx / 2), (rtk_uint32)type)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_setAsicMIBsLoggingMode((idx / 2), (rtk_uint32)mode)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,13 @@
+rtk_api_ret_t rtk_switch_isExtPort(rtk_port_t logicalPort)
+{
+    if(init_state != INIT_COMPLETED)
+        return RT_ERR_NOT_INIT;
+
+    if(logicalPort >= RTK_SWITCH_PORT_NUM)
+        return RT_ERR_FAILED;
+
+    if(halCtrl->log_port_type[logicalPort] == EXT_PORT)
+        return RT_ERR_OK;
+    else
+        return RT_ERR_FAILED;
+}

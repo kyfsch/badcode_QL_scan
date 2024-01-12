@@ -1,0 +1,17 @@
+void menu_add_entry(struct symbol *sym)
+{
+	struct menu *menu;
+
+	menu = xmalloc(sizeof(*menu));
+	memset(menu, 0, sizeof(*menu));
+	menu->sym = sym;
+	menu->parent = current_menu;
+	menu->file = current_file;
+	menu->lineno = zconf_lineno();
+
+	*last_entry_ptr = menu;
+	last_entry_ptr = &menu->next;
+	current_entry = menu;
+	if (sym)
+		menu_add_symbol(P_SYMBOL, sym, NULL);
+}

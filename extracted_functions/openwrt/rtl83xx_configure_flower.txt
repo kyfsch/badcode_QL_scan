@@ -1,0 +1,58 @@
+static int rtl83xx_configure_flower(struct rtl838x_switch_priv *priv,
+				    struct flow_cls_offload *f)
+{
+	struct rtl83xx_flow *flow;
+	int err = 0;
+
+	pr_debug("In %s\n", __func__);
+
+	rcu_read_lock();
+	pr_debug("Cookie %08lx\n", f->cookie);
+	flow = rhashtable_lookup(&priv->tc_ht, &f->cookie, tc_ht_params);
+	if (flow) {
+		pr_info("%s: Got flow\n", __func__);
+		err = -EEXIST;
+		goto rcu_unlock;
+	}
+
+rcu_unlock:
+	rcu_read_unlock();
+	if (flow)
+		goto out;
+	pr_debug("%s: New flow\n", __func__);
+
+	flow = kzalloc(sizeof(*flow), GFP_KERNEL);
+	if (!flow) {
+		err = -ENOMEM;
+		goto out;
+	}
+
+	flow->cookie = f->cookie;
+	flow->priv = priv;
+
+	err = rhashtable_insert_fast(&priv->tc_ht, &flow->node, tc_ht_params);
+	if (err) {
+		pr_err("Could not insert add new rule\n");
+		goto out_free;
+	}
+
+	rtl83xx_add_flow(priv, f, flow); /* TODO: check error */
+
+	/* Add log action to flow */
+	flow->rule.packet_cntr = rtl83xx_packet_cntr_alloc(priv);
+	if (flow->rule.packet_cntr >= 0) {
+		pr_debug("Using packet counter %d\n", flow->rule.packet_cntr);
+		flow->rule.log_sel = true;
+		flow->rule.log_data = flow->rule.packet_cntr;
+	}
+
+	err = priv->r->pie_rule_add(priv, &flow->rule);
+	return err;
+
+out_free:
+	kfree(flow);
+out:
+	pr_err("%s: error %d\n", __func__, err);
+
+	return err;
+}

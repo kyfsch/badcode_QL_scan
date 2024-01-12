@@ -1,0 +1,22 @@
+static inline int b53_spi_clear_status(struct spi_device *spi)
+{
+	unsigned int i;
+	u8 rxbuf;
+	int ret;
+
+	for (i = 0; i < 10; i++) {
+		ret = b53_spi_read_reg(spi, B53_SPI_STATUS, &rxbuf, 1);
+		if (ret)
+			return ret;
+
+		if (!(rxbuf & B53_SPI_CMD_SPIF))
+			break;
+
+		mdelay(1);
+	}
+
+	if (i == 10)
+		return -EIO;
+
+	return 0;
+}

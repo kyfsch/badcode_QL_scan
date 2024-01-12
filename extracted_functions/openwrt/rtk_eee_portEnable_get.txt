@@ -1,0 +1,29 @@
+rtk_api_ret_t rtk_eee_portEnable_get(rtk_port_t port, rtk_enable_t *pEnable)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 regData1, regData2;
+    rtk_uint32    phy_port;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check port is UTP port */
+    RTK_CHK_PORT_IS_UTP(port);
+
+    if(NULL == pEnable)
+        return RT_ERR_NULL_POINTER;
+
+    phy_port = rtk_switch_port_L2P_get(port);
+
+    if ((retVal = rtl8367c_getAsicEee100M(phy_port,&regData1))!=RT_ERR_OK)
+        return retVal;
+    if ((retVal = rtl8367c_getAsicEeeGiga(phy_port,&regData2))!=RT_ERR_OK)
+        return retVal;
+
+    if (regData1==1&&regData2==1)
+        *pEnable = ENABLED;
+    else
+        *pEnable = DISABLED;
+
+    return RT_ERR_OK;
+}

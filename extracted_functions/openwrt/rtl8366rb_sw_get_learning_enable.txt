@@ -1,0 +1,12 @@
+static int rtl8366rb_sw_get_learning_enable(struct switch_dev *dev,
+				       const struct switch_attr *attr,
+				       struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	u32 data;
+
+	rtl8366_smi_read_reg(smi, RTL8366RB_SSCR0, &data);
+	val->value.i = !data;
+
+	return 0;
+}

@@ -1,0 +1,33 @@
+static int rb4xx_gpio_cpld_set(struct rb4xx_gpio *gpio, unsigned int offset,
+			       int value)
+{
+	struct rb4xx_cpld *cpld = gpio->cpld;
+	u16 values;
+	int ret;
+
+	mutex_lock(&gpio->lock);
+	values = gpio->values;
+
+	if (value)
+		values |= BIT(offset);
+	else
+		values &= ~(BIT(offset));
+
+	if (values == gpio->values) {
+		ret = 0;
+		goto unlock;
+	}
+
+	if (offset < 8) {
+		ret = cpld->gpio_set_0_7(cpld, values & 0xff);
+	} else if (offset == 8) {
+		ret = cpld->gpio_set_8(cpld, values >> 8);
+	}
+
+	if(likely(!ret))
+		gpio->values = values;
+
+unlock:
+	mutex_unlock(&gpio->lock);
+	return ret;
+}

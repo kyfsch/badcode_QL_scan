@@ -1,0 +1,6 @@
+static inline void sata_oxnas_reset_sgdma(struct ata_port *ap)
+{
+	struct sata_oxnas_port_priv *pd = ap->private_data;
+
+	iowrite32(SGDMA_RESETS_CTRL, pd->sgdma_base + SGDMA_RESETS);
+}

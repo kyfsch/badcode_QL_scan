@@ -1,0 +1,13 @@
+int dc_ep_clk_set(struct dc_ep_priv *priv, u32 sysclk, u32 ppeclk)
+{
+	struct dc_aca *aca = to_aca(priv);
+
+	if (sysclk > SYS_CLK_MAX || ppeclk > PPE_CLK_MAX)
+		return -EINVAL;
+
+	spin_lock(&aca->clk_lock);
+	wr32_mask(PPE_CLK | SYS_CLK,
+		SM(sysclk, SYS_CLK) | SM(ppeclk, PPE_CLK), PLL_OMCFG);
+	spin_unlock(&aca->clk_lock);
+	return 0;
+}

@@ -1,0 +1,22 @@
+static void bcm6348_emac_set_flow(struct bcm6348_emac *emac, bool rx_en, bool tx_en)
+{
+	struct bcm6348_iudma *iudma = emac->iudma;
+	u32 val;
+
+	val = emac_readl(emac, ENET_RXCFG_REG);
+	if (rx_en)
+		val |= ENET_RXCFG_ENFLOW_MASK;
+	else
+		val &= ~ENET_RXCFG_ENFLOW_MASK;
+	emac_writel(emac, val, ENET_RXCFG_REG);
+
+	dmas_writel(iudma, emac->rx_desc_dma, DMAS_RSTART_REG, emac->rx_chan);
+	dmas_writel(iudma, emac->tx_desc_dma, DMAS_RSTART_REG, emac->tx_chan);
+
+	val = dma_readl(iudma, DMA_CFG_REG);
+	if (tx_en)
+		val |= DMA_CFG_FLOWCH_MASK(emac->rx_chan);
+	else
+		val &= ~DMA_CFG_FLOWCH_MASK(emac->rx_chan);
+	dma_writel(iudma, val, DMA_CFG_REG);
+}

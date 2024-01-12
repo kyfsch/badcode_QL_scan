@@ -1,0 +1,10 @@
+static void esw_reset_ephy(struct rt305x_esw *esw)
+{
+	if (!esw->rst_ephy)
+		return;
+
+	reset_control_assert(esw->rst_ephy);
+	usleep_range(60, 120);
+	reset_control_deassert(esw->rst_ephy);
+	usleep_range(60, 120);
+}

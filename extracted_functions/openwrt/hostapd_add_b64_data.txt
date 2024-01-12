@@ -1,0 +1,13 @@
+hostapd_add_b64_data(const char *name, const struct wpabuf *buf)
+{
+	char *str;
+
+	if (!buf)
+		return false;
+
+	str = blobmsg_alloc_string_buffer(&b, name, B64_ENCODE_LEN(wpabuf_len(buf)));
+	b64_encode(wpabuf_head(buf), wpabuf_len(buf), str, B64_ENCODE_LEN(wpabuf_len(buf)));
+	blobmsg_add_string_buffer(&b);
+
+	return true;
+}

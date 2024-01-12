@@ -1,0 +1,15 @@
+struct rtl8366_smi *rtl8366_smi_alloc(struct device *parent)
+{
+	struct rtl8366_smi *smi;
+
+	BUG_ON(!parent);
+
+	smi = kzalloc(sizeof(*smi), GFP_KERNEL);
+	if (!smi) {
+		dev_err(parent, "no memory for private data\n");
+		return NULL;
+	}
+
+	smi->parent = parent;
+	return smi;
+}

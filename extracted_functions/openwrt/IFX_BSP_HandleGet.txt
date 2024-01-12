@@ -1,0 +1,6 @@
+IFX_BSP_HandleGet (int maj, int num)
+{
+	if (num > BSP_MAX_DEVICES)
+		return NULL;
+	return &dsl_devices[num];
+}

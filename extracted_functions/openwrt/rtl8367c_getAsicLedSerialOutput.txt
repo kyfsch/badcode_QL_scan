@@ -1,0 +1,20 @@
+ret_t rtl8367c_getAsicLedSerialOutput(rtk_uint32 *pOutput, rtk_uint32 *pPmask)
+{
+    ret_t retVal;
+
+    if(pOutput == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    if(pPmask == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_SERIAL_LED_CTRL, RTL8367C_SERIAL_LED_GROUP_NUM_MASK, pOutput);
+    if (retVal != RT_ERR_OK)
+        return retVal;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_SERIAL_LED_CTRL, RTL8367C_SERIAL_LED_PORT_EN_MASK, pPmask);
+    if (retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

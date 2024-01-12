@@ -1,0 +1,9 @@
+static uint32_t hash(const char *s)
+{
+	uint32_t hash = 0;
+
+	while (*s)
+		hash = 31 * hash + *s++;
+
+	return hash;
+}

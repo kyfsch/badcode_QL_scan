@@ -1,0 +1,7 @@
+static int ag71xx_mdio_remove(struct platform_device *pdev)
+{
+	struct ag71xx_mdio *am = platform_get_drvdata(pdev);
+
+	mdiobus_unregister(am->mii_bus);
+	return 0;
+}

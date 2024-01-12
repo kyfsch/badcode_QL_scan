@@ -1,0 +1,14 @@
+ret_t rtl8367c_setAsicMIBsResetLoggingCounter(rtk_uint32 index)
+{
+    ret_t retVal;
+
+    if(index > RTL8367C_MIB_MAX_LOG_CNT_IDX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if(index < 16)
+        retVal = rtl8367c_setAsicReg(RTL8367C_REG_MIB_CTRL1, 1<<index);
+    else
+        retVal = rtl8367c_setAsicReg(RTL8367C_REG_MIB_CTRL2, 1<<(index-16));
+
+    return retVal;
+}

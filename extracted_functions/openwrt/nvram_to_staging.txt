@@ -1,0 +1,31 @@
+int nvram_to_staging(void)
+{
+	int fdmtd, fdstg, stat;
+	char *mtd = nvram_find_mtd();
+	char buf[nvram_part_size];
+
+	stat = -1;
+
+	if( (mtd != NULL) && (nvram_part_size > 0) )
+	{
+		if( (fdmtd = open(mtd, O_RDONLY)) > -1 )
+		{
+			if( read(fdmtd, buf, sizeof(buf)) == sizeof(buf) )
+			{
+				if((fdstg = open(NVRAM_STAGING, O_WRONLY | O_CREAT, 0600)) > -1)
+				{
+					write(fdstg, buf, sizeof(buf));
+					fsync(fdstg);
+					close(fdstg);
+
+					stat = 0;
+				}
+			}
+
+			close(fdmtd);
+		}
+	}
+
+	free(mtd);
+	return stat;
+}

@@ -1,0 +1,6 @@
+static int __init mtdsplit_seama_init(void)
+{
+	register_mtd_parser(&mtdsplit_seama_parser);
+
+	return 0;
+}

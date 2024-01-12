@@ -1,0 +1,4 @@
+static int psb6970_probe(struct phy_device *pdev)
+{
+	return 0;
+}

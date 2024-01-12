@@ -1,0 +1,7 @@
+static void rtl83xx_flow_bypass_all(struct rtl83xx_flow *flow)
+{
+	flow->rule.bypass_sel = true;
+	flow->rule.bypass_all = true;
+	flow->rule.bypass_igr_stp = true;
+	flow->rule.bypass_ibc_sc = true;
+}

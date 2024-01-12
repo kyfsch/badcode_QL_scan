@@ -1,0 +1,18 @@
+static void msdc_dma_stop(struct msdc_host *host)
+{
+	void __iomem *base = host->base;
+	//u32 retries=500;
+	u32 wints = MSDC_INTEN_XFER_COMPL | MSDC_INTEN_DATTMO | MSDC_INTEN_DATCRCERR;
+
+	N_MSG(DMA, "DMA status: 0x%.8x", sdr_read32(MSDC_DMA_CFG));
+	//while (sdr_read32(MSDC_DMA_CFG) & MSDC_DMA_CFG_STS);
+
+	sdr_set_field(MSDC_DMA_CTRL, MSDC_DMA_CTRL_STOP, 1);
+	while (sdr_read32(MSDC_DMA_CFG) & MSDC_DMA_CFG_STS)
+		;
+
+	//dsb(); /* --- by chhung */
+	sdr_clr_bits(MSDC_INTEN, wints); /* Not just xfer_comp */
+
+	N_MSG(DMA, "DMA stop");
+}

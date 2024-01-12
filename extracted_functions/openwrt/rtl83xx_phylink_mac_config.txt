@@ -1,0 +1,103 @@
+static void rtl83xx_phylink_mac_config(struct dsa_switch *ds, int port,
+					unsigned int mode,
+					const struct phylink_link_state *state)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	u32 reg;
+	int speed_bit = priv->family_id == RTL8380_FAMILY_ID ? 4 : 3;
+
+	pr_debug("%s port %d, mode %x\n", __func__, port, mode);
+
+	if (port == priv->cpu_port) {
+		/* Set Speed, duplex, flow control
+		 * FORCE_EN | LINK_EN | NWAY_EN | DUP_SEL
+		 * | SPD_SEL = 0b10 | FORCE_FC_EN | PHY_MASTER_SLV_MANUAL_EN
+		 * | MEDIA_SEL
+		 */
+		if (priv->family_id == RTL8380_FAMILY_ID) {
+			sw_w32(0x6192F, priv->r->mac_force_mode_ctrl(priv->cpu_port));
+			/* allow CRC errors on CPU-port */
+			sw_w32_mask(0, 0x8, RTL838X_MAC_PORT_CTRL(priv->cpu_port));
+		} else {
+			sw_w32_mask(0, 3, priv->r->mac_force_mode_ctrl(priv->cpu_port));
+		}
+		return;
+	}
+
+	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
+	/* Auto-Negotiation does not work for MAC in RTL8390 */
+	if (priv->family_id == RTL8380_FAMILY_ID) {
+		if (mode == MLO_AN_PHY || phylink_autoneg_inband(mode)) {
+			pr_debug("PHY autonegotiates\n");
+			reg |= RTL838X_NWAY_EN;
+			sw_w32(reg, priv->r->mac_force_mode_ctrl(port));
+			rtl83xx_config_interface(port, state->interface);
+			return;
+		}
+	}
+
+	if (mode != MLO_AN_FIXED)
+		pr_debug("Fixed state.\n");
+
+	/* Clear id_mode_dis bit, and the existing port mode, let
+		 * RGMII_MODE_EN bet set by mac_link_{up,down}  */
+	if (priv->family_id == RTL8380_FAMILY_ID) {
+		reg &= ~(RTL838X_RX_PAUSE_EN | RTL838X_TX_PAUSE_EN);
+		if (state->pause & MLO_PAUSE_TXRX_MASK) {
+			if (state->pause & MLO_PAUSE_TX)
+				reg |= RTL838X_TX_PAUSE_EN;
+			reg |= RTL838X_RX_PAUSE_EN;
+		}
+	} else if (priv->family_id == RTL8390_FAMILY_ID) {
+		reg &= ~(RTL839X_RX_PAUSE_EN | RTL839X_TX_PAUSE_EN);
+		if (state->pause & MLO_PAUSE_TXRX_MASK) {
+			if (state->pause & MLO_PAUSE_TX)
+				reg |= RTL839X_TX_PAUSE_EN;
+			reg |= RTL839X_RX_PAUSE_EN;
+		}
+	}
+
+
+	reg &= ~(3 << speed_bit);
+	switch (state->speed) {
+	case SPEED_1000:
+		reg |= 2 << speed_bit;
+		break;
+	case SPEED_100:
+		reg |= 1 << speed_bit;
+		break;
+	default:
+		break; /* Ignore, including 10MBit which has a speed value of 0 */
+	}
+
+	if (priv->family_id == RTL8380_FAMILY_ID) {
+		reg &= ~(RTL838X_DUPLEX_MODE | RTL838X_FORCE_LINK_EN);
+		if (state->link)
+			reg |= RTL838X_FORCE_LINK_EN;
+		if (state->duplex == RTL838X_DUPLEX_MODE)
+			reg |= RTL838X_DUPLEX_MODE;
+	} else if (priv->family_id == RTL8390_FAMILY_ID) {
+		reg &= ~(RTL839X_DUPLEX_MODE | RTL839X_FORCE_LINK_EN);
+		if (state->link)
+			reg |= RTL839X_FORCE_LINK_EN;
+		if (state->duplex == RTL839X_DUPLEX_MODE)
+			reg |= RTL839X_DUPLEX_MODE;
+	}
+
+	/* LAG members must use DUPLEX and we need to enable the link */
+	if (priv->lagmembers & BIT_ULL(port)) {
+		switch(priv->family_id) {
+		case RTL8380_FAMILY_ID:
+			reg |= (RTL838X_DUPLEX_MODE | RTL838X_FORCE_LINK_EN);
+		break;
+		case RTL8390_FAMILY_ID:
+			reg |= (RTL839X_DUPLEX_MODE | RTL839X_FORCE_LINK_EN);
+		break;
+		}
+	}
+
+	/* Disable AN */
+	if (priv->family_id == RTL8380_FAMILY_ID)
+		reg &= ~RTL838X_NWAY_EN;
+	sw_w32(reg, priv->r->mac_force_mode_ctrl(port));
+}

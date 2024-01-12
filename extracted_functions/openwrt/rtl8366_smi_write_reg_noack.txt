@@ -1,0 +1,4 @@
+int rtl8366_smi_write_reg_noack(struct rtl8366_smi *smi, u32 addr, u32 data)
+{
+	return __rtl8366_smi_write_reg(smi, addr, data, false);
+}

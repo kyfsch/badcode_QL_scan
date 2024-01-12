@@ -1,0 +1,18 @@
+rtk_port_t rtk_switch_maxLogicalPort_get(void)
+{
+    rtk_port_t port, maxLogicalPort = 0;
+
+    /* Check initialization state */
+    if(rtk_switch_initialState_get() != INIT_COMPLETED)
+    {
+        return UNDEFINE_PORT;
+    }
+
+    for(port = 0; port < RTK_SWITCH_PORT_NUM; port++)
+    {
+        if( (halCtrl->log_port_type[port] == UTP_PORT) || (halCtrl->log_port_type[port] == EXT_PORT) )
+            maxLogicalPort = port;
+    }
+
+    return maxLogicalPort;
+}

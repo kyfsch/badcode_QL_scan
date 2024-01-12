@@ -1,0 +1,4 @@
+swconfig_exit(void)
+{
+	genl_unregister_family(&switch_fam);
+}

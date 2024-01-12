@@ -1,0 +1,9 @@
+mt7530_set_mirror_monitor_port(struct switch_dev *dev, const struct switch_attr *attr,
+		struct switch_val *val)
+{
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+
+	priv->mirror_dest_port = val->value.i;
+
+	return 0;
+}

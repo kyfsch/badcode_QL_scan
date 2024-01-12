@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsicOutputQueueMappingIndex(rtk_uint32 port, rtk_uint32 *pIndex )
+{
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    return rtl8367c_getAsicRegBits(RTL8367C_QOS_PORT_QUEUE_NUMBER_REG(port), RTL8367C_QOS_PORT_QUEUE_NUMBER_MASK(port), pIndex);
+}

@@ -1,0 +1,10 @@
+static int rtl8214fc_get_port(struct phy_device *phydev)
+{
+	int addr = phydev->mdio.addr;
+
+	pr_debug("%s: port %d\n", __func__, addr);
+	if (rtl8214fc_media_is_fibre(phydev))
+		return PORT_FIBRE;
+
+	return PORT_MII;
+}

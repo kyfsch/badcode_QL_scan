@@ -1,0 +1,49 @@
+static int aw9523_init_irq(struct aw9523 *awi, int irq)
+{
+	struct device *dev = awi->dev;
+	struct gpio_irq_chip *gpioirq;
+	struct irq_chip *irqchip;
+	int ret;
+
+	if (!device_property_read_bool(dev, "interrupt-controller"))
+		return 0;
+
+	irqchip = devm_kzalloc(dev, sizeof(*irqchip), GFP_KERNEL);
+	if (!irqchip)
+		return -ENOMEM;
+
+	awi->irq = devm_kzalloc(dev, sizeof(*awi->irq), GFP_KERNEL);
+	if (!awi->irq)
+		return -ENOMEM;
+
+	irqchip->name = devm_kstrdup(dev, dev_name(dev), GFP_KERNEL);
+	if (!irqchip->name)
+		return -ENOMEM;
+
+	irqchip->irq_mask = aw9523_irq_mask;
+	irqchip->irq_unmask = aw9523_irq_unmask;
+	irqchip->irq_bus_lock = aw9523_irq_bus_lock;
+	irqchip->irq_bus_sync_unlock = aw9523_irq_bus_sync_unlock;
+	irqchip->irq_set_type = aw9523_gpio_irq_type;
+	awi->irq->irqchip = irqchip;
+	mutex_init(&awi->irq->lock);
+
+	ret = devm_request_threaded_irq(dev, irq, NULL, aw9523_irq_thread_func,
+					IRQF_ONESHOT, dev_name(dev), awi);
+	if (ret) {
+		dev_err(dev, "Failed to request irq %d\n", irq);
+		return ret;
+	}
+
+	gpioirq = &awi->gpio.irq;
+	gpioirq->chip = irqchip;
+	gpioirq->parent_handler = NULL;
+	gpioirq->num_parents = 0;
+	gpioirq->parents = NULL;
+	gpioirq->default_type = IRQ_TYPE_LEVEL_MASK;
+	gpioirq->handler = handle_simple_irq;
+	gpioirq->threaded = true;
+	gpioirq->first = 0;
+
+	return 0;
+}

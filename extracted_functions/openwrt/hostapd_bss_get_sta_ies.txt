@@ -1,0 +1,25 @@
+hostapd_bss_get_sta_ies(struct ubus_context *ctx, struct ubus_object *obj,
+			struct ubus_request_data *req, const char *method,
+			struct blob_attr *msg)
+{
+	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+	struct blob_attr *tb;
+	struct sta_info *sta;
+	u8 addr[ETH_ALEN];
+
+	blobmsg_parse(addr_policy, 1, &tb, blobmsg_data(msg), blobmsg_len(msg));
+
+	if (!tb || hwaddr_aton(blobmsg_data(tb), addr))
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	sta = ap_get_sta(hapd, addr);
+	if (!sta || (!sta->probe_ie_taxonomy && !sta->assoc_ie_taxonomy))
+		return UBUS_STATUS_NOT_FOUND;
+
+	blob_buf_init(&b, 0);
+	hostapd_add_b64_data("probe_ie", sta->probe_ie_taxonomy);
+	hostapd_add_b64_data("assoc_ie", sta->assoc_ie_taxonomy);
+	ubus_send_reply(ctx, req, b.head);
+
+	return 0;
+}

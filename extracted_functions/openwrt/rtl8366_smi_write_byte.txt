@@ -1,0 +1,5 @@
+static int rtl8366_smi_write_byte(struct rtl8366_smi *smi, u8 data)
+{
+	rtl8366_smi_write_bits(smi, data, 8);
+	return rtl8366_smi_wait_for_ack(smi);
+}

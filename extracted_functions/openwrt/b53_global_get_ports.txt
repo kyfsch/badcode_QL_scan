@@ -1,0 +1,12 @@
+static int b53_global_get_ports(struct switch_dev *dev,
+				const struct switch_attr *attr,
+				struct switch_val *val)
+{
+	struct b53_device *priv = sw_to_b53(dev);
+
+	val->len = snprintf(priv->buf, B53_BUF_SIZE, "0x%04x",
+			    priv->enabled_ports);
+	val->value.s = priv->buf;
+
+	return 0;
+}

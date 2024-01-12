@@ -1,0 +1,15 @@
+static int wait_FIS(int device)
+{
+	int status = 0;
+	int loops = 0;
+
+	do {
+		udelay(200000);
+		if (ide_inb(device, ATA_PORT_NSECT) > 0) {
+			status = 1;
+			break;
+		}
+	} while (++loops < FIS_LOOP_COUNT);
+
+	return status;
+}

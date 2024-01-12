@@ -1,0 +1,13 @@
+ret_t rtl8367c_getAsicFlowControlSharedThreshold(rtk_uint32 *pOnThreshold, rtk_uint32 *pOffThreshold)
+{
+    ret_t retVal;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_FLOWCTRL_SHARE_OFF, RTL8367C_FLOWCTRL_SHARE_OFF_MASK, pOffThreshold);
+
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_FLOWCTRL_SHARE_ON, RTL8367C_FLOWCTRL_SHARE_ON_MASK, pOnThreshold);
+
+    return retVal;
+}

@@ -1,0 +1,27 @@
+ret_t rtl8367c_getAsicPriorityDecision(rtk_uint32 index, rtk_uint32 prisrc, rtk_uint32* pDecisionPri)
+{
+    ret_t retVal;
+
+    if(index >= PRIDEC_IDX_END )
+        return RT_ERR_ENTRY_INDEX;
+
+    if(prisrc >= PRIDEC_END )
+        return RT_ERR_QOS_SEL_PRI_SOURCE;
+
+    switch(index)
+    {
+        case PRIDEC_IDX0:
+            if((retVal = rtl8367c_getAsicRegBits(RTL8367C_QOS_INTERNAL_PRIORITY_DECISION_REG(prisrc), RTL8367C_QOS_INTERNAL_PRIORITY_DECISION_MASK(prisrc), pDecisionPri))!=  RT_ERR_OK)
+                return retVal;
+            break;
+        case PRIDEC_IDX1:
+            if((retVal = rtl8367c_getAsicRegBits(RTL8367C_QOS_INTERNAL_PRIORITY_DECISION2_REG(prisrc), RTL8367C_QOS_INTERNAL_PRIORITY_DECISION2_MASK(prisrc), pDecisionPri))!=  RT_ERR_OK)
+                return retVal;
+            break;
+        default:
+            break;
+    };
+
+    return RT_ERR_OK;
+
+}

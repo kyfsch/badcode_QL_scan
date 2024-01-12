@@ -1,0 +1,4 @@
+bool menu_has_help(struct menu *menu)
+{
+	return menu->help != NULL;
+}

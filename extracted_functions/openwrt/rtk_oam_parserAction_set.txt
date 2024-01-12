@@ -1,0 +1,18 @@
+rtk_api_ret_t  rtk_oam_parserAction_set(rtk_port_t port, rtk_oam_parser_act_t action)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if (action >= OAM_PARSER_ACTION_END)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicOamParser(rtk_switch_port_L2P_get(port), action))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

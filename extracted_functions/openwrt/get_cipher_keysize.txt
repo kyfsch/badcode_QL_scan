@@ -1,0 +1,6 @@
+int get_cipher_keysize(const cipher_t *cipher)
+{
+    const mbedtls_cipher_info_t *c = cipher;
+
+    return c->key_bitlen >> 3;
+}

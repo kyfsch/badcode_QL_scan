@@ -1,0 +1,19 @@
+rtk_api_ret_t rtk_l2_limitSystemLearningCntPortMask_get(rtk_portmask_t *pPortmask)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 pmask;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pPortmask)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicSystemLutLearnPortMask(&pmask)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtk_switch_portmask_P2L_get(pmask, pPortmask)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

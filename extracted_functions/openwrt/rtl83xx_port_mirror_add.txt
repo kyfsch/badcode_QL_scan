@@ -1,0 +1,59 @@
+static int rtl83xx_port_mirror_add(struct dsa_switch *ds, int port,
+				   struct dsa_mall_mirror_tc_entry *mirror,
+				   bool ingress)
+{
+	/* We support 4 mirror groups, one destination port per group */
+	int group;
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int ctrl_reg, dpm_reg, spm_reg;
+
+	pr_debug("In %s\n", __func__);
+
+	for (group = 0; group < 4; group++) {
+		if (priv->mirror_group_ports[group] == mirror->to_local_port)
+			break;
+	}
+	if (group >= 4) {
+		for (group = 0; group < 4; group++) {
+			if (priv->mirror_group_ports[group] < 0)
+				break;
+		}
+	}
+
+	if (group >= 4)
+		return -ENOSPC;
+
+	ctrl_reg = priv->r->mir_ctrl + group * 4;
+	dpm_reg = priv->r->mir_dpm + group * 4 * priv->port_width;
+	spm_reg = priv->r->mir_spm + group * 4 * priv->port_width;
+
+	pr_debug("Using group %d\n", group);
+	mutex_lock(&priv->reg_mutex);
+
+	if (priv->family_id == RTL8380_FAMILY_ID) {
+		/* Enable mirroring to port across VLANs (bit 11) */
+		sw_w32(1 << 11 | (mirror->to_local_port << 4) | 1, ctrl_reg);
+	} else {
+		/* Enable mirroring to destination port */
+		sw_w32((mirror->to_local_port << 4) | 1, ctrl_reg);
+	}
+
+	if (ingress && (priv->r->get_port_reg_be(spm_reg) & (1ULL << port))) {
+		mutex_unlock(&priv->reg_mutex);
+		return -EEXIST;
+	}
+	if ((!ingress) && (priv->r->get_port_reg_be(dpm_reg) & (1ULL << port))) {
+		mutex_unlock(&priv->reg_mutex);
+		return -EEXIST;
+	}
+
+	if (ingress)
+		priv->r->mask_port_reg_be(0, 1ULL << port, spm_reg);
+	else
+		priv->r->mask_port_reg_be(0, 1ULL << port, dpm_reg);
+
+	priv->mirror_group_ports[group] = mirror->to_local_port;
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}

@@ -1,0 +1,4 @@
+nvram_header_t * nvram_header(nvram_handle_t *h)
+{
+	return (nvram_header_t *) &h->mmap[h->offset];
+}

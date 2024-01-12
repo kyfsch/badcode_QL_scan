@@ -1,0 +1,15 @@
+static int rtl839x_mdio_reset(struct mii_bus *bus)
+{
+	return 0;
+
+	pr_debug("%s called\n", __func__);
+	/* BUG: The following does not work, but should! */
+	/* Disable MAC polling the PHY so that we can start configuration */
+	sw_w32(0x00000000, RTL839X_SMI_PORT_POLLING_CTRL);
+	sw_w32(0x00000000, RTL839X_SMI_PORT_POLLING_CTRL + 4);
+	/* Disable PHY polling via SoC */
+	sw_w32_mask(1 << 7, 0, RTL839X_SMI_GLB_CTRL);
+
+	/* Probably should reset all PHYs here... */
+	return 0;
+}

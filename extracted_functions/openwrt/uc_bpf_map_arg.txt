@@ -1,0 +1,28 @@
+uc_bpf_map_arg(uc_value_t *val, const char *kind, unsigned int size)
+{
+	static union {
+		uint32_t u32;
+		uint64_t u64;
+	} val_int;
+
+	switch (ucv_type(val)) {
+	case UC_INTEGER:
+		if (size == 4)
+			val_int.u32 = ucv_int64_get(val);
+		else if (size == 8)
+			val_int.u64 = ucv_int64_get(val);
+		else
+			break;
+
+		return &val_int;
+	case UC_STRING:
+		if (size != ucv_string_length(val))
+			break;
+
+		return ucv_string_get(val);
+	default:
+		err_return(EINVAL, "%s type", kind);
+	}
+
+	err_return(EINVAL, "%s size mismatch (expected: %d)", kind, size);
+}

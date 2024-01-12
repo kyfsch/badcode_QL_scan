@@ -1,0 +1,50 @@
+static int gpio_keys_probe(struct platform_device *pdev)
+{
+	struct gpio_keys_platform_data *pdata;
+	struct gpio_keys_button_dev *bdev;
+	int ret, i;
+
+	ret = gpio_keys_button_probe(pdev, &bdev, 0);
+	if (ret)
+		return ret;
+
+	pdata = bdev->pdata;
+	for (i = 0; i < pdata->nbuttons; i++) {
+		const struct gpio_keys_button *button = &pdata->buttons[i];
+		struct gpio_keys_button_data *bdata = &bdev->data[i];
+		unsigned long irqflags = IRQF_ONESHOT;
+
+		INIT_DELAYED_WORK(&bdata->work, gpio_keys_irq_work_func);
+
+		if (!button->irq) {
+			bdata->irq = gpiod_to_irq(bdata->gpiod);
+			if (bdata->irq < 0) {
+				dev_err(&pdev->dev, "failed to get irq for gpio:%d\n",
+					button->gpio);
+				continue;
+			}
+
+			irqflags |= IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING;
+		} else {
+			bdata->irq = button->irq;
+		}
+
+		schedule_delayed_work(&bdata->work,
+				      msecs_to_jiffies(bdata->software_debounce));
+
+		ret = devm_request_threaded_irq(&pdev->dev,
+			bdata->irq, NULL, button_handle_irq,
+			irqflags, dev_name(&pdev->dev), bdata);
+		if (ret < 0) {
+			bdata->irq = 0;
+			dev_err(&pdev->dev, "failed to request irq:%d for gpio:%d\n",
+				bdata->irq, button->gpio);
+			continue;
+		} else {
+			dev_dbg(&pdev->dev, "gpio:%d has irq:%d\n",
+				button->gpio, bdata->irq);
+		}
+	}
+
+	return 0;
+}

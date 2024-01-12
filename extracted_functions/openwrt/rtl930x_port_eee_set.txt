@@ -1,0 +1,20 @@
+void rtl930x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
+{
+	u32 v;
+
+	/* This works only for Ethernet ports, and on the RTL930X, ports from 26 are SFP */
+	if (port >= 26)
+		return;
+
+	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
+	v = enable ? 0x3f : 0x0;
+
+	/* Set EEE/EEEP state for 100, 500, 1000MBit and 2.5, 5 and 10GBit */
+	sw_w32_mask(0, v << 10, rtl930x_mac_force_mode_ctrl(port));
+
+	/* Set TX/RX EEE state */
+	v = enable ? 0x3 : 0x0;
+	sw_w32(v, RTL930X_EEE_CTRL(port));
+
+	priv->ports[port].eee_enabled = enable;
+}

@@ -1,0 +1,5 @@
+static void AT91F_DataAbort() 
+{
+	puts("IDA");
+	while (1);
+}

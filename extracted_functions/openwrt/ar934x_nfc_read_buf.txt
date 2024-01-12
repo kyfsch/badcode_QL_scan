@@ -1,0 +1,24 @@
+static void ar934x_nfc_read_buf(struct nand_chip *chip, u8 *buf, int len)
+{
+	struct ar934x_nfc *nfc = chip->priv;
+	int buf_index;
+	int i;
+
+	WARN_ON(nfc->buf_index + len > nfc->buf_size);
+
+	buf_index = nfc->buf_index;
+
+	if (nfc->swap_dma || nfc->read_id) {
+		for (i = 0; i < len; i++) {
+			buf[i] = nfc->buf[buf_index ^ 3];
+			buf_index++;
+		}
+	} else {
+		for (i = 0; i < len; i++) {
+			buf[i] = nfc->buf[buf_index];
+			buf_index++;
+		}
+	}
+
+	nfc->buf_index = buf_index;
+}

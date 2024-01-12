@@ -1,0 +1,9 @@
+static void ath79_mii_ctrl_set_if(struct ag71xx *ag, unsigned int mii_if)
+{
+	u32 t;
+
+	t = __raw_readl(ag->mii_base);
+	t &= ~(AR71XX_MII_CTRL_IF_MASK);
+	t |= (mii_if & AR71XX_MII_CTRL_IF_MASK);
+	__raw_writel(t, ag->mii_base);
+}

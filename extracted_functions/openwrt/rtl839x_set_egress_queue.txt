@@ -1,0 +1,4 @@
+void rtl839x_set_egress_queue(int port, int queue)
+{
+	sw_w32(queue << ((port % 10) *3), RTL839X_QM_PORT_QNUM(port));
+}

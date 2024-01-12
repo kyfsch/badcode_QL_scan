@@ -1,0 +1,4 @@
+r16(struct adm6996_priv *priv, enum admreg reg)
+{
+	return priv->read(priv, reg);
+}

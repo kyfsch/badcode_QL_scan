@@ -1,0 +1,28 @@
+static void fe_reset_phy(struct fe_priv *priv)
+{
+	int err, msec = 30;
+	struct gpio_desc *phy_reset;
+
+	phy_reset = devm_gpiod_get_optional(priv->dev, "phy-reset",
+					    GPIOD_OUT_HIGH);
+	if (!phy_reset)
+		return;
+
+	if (IS_ERR(phy_reset)) {
+		dev_err(priv->dev, "Error acquiring reset gpio pins: %ld\n",
+			PTR_ERR(phy_reset));
+		return;
+	}
+
+	err = of_property_read_u32(priv->dev->of_node, "phy-reset-duration",
+				   &msec);
+	if (!err && msec > 1000)
+		msec = 30;
+
+	if (msec > 20)
+		msleep(msec);
+	else
+		usleep_range(msec * 1000, msec * 1000 + 1000);
+
+	gpiod_set_value(phy_reset, 0);
+}

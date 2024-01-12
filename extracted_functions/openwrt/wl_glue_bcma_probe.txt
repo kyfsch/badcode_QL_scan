@@ -1,0 +1,33 @@
+static int wl_glue_bcma_probe(struct bcma_device *dev)
+{
+	void *wldev;
+
+	if (!attach_cb)
+	{
+		pr_err("No attach callback registered\n");
+		return -ENOSYS;
+	}
+
+	if (dev->bus->hosttype != BCMA_HOSTTYPE_SOC)
+	{
+		pr_err("Unsupported BCMA bus type %d\n", dev->bus->hosttype);
+		return -EINVAL;
+	}
+
+	/*
+	 * NB:
+	 * 0x18000000 = BCMA_ADDR_BASE
+	 * 0x1000     = BCMA_CORE_SIZE
+	 */
+
+	wldev = attach_cb(dev->id.manuf, dev->id.id, (ulong)dev->addr, dev, dev->irq);
+
+	if (!wldev)
+	{
+		pr_err("The attach callback failed, BCMA probe aborted\n");
+		return -ENODEV;
+	}
+
+	bcma_set_drvdata(dev, wldev);
+	return 0;
+}

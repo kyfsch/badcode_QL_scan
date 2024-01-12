@@ -1,0 +1,5 @@
+static int menu_validate_number(struct symbol *sym, struct symbol *sym2)
+{
+	return sym2->type == S_INT || sym2->type == S_HEX ||
+	       (sym2->type == S_UNKNOWN && sym_string_valid(sym, sym2->name));
+}

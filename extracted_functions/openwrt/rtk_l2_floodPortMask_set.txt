@@ -1,0 +1,38 @@
+rtk_api_ret_t rtk_l2_floodPortMask_set(rtk_l2_flood_type_t floood_type, rtk_portmask_t *pFlood_portmask)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 pmask;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (floood_type >= FLOOD_END)
+        return RT_ERR_INPUT;
+
+    /* check port valid */
+    RTK_CHK_PORTMASK_VALID(pFlood_portmask);
+
+    /* Get Physical port mask */
+    if ((retVal = rtk_switch_portmask_L2P_get(pFlood_portmask, &pmask))!=RT_ERR_OK)
+        return retVal;
+
+    switch (floood_type)
+    {
+        case FLOOD_UNKNOWNDA:
+            if ((retVal = rtl8367c_setAsicPortUnknownDaFloodingPortmask(pmask)) != RT_ERR_OK)
+                return retVal;
+            break;
+        case FLOOD_UNKNOWNMC:
+            if ((retVal = rtl8367c_setAsicPortUnknownMulticastFloodingPortmask(pmask)) != RT_ERR_OK)
+                return retVal;
+            break;
+        case FLOOD_BC:
+            if ((retVal = rtl8367c_setAsicPortBcastFloodingPortmask(pmask)) != RT_ERR_OK)
+                return retVal;
+            break;
+        default:
+            break;
+    }
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,27 @@
+static int aw9523_remove(struct i2c_client *client)
+{
+	struct aw9523 *awi = i2c_get_clientdata(client);
+	int ret;
+
+	if (!awi)
+		return 0;
+
+	/*
+	 * If the chip VIO is connected to a regulator that we can turn
+	 * off, life is easy... otherwise, reinitialize the chip and
+	 * set the pins to hardware defaults before removing the driver
+	 * to leave it in a clean, safe and predictable state.
+	 */
+	if (awi->vio_vreg) {
+		regulator_disable(awi->vio_vreg);
+	} else {
+		mutex_lock(&awi->i2c_lock);
+		ret = aw9523_hw_init(awi);
+		mutex_unlock(&awi->i2c_lock);
+		if (ret)
+			return ret;
+	}
+
+	mutex_destroy(&awi->i2c_lock);
+	return 0;
+}

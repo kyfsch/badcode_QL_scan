@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsicUnknownIPv4MulticastBehavior(rtk_uint32 port, rtk_uint32 *pBehave)
+{
+    if(port >  RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    return rtl8367c_getAsicRegBits(RTL8367C_UNKNOWN_IPV4_MULTICAST_REG(port), RTL8367C_UNKNOWN_IPV4_MULTICAST_MASK(port), pBehave);
+}

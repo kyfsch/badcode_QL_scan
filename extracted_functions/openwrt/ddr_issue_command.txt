@@ -1,0 +1,5 @@
+static void ddr_issue_command(int commmand)
+{
+	*(volatile UINT *) C_DDR_CMD_REG = commmand;
+	ddr_poll_until_not_busy();
+}

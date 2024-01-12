@@ -1,0 +1,13 @@
+static void rtl930x_set_l3_egress_mac(u32 idx, u64 mac)
+{
+	/* Access L3_EGR_INTF_MAC table (2) via register RTL9300_TBL_2 */
+	struct table_reg *r = rtl_table_get(RTL9300_TBL_2, 2);
+
+	/* The table has a size of 2 registers */
+	sw_w32(mac >> 32, rtl_table_data(r, 0));
+	sw_w32(mac, rtl_table_data(r, 1));
+
+	pr_debug("%s: setting index %d to %016llx\n", __func__, idx, mac);
+	rtl_table_write(r, idx);
+	rtl_table_release(r);
+}

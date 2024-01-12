@@ -1,0 +1,44 @@
+static int __init nct5104d_find(int addr, struct nct5104d_sio *sio)
+{
+	int err;
+	u16 devid;
+	u8 gpio_cfg;
+
+	err = superio_enter(addr);
+	if (err)
+		return err;
+
+	err = -ENODEV;
+
+	devid = superio_inw(addr, SIO_CHIPID);
+	switch (devid) {
+	case SIO_NCT5104D_ID:
+	case SIO_PCENGINES_APU_NCT5104D_ID1:
+	case SIO_PCENGINES_APU_NCT5104D_ID2:
+		sio->type = nct5104d;
+		/* enable GPIO0 and GPIO1 */
+		superio_select(addr, SIO_LD_GPIO);
+		gpio_cfg = superio_inb(addr, SIO_GPIO_ENABLE);
+		gpio_cfg |= 0x03;
+		superio_outb(addr, SIO_GPIO_ENABLE, gpio_cfg);
+		break;
+	default:
+		pr_info(DRVNAME ": Unsupported device 0x%04x\n", devid);
+		goto err;
+	}
+	sio->addr = addr;
+	err = 0;
+
+	pr_info(DRVNAME ": Found %s at %#x chip id 0x%04x\n",
+		nct5104d_names[sio->type],
+		(unsigned int) addr,
+		(int) superio_inw(addr, SIO_CHIPID));
+
+        superio_select(sio->addr, SIO_LD_GPIO_MODE);
+        superio_outb(sio->addr, SIO_GPIO1_MODE, 0x0);
+        superio_outb(sio->addr, SIO_GPIO2_MODE, 0x0);
+
+err:
+	superio_exit(addr);
+	return err;
+}

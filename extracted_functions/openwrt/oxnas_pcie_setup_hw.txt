@@ -1,0 +1,69 @@
+static void oxnas_pcie_setup_hw(struct oxnas_pcie *pcie)
+{
+	/* We won't have any inbound address translation. This allows PCI
+	 * devices to access anywhere in the AHB address map. Might be regarded
+	 * as a bit dangerous, but let's get things working before we worry
+	 * about that
+	 */
+	oxnas_register_clear_mask(pcie->inbound + IB_ADDR_XLATE_ENABLE,
+				  ENABLE_IN_ADDR_TRANS);
+	wmb();
+
+	/*
+	 * Program outbound translation windows
+	 *
+	 * Outbound window is what is referred to as "PCI client" region in HRM
+	 *
+	 * Could use the larger alternative address space to get >>64M regions
+	 * for graphics cards etc., but will not bother at this point.
+	 *
+	 * IP bug means that AMBA window size must be a power of 2
+	 *
+	 * Set mem0 window for first 16MB of outbound window non-prefetchable
+	 * Set mem1 window for second 16MB of outbound window prefetchable
+	 * Set io window for next 16MB of outbound window
+	 * Set cfg0 for final 1MB of outbound window
+	 *
+	 * Ignore mem1, cfg1 and msg windows for now as no obvious use cases for
+	 * 820 that would need them
+	 *
+	 * Probably ideally want no offset between mem0 window start as seen by
+	 * ARM and as seen on PCI bus and get Linux to assign memory regions to
+	 * PCI devices using the same "PCI client" region start address as seen
+	 * by ARM
+	 */
+
+	/* Set PCIeA mem0 region to be 1st 16MB of the 64MB PCIeA window */
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_IN0_MEM_ADDR, pcie->non_mem.start);
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_IN0_MEM_LIMIT, pcie->non_mem.end);
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_POM0_MEM_ADDR, pcie->non_mem.start);
+
+	/* Set PCIeA mem1 region to be 2nd 16MB of the 64MB PCIeA window */
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_IN1_MEM_ADDR, pcie->pre_mem.start);
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_IN1_MEM_LIMIT, pcie->pre_mem.end);
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_POM1_MEM_ADDR, pcie->pre_mem.start);
+
+	/* Set PCIeA io to be third 16M region of the 64MB PCIeA window*/
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_IN_IO_ADDR, pcie->io.start);
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_IN_IO_LIMIT, pcie->io.end);
+
+
+	/* Set PCIeA cgf0 to be last 16M region of the 64MB PCIeA window*/
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_IN_CFG0_ADDR, pcie->cfg.start);
+	regmap_write(pcie->sys_ctrl, pcie->outbound_offset + PCIE_IN_CFG0_LIMIT, pcie->cfg.end);
+	wmb();
+
+	/* Enable outbound address translation */
+	regmap_write_bits(pcie->sys_ctrl, pcie->pcie_ctrl_offset, PCIE_OBTRANS, PCIE_OBTRANS);
+	wmb();
+
+	/*
+	 * Program PCIe command register for core to:
+	 *  enable memory space
+	 *  enable bus master
+	 *  enable io
+	 */
+	writel_relaxed(7, pcie->base + PCI_CONFIG_COMMAND_STATUS);
+	/* which is which */
+	wmb();
+}

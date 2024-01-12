@@ -1,0 +1,69 @@
+rtk_api_ret_t rtk_igmp_protocol_get(rtk_port_t port, rtk_igmp_protocol_t protocol, rtk_igmp_action_t *pAction)
+{
+    rtk_uint32      operation;
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check port valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if(protocol >= PROTOCOL_END)
+        return RT_ERR_INPUT;
+
+    if(pAction == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    switch(protocol)
+    {
+        case PROTOCOL_IGMPv1:
+            if ((retVal = rtl8367c_getAsicIGMPv1Opeartion(rtk_switch_port_L2P_get(port), &operation))!=RT_ERR_OK)
+                return retVal;
+
+            break;
+        case PROTOCOL_IGMPv2:
+            if ((retVal = rtl8367c_getAsicIGMPv2Opeartion(rtk_switch_port_L2P_get(port), &operation))!=RT_ERR_OK)
+                return retVal;
+
+            break;
+        case PROTOCOL_IGMPv3:
+            if ((retVal = rtl8367c_getAsicIGMPv3Opeartion(rtk_switch_port_L2P_get(port), &operation))!=RT_ERR_OK)
+                return retVal;
+
+            break;
+        case PROTOCOL_MLDv1:
+            if ((retVal = rtl8367c_getAsicMLDv1Opeartion(rtk_switch_port_L2P_get(port), &operation))!=RT_ERR_OK)
+                return retVal;
+
+            break;
+        case PROTOCOL_MLDv2:
+            if ((retVal = rtl8367c_getAsicMLDv2Opeartion(rtk_switch_port_L2P_get(port), &operation))!=RT_ERR_OK)
+                return retVal;
+
+            break;
+        default:
+            return RT_ERR_INPUT;
+
+    }
+
+    switch(operation)
+    {
+        case PROTOCOL_OP_FLOOD:
+            *pAction = IGMP_ACTION_FORWARD;
+            break;
+        case PROTOCOL_OP_TRAP:
+            *pAction = IGMP_ACTION_TRAP2CPU;
+            break;
+        case PROTOCOL_OP_DROP:
+            *pAction = IGMP_ACTION_DROP;
+            break;
+        case PROTOCOL_OP_ASIC:
+            *pAction = IGMP_ACTION_ASIC;
+            break;
+        default:
+            return RT_ERR_FAILED;
+    }
+
+    return RT_ERR_OK;
+}

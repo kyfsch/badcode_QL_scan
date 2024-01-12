@@ -1,0 +1,16 @@
+static void rb4xx_nand_cmd_ctrl(struct nand_chip *chip, int dat,
+				unsigned int ctrl)
+{
+	struct rb4xx_nand *nand = chip->priv;
+	struct rb4xx_cpld *cpld = nand->cpld;
+	u8 data = dat;
+
+	if (ctrl & NAND_CTRL_CHANGE) {
+		gpiod_set_value_cansleep(nand->cle, !!(ctrl & NAND_CLE));
+		gpiod_set_value_cansleep(nand->ale, !!(ctrl & NAND_ALE));
+		gpiod_set_value_cansleep(nand->nce,  !(ctrl & NAND_NCE));
+	}
+
+	if (dat != NAND_CMD_NONE)
+		cpld->write_nand(cpld, &data, 1);
+}

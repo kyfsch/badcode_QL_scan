@@ -1,0 +1,4 @@
+static inline int rtl931x_l2_port_new_salrn(int p)
+{
+	return RTL931X_L2_PORT_NEW_SALRN(p);
+}

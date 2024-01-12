@@ -1,0 +1,10 @@
+static void ag71xx_ethtool_get_stats(struct net_device *ndev,
+				     struct ethtool_stats *stats, u64 *data)
+{
+	struct ag71xx *ag = netdev_priv(ndev);
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(ag71xx_statistics); i++)
+		*data++ = ag71xx_rr(ag, ag71xx_statistics[i].offset)
+				& ag71xx_statistics[i].mask;
+}

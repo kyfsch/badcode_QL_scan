@@ -1,0 +1,21 @@
+static void espi_setup_spi(struct fsl_spi *fsl, unsigned int max_hz)
+{
+	unsigned long spibrg;
+	uint32_t pm;
+
+	spibrg = CONFIG_FREQ_SYSTEMBUS / 2;
+	fsl->div16 = 0;
+	if ((spibrg / max_hz) > 32) {
+		fsl->div16 = ESPI_CSMODE_DIV16;
+		pm = spibrg / (max_hz * 16 * 2);
+		if (pm > 16) {
+			/* max_hz too low */
+			pm = 16;
+		}
+	} else {
+		pm = spibrg / (max_hz * 2);
+	}
+	if (pm)
+		pm--;
+	fsl->pm = pm;
+}

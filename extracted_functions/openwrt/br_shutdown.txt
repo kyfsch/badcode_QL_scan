@@ -1,0 +1,5 @@
+void br_shutdown(void)
+{
+	close(br_socket_fd);
+	br_socket_fd = -1;
+}

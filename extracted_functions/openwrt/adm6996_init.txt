@@ -1,0 +1,15 @@
+static int __init adm6996_init(void)
+{
+	int err;
+
+	phy_register_fixup_for_id(PHY_ANY_ID, adm6996_fixup);
+	err = phy_driver_register(&adm6996_phy_driver, THIS_MODULE);
+	if (err)
+		return err;
+
+	err = platform_driver_register(&adm6996_gpio_driver);
+	if (err)
+		phy_driver_unregister(&adm6996_phy_driver);
+
+	return err;
+}

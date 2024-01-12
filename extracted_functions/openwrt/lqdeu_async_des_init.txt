@@ -1,0 +1,34 @@
+int __init lqdeu_async_des_init (void)
+{
+    int i, j, ret = -EINVAL;
+
+     for (i = 0; i < ARRAY_SIZE(des_drivers_alg); i++) {
+         ret = crypto_register_alg(&des_drivers_alg[i].alg);
+	 //printk("driver: %s\n", des_drivers_alg[i].alg.cra_name);
+         if (ret)
+             goto des_err;
+     }
+            
+     des_chip_init();
+     CRTCL_SECT_INIT;
+
+
+    printk (KERN_NOTICE "IFX DEU DES initialized%s%s.\n", disable_multiblock ? "" : " (multiblock)", disable_deudma ? "" : " (DMA)");
+    return ret;
+
+des_err:
+     for (j = 0; j < i; j++) 
+        crypto_unregister_alg(&des_drivers_alg[i].alg);
+
+     printk(KERN_ERR "Lantiq %s driver initialization failed!\n", (char *)&des_drivers_alg[i].alg.cra_driver_name);
+     return ret;
+
+cbc_des3_ede_err:
+     for (i = 0; i < ARRAY_SIZE(des_drivers_alg); i++) {
+         if (!strcmp((char *)&des_drivers_alg[i].alg.cra_name, "cbc(des3_ede)"))
+             crypto_unregister_alg(&des_drivers_alg[i].alg);
+     }     
+
+     printk(KERN_ERR "Lantiq %s driver initialization failed!\n", (char *)&des_drivers_alg[i].alg.cra_driver_name);
+     return ret;
+}

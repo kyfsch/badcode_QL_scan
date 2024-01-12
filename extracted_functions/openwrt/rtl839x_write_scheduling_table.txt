@@ -1,0 +1,8 @@
+static void rtl839x_write_scheduling_table(int port)
+{
+	u32 cmd = 1 << 9 | /* Execute cmd */
+	          1 << 8 | /* Write */
+	          0 << 6 | /* Table type 0b00 */
+	          (port & 0x3f);
+	rtl839x_exec_tbl2_cmd(cmd);
+}

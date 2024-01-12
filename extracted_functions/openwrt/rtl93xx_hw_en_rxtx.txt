@@ -1,0 +1,37 @@
+static void rtl93xx_hw_en_rxtx(struct rtl838x_eth_priv *priv)
+{
+	/* Setup CPU-Port: RX Buffer truncated at DEFAULT_MTU Bytes */
+	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX, priv->r->dma_if_ctrl);
+
+	for (int i = 0; i < priv->rxrings; i++) {
+		int pos = (i % 3) * 10;
+		u32 v;
+
+		sw_w32_mask(0x3ff << pos, priv->rxringlen << pos, priv->r->dma_if_rx_ring_size(i));
+
+		/* Some SoCs have issues with missing underflow protection */
+		v = (sw_r32(priv->r->dma_if_rx_ring_cntr(i)) >> pos) & 0x3ff;
+		sw_w32_mask(0x3ff << pos, v, priv->r->dma_if_rx_ring_cntr(i));
+	}
+
+	/* Enable Notify, RX done, RX overflow and TX done interrupts */
+	sw_w32(0xffffffff, priv->r->dma_if_intr_rx_runout_msk);
+	sw_w32(0xffffffff, priv->r->dma_if_intr_rx_done_msk);
+	sw_w32(0x0000000f, priv->r->dma_if_intr_tx_done_msk);
+
+	/* Enable DMA */
+	sw_w32_mask(0, RX_EN_93XX | TX_EN_93XX, priv->r->dma_if_ctrl);
+
+	/* Restart TX/RX to CPU port, enable CRC checking */
+	sw_w32_mask(0x0, 0x3 | BIT(4), priv->r->mac_port_ctrl(priv->cpu_port));
+
+	if (priv->family_id == RTL9300_FAMILY_ID)
+		sw_w32_mask(0, BIT(priv->cpu_port), RTL930X_L2_UNKN_UC_FLD_PMSK);
+	else
+		sw_w32_mask(0, BIT(priv->cpu_port), RTL931X_L2_UNKN_UC_FLD_PMSK);
+
+	if (priv->family_id == RTL9300_FAMILY_ID)
+		sw_w32(0x217, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
+	else
+		sw_w32(0x2a1d, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
+}

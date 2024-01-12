@@ -1,0 +1,12 @@
+mvswitch_probe(struct phy_device *pdev)
+{
+	struct mvswitch_priv *priv;
+
+	priv = kzalloc(sizeof(struct mvswitch_priv), GFP_KERNEL);
+	if (priv == NULL)
+		return -ENOMEM;
+
+	pdev->priv = priv;
+
+	return 0;
+}

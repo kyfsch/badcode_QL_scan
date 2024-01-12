@@ -1,0 +1,44 @@
+static int hc_wlan_data_unpack(const u16 tag_id, const size_t tofs, size_t tlen,
+			       void *outbuf, size_t *outlen)
+{
+	const u8 *lbuf;
+	u32 magic;
+	int ret;
+
+	/* Caller ensure tlen > 0. tofs is aligned */
+	if ((tofs + tlen) > hc_buflen)
+		return -EIO;
+
+	lbuf = hc_buf + tofs;
+	magic = *(u32 *)lbuf;
+
+	ret = -ENODATA;
+	switch (magic) {
+	case RB_MAGIC_LZOR:
+		/* Skip magic */
+		lbuf += sizeof(magic);
+		tlen -= sizeof(magic);
+		ret = hc_wlan_data_unpack_lzor(tag_id, lbuf, tlen, outbuf, outlen);
+		break;
+	case RB_MAGIC_ERD:
+		/* Skip magic */
+		lbuf += sizeof(magic);
+		tlen -= sizeof(magic);
+		ret = hc_wlan_data_unpack_erd(tag_id, lbuf, tlen, outbuf, outlen);
+		break;
+	default:
+		/*
+		 * If the RB_ID_WLAN_DATA payload doesn't start with a
+		 * magic number, the payload itself is the raw RLE-encoded
+		 * calibration data. Only RB_WLAN_ERD_ID_SOLO makes sense here.
+		 */
+		if (RB_WLAN_ERD_ID_SOLO == tag_id) {
+			ret = routerboot_rle_decode(lbuf, tlen, outbuf, outlen);
+			if (ret)
+				pr_debug(RB_HC_PR_PFX "RLE decoding error (%d)\n", ret);
+		}
+		break;
+	}
+
+	return ret;
+}

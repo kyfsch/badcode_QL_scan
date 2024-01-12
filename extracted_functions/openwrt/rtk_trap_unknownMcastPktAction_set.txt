@@ -1,0 +1,58 @@
+rtk_api_ret_t rtk_trap_unknownMcastPktAction_set(rtk_port_t port, rtk_mcast_type_t type, rtk_trap_mcast_action_t mcast_action)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 rawAction;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if (type >= MCAST_END)
+        return RT_ERR_INPUT;
+
+    if (mcast_action >= MCAST_ACTION_END)
+        return RT_ERR_INPUT;
+
+
+    switch (type)
+    {
+        case MCAST_L2:
+            if (MCAST_ACTION_ROUTER_PORT == mcast_action)
+                return RT_ERR_INPUT;
+            else if(MCAST_ACTION_DROP_EX_RMA == mcast_action)
+                rawAction = L2_UNKOWN_MULTICAST_DROP_EXCLUDE_RMA;
+            else
+                rawAction = (rtk_uint32)mcast_action;
+
+            if ((retVal = rtl8367c_setAsicUnknownL2MulticastBehavior(rtk_switch_port_L2P_get(port), rawAction)) != RT_ERR_OK)
+                return retVal;
+
+            break;
+        case MCAST_IPV4:
+            if (MCAST_ACTION_DROP_EX_RMA == mcast_action)
+                return RT_ERR_INPUT;
+            else
+                rawAction = (rtk_uint32)mcast_action;
+
+            if ((retVal = rtl8367c_setAsicUnknownIPv4MulticastBehavior(rtk_switch_port_L2P_get(port), rawAction)) != RT_ERR_OK)
+                return retVal;
+
+            break;
+        case MCAST_IPV6:
+            if (MCAST_ACTION_DROP_EX_RMA == mcast_action)
+                return RT_ERR_INPUT;
+            else
+                rawAction = (rtk_uint32)mcast_action;
+
+            if ((retVal = rtl8367c_setAsicUnknownIPv6MulticastBehavior(rtk_switch_port_L2P_get(port), rawAction)) != RT_ERR_OK)
+                return retVal;
+
+            break;
+        default:
+            break;
+    }
+
+    return RT_ERR_OK;
+}

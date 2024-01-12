@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicPortUnknownMulticastFloodingPortmask(rtk_uint32 *pPortmask)
+{
+    return rtl8367c_getAsicReg(RTL8367C_UNMCAST_FLOADING_PMSK_REG, pPortmask);
+}

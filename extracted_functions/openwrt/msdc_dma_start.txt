@@ -1,0 +1,11 @@
+static void msdc_dma_start(struct msdc_host *host)
+{
+	void __iomem *base = host->base;
+	u32 wints = MSDC_INTEN_XFER_COMPL | MSDC_INTEN_DATTMO | MSDC_INTEN_DATCRCERR;
+
+	sdr_set_bits(MSDC_INTEN, wints);
+	//dsb(); /* --- by chhung */
+	sdr_set_field(MSDC_DMA_CTRL, MSDC_DMA_CTRL_START, 1);
+
+	N_MSG(DMA, "DMA start");
+}

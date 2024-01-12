@@ -1,0 +1,56 @@
+ret_t rtl8367c_getAsicLutIPMCGroup(rtk_uint32 index, ipaddr_t *pGroup_addr, rtk_uint32 *pVid, rtk_uint32 *pPmask, rtk_uint32 *pValid)
+{
+    rtk_uint32      regAddr, regData, bitoffset;
+    ipaddr_t    ipData;
+    ret_t       retVal;
+
+    if(index > RTL8367C_LUT_IPMCGRP_TABLE_MAX)
+        return RT_ERR_INPUT;
+
+    if (NULL == pGroup_addr)
+        return RT_ERR_NULL_POINTER;
+
+    if (NULL == pVid)
+        return RT_ERR_NULL_POINTER;
+
+    if (NULL == pPmask)
+        return RT_ERR_NULL_POINTER;
+
+    /* Group address */
+    regAddr = RTL8367C_REG_IPMC_GROUP_ENTRY0_H + (index * 2);
+    if( (retVal = rtl8367c_getAsicReg(regAddr, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    *pGroup_addr = (((regData & 0x00000FFF) << 16) | 0xE0000000);
+
+    regAddr++;
+    if( (retVal = rtl8367c_getAsicReg(regAddr, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    ipData = (*pGroup_addr | (regData & 0x0000FFFF));
+    *pGroup_addr = ipData;
+
+    /* VID */
+    regAddr = RTL8367C_REG_IPMC_GROUP_VID_00 + index;
+    if( (retVal = rtl8367c_getAsicReg(regAddr, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    *pVid = regData;
+
+    /* portmask */
+    regAddr = RTL8367C_REG_IPMC_GROUP_PMSK_00 + index;
+    if( (retVal = rtl8367c_getAsicReg(regAddr, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    *pPmask = regData;
+
+    /* valid */
+    regAddr = RTL8367C_REG_IPMC_GROUP_VALID_15_0 + (index / 16);
+    bitoffset = index % 16;
+    if( (retVal = rtl8367c_getAsicRegBit(regAddr, bitoffset, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    *pValid = regData;
+
+    return RT_ERR_OK;
+}

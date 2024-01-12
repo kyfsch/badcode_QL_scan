@@ -1,0 +1,5 @@
+int __init psb6970_init(void)
+{
+	phy_register_fixup_for_id(PHY_ANY_ID, psb6970_fixup);
+	return phy_driver_register(&psb6970_driver, THIS_MODULE);
+}

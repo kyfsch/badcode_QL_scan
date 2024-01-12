@@ -1,0 +1,5 @@
+static int aes_generic_setkey(struct crypto_ablkcipher *tfm, const u8 *key,
+                              unsigned int keylen)
+{
+   return aes_setkey(tfm, key, keylen);
+}

@@ -1,0 +1,67 @@
+static int cybertan_parse_partitions(struct mtd_info *master,
+				     const struct mtd_partition **pparts,
+				     struct mtd_part_parser_data *data)
+{
+	struct firmware_header header;
+	struct trx_header *theader;
+	struct uimage_header *uheader;
+	struct mtd_partition *trx_parts;
+	size_t retlen;
+	unsigned int kernel_len;
+	int ret;
+
+	trx_parts = kcalloc(TRX_PARTS, sizeof(struct mtd_partition),
+			    GFP_KERNEL);
+	if (!trx_parts) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	ret = mtd_read(master, 0, sizeof(header),
+		       &retlen, (uint8_t *)&header);
+	if (ret)
+		goto free_parts;
+
+	if (retlen != sizeof(header)) {
+		ret = -EIO;
+		goto free_parts;
+	}
+
+	theader = &header.trx;
+	if (theader->magic != cpu_to_le32(TRX_MAGIC)) {
+		printk(KERN_NOTICE "%s: no TRX header found\n", master->name);
+		goto free_parts;
+	}
+
+	uheader = &header.uimage;
+	if (uheader->ih_magic != cpu_to_be32(IH_MAGIC)) {
+		printk(KERN_NOTICE "%s: no uImage found\n", master->name);
+		goto free_parts;
+	}
+
+	kernel_len = le32_to_cpu(theader->offsets[1]) +
+		sizeof(struct cybertan_header);
+
+	trx_parts[0].name = "header";
+	trx_parts[0].offset = 0;
+	trx_parts[0].size = offsetof(struct firmware_header, uimage);
+	trx_parts[0].mask_flags = 0;
+
+	trx_parts[1].name = "kernel";
+	trx_parts[1].offset = trx_parts[0].offset + trx_parts[0].size;
+	trx_parts[1].size = kernel_len - trx_parts[0].size;
+	trx_parts[1].mask_flags = 0;
+
+	trx_parts[2].name = "rootfs";
+	trx_parts[2].offset = trx_parts[1].offset + trx_parts[1].size;
+	trx_parts[2].size = master->size - trx_parts[1].size - trx_parts[0].size;
+	trx_parts[2].mask_flags = 0;
+
+	*pparts = trx_parts;
+	return TRX_PARTS;
+
+free_parts:
+	kfree(trx_parts);
+out:
+	return ret;
+}

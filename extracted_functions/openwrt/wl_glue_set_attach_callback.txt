@@ -1,0 +1,4 @@
+void wl_glue_set_attach_callback(wl_glue_attach_cb_t cb)
+{
+	attach_cb = cb;
+}

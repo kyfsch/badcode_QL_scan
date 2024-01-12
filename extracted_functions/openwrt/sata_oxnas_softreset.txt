@@ -1,0 +1,72 @@
+static int sata_oxnas_softreset(struct ata_link *link, unsigned int *class,
+				 unsigned long deadline)
+{
+	struct ata_port *ap = link->ap;
+	struct sata_oxnas_port_priv *pd = ap->private_data;
+	void __iomem *port_base = pd->port_base;
+	int rc;
+
+	struct ata_taskfile tf;
+	u32 Command_Reg;
+
+	DPRINTK("ENTER\n");
+
+	port_base = pd->port_base;
+
+	if (ata_link_offline(link)) {
+		DPRINTK("PHY reports no device\n");
+		*class = ATA_DEV_NONE;
+		goto out;
+	}
+
+	/* write value to register */
+	iowrite32(0, port_base + ORB1);
+	iowrite32(0, port_base + ORB2);
+	iowrite32(0, port_base + ORB3);
+	iowrite32((ap->ctl) << 24, port_base + ORB4);
+
+	/* command the core to send a control FIS */
+	Command_Reg = ioread32(port_base + SATA_COMMAND);
+	Command_Reg &= ~SATA_OPCODE_MASK;
+	Command_Reg |= CMD_WRITE_TO_ORB_REGS_NO_COMMAND;
+	iowrite32(Command_Reg, port_base + SATA_COMMAND);
+	udelay(20);	/* FIXME: flush */
+
+	/* write value to register */
+	iowrite32((ap->ctl | ATA_SRST) << 24, port_base + ORB4);
+
+	/* command the core to send a control FIS */
+	Command_Reg &= ~SATA_OPCODE_MASK;
+	Command_Reg |= CMD_WRITE_TO_ORB_REGS_NO_COMMAND;
+	iowrite32(Command_Reg, port_base + SATA_COMMAND);
+	udelay(20);	/* FIXME: flush */
+
+	/* write value to register */
+	iowrite32((ap->ctl) << 24, port_base + ORB4);
+
+	/* command the core to send a control FIS */
+	Command_Reg &= ~SATA_OPCODE_MASK;
+	Command_Reg |= CMD_WRITE_TO_ORB_REGS_NO_COMMAND;
+	iowrite32(Command_Reg, port_base + SATA_COMMAND);
+
+	msleep(150);
+
+	rc = ata_sff_wait_ready(link, deadline);
+
+	/* if link is occupied, -ENODEV too is an error */
+	if (rc && (rc != -ENODEV || sata_scr_valid(link))) {
+		ata_link_err(link, "SRST failed (errno=%d)\n", rc);
+		return rc;
+	}
+
+	/* determine by signature whether we have ATA or ATAPI devices */
+	sata_oxnas_tf_read(ap, &tf);
+	*class = ata_dev_classify(&tf);
+
+	if (*class == ATA_DEV_UNKNOWN)
+		*class = ATA_DEV_NONE;
+
+out:
+	DPRINTK("EXIT, class=%u\n", *class);
+	return 0;
+}

@@ -1,0 +1,4 @@
+inline int rtl930x_tbl_access_data_0(int i)
+{
+	return RTL930X_TBL_ACCESS_DATA_0(i);
+}

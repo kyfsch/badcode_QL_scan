@@ -1,0 +1,15 @@
+t_envhash(out)
+     unsigned char * out;
+{
+  char ** ptr;
+  char ebuf[256];
+  SHA1_CTX ctxt;
+
+  SHA1Init(&ctxt);
+  for(ptr = environ; *ptr; ++ptr) {
+    strncpy(ebuf, *ptr, 255);
+    ebuf[255] = '\0';
+    SHA1Update(&ctxt, ebuf, strlen(ebuf));
+  }
+  SHA1Final(out, &ctxt);
+}

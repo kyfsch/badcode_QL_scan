@@ -1,0 +1,36 @@
+static bool nmbm_erase_block_and_check(struct nmbm_instance *ni, uint32_t ba)
+{
+	uint64_t addr, off;
+	bool success;
+	int ret;
+
+	success = nmbm_erase_phys_block(ni, ba2addr(ni, ba));
+	if (!success)
+		return false;
+
+	if (!ni->empty_page_ecc_ok)
+		return true;
+
+	/* Check every page to make sure there aren't too many bitflips */
+
+	addr = ba2addr(ni, ba);
+
+	for (off = 0; off < bmtd.blk_size; off += bmtd.pg_size) {
+		ret = nmbm_read_phys_page(ni, addr + off, ni->page_cache, NULL);
+		if (ret == -EBADMSG) {
+			/*
+			 * empty_page_ecc_ok means the empty page is
+			 * still protected by ECC. So reading pages with ECC
+			 * enabled and -EBADMSG means there are too many
+			 * bitflips that can't be recovered, and the block
+			 * containing the page should be marked bad.
+			 */
+			nlog_err(ni,
+				 "Too many bitflips in empty page at 0x%llx\n",
+				 addr + off);
+			return false;
+		}
+	}
+
+	return true;
+}

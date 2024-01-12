@@ -1,0 +1,63 @@
+static void rtl838x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
+{
+	/* Table contains different entry types, we need to identify the right one:
+	 * Check for MC entries, first
+	 * In contrast to the RTL93xx SoCs, there is no valid bit, use heuristics to
+	 * identify valid entries
+	 */
+	e->is_ip_mc = !!(r[0] & BIT(22));
+	e->is_ipv6_mc = !!(r[0] & BIT(21));
+	e->type = L2_INVALID;
+
+	if (!e->is_ip_mc && !e->is_ipv6_mc) {
+		e->mac[0] = (r[1] >> 20);
+		e->mac[1] = (r[1] >> 12);
+		e->mac[2] = (r[1] >> 4);
+		e->mac[3] = (r[1] & 0xf) << 4 | (r[2] >> 28);
+		e->mac[4] = (r[2] >> 20);
+		e->mac[5] = (r[2] >> 12);
+
+		e->rvid = r[2] & 0xfff;
+		e->vid = r[0] & 0xfff;
+
+		/* Is it a unicast entry? check multicast bit */
+		if (!(e->mac[0] & 1)) {
+			e->is_static = !!((r[0] >> 19) & 1);
+			e->port = (r[0] >> 12) & 0x1f;
+			e->block_da = !!(r[1] & BIT(30));
+			e->block_sa = !!(r[1] & BIT(31));
+			e->suspended = !!(r[1] & BIT(29));
+			e->next_hop = !!(r[1] & BIT(28));
+			if (e->next_hop) {
+				pr_debug("Found next hop entry, need to read extra data\n");
+				e->nh_vlan_target = !!(r[0] & BIT(9));
+				e->nh_route_id = r[0] & 0x1ff;
+				e->vid = e->rvid;
+			}
+			e->age = (r[0] >> 17) & 0x3;
+			e->valid = true;
+
+			/* A valid entry has one of mutli-cast, aging, sa/da-blocking,
+			 * next-hop or static entry bit set
+			 */
+			if (!(r[0] & 0x007c0000) && !(r[1] & 0xd0000000))
+				e->valid = false;
+			else
+				e->type = L2_UNICAST;
+		} else { /* L2 multicast */
+			pr_debug("Got L2 MC entry: %08x %08x %08x\n", r[0], r[1], r[2]);
+			e->valid = true;
+			e->type = L2_MULTICAST;
+			e->mc_portmask_index = (r[0] >> 12) & 0x1ff;
+		}
+	} else { /* IPv4 and IPv6 multicast */
+		e->valid = true;
+		e->mc_portmask_index = (r[0] >> 12) & 0x1ff;
+		e->mc_gip = (r[1] << 20) | (r[2] >> 12);
+		e->rvid = r[2] & 0xfff;
+	}
+	if (e->is_ip_mc)
+		e->type = IP4_MULTICAST;
+	if (e->is_ipv6_mc)
+		e->type = IP6_MULTICAST;
+}

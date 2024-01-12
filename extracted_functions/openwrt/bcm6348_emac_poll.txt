@@ -1,0 +1,38 @@
+static int bcm6348_emac_poll(struct napi_struct *napi, int budget)
+{
+	struct bcm6348_emac *emac = container_of(napi, struct bcm6348_emac,
+						 napi);
+	struct bcm6348_iudma *iudma = emac->iudma;
+	struct net_device *ndev = emac->net_dev;
+	int rx_work_done;
+
+	/* ack interrupts */
+	dmac_writel(iudma, DMAC_IR_PKTDONE_MASK, DMAC_IR_REG,
+		    emac->rx_chan);
+	dmac_writel(iudma, DMAC_IR_PKTDONE_MASK, DMAC_IR_REG,
+		    emac->tx_chan);
+
+	/* reclaim sent skb */
+	bcm6348_emac_tx_reclaim(ndev, 0);
+
+	spin_lock(&emac->rx_lock);
+	rx_work_done = bcm6348_emac_receive_queue(ndev, budget);
+	spin_unlock(&emac->rx_lock);
+
+	if (rx_work_done >= budget) {
+		/* rx queue is not yet empty/clean */
+		return rx_work_done;
+	}
+
+	/* no more packet in rx/tx queue, remove device from poll
+	 * queue */
+	napi_complete_done(napi, rx_work_done);
+
+	/* restore rx/tx interrupt */
+	dmac_writel(iudma, DMAC_IR_PKTDONE_MASK, DMAC_IRMASK_REG,
+		    emac->rx_chan);
+	dmac_writel(iudma, DMAC_IR_PKTDONE_MASK, DMAC_IRMASK_REG,
+		    emac->tx_chan);
+
+	return rx_work_done;
+}

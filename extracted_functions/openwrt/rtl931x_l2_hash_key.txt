@@ -1,0 +1,41 @@
+static u32 rtl931x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
+{
+	u32 h, h0, h1, h2, h3, h4, k0, k1;
+
+	h0 = seed & 0xfff;
+	h1 = (seed >> 12) & 0xfff;
+	h2 = (seed >> 24) & 0xfff;
+	h3 = (seed >> 36) & 0xfff;
+	h4 = (seed >> 48) & 0xfff;
+	h4 = ((h4 & 0x7) << 9) | ((h4 >> 3) & 0x1ff);
+	k0 = h0 ^ h1 ^ h2 ^ h3 ^ h4;
+
+	h0 = seed & 0xfff;
+	h0 = ((h0 & 0x1ff) << 3) | ((h0 >> 9) & 0x7);
+	h1 = (seed >> 12) & 0xfff;
+	h1 = ((h1 & 0x3f) << 6) | ((h1 >> 6) & 0x3f);
+	h2 = (seed >> 24) & 0xfff;
+	h3 = (seed >> 36) & 0xfff;
+	h3 = ((h3 & 0x3f) << 6) | ((h3 >> 6) & 0x3f);
+	h4 = (seed >> 48) & 0xfff;
+	k1 = h0 ^ h1 ^ h2 ^ h3 ^ h4;
+
+	/* Algorithm choice for block 0 */
+	if (sw_r32(RTL931X_L2_CTRL) & BIT(0))
+		h = k1;
+	else
+		h = k0;
+
+	/* Algorithm choice for block 1
+	 * Since k0 and k1 are < 4096, adding 4096 will offset the hash into the second
+	 * half of hash-space
+	 * 4096 is in fact the hash-table size 32768 divided by 4 hashes per bucket
+	 * divided by 2 to divide the hash space in 2
+	 */
+	if (sw_r32(RTL931X_L2_CTRL) & BIT(1))
+		h |= (k1 + 4096) << 16;
+	else
+		h |= (k0 + 4096) << 16;
+
+	return h;
+}

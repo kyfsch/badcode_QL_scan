@@ -1,0 +1,303 @@
+ret_t rtl8367c_getAsicPortRTCTResult(rtk_uint32 port, rtl8367c_port_rtct_result_t *pResult)
+{
+    ret_t       retVal;
+    rtk_uint32  regData, finish = 1;
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0249)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_getAsicReg(0x1300, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    if( (regData == 0x6367) )
+    {
+        if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa422, &regData)) != RT_ERR_OK)
+            return retVal;
+
+        if((regData & 0x8000) == 0x8000)
+        {
+            /* Channel A */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x802a)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelAOpen       = (regData == 0x0048) ? 1 : 0;
+            pResult->channelAShort      = (regData == 0x0050) ? 1 : 0;
+            pResult->channelAMismatch   = ((regData == 0x0042) || (regData == 0x0044)) ? 1 : 0;
+            pResult->channelALinedriver = (regData == 0x0041) ? 1 : 0;
+
+            /* Channel B */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x802e)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelBOpen       = (regData == 0x0048) ? 1 : 0;
+            pResult->channelBShort      = (regData == 0x0050) ? 1 : 0;
+            pResult->channelBMismatch   = ((regData == 0x0042) || (regData == 0x0044)) ? 1 : 0;
+            pResult->channelBLinedriver = (regData == 0x0041) ? 1 : 0;
+
+            /* Channel C */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x8032)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelCOpen       = (regData == 0x0048) ? 1 : 0;
+            pResult->channelCShort      = (regData == 0x0050) ? 1 : 0;
+            pResult->channelCMismatch   = ((regData == 0x0042) || (regData == 0x0044)) ? 1 : 0;
+            pResult->channelCLinedriver = (regData == 0x0041) ? 1 : 0;
+
+            /* Channel D */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x8036)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelDOpen       = (regData == 0x0048) ? 1 : 0;
+            pResult->channelDShort      = (regData == 0x0050) ? 1 : 0;
+            pResult->channelDMismatch   = ((regData == 0x0042) || (regData == 0x0044)) ? 1 : 0;
+            pResult->channelDLinedriver = (regData == 0x0041) ? 1 : 0;
+
+            /* Channel A Length */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x802c)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelALen = (regData / 2);
+
+            /* Channel B Length */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x8030)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelBLen = (regData / 2);
+
+            /* Channel C Length */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x8034)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelCLen = (regData / 2);
+
+            /* Channel D Length */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x8038)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelDLen = (regData / 2);
+        }
+        else
+            finish = 0;
+    }
+    else if(regData == 0x6368)
+    {
+        if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa422, &regData)) != RT_ERR_OK)
+            return retVal;
+
+        if((regData & 0x8000) == 0x8000)
+        {
+            /* Channel A */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x802b)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelAOpen       = (regData == 0x0048) ? 1 : 0;
+            pResult->channelAShort      = (regData == 0x0050) ? 1 : 0;
+            pResult->channelAMismatch   = ((regData == 0x0042) || (regData == 0x0044)) ? 1 : 0;
+            pResult->channelALinedriver = (regData == 0x0041) ? 1 : 0;
+
+            /* Channel B */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x802f)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelBOpen       = (regData == 0x0048) ? 1 : 0;
+            pResult->channelBShort      = (regData == 0x0050) ? 1 : 0;
+            pResult->channelBMismatch   = ((regData == 0x0042) || (regData == 0x0044)) ? 1 : 0;
+            pResult->channelBLinedriver = (regData == 0x0041) ? 1 : 0;
+
+            /* Channel C */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x8033)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelCOpen       = (regData == 0x0048) ? 1 : 0;
+            pResult->channelCShort      = (regData == 0x0050) ? 1 : 0;
+            pResult->channelCMismatch   = ((regData == 0x0042) || (regData == 0x0044)) ? 1 : 0;
+            pResult->channelCLinedriver = (regData == 0x0041) ? 1 : 0;
+
+            /* Channel D */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x8037)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelDOpen       = (regData == 0x0048) ? 1 : 0;
+            pResult->channelDShort      = (regData == 0x0050) ? 1 : 0;
+            pResult->channelDMismatch   = ((regData == 0x0042) || (regData == 0x0044)) ? 1 : 0;
+            pResult->channelDLinedriver = (regData == 0x0041) ? 1 : 0;
+
+            /* Channel A Length */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x802d)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelALen = (regData / 2);
+
+            /* Channel B Length */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x8031)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelBLen = (regData / 2);
+
+            /* Channel C Length */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x8035)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelCLen = (regData / 2);
+
+            /* Channel D Length */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x8039)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelDLen = (regData / 2);
+        }
+        else
+            finish = 0;
+
+    }
+    else if((regData == 0x6511) || (regData == 0x0801))
+    {
+        if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa422, &regData)) != RT_ERR_OK)
+            return retVal;
+
+        if((regData & 0x8000) == 0x8000)
+        {
+            /* Channel A */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x802a)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelAOpen       = (regData == 0x0048) ? 1 : 0;
+            pResult->channelAShort      = (regData == 0x0050) ? 1 : 0;
+            pResult->channelAMismatch   = ((regData == 0x0042) || (regData == 0x0044)) ? 1 : 0;
+            pResult->channelALinedriver = (regData == 0x0041) ? 1 : 0;
+
+            /* Channel B */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x802e)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelBOpen       = (regData == 0x0048) ? 1 : 0;
+            pResult->channelBShort      = (regData == 0x0050) ? 1 : 0;
+            pResult->channelBMismatch   = ((regData == 0x0042) || (regData == 0x0044)) ? 1 : 0;
+            pResult->channelBLinedriver = (regData == 0x0041) ? 1 : 0;
+
+            /* Channel C */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x8032)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelCOpen       = (regData == 0x0048) ? 1 : 0;
+            pResult->channelCShort      = (regData == 0x0050) ? 1 : 0;
+            pResult->channelCMismatch   = ((regData == 0x0042) || (regData == 0x0044)) ? 1 : 0;
+            pResult->channelCLinedriver = (regData == 0x0041) ? 1 : 0;
+
+            /* Channel D */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x8036)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelDOpen       = (regData == 0x0048) ? 1 : 0;
+            pResult->channelDShort      = (regData == 0x0050) ? 1 : 0;
+            pResult->channelDMismatch   = ((regData == 0x0042) || (regData == 0x0044)) ? 1 : 0;
+            pResult->channelDLinedriver = (regData == 0x0041) ? 1 : 0;
+
+            /* Channel A Length */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x802c)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelALen = (regData / 2);
+
+            /* Channel B Length */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x8030)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelBLen = (regData / 2);
+
+            /* Channel C Length */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x8034)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelCLen = (regData / 2);
+
+            /* Channel D Length */
+            if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa436, 0x8038)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa438, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            pResult->channelDLen = (regData / 2);
+        }
+        else
+            finish = 0;
+
+    }
+    else
+        return RT_ERR_CHIP_NOT_SUPPORTED;
+
+    if(finish == 0)
+        return RT_ERR_PHY_RTCT_NOT_FINISH;
+    else
+        return RT_ERR_OK;
+}

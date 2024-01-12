@@ -1,0 +1,24 @@
+static void olr_statistics(int fd, DSL_AccessDir_t direction) {
+	IOCTL_DIR(DSL_OlrStatistics_t, DSL_FIO_OLR_STATISTICS_GET, direction)
+
+	void *c = blobmsg_open_table(&b, "bitswap");
+	m_u32("requested", out.data.nBitswapRequested + out.data.nBitswapRequested);
+	m_u32("executed", out.data.nBitswapExecuted);
+	m_u32("rejected", out.data.nBitswapRejected);
+	m_u32("timeout", out.data.nBitswapTimeout);
+	blobmsg_close_table(&b, c);
+
+	c = blobmsg_open_table(&b, "sra");
+	m_u32("requested", out.data.nSraRequested);
+	m_u32("executed", out.data.nSraExecuted);
+	m_u32("rejected", out.data.nSraRejected);
+	m_u32("timeout", out.data.nSraTimeout);
+	blobmsg_close_table(&b, c);
+
+	c = blobmsg_open_table(&b, "sos");
+	m_u32("requested", out.data.nSosRequested);
+	m_u32("executed", out.data.nSosExecuted);
+	m_u32("rejected", out.data.nSosRejected);
+	m_u32("timeout", out.data.nSosTimeout);
+	blobmsg_close_table(&b, c);
+}

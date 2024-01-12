@@ -1,0 +1,78 @@
+int nvram_commit(nvram_handle_t *h)
+{
+	nvram_header_t *header = nvram_header(h);
+	char *init, *config, *refresh, *ncdl;
+	char *ptr, *end;
+	int i;
+	nvram_tuple_t *t;
+	nvram_header_t tmp;
+	uint8_t crc;
+
+	/* Regenerate header */
+	header->magic = NVRAM_MAGIC;
+	header->crc_ver_init = (NVRAM_VERSION << 8);
+	if (!(init = nvram_get(h, "sdram_init")) ||
+		!(config = nvram_get(h, "sdram_config")) ||
+		!(refresh = nvram_get(h, "sdram_refresh")) ||
+		!(ncdl = nvram_get(h, "sdram_ncdl"))) {
+		header->crc_ver_init |= SDRAM_INIT << 16;
+		header->config_refresh = SDRAM_CONFIG;
+		header->config_refresh |= SDRAM_REFRESH << 16;
+		header->config_ncdl = 0;
+	} else {
+		header->crc_ver_init |= (strtoul(init, NULL, 0) & 0xffff) << 16;
+		header->config_refresh = strtoul(config, NULL, 0) & 0xffff;
+		header->config_refresh |= (strtoul(refresh, NULL, 0) & 0xffff) << 16;
+		header->config_ncdl = strtoul(ncdl, NULL, 0);
+	}
+
+	/* Clear data area */
+	ptr = (char *) header + sizeof(nvram_header_t);
+	memset(ptr, 0xFF, nvram_part_size - h->offset - sizeof(nvram_header_t));
+	memset(&tmp, 0, sizeof(nvram_header_t));
+
+	/* Leave space for a double NUL at the end */
+	end = (char *) header + nvram_part_size - h->offset - 2;
+
+	/* Write out all tuples */
+	for (i = 0; i < NVRAM_ARRAYSIZE(h->nvram_hash); i++) {
+		for (t = h->nvram_hash[i]; t; t = t->next) {
+			if ((ptr + strlen(t->name) + 1 + strlen(t->value) + 1) > end)
+				break;
+			ptr += sprintf(ptr, "%s=%s", t->name, t->value) + 1;
+		}
+	}
+
+	/* End with a double NULL and pad to 4 bytes */
+	*ptr = '\0';
+	ptr++;
+
+	if( (int)ptr % 4 )
+		memset(ptr, 0, 4 - ((int)ptr % 4));
+
+	ptr++;
+
+	/* Set new length */
+	header->len = NVRAM_ROUNDUP(ptr - (char *) header, 4);
+
+	/* Little-endian CRC8 over the last 11 bytes of the header */
+	tmp.crc_ver_init   = header->crc_ver_init;
+	tmp.config_refresh = header->config_refresh;
+	tmp.config_ncdl    = header->config_ncdl;
+	crc = hndcrc8((unsigned char *) &tmp + NVRAM_CRC_START_POSITION,
+		sizeof(nvram_header_t) - NVRAM_CRC_START_POSITION, 0xff);
+
+	/* Continue CRC8 over data bytes */
+	crc = hndcrc8((unsigned char *) &header[0] + sizeof(nvram_header_t),
+		header->len - sizeof(nvram_header_t), crc);
+
+	/* Set new CRC8 */
+	header->crc_ver_init |= crc;
+
+	/* Write out */
+	msync(h->mmap, h->length, MS_SYNC);
+	fsync(h->fd);
+
+	/* Reinitialize hash table */
+	return _nvram_rehash(h);
+}

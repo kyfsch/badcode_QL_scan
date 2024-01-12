@@ -1,0 +1,13 @@
+static inline void sata_oxnas_reset_dma(struct ata_port *ap, int assert)
+{
+	struct sata_oxnas_port_priv *pd = ap->private_data;
+	u32 reg;
+
+	reg = ioread32(pd->dmactl_base + DMA_CONTROL);
+	if (assert)
+		reg |= DMA_CONTROL_RESET;
+	else
+		reg &= ~DMA_CONTROL_RESET;
+
+	iowrite32(reg, pd->dmactl_base + DMA_CONTROL);
+};

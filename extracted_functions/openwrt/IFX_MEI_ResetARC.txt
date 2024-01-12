@@ -1,0 +1,28 @@
+IFX_MEI_ResetARC (DSL_DEV_Device_t * pDev)
+{
+	u32 arc_debug_data = 0;
+
+	IFX_MEI_HaltArc (pDev);
+
+	IFX_MEI_LongWordRead ((u32) LTQ_RCU_RST, &arc_debug_data);
+	IFX_MEI_LongWordWrite ((u32) LTQ_RCU_RST,
+		arc_debug_data | LTQ_RCU_RST_REQ_DFE | LTQ_RCU_RST_REQ_AFE);
+
+	// reset ARC
+	IFX_MEI_LongWordWriteOffset (pDev, (u32) ME_RST_CTRL, MEI_SOFT_RESET);
+	IFX_MEI_LongWordWriteOffset (pDev, (u32) ME_RST_CTRL, 0);
+
+	IFX_MEI_IRQDisable (pDev);
+
+	IFX_MEI_EnableCLK (pDev);
+
+#if 0
+	// reset part of PPE
+	*(unsigned long *) (BSP_PPE32_SRST) = 0xC30;
+	*(unsigned long *) (BSP_PPE32_SRST) = 0xFFF;
+#endif
+
+	DSL_DEV_PRIVATE(pDev)->modem_ready = 0;
+
+	return DSL_DEV_MEI_ERR_SUCCESS;
+}

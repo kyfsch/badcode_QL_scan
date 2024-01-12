@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_stat_logging_counter_get(rtk_uint32 idx, rtk_uint32 *pCnt)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pCnt)
+        return RT_ERR_NULL_POINTER;
+
+    if(idx > RTL8367C_MIB_MAX_LOG_CNT_IDX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if((retVal = rtl8367c_getAsicMIBsLogCounter(idx, pCnt)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,18 @@
+ret_t rtl8367c_getAsicMaxLength(rtk_uint32 port, rtk_uint32 type, rtk_uint32 *pCfgId)
+{
+    ret_t retVal;
+
+    if(port < 8)
+    {
+        retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_MAX_LENGTH_CFG, (type * 8) + port, pCfgId);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+    }
+    else
+    {
+        retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_MAX_LENGTH_CFG_EXT, (type * 3) + port - 8, pCfgId);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+    }
+    return RT_ERR_OK;
+}

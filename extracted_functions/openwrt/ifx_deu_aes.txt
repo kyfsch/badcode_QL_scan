@@ -1,0 +1,19 @@
+extern void ifx_deu_aes (void *ctx_arg, uint8_t *out_arg, const uint8_t *in_arg,
+        uint8_t *iv_arg, size_t nbytes, int encdec, int mode);
+/* End of function decleration */
+
+struct aes_ctx {
+    int key_length;
+    u8 buf[AES_MAX_KEY_SIZE];
+    u8 tweakkey[AES_MAX_KEY_SIZE];
+    u8 nonce[CTR_RFC3686_NONCE_SIZE];
+    u8 lastbuffer[4 * XTS_BLOCK_SIZE];
+    int use_tweak;
+    u32 byte_count;
+    u32 dbn;
+    int started;
+    u32 (*temp)[AES_BLOCK_WORDS];
+    u8 block[AES_BLOCK_SIZE];
+    u8 hash[AES_BLOCK_SIZE];
+    struct gf128mul_4k *gf128;
+};

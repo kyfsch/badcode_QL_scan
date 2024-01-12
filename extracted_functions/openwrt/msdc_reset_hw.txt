@@ -1,0 +1,8 @@
+static void msdc_reset_hw(struct msdc_host *host)
+{
+	void __iomem *base = host->base;
+
+	sdr_set_bits(MSDC_CFG, MSDC_CFG_RST);
+	while (sdr_read32(MSDC_CFG) & MSDC_CFG_RST)
+		cpu_relax();
+}

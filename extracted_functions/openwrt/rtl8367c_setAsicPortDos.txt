@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicPortDos(rtk_uint32 type, rtk_uint32 drop)
+{
+    if(type >= DOS_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_DOS_CFG, RTL8367C_DROP_DAEQSA_OFFSET + type, drop);
+}

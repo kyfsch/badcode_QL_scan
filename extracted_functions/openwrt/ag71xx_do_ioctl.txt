@@ -1,0 +1,32 @@
+static int ag71xx_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
+{
+	struct ag71xx *ag = netdev_priv(dev);
+
+
+	switch (cmd) {
+	case SIOCSIFHWADDR:
+		if (copy_from_user
+			((void*)dev->dev_addr, ifr->ifr_data, sizeof(dev->dev_addr)))
+			return -EFAULT;
+		return 0;
+
+	case SIOCGIFHWADDR:
+		if (copy_to_user
+			(ifr->ifr_data, dev->dev_addr, sizeof(dev->dev_addr)))
+			return -EFAULT;
+		return 0;
+
+	case SIOCGMIIPHY:
+	case SIOCGMIIREG:
+	case SIOCSMIIREG:
+		if (ag->phy_dev == NULL)
+			break;
+
+		return phy_mii_ioctl(ag->phy_dev, ifr, cmd);
+
+	default:
+		break;
+	}
+
+	return -EOPNOTSUPP;
+}

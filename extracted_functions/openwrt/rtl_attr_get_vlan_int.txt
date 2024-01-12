@@ -1,0 +1,7 @@
+rtl_attr_get_vlan_int(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	if (val->port_vlan >= dev->vlans)
+		return -EINVAL;
+
+	return rtl_attr_get_int(dev, attr, val);
+}

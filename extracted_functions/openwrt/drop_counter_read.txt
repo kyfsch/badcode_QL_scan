@@ -1,0 +1,52 @@
+static ssize_t drop_counter_read(struct file *filp, char __user *buffer, size_t count,
+			     loff_t *ppos)
+{
+	struct rtl838x_switch_priv *priv = filp->private_data;
+	const char **d;
+	u32 v;
+	char *buf;
+	int n = 0, len, offset;
+	int num;
+
+	switch (priv->family_id) {
+	case RTL8380_FAMILY_ID:
+		d = rtl838x_drop_cntr;
+		offset = RTL838X_STAT_PRVTE_DROP_COUNTERS;
+		num = 40;
+		break;
+	case RTL8390_FAMILY_ID:
+		d = rtl839x_drop_cntr;
+		offset = RTL839X_STAT_PRVTE_DROP_COUNTERS;
+		num = 45;
+		break;
+	case RTL9300_FAMILY_ID:
+		d = rtl930x_drop_cntr;
+		offset = RTL930X_STAT_PRVTE_DROP_COUNTERS;
+		num = 85;
+		break;
+	case RTL9310_FAMILY_ID:
+		d = rtl931x_drop_cntr;
+		offset = RTL931X_STAT_PRVTE_DROP_COUNTERS;
+		num = 81;
+		break;
+	}
+
+	buf = kmalloc(30 * num, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	for (int i = 0; i < num; i++) {
+		v = sw_r32(offset + (i << 2)) & 0xffff;
+		n += sprintf(buf + n, "%s: %d\n", d[i], v);
+	}
+
+	if (count < strlen(buf)) {
+		kfree(buf);
+		return -ENOSPC;
+	}
+
+	len = simple_read_from_buffer(buffer, count, ppos, buf, strlen(buf));
+	kfree(buf);
+
+	return len;
+}

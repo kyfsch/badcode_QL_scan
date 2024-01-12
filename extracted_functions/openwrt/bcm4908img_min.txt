@@ -1,0 +1,3 @@
+static inline size_t bcm4908img_min(size_t x, size_t y) {
+	return x < y ? x : y;
+}

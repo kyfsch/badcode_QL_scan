@@ -1,0 +1,8 @@
+static void g977_get_bit_allocation(int fd, DSL_AccessDir_t direction) {
+	IOCTL_DIR(DSL_G997_BitAllocationNsc_t, DSL_FIO_G997_BIT_ALLOCATION_NSC_GET, direction);
+
+	// create default value to obtain consistent JSON structure
+	m_u32("groupsize", 1);
+	m_u32("groups", out.data.bitAllocationNsc.nNumData);
+	m_array("data", out.data.bitAllocationNsc.nNSCData, out.data.bitAllocationNsc.nNumData);
+}

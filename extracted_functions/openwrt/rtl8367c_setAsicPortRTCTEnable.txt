@@ -1,0 +1,38 @@
+ret_t rtl8367c_setAsicPortRTCTEnable(rtk_uint32 portmask)
+{
+    ret_t       retVal;
+    rtk_uint32  regData;
+    rtk_uint32  port;
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0249)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_getAsicReg(0x1300, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    if( (regData == 0x0276) || (regData == 0x0597) )
+        return RT_ERR_CHIP_NOT_SUPPORTED;
+
+    for(port = 0; port <= 10 ; port++)
+    {
+        if(portmask & (0x0001 << port))
+        {
+             if((retVal = rtl8367c_getAsicPHYOCPReg(port, 0xa422, &regData)) != RT_ERR_OK)
+                 return retVal;
+
+             regData &= 0x7FFF;
+             if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa422, regData)) != RT_ERR_OK)
+                 return retVal;
+
+             regData |= 0x00F2;/*RTCT set to  echo response mode*/
+             if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa422, regData)) != RT_ERR_OK)
+                 return retVal;
+
+             regData |= 0x0001;
+             if((retVal = rtl8367c_setAsicPHYOCPReg(port, 0xa422, regData)) != RT_ERR_OK)
+                 return retVal;
+        }
+    }
+
+    return RT_ERR_OK;
+}

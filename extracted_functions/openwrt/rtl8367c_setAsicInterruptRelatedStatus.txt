@@ -1,0 +1,18 @@
+ret_t rtl8367c_setAsicInterruptRelatedStatus(rtk_uint32 type, rtk_uint32 status)
+{
+    CONST rtk_uint32 indicatorAddress[INTRST_END] = {RTL8367C_REG_LEARN_OVER_INDICATOR,
+                                                    RTL8367C_REG_SPEED_CHANGE_INDICATOR,
+                                                    RTL8367C_REG_SPECIAL_CONGEST_INDICATOR,
+                                                    RTL8367C_REG_PORT_LINKDOWN_INDICATOR,
+                                                    RTL8367C_REG_PORT_LINKUP_INDICATOR,
+                                                    RTL8367C_REG_METER_OVERRATE_INDICATOR0,
+                                                    RTL8367C_REG_METER_OVERRATE_INDICATOR1,
+                                                    RTL8367C_REG_RLDP_LOOPED_INDICATOR,
+                                                    RTL8367C_REG_RLDP_RELEASED_INDICATOR,
+                                                    RTL8367C_REG_SYSTEM_LEARN_OVER_INDICATOR};
+
+    if(type >= INTRST_END )
+        return RT_ERR_OUT_OF_RANGE;
+
+    return rtl8367c_setAsicReg(indicatorAddress[type], status);
+}

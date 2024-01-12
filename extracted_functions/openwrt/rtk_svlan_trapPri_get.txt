@@ -1,0 +1,13 @@
+rtk_api_ret_t rtk_svlan_trapPri_get(rtk_pri_t *pPriority)
+{
+    rtk_api_ret_t   retVal;
+
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pPriority)
+        return RT_ERR_NULL_POINTER;
+
+    retVal = rtl8367c_getAsicSvlanTrapPriority(pPriority);
+
+    return retVal;
+}   /* end of rtk_svlan_trapPri_get */

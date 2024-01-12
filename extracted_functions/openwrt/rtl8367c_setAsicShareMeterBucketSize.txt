@@ -1,0 +1,11 @@
+ret_t rtl8367c_setAsicShareMeterBucketSize(rtk_uint32 index, rtk_uint32 lbthreshold)
+{
+
+    if(index > RTL8367C_METERMAX)
+        return RT_ERR_FILTER_METER_ID;
+
+    if(index < 32)
+    return rtl8367c_setAsicReg(RTL8367C_METER_BUCKET_SIZE_REG(index), lbthreshold);
+    else
+       return rtl8367c_setAsicReg(RTL8367C_REG_METER32_BUCKET_SIZE + index - 32, lbthreshold);
+}

@@ -1,0 +1,21 @@
+uc_bpf_map_iter_next_int(uc_vm_t *vm, size_t nargs)
+{
+	struct uc_bpf_map_iter *iter = uc_fn_thisval("bpf.map_iter");
+	uint64_t intval;
+	uc_value_t *rv;
+
+	if (!iter->has_next)
+		return NULL;
+
+	if (iter->key_size == 4)
+		intval = *(uint32_t *)iter->key;
+	else if (iter->key_size == 8)
+		intval = *(uint64_t *)iter->key;
+	else
+		return NULL;
+
+	rv = ucv_int64_new(intval);
+	iter->has_next = !bpf_map_get_next_key(iter->fd, &iter->key, &iter->key);
+
+	return rv;
+}

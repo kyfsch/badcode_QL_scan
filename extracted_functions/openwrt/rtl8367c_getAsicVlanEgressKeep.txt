@@ -1,0 +1,71 @@
+ret_t rtl8367c_getAsicVlanEgressKeep(rtk_uint32 port, rtk_uint32* pPortmask)
+{
+    rtk_uint32 regAddr, bit_mask, regval_l, regval_h;
+    ret_t  retVal;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(port < 8){
+        retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_VLAN_EGRESS_KEEP_CTRL0 + (port>>1),RTL8367C_PORT0_VLAN_KEEP_MASK_MASK<<((port&1)*8),&regval_l);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+        regAddr = RTL8367C_REG_VLAN_EGRESS_KEEP_CTRL0_EXT + (port>>1);
+        bit_mask = RTL8367C_PORT0_VLAN_KEEP_MASK_EXT_MASK;
+        bit_mask <<= (port&1)*3;
+        retVal = rtl8367c_getAsicRegBits(regAddr, bit_mask, &regval_h);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+        *pPortmask = (regval_h << 8) | regval_l;
+    }
+    else{
+        switch(port){
+            case 8:
+                regAddr = RTL8367C_REG_VLAN_EGRESS_KEEP_CTRL4;
+                bit_mask = RTL8367C_PORT8_VLAN_KEEP_MASK_MASK;
+                retVal = rtl8367c_getAsicRegBits(regAddr, bit_mask, &regval_l);
+                if(retVal != RT_ERR_OK)
+                    return retVal;
+                regAddr = RTL8367C_REG_VLAN_EGRESS_KEEP_CTRL4_EXT;
+                bit_mask = RTL8367C_PORT8_VLAN_KEEP_MASK_EXT_MASK;
+                retVal = rtl8367c_getAsicRegBits(regAddr, bit_mask, &regval_h);
+                if(retVal != RT_ERR_OK)
+                    return retVal;
+
+                *pPortmask = (regval_h << 8) | regval_l;
+                break;
+
+            case 9:
+                regAddr = RTL8367C_REG_VLAN_EGRESS_KEEP_CTRL4;
+                bit_mask = RTL8367C_PORT9_VLAN_KEEP_MASK_MASK;
+                retVal = rtl8367c_getAsicRegBits(regAddr, bit_mask, &regval_l);
+                if(retVal != RT_ERR_OK)
+                    return retVal;
+                regAddr = RTL8367C_REG_VLAN_EGRESS_KEEP_CTRL4_EXT;
+                bit_mask = RTL8367C_PORT9_VLAN_KEEP_MASK_EXT_MASK;
+                retVal = rtl8367c_getAsicRegBits(regAddr, bit_mask, &regval_h);
+                if(retVal != RT_ERR_OK)
+                    return retVal;
+
+                *pPortmask = (regval_h << 8) | regval_l;
+                break;
+
+            case 10:
+                regAddr = RTL8367C_REG_VLAN_EGRESS_KEEP_CTRL5;
+                bit_mask = RTL8367C_VLAN_EGRESS_KEEP_CTRL5_MASK;
+                retVal = rtl8367c_getAsicRegBits(regAddr, bit_mask, &regval_l);
+                if(retVal != RT_ERR_OK)
+                    return retVal;
+                regAddr = RTL8367C_REG_VLAN_EGRESS_KEEP_CTRL5_EXT;
+                bit_mask = RTL8367C_VLAN_EGRESS_KEEP_CTRL5_EXT_MASK;
+                retVal = rtl8367c_getAsicRegBits(regAddr, bit_mask, &regval_h);
+                if(retVal != RT_ERR_OK)
+                    return retVal;
+
+                *pPortmask = (regval_h << 8) | regval_l;
+                break;
+        }
+    }
+
+    return RT_ERR_OK;
+}

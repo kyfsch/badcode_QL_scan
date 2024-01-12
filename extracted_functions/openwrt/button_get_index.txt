@@ -1,0 +1,10 @@
+static int button_get_index(unsigned int code)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(button_map); i++)
+		if (button_map[i].code == code)
+			return i;
+
+	return -1;
+}

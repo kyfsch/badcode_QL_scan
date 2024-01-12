@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicPortMirrorRealKeep(rtk_uint32 mode)
+{
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_MIRROR_CTRL2, RTL8367C_MIRROR_REALKEEP_EN_OFFSET, mode);
+}

@@ -1,0 +1,44 @@
+swlib_map_settings(struct switch_dev *dev, int type, int port_vlan, struct uci_section *s)
+{
+	struct swlib_setting *setting;
+	struct switch_attr *attr;
+	struct uci_element *e;
+	struct uci_option *o;
+
+	uci_foreach_element(&s->options, e) {
+		o = uci_to_option(e);
+
+		if (o->type != UCI_TYPE_STRING)
+			continue;
+
+		if (!strcmp(e->name, "device"))
+			continue;
+
+		/* map early settings */
+		if (type == SWLIB_ATTR_GROUP_GLOBAL) {
+			int i;
+
+			for (i = 0; i < ARRAY_SIZE(early_settings); i++) {
+				if (strcmp(e->name, early_settings[i].name) != 0)
+					continue;
+
+				early_settings[i].val = o->v.string;
+				goto skip;
+			}
+		}
+
+		attr = swlib_lookup_attr(dev, type, e->name);
+		if (!attr)
+			continue;
+
+		setting = malloc(sizeof(struct swlib_setting));
+		memset(setting, 0, sizeof(struct swlib_setting));
+		setting->attr = attr;
+		setting->port_vlan = port_vlan;
+		setting->val = o->v.string;
+		*head = setting;
+		head = &setting->next;
+skip:
+		continue;
+	}
+}

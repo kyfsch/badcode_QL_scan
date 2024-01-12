@@ -1,0 +1,47 @@
+srg_led_init_led(struct srg_led_ctrl *sysled_ctrl, struct device_node *np)
+{
+	struct led_init_data init_data = {};
+	struct led_classdev *led_cdev;
+	struct srg_led *sysled;
+	int index, ret;
+
+	if (!np)
+		return -ENOENT;
+
+	ret = of_property_read_u32(np, "reg", &index);
+	if (ret) {
+		dev_err(&sysled_ctrl->client->dev,
+			"srg_led_init_led: no reg defined in np!\n");
+		return ret;
+	}
+
+	if (index < 1 || index > 4)
+		return -EINVAL;
+
+	sysled = &sysled_ctrl->channel[index - 1];
+	led_cdev = &sysled->led;
+
+	sysled->index = index;
+	sysled->ctrl = sysled_ctrl;
+
+	init_data.fwnode = of_fwnode_handle(np);
+
+	led_cdev->name = of_get_property(np, "label", NULL) ? : np->name;
+	led_cdev->brightness = LED_OFF;
+	led_cdev->max_brightness = LED_FULL;
+	led_cdev->brightness_set_blocking = srg_led_set_brightness;
+	led_cdev->blink_set = srg_led_set_pulse;
+
+	srg_led_i2c_write(sysled_ctrl, index + 4, 0);
+
+	ret = devm_led_classdev_register_ext(&sysled_ctrl->client->dev,
+						led_cdev, &init_data);
+	if (ret) {
+		dev_err(&sysled_ctrl->client->dev,
+			"srg_led_init_led: led register %s error ret %d!n",
+			led_cdev->name, ret);
+		return ret;
+	}
+
+	return 0;
+}

@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_l2_learningCnt_get(rtk_port_t port, rtk_mac_cnt_t *pMac_cnt)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* check port valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if(NULL == pMac_cnt)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicLutLearnNo(rtk_switch_port_L2P_get(port), pMac_cnt)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

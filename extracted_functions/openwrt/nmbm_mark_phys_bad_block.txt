@@ -1,0 +1,8 @@
+static int nmbm_mark_phys_bad_block(struct nmbm_instance *ni, uint32_t ba)
+{
+	uint64_t addr = ba2addr(ni, ba);
+
+	nlog_info(ni, "Block %u [0x%08llx] will be marked bad\n", ba, addr);
+
+	return bmtd._block_markbad(bmtd.mtd, addr);
+}

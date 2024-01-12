@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_l2_limitLearningCnt_set(rtk_port_t port, rtk_mac_cnt_t mac_cnt)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* check port valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if (mac_cnt > rtk_switch_maxLutAddrNumber_get())
+        return RT_ERR_LIMITED_L2ENTRY_NUM;
+
+    if ((retVal = rtl8367c_setAsicLutLearnLimitNo(rtk_switch_port_L2P_get(port), mac_cnt)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

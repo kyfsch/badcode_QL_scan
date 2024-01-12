@@ -1,0 +1,5 @@
+static void i2c_start(void)
+{
+	sdalo();
+	scllo();
+}

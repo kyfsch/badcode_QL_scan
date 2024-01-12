@@ -1,0 +1,6 @@
+static int __init mtdsplit_eva_init(void)
+{
+	register_mtd_parser(&mtdsplit_eva_parser);
+
+	return 0;
+}

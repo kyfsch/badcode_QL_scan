@@ -1,0 +1,4 @@
+void wl_glue_set_remove_callback(wl_glue_remove_cb_t cb)
+{
+	remove_cb = cb;
+}

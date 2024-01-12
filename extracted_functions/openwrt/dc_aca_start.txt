@@ -1,0 +1,16 @@
+int dc_aca_start(struct dc_ep_priv *priv, u32 func, int start)
+{
+	if (!func)
+		return -EINVAL;
+
+	wr32_mask(0, func, GNRC_EN_TASK_BITMAP);
+
+	/* Only do if requested by caller */
+	if (start) {
+		wr32(0x1, GNRC_START_OP); /* Any write will trigger */
+		rd32(GNRC_START_OP);
+		if (!aca_hif_param_init_check(priv))
+			return -EIO;
+	}
+	return 0;
+}

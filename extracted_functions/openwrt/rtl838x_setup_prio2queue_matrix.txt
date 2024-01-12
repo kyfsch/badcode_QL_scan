@@ -1,0 +1,9 @@
+void rtl838x_setup_prio2queue_matrix(int *min_queues)
+{
+	u32 v = 0;
+
+	pr_info("Current Intprio2queue setting: %08x\n", sw_r32(RTL838X_QM_INTPRI2QID_CTRL));
+	for (int i = 0; i < MAX_PRIOS; i++)
+		v |= i << (min_queues[i] * 3);
+	sw_w32(v, RTL838X_QM_INTPRI2QID_CTRL);
+}

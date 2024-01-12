@@ -1,0 +1,24 @@
+static int rtl8367_init_regs1(struct rtl8366_smi *smi, unsigned mode)
+{
+	const struct rtl8367_initval *initvals;
+	int count;
+
+	switch (mode) {
+	case 0:
+		initvals = rtl8367_initvals_1_0;
+		count = ARRAY_SIZE(rtl8367_initvals_1_0);
+		break;
+
+	case 1:
+	case 2:
+		initvals = rtl8367_initvals_1_1;
+		count = ARRAY_SIZE(rtl8367_initvals_1_1);
+		break;
+
+	default:
+		dev_err(smi->parent, "%s: unknow mode %u\n", __func__, mode);
+		return -ENODEV;
+	}
+
+	return rtl8367_write_initvals(smi, initvals, count);
+}

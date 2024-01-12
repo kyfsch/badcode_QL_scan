@@ -1,0 +1,17 @@
+rtk_api_ret_t rtk_svlan_lookupType_set(rtk_svlan_lookupType_t type)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (type >= SVLAN_LOOKUP_END)
+        return RT_ERR_CHIP_NOT_SUPPORTED;
+
+
+    svlan_lookupType = type;
+
+    retVal = rtl8367c_setAsicSvlanLookupType((rtk_uint32)type);
+
+    return retVal;
+}

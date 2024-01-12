@@ -1,0 +1,4 @@
+u32 dc_aca_txin_hd_cnt(struct dc_ep_priv *priv)
+{
+	return rd32(TXIN_ACA_HD_ACC_CNT);
+}

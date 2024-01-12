@@ -1,0 +1,11 @@
+static int rtl8214fc_set_port(struct phy_device *phydev, int port)
+{
+	bool is_fibre = (port == PORT_FIBRE ? true : false);
+	int addr = phydev->mdio.addr;
+
+	pr_debug("%s port %d to %d\n", __func__, addr, port);
+
+	rtl8214fc_media_set(phydev, is_fibre);
+
+	return 0;
+}

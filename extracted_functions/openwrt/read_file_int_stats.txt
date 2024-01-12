@@ -1,0 +1,23 @@
+static ssize_t read_file_int_stats(struct file *file, char __user *user_buf,
+				   size_t count, loff_t *ppos)
+{
+#define PR_INT_STAT(_label, _field)					\
+	len += snprintf(buf + len, sizeof(buf) - len,			\
+		"%20s: %10lu\n", _label, ag->debug.int_stats._field);
+
+	struct ag71xx *ag = file->private_data;
+	char buf[256];
+	unsigned int len = 0;
+
+	PR_INT_STAT("TX Packet Sent", tx_ps);
+	PR_INT_STAT("TX Underrun", tx_ur);
+	PR_INT_STAT("TX Bus Error", tx_be);
+	PR_INT_STAT("RX Packet Received", rx_pr);
+	PR_INT_STAT("RX Overflow", rx_of);
+	PR_INT_STAT("RX Bus Error", rx_be);
+	len += snprintf(buf + len, sizeof(buf) - len, "\n");
+	PR_INT_STAT("Total", total);
+
+	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+#undef PR_INT_STAT
+}

@@ -1,0 +1,31 @@
+ret_t rtl8367c_getAsicSvlanDefaultVlan(rtk_uint32 port, rtk_uint32* pIndex)
+{
+    ret_t retVal;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(port < 8){
+        if(port & 1)
+            retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_SVLAN_PORTBASED_SVIDX_CTRL0 + (port >> 1), RTL8367C_VS_PORT1_SVIDX_MASK,pIndex);
+        else
+            retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_SVLAN_PORTBASED_SVIDX_CTRL0 + (port >> 1), RTL8367C_VS_PORT0_SVIDX_MASK,pIndex);
+    }else{
+        switch(port){
+            case 8:
+                retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_SVLAN_PORTBASED_SVIDX_CTRL4, RTL8367C_VS_PORT8_SVIDX_MASK,pIndex);
+                break;
+
+            case 9:
+                retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_SVLAN_PORTBASED_SVIDX_CTRL4, RTL8367C_VS_PORT9_SVIDX_MASK,pIndex);
+                break;
+
+            case 10:
+                retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_SVLAN_PORTBASED_SVIDX_CTRL5, RTL8367C_SVLAN_PORTBASED_SVIDX_CTRL5_MASK,pIndex);
+                break;
+        }
+    }
+
+    return retVal;
+
+}

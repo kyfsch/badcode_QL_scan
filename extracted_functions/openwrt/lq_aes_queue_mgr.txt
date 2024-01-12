@@ -1,0 +1,92 @@
+static int lq_aes_queue_mgr(struct aes_ctx *ctx, struct ablkcipher_request *areq, 
+                            u8 *iv, int dir, int mode)
+{
+    int err = -EINVAL; 
+    unsigned long queue_flag;
+    struct scatterlist *src = areq->src;
+    struct scatterlist *dst = areq->dst;
+    struct aes_container *aes_con = NULL;
+    u32 remain, inc, nbytes = areq->nbytes;
+    u32 chunk_bytes = src->length;
+    
+ 
+    aes_con = (struct aes_container *)kmalloc(sizeof(struct aes_container),
+    	                                       GFP_KERNEL);
+
+    if (!(aes_con)) {
+        printk("Cannot allocate memory for AES container, fn %s, ln %d\n",
+		__func__, __LINE__);
+	return -ENOMEM;
+    }
+
+    /* AES encrypt/decrypt mode */
+    if (mode == 5) {
+        nbytes = AES_BLOCK_SIZE;
+        chunk_bytes = AES_BLOCK_SIZE;
+        mode = 0;
+    }
+
+    aes_con->bytes_processed = nbytes;
+    aes_con->arequest = *(areq);
+    remain = nbytes;
+
+    //printk("debug - Line: %d, func: %s, reqsize: %d, scattersize: %d\n",
+    //        __LINE__, __func__, nbytes, chunk_bytes);
+
+    if (remain > DEU_MAX_PACKET_SIZE) 
+       inc = DEU_MAX_PACKET_SIZE;
+    else if (remain > chunk_bytes)
+       inc = chunk_bytes; 
+    else
+       inc = remain;
+         
+    remain -= inc;
+    lq_sg_init(aes_con, src, dst);  
+
+    if (remain <= 0)
+        aes_con->complete = 1;
+    else
+        aes_con->complete = 0;
+
+    aes_con->nbytes = inc;
+    aes_con->iv = iv;
+    aes_con->mode = mode;
+    aes_con->encdec = dir;
+ 
+    spin_lock_irqsave(&aes_queue->lock, queue_flag);
+
+    if (aes_queue->hw_status == AES_STARTED || aes_queue->hw_status == AES_BUSY ||
+             aes_queue->list.qlen > 0) {
+
+        aes_con->flag = PROCESS_NEW_PACKET;
+        err = ablkcipher_enqueue_request(&aes_queue->list, &aes_con->arequest);
+
+         /* max queue length reached */
+        if (err == -EBUSY) {
+            spin_unlock_irqrestore(&aes_queue->lock, queue_flag);
+            printk("Unable to enqueue request ln: %d, err: %d\n", __LINE__, err);
+             return err;
+         }
+
+        spin_unlock_irqrestore(&aes_queue->lock, queue_flag);
+        return -EINPROGRESS;
+    }
+    else if (aes_queue->hw_status == AES_IDLE) 
+        aes_queue->hw_status = AES_STARTED;
+
+    aes_con->flag = PROCESS_SCATTER;
+    aes_con->bytes_processed -= aes_con->nbytes;
+    /* or enqueue the whole structure so as to get back the info 
+     * at the moment that it's queued. nbytes might be different */
+    err = ablkcipher_enqueue_request(&aes_queue->list, &aes_con->arequest);
+
+    if (err == -EBUSY) {
+        spin_unlock_irqrestore(&aes_queue->lock, queue_flag);
+        printk("Unable to enqueue request ln: %d, err: %d\n", __LINE__, err);
+        return err;
+    }
+
+    spin_unlock_irqrestore(&aes_queue->lock, queue_flag);
+    return lq_deu_aes_core(ctx, aes_con->dst_buf, aes_con->src_buf, iv, inc, dir, mode);
+
+}

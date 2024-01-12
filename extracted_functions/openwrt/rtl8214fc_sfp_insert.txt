@@ -1,0 +1,8 @@
+static int rtl8214fc_sfp_insert(void *upstream, const struct sfp_eeprom_id *id)
+{
+	struct phy_device *phydev = upstream;
+
+	rtl8214fc_media_set(phydev, true);
+
+	return 0;
+}

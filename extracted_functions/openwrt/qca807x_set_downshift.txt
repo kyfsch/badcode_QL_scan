@@ -1,0 +1,24 @@
+static int qca807x_set_downshift(struct phy_device *phydev, u8 cnt)
+{
+	int ret, val;
+
+	if (cnt > QCA807X_SMARTSPEED_RETRY_LIMIT_MAX ||
+	    (cnt < QCA807X_SMARTSPEED_RETRY_LIMIT_MIN && cnt != DOWNSHIFT_DEV_DISABLE))
+		return -EINVAL;
+
+	if (!cnt) {
+		ret = phy_clear_bits(phydev, MII_NWAYTEST, QCA807X_SMARTSPEED_EN);
+	} else {
+		val = QCA807X_SMARTSPEED_EN;
+		val |= FIELD_PREP(QCA807X_SMARTSPEED_RETRY_LIMIT_MASK, cnt - 2);
+
+		phy_modify(phydev, MII_NWAYTEST,
+			   QCA807X_SMARTSPEED_EN |
+			   QCA807X_SMARTSPEED_RETRY_LIMIT_MASK,
+			   val);
+	}
+
+	ret = genphy_soft_reset(phydev);
+
+	return ret;
+}

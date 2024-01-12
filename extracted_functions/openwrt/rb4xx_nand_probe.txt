@@ -1,0 +1,78 @@
+static int rb4xx_nand_probe(struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
+	struct device *parent = dev->parent;
+	struct rb4xx_nand *nand;
+	struct mtd_info *mtd;
+	int ret;
+
+	if (!parent)
+		return -ENODEV;
+
+	nand = devm_kzalloc(dev, sizeof(*nand), GFP_KERNEL);
+	if (!nand)
+		return -ENOMEM;
+
+	platform_set_drvdata(pdev, nand);
+	nand->cpld	= dev_get_drvdata(parent);
+	nand->dev	= dev;
+
+	nand->ale = devm_gpiod_get_index(dev, NULL, 0, GPIOD_OUT_LOW);
+	if (IS_ERR(nand->ale))
+		dev_err(dev, "missing gpio ALE: %ld\n", PTR_ERR(nand->ale));
+
+	nand->cle = devm_gpiod_get_index(dev, NULL, 1, GPIOD_OUT_LOW);
+	if (IS_ERR(nand->cle))
+		dev_err(dev, "missing gpio CLE: %ld\n", PTR_ERR(nand->cle));
+
+	nand->nce = devm_gpiod_get_index(dev, NULL, 2, GPIOD_OUT_LOW);
+	if (IS_ERR(nand->nce))
+		dev_err(dev, "missing gpio nCE: %ld\n", PTR_ERR(nand->nce));
+
+	nand->rdy = devm_gpiod_get_index(dev, NULL, 3, GPIOD_IN);
+	if (IS_ERR(nand->rdy))
+		dev_err(dev, "missing gpio RDY: %ld\n", PTR_ERR(nand->rdy));
+
+	if (IS_ERR(nand->ale) || IS_ERR(nand->cle) ||
+	    IS_ERR(nand->nce) || IS_ERR(nand->rdy))
+		return -ENOENT;
+
+	gpiod_set_consumer_name(nand->ale, "mikrotik:nand:ALE");
+	gpiod_set_consumer_name(nand->cle, "mikrotik:nand:CLE");
+	gpiod_set_consumer_name(nand->nce, "mikrotik:nand:nCE");
+	gpiod_set_consumer_name(nand->rdy, "mikrotik:nand:RDY");
+
+	mtd = nand_to_mtd(&nand->chip);
+	mtd->priv	= nand;
+	mtd->owner	= THIS_MODULE;
+	mtd->dev.parent	= dev;
+	mtd_set_of_node(mtd, dev->of_node);
+
+	if (mtd->writesize == 512)
+		mtd_set_ooblayout(mtd, &rb4xx_nand_ecclayout_ops);
+
+	nand->chip.ecc.engine_type	= NAND_ECC_ENGINE_TYPE_SOFT;
+	nand->chip.ecc.algo		= NAND_ECC_ALGO_HAMMING;
+	nand->chip.options		= NAND_NO_SUBPAGE_WRITE;
+	nand->chip.priv			= nand;
+
+	nand->chip.legacy.read_byte	= rb4xx_nand_read_byte;
+	nand->chip.legacy.write_buf	= rb4xx_nand_write_buf;
+	nand->chip.legacy.read_buf	= rb4xx_nand_read_buf;
+	nand->chip.legacy.cmd_ctrl	= rb4xx_nand_cmd_ctrl;
+	nand->chip.legacy.dev_ready	= rb4xx_nand_dev_ready;
+	nand->chip.legacy.chip_delay	= 25;
+
+	ret = nand_scan(&nand->chip, 1);
+	if (ret)
+		return -ENXIO;
+
+	ret = mtd_device_register(mtd, NULL, 0);
+	if (ret) {
+		mtd_device_unregister(nand_to_mtd(&nand->chip));
+		nand_cleanup(&nand->chip);
+		return ret;
+	}
+
+	return 0;
+}

@@ -1,0 +1,16 @@
+rtk_api_ret_t rtk_svlan_lookupType_get(rtk_svlan_lookupType_t *pType)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pType)
+        return RT_ERR_NULL_POINTER;
+
+    retVal = rtl8367c_getAsicSvlanLookupType(pType);
+
+    svlan_lookupType = *pType;
+
+    return retVal;
+}

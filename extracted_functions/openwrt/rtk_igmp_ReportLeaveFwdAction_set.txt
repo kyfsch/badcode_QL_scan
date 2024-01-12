@@ -1,0 +1,28 @@
+rtk_api_ret_t rtk_igmp_ReportLeaveFwdAction_set(rtk_igmp_ReportLeaveFwdAct_t action)
+{
+    rtk_api_ret_t   retVal;
+    rtk_uint32      regData;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    switch(action)
+    {
+        case IGMP_REPORT_LEAVE_TO_ROUTER:
+            regData = 1;
+            break;
+        case IGMP_REPORT_LEAVE_TO_ALLPORT:
+            regData = 2;
+            break;
+        case IGMP_REPORT_LEAVE_TO_ROUTER_PORT_ADV:
+            regData = 3;
+            break;
+        default:
+            return RT_ERR_INPUT;
+    }
+
+    if ((retVal = rtl8367c_setAsicIGMPReportLeaveFlood(regData))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

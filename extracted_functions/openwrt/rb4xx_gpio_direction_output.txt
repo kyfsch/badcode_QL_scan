@@ -1,0 +1,5 @@
+static int rb4xx_gpio_direction_output(struct gpio_chip *chip,
+				       unsigned int offset, int value)
+{
+	return rb4xx_gpio_cpld_set(gpiochip_get_data(chip), offset, value);
+}

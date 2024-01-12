@@ -1,0 +1,65 @@
+static int rtl9300_i2c_smbus_xfer(struct i2c_adapter * adap, u16 addr,
+		  unsigned short flags, char read_write,
+		  u8 command, int size, union i2c_smbus_data * data)
+{
+	struct rtl9300_i2c *i2c = i2c_get_adapdata(adap);
+	struct i2c_drv_data *drv_data = (struct i2c_drv_data *)device_get_match_data(i2c->dev);
+	int len = 0, ret;
+
+	mutex_lock(&i2c_lock);
+	switch (size) {
+	case I2C_SMBUS_QUICK:
+		drv_data->config_xfer(i2c, addr, 0);
+		drv_data->reg_addr_set(i2c, 0, 0);
+		break;
+
+	case I2C_SMBUS_BYTE:
+		if (read_write == I2C_SMBUS_WRITE) {
+			drv_data->config_xfer(i2c, addr, 0);
+			drv_data->reg_addr_set(i2c, command, 1);
+		} else {
+			drv_data->config_xfer(i2c, addr, 1);
+			drv_data->reg_addr_set(i2c, 0, 0);
+		}
+		break;
+
+	case I2C_SMBUS_BYTE_DATA:
+		pr_debug("I2C_SMBUS_BYTE_DATA %02x, read %d cmd %02x\n", addr, read_write, command);
+		drv_data->reg_addr_set(i2c, command, 1);
+		drv_data->config_xfer(i2c, addr, 1);
+
+		if (read_write == I2C_SMBUS_WRITE) {
+			pr_debug("--> data %02x\n", data->byte);
+			drv_data->writel(i2c, data->byte);
+		}
+		break;
+
+	case I2C_SMBUS_WORD_DATA:
+		pr_debug("I2C_SMBUS_WORD %02x, read %d\n", addr, read_write);
+		drv_data->reg_addr_set(i2c, command, 1);
+		drv_data->config_xfer(i2c, addr, 2);
+		if (read_write == I2C_SMBUS_WRITE)
+			drv_data->writel(i2c, data->word);
+		break;
+
+	case I2C_SMBUS_BLOCK_DATA:
+		pr_debug("I2C_SMBUS_BLOCK_DATA %02x, read %d, len %d\n",
+			addr, read_write, data->block[0]);
+		drv_data->reg_addr_set(i2c, command, 1);
+		drv_data->config_xfer(i2c, addr, data->block[0]);
+		if (read_write == I2C_SMBUS_WRITE)
+			drv_data->write(i2c, &data->block[1], data->block[0]);
+		len = data->block[0];
+		break;
+
+	default:
+		dev_warn(&adap->dev, "Unsupported transaction %d\n", size);
+		return -EOPNOTSUPP;
+	}
+
+	ret = drv_data->execute_xfer(i2c, read_write, size, data, len);
+
+	mutex_unlock(&i2c_lock);
+
+	return ret;
+}

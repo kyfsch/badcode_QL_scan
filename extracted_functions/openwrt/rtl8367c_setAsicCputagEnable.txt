@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicCputagEnable(rtk_uint32 enabled)
+{
+    if(enabled > 1)
+        return RT_ERR_ENABLE;
+
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_CPU_CTRL, RTL8367C_CPU_EN_OFFSET, enabled);
+}

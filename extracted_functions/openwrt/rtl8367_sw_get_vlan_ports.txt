@@ -1,0 +1,26 @@
+static int rtl8367_sw_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
+{
+	struct switch_port *port;
+	struct rtl8367_vlan_info vlan;
+	int i;	
+	
+	if (!rtl8367c_is_vlan_valid(val->port_vlan))
+		return -EINVAL;
+
+	if(rtl8367c_get_vlan(val->port_vlan, &vlan))
+		return -EINVAL;
+
+	port = &val->value.ports[0];
+	val->len = 0;
+	for (i = 0; i <RTL8367C_NUM_PORTS ; i++) {
+		if (!(vlan.member & BIT(i)))
+			continue;
+
+		port->id = i;
+		port->flags = (vlan.untag & BIT(i)) ?
+					0 : BIT(SWITCH_PORT_FLAG_TAGGED);
+		val->len++;
+		port++;
+	}
+	return 0;
+}

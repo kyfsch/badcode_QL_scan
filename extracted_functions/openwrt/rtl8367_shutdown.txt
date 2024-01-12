@@ -1,0 +1,7 @@
+static void rtl8367_shutdown(struct platform_device *pdev)
+{
+	struct rtl8366_smi *smi = platform_get_drvdata(pdev);
+
+	if (smi)
+		rtl8367_reset_chip(smi);
+}

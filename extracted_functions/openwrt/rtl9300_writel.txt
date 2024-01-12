@@ -1,0 +1,4 @@
+static void rtl9300_writel(struct rtl9300_i2c *i2c, u32 data)
+{
+	writel(data, REG(i2c, RTL9300_I2C_DATA_WORD0));
+}

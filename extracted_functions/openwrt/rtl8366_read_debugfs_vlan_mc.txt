@@ -1,0 +1,25 @@
+static ssize_t rtl8366_read_debugfs_vlan_mc(struct file *file,
+					      char __user *user_buf,
+					      size_t count, loff_t *ppos)
+{
+	struct rtl8366_smi *smi = (struct rtl8366_smi *)file->private_data;
+	int i, len = 0;
+	char *buf = smi->buf;
+
+	len += snprintf(buf + len, sizeof(smi->buf) - len,
+			"%2s %6s %4s %6s %6s %3s\n",
+			"id", "vid","prio", "member", "untag", "fid");
+
+	for (i = 0; i < smi->num_vlan_mc; ++i) {
+		struct rtl8366_vlan_mc vlanmc;
+
+		smi->ops->get_vlan_mc(smi, i, &vlanmc);
+
+		len += snprintf(buf + len, sizeof(smi->buf) - len,
+				"%2d %6d %4d 0x%04x 0x%04x %3d\n",
+				i, vlanmc.vid, vlanmc.priority,
+				vlanmc.member, vlanmc.untag, vlanmc.fid);
+	}
+
+	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+}

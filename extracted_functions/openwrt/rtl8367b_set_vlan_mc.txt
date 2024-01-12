@@ -1,0 +1,28 @@
+static int rtl8367b_set_vlan_mc(struct rtl8366_smi *smi, u32 index,
+				const struct rtl8366_vlan_mc *vlanmc)
+{
+	u32 data[RTL8367B_VLAN_MC_NUM_WORDS];
+	int err;
+	int i;
+
+	if (index >= RTL8367B_NUM_VLANS ||
+	    vlanmc->vid >= RTL8367B_NUM_VIDS ||
+	    vlanmc->priority > RTL8367B_PRIORITYMAX ||
+	    vlanmc->member > RTL8367B_VLAN_MC0_MEMBER_MASK ||
+	    vlanmc->untag > RTL8367B_UNTAG_MASK ||
+	    vlanmc->fid > RTL8367B_FIDMAX)
+		return -EINVAL;
+
+	data[0] = (vlanmc->member & RTL8367B_VLAN_MC0_MEMBER_MASK) <<
+		  RTL8367B_VLAN_MC0_MEMBER_SHIFT;
+	data[1] = (vlanmc->fid & RTL8367B_VLAN_MC1_FID_MASK) <<
+		  RTL8367B_VLAN_MC1_FID_SHIFT;
+	data[2] = 0;
+	data[3] = (vlanmc->vid & RTL8367B_VLAN_MC3_EVID_MASK) <<
+		   RTL8367B_VLAN_MC3_EVID_SHIFT;
+
+	for (i = 0; i < ARRAY_SIZE(data); i++)
+		REG_WR(smi, RTL8367B_VLAN_MC_BASE(index) + i, data[i]);
+
+	return 0;
+}

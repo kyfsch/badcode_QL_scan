@@ -1,0 +1,1 @@
+static inline void tlwr1043nd_init(void) {}

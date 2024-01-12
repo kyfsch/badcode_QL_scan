@@ -1,0 +1,64 @@
+static void rtl931x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
+{
+	pr_debug("In %s valid?\n", __func__);
+	e->valid = !!(r[0] & BIT(31));
+	if (!e->valid)
+		return;
+
+	pr_debug("%s: entry valid, raw: %08x %08x %08x %08x\n", __func__, r[0], r[1], r[2], r[3]);
+	e->is_ip_mc = false;
+	e->is_ipv6_mc = false;
+
+	e->mac[0] = r[0] >> 8;
+	e->mac[1] = r[0];
+	e->mac[2] = r[1] >> 24;
+	e->mac[3] = r[1] >> 16;
+	e->mac[4] = r[1] >> 8;
+	e->mac[5] = r[1];
+
+	e->is_open_flow = !!(r[0] & BIT(30));
+	e->is_pe_forward = !!(r[0] & BIT(29));
+	e->next_hop = !!(r[2] & BIT(30));
+	e->rvid = (r[0] >> 16) & 0xfff;
+
+	/* Is it a unicast entry? check multicast bit */
+	if (!(e->mac[0] & 1)) {
+		e->type = L2_UNICAST;
+		e->is_l2_tunnel = !!(r[2] & BIT(31));
+		e->is_static = !!(r[2] & BIT(13));
+		e->port = (r[2] >> 19) & 0x3ff;
+		/* Check for trunk port */
+		if (r[2] & BIT(29)) {
+			e->is_trunk = true;
+			e->stack_dev = (e->port >> 9) & 1;
+			e->trunk = e->port & 0x3f;
+		} else {
+			e->is_trunk = false;
+			e->stack_dev = (e->port >> 6) & 0xf;
+			e->port = e->port & 0x3f;
+		}
+
+		e->block_da = !!(r[2] & BIT(14));
+		e->block_sa = !!(r[2] & BIT(15));
+		e->suspended = !!(r[2] & BIT(12));
+		e->age = (r[2] >> 16) & 3;
+
+		/* the UC_VID field in hardware is used for the VID or for the route id */
+		if (e->next_hop) {
+			e->nh_route_id = r[2] & 0x7ff;
+			e->vid = 0;
+		} else {
+			e->vid = r[2] & 0xfff;
+			e->nh_route_id = 0;
+		}
+		if (e->is_l2_tunnel)
+			e->l2_tunnel_id = ((r[2] & 0xff) << 4) | (r[3] >> 28);
+		/* TODO: Implement VLAN conversion */
+	} else {
+		e->type = L2_MULTICAST;
+		e->is_local_forward = !!(r[2] & BIT(31));
+		e->is_remote_forward = !!(r[2] & BIT(17));
+		e->mc_portmask_index = (r[2] >> 18) & 0xfff;
+		e->l2_tunnel_list_id = (r[2] >> 4) & 0x1fff;
+	}
+}

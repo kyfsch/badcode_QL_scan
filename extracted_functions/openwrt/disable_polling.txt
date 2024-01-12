@@ -1,0 +1,31 @@
+static u64 disable_polling(int port)
+{
+	u64 saved_state;
+
+	mutex_lock(&poll_lock);
+
+	switch (soc_info.family) {
+	case RTL8380_FAMILY_ID:
+		saved_state = sw_r32(RTL838X_SMI_POLL_CTRL);
+		sw_w32_mask(BIT(port), 0, RTL838X_SMI_POLL_CTRL);
+		break;
+	case RTL8390_FAMILY_ID:
+		saved_state = sw_r32(RTL839X_SMI_PORT_POLLING_CTRL + 4);
+		saved_state <<= 32;
+		saved_state |= sw_r32(RTL839X_SMI_PORT_POLLING_CTRL);
+		sw_w32_mask(BIT(port % 32), 0,
+		            RTL839X_SMI_PORT_POLLING_CTRL + ((port >> 5) << 2));
+		break;
+	case RTL9300_FAMILY_ID:
+		saved_state = sw_r32(RTL930X_SMI_POLL_CTRL);
+		sw_w32_mask(BIT(port), 0, RTL930X_SMI_POLL_CTRL);
+		break;
+	case RTL9310_FAMILY_ID:
+		pr_warn("%s not implemented for RTL931X\n", __func__);
+		break;
+	}
+
+	mutex_unlock(&poll_lock);
+
+	return saved_state;
+}

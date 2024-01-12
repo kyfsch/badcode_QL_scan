@@ -1,0 +1,49 @@
+ret_t rtl8367c_setAsicAclAct(rtk_uint32 index, rtl8367c_acl_act_t* pAclAct)
+{
+    rtk_uint16 aclActSmi[RTL8367C_ACL_ACT_TABLE_LEN];
+    ret_t retVal;
+    rtk_uint32 regAddr, regData;
+    rtk_uint16* tableAddr;
+    rtk_uint32 i;
+
+    if(index > RTL8367C_ACLRULEMAX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    memset(aclActSmi, 0x00, sizeof(rtk_uint16) * RTL8367C_ACL_ACT_TABLE_LEN);
+     _rtl8367c_aclActStUser2Smi(pAclAct, aclActSmi);
+
+    /* Write ACS_ADR register for data bits */
+    regAddr = RTL8367C_TABLE_ACCESS_ADDR_REG;
+    regData = index;
+    retVal = rtl8367c_setAsicReg(regAddr, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    /* Write Data Bits to ACS_DATA registers */
+     tableAddr = aclActSmi;
+     regAddr = RTL8367C_TABLE_ACCESS_WRDATA_BASE;
+
+    for(i = 0; i < RTL8367C_ACLACTTBLEN; i++)
+    {
+        regData = *tableAddr;
+        retVal = rtl8367c_setAsicReg(regAddr, regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        regAddr++;
+        tableAddr++;
+    }
+
+    /* Write ACS_CMD register for care bits*/
+    regAddr = RTL8367C_TABLE_ACCESS_CTRL_REG;
+    regData = RTL8367C_TABLE_ACCESS_REG_DATA(TB_OP_WRITE, TB_TARGET_ACLACT);
+    retVal = rtl8367c_setAsicRegBits(regAddr, RTL8367C_TABLE_TYPE_MASK | RTL8367C_COMMAND_TYPE_MASK, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+#ifdef CONFIG_RTL8367C_ASICDRV_TEST
+    memcpy(&Rtl8370sVirtualAclActTable[index][0], aclActSmi, sizeof(rtk_uint16) * RTL8367C_ACL_ACT_TABLE_LEN);
+#endif
+
+    return RT_ERR_OK;
+}

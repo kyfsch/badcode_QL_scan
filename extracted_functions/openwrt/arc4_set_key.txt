@@ -1,0 +1,25 @@
+static int arc4_set_key(struct crypto_tfm *tfm, const u8 *inkey,
+                       unsigned int key_len)
+{
+        //struct arc4_ctx *ctx = crypto_tfm_ctx(tfm);
+        volatile struct arc4_t *arc4 = (struct arc4_t *) ARC4_START;
+        u32 *in_key = (u32 *)inkey;
+                
+        // must program all bits at one go?!!!
+//#if 1
+        *IFX_ARC4_CON = ( (1<<31) | ((key_len - 1)<<27) | (1<<26) | (3<<16) );
+        //NDC=1,ENDI=1,GO=0,KSAE=1,SM=0
+
+        arc4->K3R = *((u32 *) in_key + 0);
+        arc4->K2R = *((u32 *) in_key + 1);
+        arc4->K1R = *((u32 *) in_key + 2);
+        arc4->K0R = *((u32 *) in_key + 3);
+
+#if 0 // arc4 is a ugly state machine, KSAE can only be set once per session  
+        ctx->key_length = key_len;
+
+        memcpy ((u8 *) (ctx->buf), in_key, key_len);
+#endif
+
+        return 0;
+}

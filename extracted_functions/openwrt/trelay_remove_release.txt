@@ -1,0 +1,15 @@
+static int trelay_remove_release(struct inode *inode, struct file *file)
+{
+	struct trelay *tr, *tmp;
+
+	/* This is the only file op that is called outside debugfs_use_file_*()
+	 * context which means that: (1) this file can be removed and
+	 * (2) file->private_data may no longer be valid */
+	rtnl_lock();
+	list_for_each_entry_safe(tr, tmp, &trelay_devs, list)
+		if (tr->to_remove)
+			trelay_do_remove(tr);
+	rtnl_unlock();
+
+	return 0;
+}

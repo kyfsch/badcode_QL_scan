@@ -1,0 +1,10 @@
+ret_t rtl8367c_setAsicOamParser(rtk_uint32 port, rtk_uint32 parser)
+{
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    if(parser > OAM_PARFWDCPU)
+        return RT_ERR_NOT_ALLOWED;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_OAM_PARSER_CTRL0 + port/8, RTL8367C_OAM_PARSER_MASK(port % 8), parser);
+}

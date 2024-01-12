@@ -1,0 +1,17 @@
+static void rtk_dump_mib_type(rtk_stat_port_type_t cntr_idx)
+{
+	rtk_port_t port;
+	rtk_stat_counter_t Cntr;
+
+	for (port = UTP_PORT0; port < (UTP_PORT0 + 5); port++) {
+		rtk_stat_port_get(port, cntr_idx, &Cntr);
+		printk("%8llu", Cntr);
+	}
+
+	for (port = EXT_PORT0; port < (EXT_PORT0 + 2); port++) {
+		rtk_stat_port_get(port, cntr_idx, &Cntr);
+		printk("%8llu", Cntr);
+	}
+	
+	printk("\n");
+}

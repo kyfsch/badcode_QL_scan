@@ -1,0 +1,22 @@
+rtk_api_ret_t rtk_vlan_keep_get(rtk_port_t egr_port, rtk_portmask_t *pIgr_pmask)
+{
+     rtk_api_ret_t retVal;
+     rtk_uint32    pmask;
+
+     /* Check initialization state */
+     RTK_CHK_INIT_STATE();
+
+     /* Check Port Valid */
+     RTK_CHK_PORT_VALID(egr_port);
+
+     if(NULL == pIgr_pmask)
+        return RT_ERR_NULL_POINTER;
+
+     if ((retVal = rtl8367c_getAsicVlanEgressKeep(rtk_switch_port_L2P_get(egr_port), &pmask)) != RT_ERR_OK)
+         return retVal;
+
+     if(rtk_switch_portmask_P2L_get(pmask, pIgr_pmask) != RT_ERR_OK)
+        return RT_ERR_FAILED;
+
+     return RT_ERR_OK;
+}

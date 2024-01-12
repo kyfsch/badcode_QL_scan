@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsicEgressFlowControlPortDropThreshold(rtk_uint32 port, rtk_uint32 *pThreshold)
+{
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    return rtl8367c_getAsicRegBits(RTL8367C_FLOWCTRL_PORT_DROP_ON_REG(port), RTL8367C_FLOWCTRL_PORT_DROP_ON_MASK, pThreshold);
+}

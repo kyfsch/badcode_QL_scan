@@ -1,0 +1,19 @@
+static int rtl8366s_set_green(struct rtl8366_smi *smi, int enable)
+{
+	int err;
+	unsigned i;
+	u32 data = 0;
+
+	if (!enable) {
+		for (i = 0; i <= RTL8366S_PHY_NO_MAX; i++) {
+			rtl8366s_set_green_port(smi, i, 0);
+		}
+	}
+
+	if (enable)
+		data = (RTL8366S_GREEN_ETHERNET_TX_BIT | RTL8366S_GREEN_ETHERNET_RX_BIT);
+
+	REG_RMW(smi, RTL8366S_GREEN_ETHERNET_CTRL_REG, RTL8366S_GREEN_ETHERNET_CTRL_MASK, data);
+
+	return 0;
+}

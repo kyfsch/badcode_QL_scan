@@ -1,0 +1,26 @@
+rtk_api_ret_t rtk_l2_init(void)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 port;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if ((retVal = rtl8367c_setAsicLutIpMulticastLookup(DISABLED)) != RT_ERR_OK)
+        return retVal;
+
+    /*Enable CAM Usage*/
+    if ((retVal = rtl8367c_setAsicLutCamTbUsage(ENABLED)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicLutAgeTimerSpeed(6,2)) != RT_ERR_OK)
+        return retVal;
+
+    RTK_SCAN_ALL_LOG_PORT(port)
+    {
+        if ((retVal = rtl8367c_setAsicLutLearnLimitNo(rtk_switch_port_L2P_get(port), rtk_switch_maxLutAddrNumber_get())) != RT_ERR_OK)
+            return retVal;
+    }
+
+    return RT_ERR_OK;
+}

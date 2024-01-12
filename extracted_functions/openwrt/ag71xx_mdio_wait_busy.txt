@@ -1,0 +1,20 @@
+static int ag71xx_mdio_wait_busy(struct ag71xx_mdio *am)
+{
+	int i;
+
+	for (i = 0; i < AG71XX_MDIO_RETRY; i++) {
+		u32 busy;
+
+		udelay(AG71XX_MDIO_DELAY);
+
+		regmap_read(am->mii_regmap, AG71XX_REG_MII_IND, &busy);
+		if (!busy)
+			return 0;
+
+		udelay(AG71XX_MDIO_DELAY);
+	}
+
+	pr_err("%s: MDIO operation timed out\n", am->mii_bus->name);
+
+	return -ETIMEDOUT;
+}

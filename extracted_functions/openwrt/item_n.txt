@@ -1,0 +1,12 @@
+int item_n(void)
+{
+	int n = 0;
+	struct dialog_list *p;
+
+	for (p = item_head; p; p = p->next) {
+		if (p == item_cur)
+			return n;
+		n++;
+	}
+	return 0;
+}

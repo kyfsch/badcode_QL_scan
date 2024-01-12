@@ -1,0 +1,23 @@
+void rtk_hal_qos_get_table2type(struct ra_switch_ioctl_data *data)
+{
+	rtk_api_ret_t ret;
+	rtk_priority_select_t PriDec;
+
+	if (data->qos_table_idx == 0)
+        ret = rtk_qos_priSel_get(PRIDECTBL_IDX0, &PriDec);
+    else
+        ret = rtk_qos_priSel_get(PRIDECTBL_IDX1, &PriDec);
+
+	if (ret != 0)
+        printk("rtk_qos_priSel_set failed\n");
+    else {
+		printk("port_pri  = %d\n", PriDec.port_pri);
+		printk("dot1q_pri = %d\n", PriDec.dot1q_pri);
+		printk("acl_pri   = %d\n", PriDec.acl_pri);
+		printk("dscp_pri  = %d\n", PriDec.dscp_pri);
+		printk("cvlan_pri = %d\n", PriDec.cvlan_pri);
+		printk("svlan_pri = %d\n", PriDec.svlan_pri);
+		printk("dmac_pri  = %d\n", PriDec.dmac_pri);
+		printk("smac_pri  = %d\n", PriDec.smac_pri);
+	}
+}

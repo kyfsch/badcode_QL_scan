@@ -1,0 +1,13 @@
+void ifxdeu_fini_aes (void)
+{
+    crypto_unregister_alg (&ifxdeu_aes_alg);
+    crypto_unregister_skcipher (&ifxdeu_ecb_aes_alg);
+    crypto_unregister_skcipher (&ifxdeu_cbc_aes_alg);
+    crypto_unregister_skcipher (&ifxdeu_xts_aes_alg);
+    crypto_unregister_skcipher (&ifxdeu_ofb_aes_alg);
+    crypto_unregister_skcipher (&ifxdeu_cfb_aes_alg);
+    crypto_unregister_skcipher (&ifxdeu_ctr_basic_aes_alg);
+    crypto_unregister_skcipher (&ifxdeu_ctr_rfc3686_aes_alg);
+    crypto_unregister_shash (&ifxdeu_cbcmac_aes_alg);
+    crypto_unregister_aead (&ifxdeu_gcm_aes_alg);
+}

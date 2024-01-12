@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicInterruptMask(rtk_uint32* pImr)
+{
+    return rtl8367c_getAsicReg(RTL8367C_REG_INTR_IMR, pImr);
+}

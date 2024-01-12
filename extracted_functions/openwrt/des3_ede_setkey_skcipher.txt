@@ -1,0 +1,5 @@
+int des3_ede_setkey_skcipher(struct crypto_skcipher *tfm, const u8 *key,
+                    unsigned int keylen)
+{
+        return des3_ede_setkey(crypto_skcipher_tfm(tfm), key, keylen);
+}

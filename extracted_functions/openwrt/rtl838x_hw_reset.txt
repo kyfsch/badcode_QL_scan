@@ -1,0 +1,75 @@
+static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
+{
+	u32 int_saved, nbuf;
+	u32 reset_mask;
+
+	pr_info("RESETTING %x, CPU_PORT %d\n", priv->family_id, priv->cpu_port);
+	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(priv->cpu_port));
+	mdelay(100);
+
+	/* Disable and clear interrupts */
+	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID) {
+		sw_w32(0x00000000, priv->r->dma_if_intr_rx_runout_msk);
+		sw_w32(0xffffffff, priv->r->dma_if_intr_rx_runout_sts);
+		sw_w32(0x00000000, priv->r->dma_if_intr_rx_done_msk);
+		sw_w32(0xffffffff, priv->r->dma_if_intr_rx_done_sts);
+		sw_w32(0x00000000, priv->r->dma_if_intr_tx_done_msk);
+		sw_w32(0x0000000f, priv->r->dma_if_intr_tx_done_sts);
+	} else {
+		sw_w32(0x00000000, priv->r->dma_if_intr_msk);
+		sw_w32(0xffffffff, priv->r->dma_if_intr_sts);
+	}
+
+	if (priv->family_id == RTL8390_FAMILY_ID) {
+		/* Preserve L2 notification and NBUF settings */
+		int_saved = sw_r32(priv->r->dma_if_intr_msk);
+		nbuf = sw_r32(RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL);
+
+		/* Disable link change interrupt on RTL839x */
+		sw_w32(0, RTL839X_IMR_PORT_LINK_STS_CHG);
+		sw_w32(0, RTL839X_IMR_PORT_LINK_STS_CHG + 4);
+
+		sw_w32(0x00000000, priv->r->dma_if_intr_msk);
+		sw_w32(0xffffffff, priv->r->dma_if_intr_sts);
+	}
+
+	/* Reset NIC (SW_NIC_RST) and queues (SW_Q_RST) */
+	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID)
+		reset_mask = 0x6;
+	else
+		reset_mask = 0xc;
+
+	sw_w32_mask(0, reset_mask, priv->r->rst_glb_ctrl);
+
+	do { /* Wait for reset of NIC and Queues done */
+		udelay(20);
+	} while (sw_r32(priv->r->rst_glb_ctrl) & reset_mask);
+	mdelay(100);
+
+	/* Setup Head of Line */
+	if (priv->family_id == RTL8380_FAMILY_ID)
+		sw_w32(0, RTL838X_DMA_IF_RX_RING_SIZE);  /* Disabled on RTL8380 */
+	if (priv->family_id == RTL8390_FAMILY_ID)
+		sw_w32(0xffffffff, RTL839X_DMA_IF_RX_RING_CNTR);
+	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID) {
+		for (int i = 0; i < priv->rxrings; i++) {
+			int pos = (i % 3) * 10;
+
+			sw_w32_mask(0x3ff << pos, 0, priv->r->dma_if_rx_ring_size(i));
+			sw_w32_mask(0x3ff << pos, priv->rxringlen,
+			            priv->r->dma_if_rx_ring_cntr(i));
+		}
+	}
+
+	/* Re-enable link change interrupt */
+	if (priv->family_id == RTL8390_FAMILY_ID) {
+		sw_w32(0xffffffff, RTL839X_ISR_PORT_LINK_STS_CHG);
+		sw_w32(0xffffffff, RTL839X_ISR_PORT_LINK_STS_CHG + 4);
+		sw_w32(0xffffffff, RTL839X_IMR_PORT_LINK_STS_CHG);
+		sw_w32(0xffffffff, RTL839X_IMR_PORT_LINK_STS_CHG + 4);
+
+		/* Restore notification settings: on RTL838x these bits are null */
+		sw_w32_mask(7 << 20, int_saved & (7 << 20), priv->r->dma_if_intr_msk);
+		sw_w32(nbuf, RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL);
+	}
+}

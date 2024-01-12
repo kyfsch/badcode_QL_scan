@@ -1,0 +1,18 @@
+extern void __ehci_set_usbmode(int index);
+void ehci_set_usbmode(int index)
+{
+	#define  or_txttfill_tuning	_reserved_1_[0]
+	u32 tmp;
+
+	__ehci_set_usbmode(index);
+
+	tmp = ehci_readl(&ghcor->or_txfilltuning);
+	tmp &= ~0x00ff0000;
+	tmp |= 0x003f0000; /* set burst pre load count to 0x40 (63 * 4 bytes)  */
+	tmp |= 0x16; /* set sheduler overhead to 22 * 1.267us (HS) or 22 * 6.33us (FS/LS)*/
+	ehci_writel(&ghcor->or_txfilltuning, tmp);
+
+	tmp = ehci_readl(&ghcor->or_txttfill_tuning);
+	tmp |= 0x2; /* set sheduler overhead to 2 * 6.333us */
+	ehci_writel(&ghcor->or_txttfill_tuning, tmp);
+}

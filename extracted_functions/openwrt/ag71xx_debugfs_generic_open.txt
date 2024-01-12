@@ -1,0 +1,5 @@
+static int ag71xx_debugfs_generic_open(struct inode *inode, struct file *file)
+{
+	file->private_data = inode->i_private;
+	return 0;
+}

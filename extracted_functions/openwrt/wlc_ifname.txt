@@ -1,0 +1,16 @@
+static int wlc_ifname(wlc_param param, void *data, void *value)
+{
+	char *val = (char *) value;
+	int ret = 0;
+	
+	if (param & SET) {
+		if (strlen(val) < 16)
+			strcpy(interface, val);
+		else ret = -1;
+	}
+	if (param & GET) {
+		strcpy(val, interface);
+	}
+
+	return ret;
+}

@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicIGMPStaticRouterPort(rtk_uint32 *pmsk)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_IGMP_STATIC_ROUTER_PORT, RTL8367C_IGMP_STATIC_ROUTER_PORT_MASK, pmsk);
+}

@@ -1,0 +1,12 @@
+static int get_mapping_block_index_v2(int block)
+{
+	int start, end;
+
+	if (block >= bmtd.pool_lba)
+		return block;
+
+	if (!mapping_block_in_range(block, &start, &end))
+		return block;
+
+	return bmtd.bbt->bb_tbl[block];
+}

@@ -1,0 +1,8 @@
+static int b53_mmap_write8(struct b53_device *dev, u8 page, u8 reg, u8 value)
+{
+	u8 __iomem *regs = dev->priv;
+
+	writeb(value, regs + (page << 8) + reg);
+
+	return 0;
+}

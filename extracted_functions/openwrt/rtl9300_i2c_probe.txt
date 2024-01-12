@@ -1,0 +1,90 @@
+static int rtl9300_i2c_probe(struct platform_device *pdev)
+{
+	struct resource *res;
+	struct rtl9300_i2c *i2c;
+	struct i2c_adapter *adap;
+	struct i2c_drv_data *drv_data;
+	struct device_node *node = pdev->dev.of_node;
+	u32 clock_freq, pin;
+	int ret = 0;
+
+	pr_info("%s probing I2C adapter\n", __func__);
+
+	if (!node) {
+		dev_err(i2c->dev, "No DT found\n");
+		return -EINVAL;
+	}
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+
+	drv_data = (struct i2c_drv_data *) device_get_match_data(&pdev->dev);
+
+	i2c = devm_kzalloc(&pdev->dev, sizeof(struct rtl9300_i2c), GFP_KERNEL);
+	if (!i2c)
+		return -ENOMEM;
+
+	i2c->base = devm_ioremap_resource(&pdev->dev, res);
+	i2c->mst2_offset = drv_data->mst2_offset;
+	if (IS_ERR(i2c->base))
+		return PTR_ERR(i2c->base);
+
+	pr_debug("%s base memory %08x\n", __func__, (u32)i2c->base);
+	i2c->dev = &pdev->dev;
+
+	if (of_property_read_u32(node, "clock-frequency", &clock_freq)) {
+		clock_freq = I2C_MAX_STANDARD_MODE_FREQ;
+	}
+	switch(clock_freq) {
+	case I2C_MAX_STANDARD_MODE_FREQ:
+		i2c->bus_freq = RTL9300_I2C_STD_FREQ;
+		break;
+
+	case I2C_MAX_FAST_MODE_FREQ:
+		i2c->bus_freq = RTL9300_I2C_FAST_FREQ;
+		break;
+	default:
+		dev_warn(i2c->dev, "clock-frequency %d not supported\n", clock_freq);
+		return -EINVAL;
+	}
+
+	dev_info(&pdev->dev, "SCL speed %d, mode is %d\n", clock_freq, i2c->bus_freq);
+
+	if (of_property_read_u32(node, "scl-pin", &pin)) {
+		dev_warn(i2c->dev, "SCL pin not found in DT, using default\n");
+		pin = drv_data->scl0_pin;
+	}
+	if (!(pin == drv_data->scl0_pin || pin == drv_data->scl1_pin)) {
+		dev_warn(i2c->dev, "SCL pin %d not supported\n", pin);
+		return -EINVAL;
+	}
+	i2c->scl_num = pin == drv_data->scl0_pin ? 0 : 1;
+	pr_info("%s scl_num %d\n", __func__, i2c->scl_num);
+
+	if (of_property_read_u32(node, "sda-pin", &pin)) {
+		dev_warn(i2c->dev, "SDA pin not found in DT, using default \n");
+		pin = drv_data->sda0_pin;
+	}
+	i2c->sda_num = pin - drv_data->sda0_pin;
+	if (i2c->sda_num < 0 || i2c->sda_num > 7) {
+		dev_warn(i2c->dev, "SDA pin %d not supported\n", pin);
+		return -EINVAL;
+	}
+	pr_info("%s sda_num %d\n", __func__, i2c->sda_num);
+
+	adap = &i2c->adap;
+	adap->owner = THIS_MODULE;
+	adap->algo = &rtl9300_i2c_algo;
+	adap->retries = 3;
+	adap->dev.parent = &pdev->dev;
+	i2c_set_adapdata(adap, i2c);
+	adap->dev.of_node = node;
+	strlcpy(adap->name, dev_name(&pdev->dev), sizeof(adap->name));
+
+	platform_set_drvdata(pdev, i2c);
+
+	drv_data->config_io(i2c, i2c->scl_num, i2c->sda_num);
+
+	ret = i2c_add_adapter(adap);
+
+	return ret;
+}

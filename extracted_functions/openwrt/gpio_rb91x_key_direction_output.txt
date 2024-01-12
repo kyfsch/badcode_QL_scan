@@ -1,0 +1,12 @@
+static int gpio_rb91x_key_direction_output(struct gpio_chip *gc, unsigned offset,
+					   int value)
+{
+	switch (offset) {
+	case GPIO_RB91X_KEY_NAND:
+	case GPIO_RB91X_KEY_PDIS:
+		gpio_rb91x_key_set(gc, offset, value);
+		return 0;
+	default:
+		return -EINVAL;
+	}
+}

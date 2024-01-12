@@ -1,0 +1,4 @@
+static int rtl8214c_match_phy_device(struct phy_device *phydev)
+{
+	return phydev->phy_id == PHY_ID_RTL8214C;
+}

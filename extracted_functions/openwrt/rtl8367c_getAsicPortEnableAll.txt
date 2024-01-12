@@ -1,0 +1,16 @@
+ret_t rtl8367c_getAsicPortEnableAll(rtk_uint32 *pEnable)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+
+    retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_PHY_AD, RTL8367C_PDNPHY_OFFSET, &regData);
+    if(retVal !=  RT_ERR_OK)
+        return retVal;
+
+    if (regData==0)
+        *pEnable = 1;
+    else
+        *pEnable = 0;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,7 @@
+static nvram_handle_t * nvram_open_staging(void)
+{
+	if( nvram_find_staging() != NULL || nvram_to_staging() == 0 )
+		return nvram_open(NVRAM_STAGING, NVRAM_RW);
+
+	return NULL;
+}

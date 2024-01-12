@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_qos_dscpRemark2Dscp_set(rtk_dscp_t dscp, rtk_dscp_t rmkDscp)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if ((dscp > RTK_DSCPMAX) || (rmkDscp > RTK_DSCPMAX))
+        return RT_ERR_QOS_DSCP_VALUE;
+
+    if ((retVal = rtl8367c_setAsicRemarkingDscp2Dscp(dscp, rmkDscp)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

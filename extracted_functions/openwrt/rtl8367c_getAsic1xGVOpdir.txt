@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsic1xGVOpdir(rtk_uint32 *pEnabled)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_DOT1X_CFG_REG, RTL8367C_DOT1X_GVOPDIR_OFFSET, pEnabled);
+}

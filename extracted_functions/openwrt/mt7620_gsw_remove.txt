@@ -1,0 +1,6 @@
+static int mt7620_gsw_remove(struct platform_device *pdev)
+{
+	platform_set_drvdata(pdev, NULL);
+
+	return 0;
+}

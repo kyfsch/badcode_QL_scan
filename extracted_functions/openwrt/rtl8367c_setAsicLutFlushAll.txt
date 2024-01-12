@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicLutFlushAll(void)
+{
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_L2_FLUSH_CTRL3, RTL8367C_L2_FLUSH_CTRL3_OFFSET, 1);
+}

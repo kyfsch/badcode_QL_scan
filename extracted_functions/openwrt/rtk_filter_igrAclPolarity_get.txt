@@ -1,0 +1,10 @@
+rtk_api_ret_t rtk_filter_igrAclPolarity_get(rtk_uint32* pPolarity)
+{
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pPolarity)
+        return RT_ERR_NULL_POINTER;
+
+    return rtl8367c_getAsicAclGpioPolarity(pPolarity);
+}

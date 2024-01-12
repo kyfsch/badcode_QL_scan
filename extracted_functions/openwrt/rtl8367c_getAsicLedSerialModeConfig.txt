@@ -1,0 +1,13 @@
+ret_t rtl8367c_getAsicLedSerialModeConfig(rtk_uint32 *active, rtk_uint32 *serimode)
+{
+    ret_t retVal;
+
+    if((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_LED_SYS_CONFIG, RTL8367C_SERI_LED_ACT_LOW_OFFSET, active))!=  RT_ERR_OK)
+        return retVal;
+
+    /*get to 8G mode (not 16G mode)*/
+    if((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_LED_MODE, RTL8367C_DLINK_TIME_OFFSET, serimode))!=  RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

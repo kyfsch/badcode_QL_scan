@@ -1,0 +1,21 @@
+static void free_tx_ring(unsigned int queue)
+{
+	unsigned long flags;
+	int i;
+	struct connection *conn = &g_atm_priv_data.conn[queue];
+	struct sk_buff *skb;
+
+	if (!conn)
+		return;
+
+	spin_lock_irqsave(&conn->lock, flags);
+
+	for (i = 0; i < dma_tx_descriptor_length; i++) {
+		if (conn->tx_desc[i].own == 0 && conn->tx_skb[i] != NULL) {
+			skb = conn->tx_skb[i];
+			conn->tx_skb[i] = NULL;
+			atm_free_tx_skb_vcc(skb, ATM_SKB(skb)->vcc);
+		}
+	}
+	spin_unlock_irqrestore(&conn->lock, flags);
+}

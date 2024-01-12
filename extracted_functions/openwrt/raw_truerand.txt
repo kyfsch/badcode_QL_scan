@@ -1,0 +1,56 @@
+unsigned long raw_truerand();
+
+void
+t_initrand()
+{
+  SHA1_CTX ctxt;
+#ifdef USE_FTIME
+  struct timeb t;
+#else
+  struct timeval t;
+#endif
+  int i, r=0;
+
+  if(initialized)
+    return;
+
+  initialized = 1;
+
+  i = open("/dev/urandom", O_RDONLY);
+  if(i > 0) {
+    r += read(i, preseed.devrand, sizeof(preseed.devrand));
+    close(i);
+  }
+
+  /* Resort to truerand only if desperate for some Real entropy */
+  if(r == 0)
+    preseed.trand1 = raw_truerand();
+
+#ifdef USE_FTIME
+  ftime(&t);
+#else
+  gettimeofday(&t, NULL);
+#endif
+
+#ifdef USE_FTIME
+  preseed.sec = t.time;
+  preseed.usec = t.millitm;
+#else
+  preseed.sec = t.tv_sec;
+  preseed.usec = t.tv_usec;
+#endif
+  preseed.pid = getpid();
+  preseed.ppid = getppid();
+  t_envhash(preseed.envh);
+  t_fshash(preseed.fsh);
+
+  if(r == 0)
+    preseed.trand2 = raw_truerand();
+
+  SHA1Init(&ctxt);
+  SHA1Update(&ctxt, (unsigned char *) &preseed, sizeof(preseed));
+  SHA1Final(randpool, &ctxt);
+  outpos = 0;
+  memset((unsigned char *) &preseed, 0, sizeof(preseed));
+  memset((unsigned char *) &ctxt, 0, sizeof(ctxt));
+}

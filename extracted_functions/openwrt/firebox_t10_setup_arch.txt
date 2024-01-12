@@ -1,0 +1,9 @@
+static void __init firebox_t10_setup_arch(void)
+{
+	if (ppc_md.progress)
+		ppc_md.progress("firebox_t10_setup_arch()", 0);
+
+	fsl_pci_assign_primary();
+
+	pr_info("Firebox T10 from Watchguard\n");
+}

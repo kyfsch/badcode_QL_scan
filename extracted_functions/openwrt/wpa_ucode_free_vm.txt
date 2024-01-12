@@ -1,0 +1,10 @@
+void wpa_ucode_free_vm(void)
+{
+	if (!vm.config)
+		return;
+
+	uc_search_path_free(&vm.config->module_search_path);
+	uc_vm_free(&vm);
+	registry = NULL;
+	vm = (uc_vm_t){};
+}

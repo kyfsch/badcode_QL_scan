@@ -1,0 +1,18 @@
+static ssize_t hc_wlan_data_bin_read(struct file *filp, struct kobject *kobj,
+				     struct bin_attribute *attr, char *buf,
+				     loff_t off, size_t count);
+
+static struct hc_wlan_attr {
+	const u16 erd_tag_id;
+	struct bin_attribute battr;
+	u16 pld_ofs;
+	u16 pld_len;
+} hc_wd_multi_battrs[] = {
+	{
+		.erd_tag_id = RB_WLAN_ERD_ID_MULTI_8001,
+		.battr = __BIN_ATTR(data_0, S_IRUSR, hc_wlan_data_bin_read, NULL, 0),
+	}, {
+		.erd_tag_id = RB_WLAN_ERD_ID_MULTI_8201,
+		.battr = __BIN_ATTR(data_2, S_IRUSR, hc_wlan_data_bin_read, NULL, 0),
+	}
+};

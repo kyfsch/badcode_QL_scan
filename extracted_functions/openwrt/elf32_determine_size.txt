@@ -1,0 +1,33 @@
+static int elf32_determine_size(struct mtd_info *mtd, struct elf_header *hdr,
+				size_t *size)
+{
+	struct elf_header_32 *hdr32 = &(hdr->elf32);
+	int err;
+	size_t section_end, ph_table_end, ph_entry;
+	struct elf_program_header_32 ph;
+
+	*size = 0;
+
+	if (hdr32->shoff > 0) {
+		*size = hdr32->shoff + hdr32->shentsize * hdr32->shnum;
+		return 0;
+	}
+
+	ph_entry = hdr32->phoff;
+	ph_table_end = hdr32->phoff + hdr32->phentsize * hdr32->phnum;
+
+	while (ph_entry < ph_table_end) {
+		err = mtdsplit_elf_read_mtd(mtd, ph_entry, (uint8_t *)(&ph),
+					    sizeof(ph));
+		if (err)
+			return err;
+
+		section_end = ph.offset + ph.filesize;
+		if (section_end > *size)
+			*size = section_end;
+
+		ph_entry += hdr32->phentsize;
+	}
+
+	return 0;
+}

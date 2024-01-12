@@ -1,0 +1,18 @@
+bool sym_tristate_within_range(struct symbol *sym, tristate val)
+{
+	int type = sym_get_type(sym);
+
+	if (sym->visible == no)
+		return false;
+
+	if (type != S_BOOLEAN && type != S_TRISTATE)
+		return false;
+
+	if (type == S_BOOLEAN && val == mod)
+		return false;
+	if (sym->visible <= sym->rev_dep.tri)
+		return false;
+	if (sym_is_choice_value(sym) && sym->visible == yes)
+		return val == yes;
+	return val >= sym->rev_dep.tri && val <= sym->visible;
+}

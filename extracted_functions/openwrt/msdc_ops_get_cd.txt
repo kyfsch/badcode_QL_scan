@@ -1,0 +1,43 @@
+static int msdc_ops_get_cd(struct mmc_host *mmc)
+{
+	struct msdc_host *host = mmc_priv(mmc);
+	void __iomem *base = host->base;
+	unsigned long flags;
+	int present = 1;
+
+	/* for sdio, MSDC_REMOVABLE not set, always return 1 */
+	if (!(host->hw->flags & MSDC_REMOVABLE)) {
+		/* For sdio, read H/W always get<1>, but may timeout some times */
+#if 1
+		host->card_inserted = 1;
+		return 1;
+#else
+		host->card_inserted = (host->pm_state.event == PM_EVENT_USER_RESUME) ? 1 : 0;
+		INIT_MSG("sdio ops_get_cd<%d>", host->card_inserted);
+		return host->card_inserted;
+#endif
+	}
+
+	/* MSDC_CD_PIN_EN set for card */
+	if (host->hw->flags & MSDC_CD_PIN_EN) {
+		spin_lock_irqsave(&host->lock, flags);
+#if 0
+		present = host->card_inserted;  /* why not read from H/W: Fix me*/
+#else
+		// CD
+		if (cd_active_low)
+			present = (sdr_read32(MSDC_PS) & MSDC_PS_CDSTS) ? 0 : 1;
+		else
+			present = (sdr_read32(MSDC_PS) & MSDC_PS_CDSTS) ? 1 : 0;
+		if (host->mmc->caps & MMC_CAP_NEEDS_POLL)
+			present = 1;
+		host->card_inserted = present;
+#endif
+		spin_unlock_irqrestore(&host->lock, flags);
+	} else {
+		present = 0; /* TODO? Check DAT3 pins for card detection */
+	}
+
+	INIT_MSG("ops_get_cd return<%d>", present);
+	return present;
+}

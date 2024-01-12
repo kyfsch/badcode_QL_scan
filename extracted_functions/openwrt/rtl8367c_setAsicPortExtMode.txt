@@ -1,0 +1,1625 @@
+ret_t rtl8367c_setAsicPortExtMode(rtk_uint32 id, rtk_uint32 mode)
+{
+    ret_t   retVal;
+    rtk_uint32 i, regValue, type, option,reg_data;
+    rtk_uint32 idx;
+    rtk_uint32 redData[][2] =   { {0x04D7, 0x0480}, {0xF994, 0x0481}, {0x21A2, 0x0482}, {0x6960, 0x0483}, {0x9728, 0x0484}, {0x9D85, 0x0423}, {0xD810, 0x0424}, {0x83F2, 0x002E} };
+    rtk_uint32 redDataSB[][2] = { {0x04D7, 0x0480}, {0xF994, 0x0481}, {0x31A2, 0x0482}, {0x6960, 0x0483}, {0x9728, 0x0484}, {0x9D85, 0x0423}, {0xD810, 0x0424}, {0x83F2, 0x002E} };
+    rtk_uint32 redData1[][2] =  { {0x82F1, 0x0500}, {0xF195, 0x0501}, {0x31A2, 0x0502}, {0x796C, 0x0503}, {0x9728, 0x0504}, {0x9D85, 0x0423}, {0xD810, 0x0424}, {0x0F80, 0x0001}, {0x83F2, 0x002E} };
+    rtk_uint32 redData5[][2] =  { {0x82F1, 0x0500}, {0xF195, 0x0501}, {0x31A2, 0x0502}, {0x796C, 0x0503}, {0x9728, 0x0504}, {0x9D85, 0x0423}, {0xD810, 0x0424}, {0x0F80, 0x0001}, {0x83F2, 0x002E} };
+    rtk_uint32 redData6[][2] =  { {0x82F1, 0x0500}, {0xF195, 0x0501}, {0x31A2, 0x0502}, {0x796C, 0x0503}, {0x9728, 0x0504}, {0x9D85, 0x0423}, {0xD810, 0x0424}, {0x0F80, 0x0001}, {0x83F2, 0x002E} };
+    rtk_uint32 redData8[][2] =  { {0x82F1, 0x0500}, {0xF995, 0x0501}, {0x31A2, 0x0502}, {0x796C, 0x0503}, {0x9728, 0x0504}, {0x9D85, 0x0423}, {0xD810, 0x0424}, {0x0F80, 0x0001}, {0x83F2, 0x002E} };
+    rtk_uint32 redData9[][2] =  { {0x82F1, 0x0500}, {0xF995, 0x0501}, {0x31A2, 0x0502}, {0x796C, 0x0503}, {0x9728, 0x0504}, {0x9D85, 0x0423}, {0xD810, 0x0424}, {0x0F80, 0x0001}, {0x83F2, 0x002E} };
+    rtk_uint32 redDataHB[][2] = { {0x82F0, 0x0500}, {0xF195, 0x0501}, {0x31A2, 0x0502}, {0x7960, 0x0503}, {0x9728, 0x0504}, {0x9D85, 0x0423}, {0xD810, 0x0424}, {0x0F80, 0x0001}, {0x83F2, 0x002E} };
+
+    if(id >= RTL8367C_EXTNO)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if(mode >= EXT_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    /* magic number*/
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0249)) != RT_ERR_OK)
+        return retVal;
+    /* Chip num */
+    if((retVal = rtl8367c_getAsicReg(0x1300, &regValue)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0000)) != RT_ERR_OK)
+        return retVal;
+
+    type = 0;
+
+    switch (regValue)
+    {
+        case 0x0276:
+        case 0x0597:
+        case 0x6367:
+            type = 1;
+            break;
+        case 0x0652:
+        case 0x6368:
+            type = 2;
+            break;
+        case 0x0801:
+        case 0x6511:
+            type = 3;
+            break;
+        default:
+            return RT_ERR_FAILED;
+    }
+
+
+    if (1==type)
+    {
+        if((mode == EXT_1000X_100FX) || (mode == EXT_1000X) || (mode == EXT_100FX))
+        {
+            if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_REG_TO_ECO4, 5, 1)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_REG_TO_ECO4, 7, 1)) != RT_ERR_OK)
+                return retVal;
+
+            if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_CHIP_RESET, RTL8367C_DW8051_RST_OFFSET, 1)) != RT_ERR_OK)
+                return retVal;
+
+            if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_MISCELLANEOUS_CONFIGURE0, RTL8367C_DW8051_EN_OFFSET, 1)) != RT_ERR_OK)
+                return retVal;
+
+            if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_DW8051_RDY, RTL8367C_ACS_IROM_ENABLE_OFFSET, 1)) != RT_ERR_OK)
+                return retVal;
+
+            if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_DW8051_RDY, RTL8367C_IROM_MSB_OFFSET, 0)) != RT_ERR_OK)
+                return retVal;
+
+            if(mode == EXT_1000X_100FX)
+            {
+                for(idx = 0; idx < FIBER2_AUTO_INIT_SIZE; idx++)
+                {
+                    if ((retVal = rtl8367c_setAsicReg(0xE000 + idx, (rtk_uint32)Fiber2_Auto[idx])) != RT_ERR_OK)
+                        return retVal;
+                }
+            }
+
+            if(mode == EXT_1000X)
+            {
+                for(idx = 0; idx < FIBER2_1G_INIT_SIZE; idx++)
+                {
+                    if ((retVal = rtl8367c_setAsicReg(0xE000 + idx, (rtk_uint32)Fiber2_1G[idx])) != RT_ERR_OK)
+                        return retVal;
+                }
+            }
+
+            if(mode == EXT_100FX)
+            {
+                for(idx = 0; idx < FIBER2_100M_INIT_SIZE; idx++)
+                {
+                    if ((retVal = rtl8367c_setAsicReg(0xE000 + idx, (rtk_uint32)Fiber2_100M[idx])) != RT_ERR_OK)
+                        return retVal;
+                }
+            }
+
+            if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_DW8051_RDY, RTL8367C_IROM_MSB_OFFSET, 0)) != RT_ERR_OK)
+                return retVal;
+
+            if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_DW8051_RDY, RTL8367C_ACS_IROM_ENABLE_OFFSET, 0)) != RT_ERR_OK)
+                return retVal;
+
+            if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_CHIP_RESET, RTL8367C_DW8051_RST_OFFSET, 0)) != RT_ERR_OK)
+                return retVal;
+        }
+
+        if(mode == EXT_GMII)
+        {
+            if( (retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_EXT0_RGMXF, RTL8367C_EXT0_RGTX_INV_OFFSET, 1)) != RT_ERR_OK)
+                return retVal;
+
+            if( (retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_EXT1_RGMXF, RTL8367C_EXT1_RGTX_INV_OFFSET, 1)) != RT_ERR_OK)
+                return retVal;
+
+            if( (retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_EXT_TXC_DLY, RTL8367C_EXT1_GMII_TX_DELAY_MASK, 5)) != RT_ERR_OK)
+                return retVal;
+
+            if( (retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_EXT_TXC_DLY, RTL8367C_EXT0_GMII_TX_DELAY_MASK, 6)) != RT_ERR_OK)
+                return retVal;
+        }
+
+        /* Serdes reset */
+        if( (mode == EXT_TMII_MAC) || (mode == EXT_TMII_PHY) )
+        {
+            if( (retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_BYPASS_LINE_RATE, id, 1)) != RT_ERR_OK)
+                return retVal;
+        }
+        else
+        {
+            if( (retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_BYPASS_LINE_RATE, id, 0)) != RT_ERR_OK)
+                return retVal;
+        }
+
+        if( (mode == EXT_SGMII) || (mode == EXT_HSGMII) )
+        {
+            if(id != 1)
+                return RT_ERR_PORT_ID;
+
+            if((retVal = rtl8367c_setAsicReg(0x13C0, 0x0249)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicReg(0x13C1, &option)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicReg(0x13C0, 0x0000)) != RT_ERR_OK)
+                return retVal;
+        }
+
+        if(mode == EXT_SGMII)
+        {
+            if(option == 0)
+            {
+                for(i = 0; i <= 7; i++)
+                {
+                    if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, redData[i][0])) != RT_ERR_OK)
+                        return retVal;
+
+                    if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, redData[i][1])) != RT_ERR_OK)
+                        return retVal;
+
+                    if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+                        return retVal;
+                }
+            }
+            else
+            {
+                for(i = 0; i <= 7; i++)
+                {
+                    if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, redDataSB[i][0])) != RT_ERR_OK)
+                        return retVal;
+
+                    if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, redDataSB[i][1])) != RT_ERR_OK)
+                        return retVal;
+
+                    if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+                        return retVal;
+                }
+            }
+        }
+
+        if(mode == EXT_HSGMII)
+        {
+            if(option == 0)
+            {
+                if( (retVal = rtl8367c_setAsicReg(0x13c2, 0x0249)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_getAsicReg(0x1301, &regValue)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(0x13c2, 0x0000)) != RT_ERR_OK)
+                    return retVal;
+
+                if ( ((regValue & 0x00F0) >> 4) == 0x0001)
+                {
+                    for(i = 0; i <= 8; i++)
+                    {
+                        if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, redData1[i][0])) != RT_ERR_OK)
+                            return retVal;
+
+                        if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, redData1[i][1])) != RT_ERR_OK)
+                            return retVal;
+
+                        if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+                            return retVal;
+                    }
+                }
+                else if ( ((regValue & 0x00F0) >> 4) == 0x0005)
+                {
+                    for(i = 0; i <= 8; i++)
+                    {
+                        if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, redData5[i][0])) != RT_ERR_OK)
+                            return retVal;
+
+                        if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, redData5[i][1])) != RT_ERR_OK)
+                            return retVal;
+
+                        if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+                            return retVal;
+                    }
+                }
+                else if ( ((regValue & 0x00F0) >> 4) == 0x0006)
+                {
+                    for(i = 0; i <= 8; i++)
+                    {
+                        if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, redData6[i][0])) != RT_ERR_OK)
+                            return retVal;
+
+                        if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, redData6[i][1])) != RT_ERR_OK)
+                            return retVal;
+
+                        if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+                            return retVal;
+                    }
+                }
+                else if ( ((regValue & 0x00F0) >> 4) == 0x0008)
+                {
+                    for(i = 0; i <= 8; i++)
+                    {
+                        if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, redData8[i][0])) != RT_ERR_OK)
+                            return retVal;
+
+                        if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, redData8[i][1])) != RT_ERR_OK)
+                            return retVal;
+
+                        if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+                            return retVal;
+                    }
+                }
+                else if ( ((regValue & 0x00F0) >> 4) == 0x0009)
+                {
+                    for(i = 0; i <= 8; i++)
+                    {
+                        if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, redData9[i][0])) != RT_ERR_OK)
+                            return retVal;
+
+                        if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, redData9[i][1])) != RT_ERR_OK)
+                            return retVal;
+
+                        if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+                            return retVal;
+                    }
+                }
+            }
+            else
+            {
+                for(i = 0; i <= 8; i++)
+                {
+                    if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, redDataHB[i][0])) != RT_ERR_OK)
+                        return retVal;
+
+                    if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, redDataHB[i][1])) != RT_ERR_OK)
+                        return retVal;
+
+                    if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+                        return retVal;
+                }
+            }
+        }
+
+        /* Only one ext port should care SGMII setting */
+        if(id == 1)
+        {
+
+            if(mode == EXT_SGMII)
+            {
+                if( (retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_MAC8_SEL_SGMII_OFFSET, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_MAC8_SEL_HSGMII_OFFSET, 0)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else if(mode == EXT_HSGMII)
+            {
+                if( (retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_MAC8_SEL_SGMII_OFFSET, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_MAC8_SEL_HSGMII_OFFSET, 1)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else
+            {
+
+                if((mode != EXT_1000X_100FX) && (mode != EXT_1000X) && (mode != EXT_100FX))
+                {
+                    if( (retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_MAC8_SEL_SGMII_OFFSET, 0)) != RT_ERR_OK)
+                        return retVal;
+
+                    if( (retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_MAC8_SEL_HSGMII_OFFSET, 0)) != RT_ERR_OK)
+                        return retVal;
+                }
+            }
+        }
+
+        if(0 == id || 1 == id)
+        {
+            if((retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_DIGITAL_INTERFACE_SELECT, RTL8367C_SELECT_GMII_0_MASK << (id * RTL8367C_SELECT_GMII_1_OFFSET), mode)) != RT_ERR_OK)
+                return retVal;
+        }
+        else
+        {
+            if((retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_DIGITAL_INTERFACE_SELECT_1, RTL8367C_SELECT_GMII_2_MASK, mode)) != RT_ERR_OK)
+                return retVal;
+        }
+
+        /* Serdes not reset */
+        if( (mode == EXT_SGMII) || (mode == EXT_HSGMII) )
+        {
+            if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, 0x7106)) != RT_ERR_OK)
+                return retVal;
+
+            if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, 0x0003)) != RT_ERR_OK)
+                return retVal;
+
+            if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+                return retVal;
+        }
+
+        if( (mode == EXT_SGMII) || (mode == EXT_HSGMII) )
+        {
+            if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_CHIP_RESET, RTL8367C_DW8051_RST_OFFSET, 1)) != RT_ERR_OK)
+                return retVal;
+
+            if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_MISCELLANEOUS_CONFIGURE0, RTL8367C_DW8051_EN_OFFSET, 1)) != RT_ERR_OK)
+                return retVal;
+
+            if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_DW8051_RDY, RTL8367C_ACS_IROM_ENABLE_OFFSET, 1)) != RT_ERR_OK)
+                return retVal;
+
+            if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_DW8051_RDY, RTL8367C_IROM_MSB_OFFSET, 0)) != RT_ERR_OK)
+                return retVal;
+
+            for(idx = 0; idx < SGMII_INIT_SIZE; idx++)
+            {
+                if ((retVal = rtl8367c_setAsicReg(0xE000 + idx, (rtk_uint32)Sgmii_Init[idx])) != RT_ERR_OK)
+                    return retVal;
+            }
+
+            if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_DW8051_RDY, RTL8367C_IROM_MSB_OFFSET, 0)) != RT_ERR_OK)
+                return retVal;
+
+            if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_DW8051_RDY, RTL8367C_ACS_IROM_ENABLE_OFFSET, 0)) != RT_ERR_OK)
+                return retVal;
+
+            if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_CHIP_RESET, RTL8367C_DW8051_RST_OFFSET, 0)) != RT_ERR_OK)
+                return retVal;
+        }
+    }
+    else if (2 == type)
+    {
+        /* Serdes reset */
+        if( (mode == EXT_TMII_MAC) || (mode == EXT_TMII_PHY) )
+        {
+            if( (retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_BYPASS_LINE_RATE, id+2, 1)) != RT_ERR_OK)
+                return retVal;
+        }
+        else
+        {
+            if( (retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_BYPASS_LINE_RATE, id+2, 0)) != RT_ERR_OK)
+                return retVal;
+        }
+
+        /*set MAC mode*/
+        if (id == 1)
+        {
+            if(mode == EXT_HSGMII)
+                return RT_ERR_PORT_ID;
+
+            if (mode == EXT_SGMII)
+            {
+                /*cfg port8 with MII mac mode*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x1305, 0xf0, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*enable port8 SGMII*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d92, 14, 1)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else if (mode == EXT_1000X || mode == EXT_100FX || mode == EXT_1000X_100FX)
+            {
+                /*cfg port8 with MII mac mode*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x1305, 0xf0, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*disable port8 SGMII*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d92, 14, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*set fiber link up*/
+                if((retVal = rtl8367c_setAsicRegBit(0x6210, 11, 0)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else
+            {
+                /*cfg port8 with MII mac mode*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x1305, 0xf0, mode)) != RT_ERR_OK)
+                    return retVal;
+
+                /*disable port8 SGMII*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d92, 14, 0)) != RT_ERR_OK)
+                    return retVal;
+            }
+            /*disable SDS 1*/
+            if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f00, 0x1f)) != RT_ERR_OK)
+                return retVal;
+        }
+        else if(id == 2)
+        {
+            if (mode == EXT_HSGMII)
+            {
+                if ((retVal = rtl8367c_setAsicReg(0x130, 7)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicReg(0x39f, 7)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicReg(0x3fa, 7)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else
+            {
+                if ((retVal = rtl8367c_setAsicReg(0x130, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicReg(0x39f, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicReg(0x3fa, 4)) != RT_ERR_OK)
+                    return retVal;
+
+            }
+
+
+            if (mode == EXT_SGMII)
+            {
+                /*cfg port9 with MII mac mode*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x13c3, 0xf, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*enable port9 SGMII*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d92, 6, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*disable port9 HSGMII*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d92, 7, 0)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else if (mode == EXT_HSGMII)
+            {
+                /*cfg port9 with MII mac mode*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x13c3, 0xf, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*disable port9 SGMII*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d92, 6, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*enable port9 HSGMII*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d92, 7, 1)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else if (mode == EXT_1000X || mode == EXT_100FX || mode == EXT_1000X_100FX)
+            {
+                /*cfg port9 with MII mac mode*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x13c3, 0xf, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*disable port9 SGMII*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d92, 6, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*disable port9 HSGMII*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d92, 7, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*set fiber link up*/
+                if((retVal = rtl8367c_setAsicRegBit(0x6200, 11, 0)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else
+            {
+                /*cfg port9 with MII mac mode*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x13c3, 0xf, mode)) != RT_ERR_OK)
+                    return retVal;
+
+                /*disable port9 SGMII*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d92, 6, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*disable port9 HSGMII*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d92, 7, 0)) != RT_ERR_OK)
+                    return retVal;
+            }
+            /*disable SDS 0*/
+            if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f, 0x1f)) != RT_ERR_OK)
+                return retVal;
+        }
+
+        /*SET TO RGMII MODE*/
+        if (mode == EXT_RGMII)
+        {
+            /*disable paral led pad*/
+            if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_PARA_LED_IO_EN3, 0)) != RT_ERR_OK)
+                return retVal;
+
+            if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_PARA_LED_IO_EN1, 0)) != RT_ERR_OK)
+                return retVal;
+
+            if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_PARA_LED_IO_EN2, 0)) != RT_ERR_OK)
+                return retVal;
+
+            /*set MAC8 mode*/
+            if (id == 1)
+            {
+                /*1: RGMII1 bias work at 3.3V, 0: RGMII1 bias work at 2.5V*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1303, 9, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*drving 1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1303, 6, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*drving 1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1303, 4, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*show rate = 0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1303, 1, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*EXT1 RGMII TXC delay 2ns*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1307, 3, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_Ext1_rgtxc_dly = 0*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x13f9, 0x38, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*RXDLY = 0*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x1307, 0x7, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_rg1_dn = 4*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x1304, 0x7000, 4)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_rg1_dp = 4*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x13f9, 0x700, 4)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else if (id == 2)
+            {
+                /*1: RGMII1 bias work at 3.3V, 0: RGMII1 bias work at 2.5V*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1303, 10, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*drving 1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x13e2, 2, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*drving 1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x13e2, 1, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*show rate = 0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x13e2, 0, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*EXT1 RGMII TXC delay 2ns*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x13c5, 3, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_Ext1_rgtxc_dly = 0*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x13f9, 0x1c0, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*RXDLY = 0*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x13c5, 0x7, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_rg1_dn = 4*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x13e2, 0x1c0, 4)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_rg1_dp = 4*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x13e2, 0x38, 4)) != RT_ERR_OK)
+                    return retVal;
+            }
+        }
+        else if (mode == EXT_SGMII)
+        {
+            if (id == 1)
+            {
+                /*sds 1     reg 1    page 0x21     write value  0xec91*/
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, 0xec91)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, (0x21<<5) | 1)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*sds 1     reg 5    page 0x24     write value  0x5825*/
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, 0x5825)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, (0x24<<5) | 5)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C1)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f00, 2)) != RT_ERR_OK)
+                    return retVal;
+
+                /*?????????????????*/
+
+            }
+            else if (id == 2)
+            {
+                /*sds 0     reg 0    page 0x28     write value  0x942c*/
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, 0x942c)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, (0x28<<5) | 0)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*sds 0     reg 0    page 0x24     write value  0x942c*/
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, 0x942c)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, (0x24<<5) | 0)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*sds 0     reg 5    page 0x21     write value  0x8dc3*/
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, 0x8dc3)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, (0x21<<5) | 5)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f, 2)) != RT_ERR_OK)
+                    return retVal;
+
+                /*?????????????????*/
+            }
+        }
+        else if (mode == EXT_HSGMII)
+        {
+            if (id == 2)
+            {
+                /*sds 0     reg 0    page 0x28     write value  0x942c*/
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, 0x942c)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, (0x28<<5) | 0)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*sds 0     reg 0    page 0x24     write value  0x942c*/
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, 0x942c)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, (0x24<<5) | 0)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*sds 0     reg 5    page 0x21     write value  0x8dc3*/
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, 0x8dc3)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, (0x21<<5) | 5)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+                    return retVal;
+
+
+                /* optimizing HISGMII performance while RGMII used & */
+                /*sds 0     reg 9     page 0x21     write value 0x3931*/
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, 0x3931)) != RT_ERR_OK)
+                        return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, (0x21<<5)|9) ) != RT_ERR_OK)
+                        return retVal;
+
+                if( (retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+                        return retVal;
+
+
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f, 0x12)) != RT_ERR_OK)
+                    return retVal;
+
+                /*?????????????????*/
+            }
+        }
+        else if (mode == EXT_1000X)
+        {
+            if (id == 1)
+            {
+
+                if( (retVal = rtl8367c_setAsicSdsReg(1, 1, 0x21, 0xec91)) != RT_ERR_OK)
+                    return retVal;
+                if( (retVal = rtl8367c_setAsicSdsReg(1, 5, 0x24, 0x5825)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f00, 4)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f00, 0x1f)) != RT_ERR_OK)
+                    return retVal;
+
+                /*patch speed change sds1 1000M*/
+                if( (retVal = rtl8367c_getAsicSdsReg(1, 4, 0, &regValue)) != RT_ERR_OK)
+                    return retVal;
+                regValue &= 0xFFFF0FFF;
+                regValue |= 0x9000;
+                if( (retVal = rtl8367c_setAsicSdsReg(1, 4, 0, regValue)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_getAsicSdsReg(1, 0, 2, &regValue)) != RT_ERR_OK)
+                    return retVal;
+                regValue &= 0xFFFFdFFF;
+                regValue |= 0x40;
+                if( (retVal = rtl8367c_setAsicSdsReg(1, 0, 2, regValue)) != RT_ERR_OK)
+                    return retVal;
+
+
+                if( (retVal = rtl8367c_getAsicSdsReg(1, 4, 0, &regValue)) != RT_ERR_OK)
+                    return retVal;
+                regValue &= 0xFFFFEFFF;
+                if( (retVal = rtl8367c_setAsicSdsReg(1, 4, 0, regValue)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f00, 4)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x6000, 0)) != RT_ERR_OK)
+                    return retVal;
+
+            }
+            else if (id == 2)
+            {
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 0, 0x28, 0x942c)) != RT_ERR_OK)
+                    return retVal;
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 0, 0x24, 0x942c)) != RT_ERR_OK)
+                    return retVal;
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 5, 0x21, 0x8dc3)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f, 4)) != RT_ERR_OK)
+                    return retVal;
+
+                /*patch speed change sds0 1000M*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f, 0x1f)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &regValue)) != RT_ERR_OK)
+                    return retVal;
+                regValue &= 0xFFFF0FFF;
+                regValue |= 0x9000;
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 4, 0, regValue)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_getAsicSdsReg(0, 0, 2, &regValue)) != RT_ERR_OK)
+                    return retVal;
+                regValue &= 0xFFFFDFFF;
+                regValue |= 0x40;
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 0, 2, regValue)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &regValue)) != RT_ERR_OK)
+                    return retVal;
+                regValue &= 0xFFFFEFFF;
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 4, 0, regValue)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f, 4)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0xe0, 0)) != RT_ERR_OK)
+                    return retVal;
+
+            }
+        }
+        else if (mode == EXT_100FX)
+        {
+            if (id == 1)
+            {
+                if( (retVal = rtl8367c_setAsicSdsReg(1, 1, 0x21, 0xec91)) != RT_ERR_OK)
+                    return retVal;
+                if( (retVal = rtl8367c_setAsicSdsReg(1, 5, 0x24, 0x5825)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f00, 5)) != RT_ERR_OK)
+                    return retVal;
+
+                /*patch speed change sds1 100M*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f00, 0x1f)) != RT_ERR_OK)
+                    return retVal;
+                if( (retVal = rtl8367c_getAsicSdsReg(1, 4, 0, &regValue)) != RT_ERR_OK)
+                    return retVal;
+                regValue &= 0xFFFF0FFF;
+                regValue |= 0xb000;
+                if( (retVal = rtl8367c_setAsicSdsReg(1, 4, 0, regValue)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_getAsicSdsReg(1, 0, 2, &regValue)) != RT_ERR_OK)
+                    return retVal;
+                regValue &= 0xFFFFFFBF;
+                regValue |= 0x2000;
+                if( (retVal = rtl8367c_setAsicSdsReg(1, 0, 2, regValue)) != RT_ERR_OK)
+                    return retVal;
+#if 0
+                if( (retVal = rtl8367c_setAsicReg(0x6214, 0x1a0)) != RT_ERR_OK)
+                    return retVal;
+#endif
+                if( (retVal = rtl8367c_getAsicSdsReg(1, 4, 0, &regValue)) != RT_ERR_OK)
+                    return retVal;
+                regValue &= 0xFFFFEFFF;
+                if( (retVal = rtl8367c_setAsicSdsReg(1, 4, 0, regValue)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f00, 5)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x6000, 0)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else if (id == 2)
+            {
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 0, 0x28, 0x942c)) != RT_ERR_OK)
+                    return retVal;
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 0, 0x24, 0x942c)) != RT_ERR_OK)
+                    return retVal;
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 5, 0x21, 0x8dc3)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f, 5)) != RT_ERR_OK)
+                    return retVal;
+
+                /*patch speed change sds0 100M*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f, 0x1f)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &regValue)) != RT_ERR_OK)
+                    return retVal;
+                regValue &= 0xFFFF0FFF;
+                regValue |= 0xb000;
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 4, 0, regValue)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_getAsicSdsReg(0, 0, 2, &regValue)) != RT_ERR_OK)
+                    return retVal;
+                regValue &= 0xFFFFFFBF;
+                regValue |= 0x2000;
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 0, 2, regValue)) != RT_ERR_OK)
+                    return retVal;
+
+                if( (retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &regValue)) != RT_ERR_OK)
+                    return retVal;
+                regValue &= 0xFFFFEFFF;
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 4, 0, regValue)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f, 5)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0xe0, 0)) != RT_ERR_OK)
+                    return retVal;
+            }
+        }
+        else if (mode == EXT_1000X_100FX)
+        {
+            if (id == 1)
+            {
+                if( (retVal = rtl8367c_setAsicSdsReg(1, 1, 0x21, 0xec91)) != RT_ERR_OK)
+                    return retVal;
+                if( (retVal = rtl8367c_setAsicSdsReg(1, 5, 0x24, 0x5825)) != RT_ERR_OK)
+                    return retVal;
+                if( (retVal = rtl8367c_setAsicSdsReg(1, 13, 0, 0x4616)) != RT_ERR_OK)
+                    return retVal;
+                if( (retVal = rtl8367c_setAsicSdsReg(1, 1, 0, 0xf20)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f00, 7)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else if (id == 2)
+            {
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 0, 0x28, 0x942c)) != RT_ERR_OK)
+                    return retVal;
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 0, 0x24, 0x942c)) != RT_ERR_OK)
+                    return retVal;
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 5, 0x21, 0x8dc3)) != RT_ERR_OK)
+                    return retVal;
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 13, 0, 0x4616)) != RT_ERR_OK)
+                    return retVal;
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 1, 0, 0xf20)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d92, 0x1f, 7)) != RT_ERR_OK)
+                    return retVal;
+            }
+        }
+
+    }
+    else if (3 == type)
+    {
+
+        /*restore patch, by designer. patch Tx FIFO issue, when not HSGMII 2.5G mode
+         #sds0, page 1, reg 1, bit4=0*/
+        if( (retVal = rtl8367c_getAsicSdsReg(0, 1, 1, &regValue)) != RT_ERR_OK)
+            return retVal;
+        regValue &= 0xFFFFFFEF;
+        if( (retVal = rtl8367c_setAsicSdsReg(0, 1, 1, regValue)) != RT_ERR_OK)
+            return retVal;
+
+        /*set for mac 6*/
+        if (1 == id)
+        {
+            /*force port6 linkdown*/
+            if ((retVal = rtl8367c_setAsicReg(0x137c, 0x1000)) != RT_ERR_OK)
+                    return retVal;
+
+            if ((retVal = rtl8367c_getAsicRegBit(0x1d9d, 6, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+            while(reg_data == 0)
+            {
+                if ((retVal = rtl8367c_getAsicRegBit(0x1d9d, 6, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+            }
+
+            if (mode == EXT_SGMII)
+            {
+                /* disable mac6 mode_ext1  mode*/
+                if ((retVal = rtl8367c_getAsicRegBit(0x1d3d, 10, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+                if(reg_data == 0)
+                {
+                    if ((retVal = rtl8367c_setAsicRegBits(0x1305, 0xf0, 0)) != RT_ERR_OK)
+                        return retVal;
+                }
+                /*cfg_bypass_line_rate[1]=0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x3f7, 1, 0)) != RT_ERR_OK)
+                    return retVal;
+
+
+
+                /*bit5: cfg_mac6_fib=0    &   bit7: cfg_mac6_fib2=0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 5, 0)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 7, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac7_fib=0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d95, 1, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac7_sel_sgmii= 0: MAC7 is not SGMII mode*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d95, 0, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*#cfg_sgmii_link=0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d11, 9, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac6_sel_hsgmii=0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d11, 11, 0)) != RT_ERR_OK)
+                    return retVal;
+
+
+                /*bit13: cfg_sds_mode_sel_new=1 :Enable new sds mode config method*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*  bit[12:8]: Only valid when cfg_sds_mode_sel_new=1
+                    new_cfg_sds_mode=0x1F (reset mode) */
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x1f)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac6_sel_sgmii= 1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d11, 6, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /* bit[12:8]: Only valid when cfg_sds_mode_sel_new=1
+                   new_cfg_sds_mode=0x12  */
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x2)) != RT_ERR_OK)
+                    return retVal;
+
+                /* MAC link source*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d95, 2, 0)) != RT_ERR_OK)
+                    return retVal;
+
+
+            }
+            else if (mode == EXT_HSGMII)
+            {
+
+                /*restore patch, by designer. patch Tx FIFO issue, when  HSGMII 2.5G mode
+                 #sds0, page 1, reg 1, bit4=1*/
+                if( (retVal = rtl8367c_getAsicSdsReg(0, 1, 1, &regValue)) != RT_ERR_OK)
+                    return retVal;
+                regValue |= 0x10;
+                if( (retVal = rtl8367c_setAsicSdsReg(0, 1, 1, regValue)) != RT_ERR_OK)
+                    return retVal;
+
+                 /* mode_ext1 = disable*/
+                /* disable mac6 mode_ext1  mode*/
+                if ((retVal = rtl8367c_getAsicRegBit(0x1d3d, 10, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+                if(reg_data == 0)
+                {
+                    if ((retVal = rtl8367c_setAsicRegBits(0x1305, 0xf0, 0)) != RT_ERR_OK)
+                        return retVal;
+                }
+
+                if ((retVal = rtl8367c_setAsicRegBit(0x3f7, 1, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*bit5: cfg_mac6_fib=0   &   bit7: cfg_mac6_fib2=0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 5, 0)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 7, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac7_fib=0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d95, 1, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac7_sel_sgmii= 0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d95, 0, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac6_sel_sgmii=0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d11, 9, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac6_sel_hsgmii=1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d11, 11, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac6_sel_sgmii= 0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d11, 6, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicReg(0xd0,7)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicReg(0x399, 7)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicReg(0x3fa, 7)) != RT_ERR_OK)
+                    return retVal;
+
+                /*bit13: cfg_sds_mode_sel_new=1 :Enable new sds mode config method*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 1)) != RT_ERR_OK)
+                    return retVal;
+                /* bit[12:8]: Only valid when cfg_sds_mode_sel_new=1
+                   new_cfg_sds_mode=0x12  */
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x12)) != RT_ERR_OK)
+                    return retVal;
+                /*
+                1: MAC link = SGMII SerDes link
+                0: MAC link = SGMII config link cfg_sgmii_link
+                */
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d95, 2, 0)) != RT_ERR_OK)
+                    return retVal;
+
+            }
+            else if(mode == EXT_1000X)
+            {
+                /* 0 2 0  bit 8~9  set 0, force n-way*/
+                if((retVal = rtl8367c_getAsicSdsReg(0, 2, 0, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+                reg_data &= 0xFFFFFCFF;
+                if((retVal = rtl8367c_setAsicSdsReg(0,2,0, reg_data)) != RT_ERR_OK)
+                        return retVal;
+
+                /* disable mac6 mode_ext1  mode*/
+                if ((retVal = rtl8367c_getAsicRegBit(0x1d3d, 10, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+                if(reg_data == 0)
+                {
+                    if ((retVal = rtl8367c_setAsicRegBits(0x1305, 0xf0, 0)) != RT_ERR_OK)
+                        return retVal;
+                }
+
+                if ((retVal = rtl8367c_setAsicRegBit(0x3f7, 1, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicReg(0x1d11, 0x1500)) != RT_ERR_OK)
+                    return retVal;
+
+                /*bit13: cfg_sds_mode_sel_new=1 :Enable new sds mode config method
+                  bit[1:0]:cfg_mac7_fib= 0  &  cfg_mac7_sel_sgmii=0
+                */
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x1f)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 1)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 3, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /* bit0 :UTP/Fiber auto detect function enable or not, cfg_dis_det=1:disable
+                   bit3:Force UTP/Fiber auto detect function enable or not, cfg_force_auto-detect=1 */
+                if ((retVal = rtl8367c_setAsicReg(0x13eb, 0x15bb)) != RT_ERR_OK)
+                    return retVal;
+
+                /*bit3:  Serdes force mode:cfg_sds_frc_mode=1
+                  bit[2:0]: Serdes chip mode, cfg_sds_mode=3b'100 (force sds FIB1G mode) */
+                if ((retVal = rtl8367c_setAsicReg(0x13e7, 0xc)) != RT_ERR_OK)
+                    return retVal;
+
+
+                /*bit5: cfg_mac6_fib=1 & bit7: cfg_mac6_fib2=1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 5, 1)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 7, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac6_sel_hsgmii=0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d11, 11, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac6_sel_sgmii= 1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d11, 6, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /* bit[12:8]: Only valid when cfg_sds_mode_sel_new=1
+                   new_cfg_sds_mode=0x4  */
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x4)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else if(mode == EXT_100FX)
+            {
+                /* 0 2 0  bit 8~9  set 0, force n-way*/
+                if((retVal = rtl8367c_getAsicSdsReg(0, 2, 0, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+                reg_data &= 0xFFFFFCFF;
+                if((retVal = rtl8367c_setAsicSdsReg(0,2,0, reg_data)) != RT_ERR_OK)
+                        return retVal;
+
+                /* disable mac6 mode_ext1  mode*/
+                if ((retVal = rtl8367c_getAsicRegBit(0x1d3d, 10, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+                if(reg_data == 0)
+                {
+                    if ((retVal = rtl8367c_setAsicRegBits(0x1305, 0xf0, 0)) != RT_ERR_OK)
+                        return retVal;
+                }
+
+                if ((retVal = rtl8367c_setAsicRegBit(0x3f7, 1, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicReg(0x1d11, 0x1500)) != RT_ERR_OK)
+                    return retVal;
+
+                /*bit13: cfg_sds_mode_sel_new=1 :Enable new sds mode config method
+                  bit[1:0]:cfg_mac7_fib= 0  &  cfg_mac7_sel_sgmii=0
+                */
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x1f)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 1)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 3, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /* bit0 :UTP/Fiber auto detect function enable or not, cfg_dis_det=1:disable
+                   bit3:Force UTP/Fiber auto detect function enable or not, cfg_force_auto-detect=1 */
+                if ((retVal = rtl8367c_setAsicReg(0x13eb, 0x15bb)) != RT_ERR_OK)
+                    return retVal;
+
+                /*!!!!! cfg_sds_frc_mode=1 &  cfg_sds_mode=3b'101 (force sds fib100M mode)*/
+                if ((retVal = rtl8367c_setAsicReg(0x13e7, 0xc)) != RT_ERR_OK)
+                    return retVal;
+
+
+                /*bit5: cfg_mac6_fib=1 & bit7: cfg_mac6_fib2=1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 5, 1)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 7, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac6_sel_hsgmii=0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d11, 11, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac6_sel_sgmii= 1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d11, 6, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*  bit[12:8]: Only valid when cfg_sds_mode_sel_new=1
+                    new_cfg_sds_mode=0x5 */
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x5)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else if(mode == EXT_1000X_100FX)
+            {
+                /* 0 2 0  bit 8~9  set 0, force n-way*/
+                if((retVal = rtl8367c_getAsicSdsReg(0, 2, 0, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+                reg_data &= 0xFFFFFCFF;
+                if((retVal = rtl8367c_setAsicSdsReg(0,2,0, reg_data)) != RT_ERR_OK)
+                        return retVal;
+
+                /* disable mac6 mode_ext1  mode*/
+                if ((retVal = rtl8367c_getAsicRegBit(0x1d3d, 10, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+                if(reg_data == 0)
+                {
+                    if ((retVal = rtl8367c_setAsicRegBits(0x1305, 0xf0, 0)) != RT_ERR_OK)
+                        return retVal;
+                }
+
+                if ((retVal = rtl8367c_setAsicRegBit(0x3f7, 1, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicReg(0x1d11, 0x1500)) != RT_ERR_OK)
+                    return retVal;
+
+                /*bit13: cfg_sds_mode_sel_new=1 :Enable new sds mode config method
+                  bit[1:0]:cfg_mac7_fib= 0  &  cfg_mac7_sel_sgmii=0
+                */
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x1f)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 0)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 3, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /* bit0 :UTP/Fiber auto detect function enable or not, cfg_dis_det=1:disable
+                   bit3:Force UTP/Fiber auto detect function enable or not, cfg_force_auto-detect=1 */
+                if ((retVal = rtl8367c_setAsicReg(0x13eb, 0x15bb)) != RT_ERR_OK)
+                    return retVal;
+
+                /*!!!!!! cfg_sds_frc_mode=1 &  cfg_sds_mode=3'b111: Fib1G/Fib100M auto detect */
+                if ((retVal = rtl8367c_setAsicReg(0x13e7, 0xc)) != RT_ERR_OK)
+                    return retVal;
+
+
+                /*bit5: cfg_mac6_fib=1 & bit7: cfg_mac6_fib2=1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 5, 1)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 7, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac6_sel_hsgmii=0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d11, 11, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac6_sel_sgmii= 1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d11, 6, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*  bit[12:8]: Only valid when cfg_sds_mode_sel_new=1
+                    new_cfg_sds_mode=0x7 */
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x7)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else if(mode < EXT_SGMII)
+            {
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d3d, 10, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicRegBit(0x3f7, 1, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /* keep default setting, disable mac6 sel SerDes mode,*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d11, 11, 0)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d11, 6, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*bit5: cfg_mac6_fib=0       &        bit7: cfg_mac6_fib2=0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 5, 0)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 7, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                if (mode < EXT_GMII)
+                {
+                    /* set mac6 mode*/
+                    if ((retVal = rtl8367c_setAsicRegBits(0x1305, 0xf0, mode)) != RT_ERR_OK)
+                        return retVal;
+                }
+                else if(mode == EXT_RMII_MAC)
+                {
+                    /*!!!!!!*/
+                    if ((retVal = rtl8367c_setAsicRegBits(0x1305, 0xf0, 7)) != RT_ERR_OK)
+                        return retVal;
+                }
+                else if(mode == EXT_RMII_PHY)
+                {
+                    if ((retVal = rtl8367c_setAsicRegBits(0x1305, 0xf0, 8)) != RT_ERR_OK)
+                        return retVal;
+                }
+
+                if ((mode == EXT_TMII_MAC) || (mode == EXT_TMII_PHY))
+                {
+                    if ((retVal = rtl8367c_setAsicRegBit(0x3f7, 1, 1)) != RT_ERR_OK)
+                        return retVal;
+                }
+            }
+
+        }
+        else if (2 == id)
+        {
+
+            /*force port7 linkdown*/
+            if ((retVal = rtl8367c_setAsicReg(0x137d, 0x1000)) != RT_ERR_OK)
+                    return retVal;
+
+            if ((retVal = rtl8367c_getAsicRegBit(0x1d9d, 7, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+            while(reg_data == 0)
+            {
+                if ((retVal = rtl8367c_getAsicRegBit(0x1d9d, 7, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+            }
+
+            if (mode == EXT_SGMII)
+            {
+                /*disable mac7 sel ext2 xMII mode*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x13c3, 0xf,0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*restore ext2 ability*/
+                if ((retVal = rtl8367c_setAsicReg(0x13c4, 0)) != RT_ERR_OK)
+                    return retVal;
+                /*  disable mac7  mode_ext2  */
+                if ((retVal = rtl8367c_setAsicRegBit(0x3f7, 2, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*bit5: cfg_mac6_fib=0 & bit7: cfg_mac6_fib2=0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 5, 0)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 7, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*
+                   bit0:cfg_mac7_sel_sgmii=0,MAC7 is not SGMII mode
+                   bit1:cfg_mac7_fib= 0  */
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 3, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac6_sel_hsgmii=0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d11, 11, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac6_sel_sgmii= 1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d11, 6, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*Enable new sds mode config method, cfg_sds_mode_sel_new=1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*  bit[12:8]: Only valid when cfg_sds_mode_sel_new=1
+                    new_cfg_sds_mode=0x1F (reset mode) */
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x1f)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac7_sel_sgmii= 1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d95, 0, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*  bit[12:8]: Only valid when cfg_sds_mode_sel_new=1
+                    new_cfg_sds_mode=0x2 (SGMII mode)*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x2)) != RT_ERR_OK)
+                    return retVal;
+
+                /*select MAC link source when port6/7 be set sgmii mode cfg_sgmii_link*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d95, 2, 0)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else if (mode == EXT_1000X)
+            {
+                /*  disable mac7 MII/TMM/RMII/GMII/RGMII mode, mode_ext2 = disable */
+                if ((retVal = rtl8367c_setAsicRegBits(0x13c3, 0xf, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*restore ext2 ability*/
+                if ((retVal = rtl8367c_setAsicReg(0x13c4, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /* 0 2 0  bit 8~9  set 0, force n-way*/
+                if((retVal = rtl8367c_getAsicSdsReg(0, 2, 0, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+                reg_data &= 0xFFFFFCFF;
+                if((retVal = rtl8367c_setAsicSdsReg(0,2,0, reg_data)) != RT_ERR_OK)
+                        return retVal;
+
+                /*restore ext2 ability*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x3f7, 2, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*  keep default setting, disable mac6 sel serdes*/
+                if ((retVal = rtl8367c_setAsicReg(0x1d11, 0x1500)) != RT_ERR_OK)
+                    return retVal;
+
+                /*Enable new sds mode config method, cfg_sds_mode_sel_new=1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*  bit[12:8]: Only valid when cfg_sds_mode_sel_new=1
+                    new_cfg_sds_mode=0x1F (reset mode) */
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x1f)) != RT_ERR_OK)
+                    return retVal;
+
+                /*bit5: cfg_mac6_fib=0         &        bit7: cfg_mac6_fib2=0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 5, 0)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 7, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac7_sel_sgmii= 1 & cfg_mac7_fib=1*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 3, 3)) != RT_ERR_OK)
+                    return retVal;
+
+                /*new_cfg_sds_mode=0x4 (FIB1000 mode)*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x4)) != RT_ERR_OK)
+                    return retVal;
+
+            }
+            else if (mode == EXT_100FX)
+            {
+                /*  disable mac7 MII/TMM/RMII/GMII/RGMII mode, mode_ext2 = disable  */
+                if ((retVal = rtl8367c_setAsicRegBits(0x13c3, 0xf, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*restore ext2 ability*/
+                if ((retVal = rtl8367c_setAsicReg(0x13c4, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /* 0 2 0  bit 8~9  set 0, force n-way*/
+                if((retVal = rtl8367c_getAsicSdsReg(0, 2, 0, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+                reg_data &= 0xFFFFFCFF;
+                if((retVal = rtl8367c_setAsicSdsReg(0,2,0, reg_data)) != RT_ERR_OK)
+                        return retVal;
+
+                /*restore ext2 ability*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x3f7, 2, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /* keep default setting, disable mac6 sel serdes*/
+                if ((retVal = rtl8367c_setAsicReg(0x1d11, 0x1500)) != RT_ERR_OK)
+                    return retVal;
+
+                /*Enable new sds mode config method, cfg_sds_mode_sel_new=1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*  bit[12:8]: Only valid when cfg_sds_mode_sel_new=1
+                    new_cfg_sds_mode=0x1F (reset mode) */
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x1f)) != RT_ERR_OK)
+                    return retVal;
+
+                /*bit5: cfg_mac6_fib=0       &       bit7: cfg_mac6_fib2=0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 5, 0)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 7, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac7_sel_sgmii= 1 & cfg_mac7_fib=1*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 3, 3)) != RT_ERR_OK)
+                    return retVal;
+
+                /*  bit[12:8]: Only valid when cfg_sds_mode_sel_new=1
+                    new_cfg_sds_mode=0x5  */
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x5)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else if (mode == EXT_1000X_100FX)
+            {
+                /*  disable mac7 MII/TMM/RMII/GMII/RGMII mode, mode_ext2 = disable  */
+                if ((retVal = rtl8367c_setAsicRegBits(0x13c3, 0xf, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*restore ext2 ability*/
+                if ((retVal = rtl8367c_setAsicReg(0x13c4, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /* 0 2 0  bit 8~9  set 0, force n-way*/
+                if((retVal = rtl8367c_getAsicSdsReg(0, 2, 0, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+                reg_data &= 0xFFFFFCFF;
+                if((retVal = rtl8367c_setAsicSdsReg(0,2,0, reg_data)) != RT_ERR_OK)
+                        return retVal;
+
+                /*restore ext2 ability*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x3f7, 2, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /* keep default setting, disable mac6 sel serdes*/
+                if ((retVal = rtl8367c_setAsicReg(0x1d11, 0x1500)) != RT_ERR_OK)
+                    return retVal;
+
+                /*Enable new sds mode config method, cfg_sds_mode_sel_new=1*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                /*  bit[12:8]: Only valid when cfg_sds_mode_sel_new=1
+                    new_cfg_sds_mode=0x1F (reset mode) */
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x1f)) != RT_ERR_OK)
+                    return retVal;
+
+                /*bit5: cfg_mac6_fib=0    &    bit7: cfg_mac6_fib2=0*/
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 5, 0)) != RT_ERR_OK)
+                    return retVal;
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d41, 7, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac7_sel_sgmii= 1 & cfg_mac7_fib=1*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 3, 3)) != RT_ERR_OK)
+                    return retVal;
+
+                /*  bit[12:8]: Only valid when cfg_sds_mode_sel_new=1
+                    new_cfg_sds_mode=0x7  */
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x7)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else if (mode < EXT_SGMII)
+            {
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d3d, 10, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicRegBit(0x3f7, 2, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /* keep default setting, disable mac7 sel SerDes mode*/
+                if ((retVal = rtl8367c_setAsicReg(0x1d95, 0x1f00)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac7_sel_sgmii= 0 & cfg_mac7_fib=0*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 3, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /* set port7 mode*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x13c3, 0xf, mode)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((mode == EXT_TMII_MAC) || (mode == EXT_TMII_PHY))
+                {
+                    if ((retVal = rtl8367c_setAsicRegBit(0x3f7, 2, 1)) != RT_ERR_OK)
+                        return retVal;
+                }
+
+            }
+            else if ((mode < EXT_END) && (mode > EXT_100FX))
+            {
+                if ((retVal = rtl8367c_setAsicRegBits(0x13C3, 0xf, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicRegBit(0x3f7, 2, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                /*cfg_mac7_sel_sgmii= 0 & cfg_mac7_fib=0*/
+                if ((retVal = rtl8367c_setAsicRegBits(0x1d95, 3, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_setAsicRegBit(0x1d3d, 10, 1)) != RT_ERR_OK)
+                    return retVal;
+
+                if ((retVal = rtl8367c_getAsicRegBit(0x1d11, 11, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+                if(reg_data == 0)
+                {
+                    if ((retVal = rtl8367c_setAsicRegBit(0x1d11, 6, 1)) != RT_ERR_OK)
+                        return retVal;
+                }
+
+                /* set port7 mode*/
+                if (mode < EXT_RMII_MAC_2)
+                {
+                    if ((retVal = rtl8367c_setAsicRegBits(0x1305, 0xf0, (mode-13))) != RT_ERR_OK)
+                        return retVal;
+                }
+                else
+                {
+                    if ((retVal = rtl8367c_setAsicRegBits(0x1305, 0xf0, (mode-12))) != RT_ERR_OK)
+                        return retVal;
+                }
+
+                if ((mode == EXT_TMII_MAC_2) || (mode == EXT_TMII_PHY_2))
+                {
+                    if ((retVal = rtl8367c_setAsicRegBit(0x3f7, 2, 1)) != RT_ERR_OK)
+                        return retVal;
+                }
+            }
+
+        }
+
+    }
+    return RT_ERR_OK;
+}

@@ -1,0 +1,5 @@
+sig_catch (sig)
+int     sig;
+{
+	sig_caught = 1;
+}

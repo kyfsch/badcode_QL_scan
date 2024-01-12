@@ -1,0 +1,14 @@
+static int __init gpio_button_init(void)
+{
+	int ret;
+
+	ret = platform_driver_register(&gpio_keys_driver);
+	if (ret)
+		return ret;
+
+	ret = platform_driver_register(&gpio_keys_polled_driver);
+	if (ret)
+		platform_driver_unregister(&gpio_keys_driver);
+
+	return ret;
+}

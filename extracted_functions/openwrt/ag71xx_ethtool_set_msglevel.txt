@@ -1,0 +1,6 @@
+static void ag71xx_ethtool_set_msglevel(struct net_device *dev, u32 msg_level)
+{
+	struct ag71xx *ag = netdev_priv(dev);
+
+	ag->msg_enable = msg_level;
+}

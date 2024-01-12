@@ -1,0 +1,49 @@
+ar8xxx_phy_config_init(struct phy_device *phydev)
+{
+	struct ar8xxx_priv *priv = phydev->priv;
+#ifdef CONFIG_ETHERNET_PACKET_MANGLE
+	struct net_device *dev = phydev->attached_dev;
+#endif
+	int ret;
+
+	if (WARN_ON(!priv))
+		return -ENODEV;
+
+	if (priv->chip->config_at_probe)
+		return ar8xxx_phy_check_aneg(phydev);
+
+	priv->phy = phydev;
+
+	if (phydev->mdio.addr != 0) {
+		if (chip_is_ar8316(priv)) {
+			/* switch device has been initialized, reinit */
+			priv->dev.ports = (AR8216_NUM_PORTS - 1);
+			priv->initialized = false;
+			priv->port4_phy = true;
+			ar8316_hw_init(priv);
+			return 0;
+		}
+
+		return 0;
+	}
+
+	ret = ar8xxx_start(priv);
+	if (ret)
+		return ret;
+
+#ifdef CONFIG_ETHERNET_PACKET_MANGLE
+	/* VID fixup only needed on ar8216 */
+	if (chip_is_ar8216(priv)) {
+		dev->phy_ptr = priv;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
+		dev->priv_flags |= IFF_NO_IP_ALIGN;
+#else
+		dev->extra_priv_flags |= IFF_NO_IP_ALIGN;
+#endif
+		dev->eth_mangle_rx = ar8216_mangle_rx;
+		dev->eth_mangle_tx = ar8216_mangle_tx;
+	}
+#endif
+
+	return 0;
+}

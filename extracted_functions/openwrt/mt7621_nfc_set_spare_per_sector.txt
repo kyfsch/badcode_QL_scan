@@ -1,0 +1,25 @@
+static int mt7621_nfc_set_spare_per_sector(struct mt7621_nfc *nfc)
+{
+	struct nand_chip *nand = &nfc->nand;
+	struct mtd_info *mtd = nand_to_mtd(nand);
+	u32 size;
+	int i;
+
+	size = nand->ecc.bytes + NFI_FDM_SIZE;
+
+	/* Find the closest supported spare size */
+	for (i = 0; i < ARRAY_SIZE(mt7621_nfi_spare_size); i++) {
+		if (mt7621_nfi_spare_size[i] >= size)
+			break;
+	}
+
+	if (unlikely(i >= ARRAY_SIZE(mt7621_nfi_spare_size))) {
+		dev_err(nfc->dev, "OOB size (%u) is not supported\n",
+			mtd->oobsize);
+		return -EINVAL;
+	}
+
+	nfc->spare_per_sector = mt7621_nfi_spare_size[i];
+
+	return i;
+}

@@ -1,0 +1,46 @@
+static int aca_fw_download(struct dc_ep_priv *priv)
+{
+	int i, j;
+	u32 val;
+	size_t size;
+	u32 id, load_addr;
+	const char *fw_base;
+	struct aca_fw_dl_addr *fw_dl = to_fw_addr(priv);
+
+	for (i = 0; i < fw_dl->fw_num; i++) {
+		id = fw_dl->fw_addr[i].fw_id;
+		load_addr = fw_dl->fw_addr[i].fw_load_addr;
+		size = fw_dl->fw_addr[i].fw_size;
+		fw_base = fw_dl->fw_addr[i].fw_base;
+
+		if (size % 4) {
+			dev_err(priv->dev,
+				"aca %s fw size is not a multiple of 4\n",
+				fw_id_to_str(id));
+			return -EINVAL;
+		}
+
+		for (j = 0; j < size; j += 4) {
+			val = *((u32 *)(fw_base + j));
+			wr32(cpu_to_be32(val), load_addr + j);
+		}
+		/* Write flush */
+		rd32(load_addr);
+	#ifdef DEBUG
+		{
+		u32 src, dst;
+
+		for (j = 0; j < size; j += 4) {
+			dst = rd32(load_addr + j);
+			src = *((u32 *)(fw_base + j));
+			if (dst != cpu_to_be32(src)) {
+				dev_info(priv->dev,
+					"dst 0x%08x != src 0x%08x\n", dst, src);
+				return -EIO;
+			}
+		}
+		}
+	#endif /* DEBUG */
+	}
+	return 0;
+}

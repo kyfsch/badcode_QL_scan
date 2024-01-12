@@ -1,0 +1,10 @@
+static int esw_get_alt_vlan_disable(struct switch_dev *dev,
+				const struct switch_attr *attr,
+				struct switch_val *val)
+{
+	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
+
+	val->value.i = esw->alt_vlan_disable;
+
+	return 0;
+}

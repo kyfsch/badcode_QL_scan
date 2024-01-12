@@ -1,0 +1,6 @@
+static int mtk_bmt_debug_mark_good(void *data, u64 val)
+{
+	bmtd.ops->unmap_block(val >> bmtd.blk_shift);
+
+	return 0;
+}

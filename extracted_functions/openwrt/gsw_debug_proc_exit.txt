@@ -1,0 +1,5 @@
+void gsw_debug_proc_exit(void)
+{
+	if (proc_esw_cnt)
+		remove_proc_entry(PROCREG_ESW_CNT, proc_reg_dir);
+}

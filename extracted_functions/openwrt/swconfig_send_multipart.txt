@@ -1,0 +1,40 @@
+swconfig_send_multipart(struct swconfig_callback *cb, void *arg)
+{
+	struct genl_info *info = cb->info;
+	int restart = 0;
+	int err;
+
+	do {
+		if (!cb->msg) {
+			cb->msg = nlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
+			if (cb->msg == NULL)
+				goto error;
+		}
+
+		if (!(cb->fill(cb, arg) < 0))
+			break;
+
+		/* fill failed, check if this was already the second attempt */
+		if (restart)
+			goto error;
+
+		/* try again in a new message, send the current one */
+		restart = 1;
+		if (cb->close) {
+			if (cb->close(cb, arg) < 0)
+				goto error;
+		}
+		err = genlmsg_reply(cb->msg, info);
+		cb->msg = NULL;
+		if (err < 0)
+			goto error;
+
+	} while (restart);
+
+	return 0;
+
+error:
+	if (cb->msg)
+		nlmsg_free(cb->msg);
+	return -1;
+}

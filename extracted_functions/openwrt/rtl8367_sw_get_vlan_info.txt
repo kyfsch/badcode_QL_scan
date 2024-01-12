@@ -1,0 +1,39 @@
+static int rtl8367_sw_get_vlan_info(struct switch_dev *dev,
+			     const struct switch_attr *attr,
+			     struct switch_val *val)
+{	
+	int i;
+	u32 len = 0;
+	struct rtl8367_vlan_info vlan;
+	static char vlan_buf[256];
+	int err;
+
+	if (!rtl8367c_is_vlan_valid(val->port_vlan))
+		return -EINVAL;
+
+	memset(vlan_buf, '\0', sizeof(vlan_buf));
+
+	err = rtl8367c_get_vlan(val->port_vlan, &vlan);
+	if (err)
+		return err;
+
+	len += snprintf(vlan_buf + len, sizeof(vlan_buf) - len,
+			"VLAN %d: Ports: '", vlan.vid);
+
+	for (i = 0; i <RTL8367C_NUM_PORTS; i++) {
+		if (!(vlan.member & (1 << i)))
+			continue;
+
+		len += snprintf(vlan_buf + len, sizeof(vlan_buf) - len, "%d%s", i,
+				(vlan.untag & (1 << i)) ? "" : "t");
+	}
+
+	len += snprintf(vlan_buf + len, sizeof(vlan_buf) - len,
+			"', members=%04x, untag=%04x, fid=%u",
+			vlan.member, vlan.untag, vlan.fid);
+
+	val->value.s = vlan_buf;
+	val->len = len;
+
+	return 0;
+}

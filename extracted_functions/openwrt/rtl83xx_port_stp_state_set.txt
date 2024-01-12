@@ -1,0 +1,20 @@
+void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
+void rtl83xx_fast_age(struct dsa_switch *ds, int port);
+u32 rtl838x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
+u32 rtl839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
+int rtl838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
+int rtl839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
+
+
+const char *rtl838x_drop_cntr[] = {
+    "ALE_TX_GOOD_PKTS", "MAC_RX_DROP", "ACL_FWD_DROP", "HW_ATTACK_PREVENTION_DROP",
+    "RMA_DROP", "VLAN_IGR_FLTR_DROP", "INNER_OUTER_CFI_EQUAL_1_DROP", "PORT_MOVE_DROP",
+    "NEW_SA_DROP", "MAC_LIMIT_SYS_DROP", "MAC_LIMIT_VLAN_DROP", "MAC_LIMIT_PORT_DROP",
+    "SWITCH_MAC_DROP", "ROUTING_EXCEPTION_DROP", "DA_LKMISS_DROP", "RSPAN_DROP",
+    "ACL_LKMISS_DROP", "ACL_DROP", "INBW_DROP", "IGR_METER_DROP",
+    "ACCEPT_FRAME_TYPE_DROP", "STP_IGR_DROP", "INVALID_SA_DROP", "SA_BLOCKING_DROP",
+    "DA_BLOCKING_DROP", "L2_INVALID_DPM_DROP", "MCST_INVALID_DPM_DROP", "RX_FLOW_CONTROL_DROP",
+    "STORM_SPPRS_DROP", "LALS_DROP", "VLAN_EGR_FILTER_DROP", "STP_EGR_DROP",
+    "SRC_PORT_FILTER_DROP", "PORT_ISOLATION_DROP", "ACL_FLTR_DROP", "MIRROR_FLTR_DROP",
+    "TX_MAX_DROP", "LINK_DOWN_DROP", "FLOW_CONTROL_DROP", "BRIDGE .1d discards"
+};

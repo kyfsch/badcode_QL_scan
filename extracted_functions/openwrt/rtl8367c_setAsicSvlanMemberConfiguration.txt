@@ -1,0 +1,39 @@
+ret_t rtl8367c_setAsicSvlanMemberConfiguration(rtk_uint32 index, rtl8367c_svlan_memconf_t* pSvlanMemCfg)
+{
+    ret_t retVal;
+    rtk_uint32 regAddr, regData;
+    rtk_uint16 *accessPtr;
+    rtk_uint32 i;
+    rtk_uint16 smiSvlanMemConf[RTL8367C_SVLAN_MEMCONF_LEN];
+
+    if(index > RTL8367C_SVIDXMAX)
+        return RT_ERR_SVLAN_ENTRY_INDEX;
+
+    memset(smiSvlanMemConf, 0x00, sizeof(rtk_uint16) * RTL8367C_SVLAN_MEMCONF_LEN);
+    _rtl8367c_svlanConfStUser2Smi(pSvlanMemCfg, smiSvlanMemConf);
+
+    accessPtr = smiSvlanMemConf;
+
+    regData = *accessPtr;
+    for(i = 0; i < 3; i++)
+    {
+        retVal = rtl8367c_setAsicReg(RTL8367C_SVLAN_MEMBERCFG_BASE_REG(index) + i, regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        accessPtr ++;
+        regData = *accessPtr;
+    }
+
+    if(index < 63)
+        regAddr = RTL8367C_REG_SVLAN_MEMBERCFG0_CTRL4+index;
+    else if(index == 63)
+        regAddr = RTL8367C_REG_SVLAN_MEMBERCFG63_CTRL4;
+
+    retVal = rtl8367c_setAsicReg(regAddr, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+
+}

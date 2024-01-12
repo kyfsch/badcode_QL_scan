@@ -1,0 +1,4 @@
+static u32 jffs2_dirent_crc(struct jffs2_raw_dirent *node)
+{
+	return crc32(0, node, sizeof(struct jffs2_raw_dirent) - 8);
+}

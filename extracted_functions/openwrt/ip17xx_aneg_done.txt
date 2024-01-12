@@ -1,0 +1,4 @@
+static int ip17xx_aneg_done(struct phy_device *pdev)
+{
+	return 1;	/* Return any positive value */
+}

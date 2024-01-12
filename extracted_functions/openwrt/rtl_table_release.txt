@@ -1,0 +1,9 @@
+void rtl_table_release(struct table_reg *r)
+{
+	if (!r)
+		return;
+
+/*	pr_info("Unlocking %08x\n", (u32)r); */
+	mutex_unlock(&r->lock);
+/*	pr_info("Unlock done\n"); */
+}

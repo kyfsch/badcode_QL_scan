@@ -1,0 +1,4 @@
+static int avl_compare_macaddr(const void *k1, const void *k2, void *ptr)
+{
+	return memcmp(k1, k2, ETH_ALEN);
+}

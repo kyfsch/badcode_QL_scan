@@ -1,0 +1,91 @@
+void rtl9300_sds_rxcal_dcvs_get(u32 sds_num, u32 dcvs_id, u32 dcvs_list[])
+{
+	u32 dcvs_sign_out = 0, dcvs_coef_bin = 0;
+	bool dcvs_manual;
+
+	if (!(sds_num % 2))
+		rtl930x_write_sds_phy(sds_num, 0x1f, 0x2, 0x2f);
+	else
+		rtl930x_write_sds_phy(sds_num - 1, 0x1f, 0x2, 0x31);
+
+	/* ##Page0x2E, Reg0x15[9], REG0_RX_EN_TEST=[1] */
+	rtl9300_sds_field_w(sds_num, 0x2e, 0x15, 9, 9, 0x1);
+
+	/* ##Page0x21, Reg0x06[11 6], REG0_RX_DEBUG_SEL=[1 0 x x x x] */
+	rtl9300_sds_field_w(sds_num, 0x21, 0x06, 11, 6, 0x20);
+
+	switch(dcvs_id) {
+	case 0:
+		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0x22);
+		mdelay(1);
+
+		/* ##DCVS0 Read Out */
+		dcvs_sign_out = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  4,  4);
+		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  3,  0);
+		dcvs_manual = !!rtl9300_sds_field_r(sds_num, 0x2e, 0x1e, 14, 14);
+		break;
+
+	case 1:
+		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0x23);
+		mdelay(1);
+
+		/* ##DCVS0 Read Out */
+		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  4,  4);
+		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  3,  0);
+		dcvs_manual = !!rtl9300_sds_field_r(sds_num, 0x2e, 0x1e, 13, 13);
+		break;
+
+	case 2:
+		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0x24);
+		mdelay(1);
+
+		/* ##DCVS0 Read Out */
+		dcvs_sign_out = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  4,  4);
+		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  3,  0);
+		dcvs_manual = !!rtl9300_sds_field_r(sds_num, 0x2e, 0x1e, 12, 12);
+		break;
+	case 3:
+		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0x25);
+		mdelay(1);
+
+		/* ##DCVS0 Read Out */
+		dcvs_sign_out = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  4,  4);
+		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  3,  0);
+		dcvs_manual   = rtl9300_sds_field_r(sds_num, 0x2e, 0x1e, 11, 11);
+		break;
+
+	case 4:
+		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0x2c);
+		mdelay(1);
+
+		/* ##DCVS0 Read Out */
+		dcvs_sign_out = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  4,  4);
+		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  3,  0);
+		dcvs_manual = !!rtl9300_sds_field_r(sds_num, 0x2e, 0x01, 15, 15);
+		break;
+
+	case 5:
+		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0x2d);
+		mdelay(1);
+
+		/* ##DCVS0 Read Out */
+		dcvs_sign_out = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  4,  4);
+		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  3,  0);
+		dcvs_manual   = rtl9300_sds_field_r(sds_num, 0x2e, 0x02, 11, 11);
+		break;
+
+	default:
+		break;
+	}
+
+	if (dcvs_sign_out)
+		pr_info("%s DCVS %u Sign: -", __func__, dcvs_id);
+	else
+		pr_info("%s DCVS %u Sign: +", __func__, dcvs_id);
+
+	pr_info("DCVS %u even coefficient = %u", dcvs_id, dcvs_coef_bin);
+	pr_info("DCVS %u manual = %u", dcvs_id, dcvs_manual);
+
+	dcvs_list[0] = dcvs_sign_out;
+	dcvs_list[1] = dcvs_coef_bin;
+}

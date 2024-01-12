@@ -1,0 +1,8 @@
+indicate_writing(const char *mtd)
+{
+	if (quiet < 2)
+		fprintf(stderr, "\nWriting from %s to %s ... ", imagefile, mtd);
+
+	if (!quiet)
+		fprintf(stderr, " [ ]");
+}

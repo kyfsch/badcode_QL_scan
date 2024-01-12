@@ -1,0 +1,67 @@
+rtk_api_ret_t rtk_port_macForceLinkExt_set(rtk_port_t port, rtk_mode_ext_t mode, rtk_port_mac_ability_t *pPortability)
+{
+    rtk_api_ret_t retVal;
+    rtl8367c_port_ability_t ability;
+    rtk_uint32 ext_id;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_IS_EXT(port);
+
+    if(NULL == pPortability)
+        return RT_ERR_NULL_POINTER;
+
+    if (mode >=MODE_EXT_END)
+        return RT_ERR_INPUT;
+
+    if(mode == MODE_EXT_HSGMII)
+    {
+        if (pPortability->forcemode > 1 || pPortability->speed != PORT_SPEED_2500M || pPortability->duplex != PORT_FULL_DUPLEX ||
+           pPortability->link >= PORT_LINKSTATUS_END || pPortability->nway > 1 || pPortability->txpause > 1 || pPortability->rxpause > 1)
+            return RT_ERR_INPUT;
+
+        if(rtk_switch_isHsgPort(port) != RT_ERR_OK)
+            return RT_ERR_PORT_ID;
+    }
+    else
+    {
+        if (pPortability->forcemode > 1 || pPortability->speed > PORT_SPEED_1000M || pPortability->duplex >= PORT_DUPLEX_END ||
+           pPortability->link >= PORT_LINKSTATUS_END || pPortability->nway > 1 || pPortability->txpause > 1 || pPortability->rxpause > 1)
+            return RT_ERR_INPUT;
+    }
+
+    ext_id = port - 15;
+
+    if(mode == MODE_EXT_DISABLE)
+    {
+        memset(&ability, 0x00, sizeof(rtl8367c_port_ability_t));
+        if ((retVal = rtl8367c_setAsicPortForceLinkExt(ext_id, &ability)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicPortExtMode(ext_id, mode)) != RT_ERR_OK)
+            return retVal;
+    }
+    else
+    {
+        if ((retVal = rtl8367c_setAsicPortExtMode(ext_id, mode)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_getAsicPortForceLinkExt(ext_id, &ability)) != RT_ERR_OK)
+            return retVal;
+
+        ability.forcemode = pPortability->forcemode;
+        ability.speed     = (mode == MODE_EXT_HSGMII) ? PORT_SPEED_1000M : pPortability->speed;
+        ability.duplex    = pPortability->duplex;
+        ability.link      = pPortability->link;
+        ability.nway      = pPortability->nway;
+        ability.txpause   = pPortability->txpause;
+        ability.rxpause   = pPortability->rxpause;
+
+        if ((retVal = rtl8367c_setAsicPortForceLinkExt(ext_id, &ability)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    return RT_ERR_OK;
+}

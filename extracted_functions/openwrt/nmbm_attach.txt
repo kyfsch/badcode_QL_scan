@@ -1,0 +1,48 @@
+static int nmbm_attach(struct nmbm_instance *ni)
+{
+	bool success;
+
+	if (!ni)
+		return -EINVAL;
+
+	/* Initialize NMBM instance */
+	nmbm_init_structure(ni);
+
+	success = nmbm_find_signature(ni, &ni->signature, &ni->signature_ba);
+	if (!success) {
+		if (!ni->force_create) {
+			nlog_err(ni, "Signature not found\n");
+			return -ENODEV;
+		}
+
+		success = nmbm_create_new(ni);
+		if (!success)
+			return -ENODEV;
+
+		return 0;
+	}
+
+	nlog_info(ni, "Signature found at block %u [0x%08llx]\n",
+		 ni->signature_ba, ba2addr(ni, ni->signature_ba));
+
+	if (ni->signature.header.version != NMBM_VER) {
+		nlog_err(ni, "NMBM version %u.%u is not supported\n",
+			NMBM_VERSION_MAJOR_GET(ni->signature.header.version),
+			NMBM_VERSION_MINOR_GET(ni->signature.header.version));
+		return -EINVAL;
+	}
+
+	if (ni->signature.nand_size != bmtd.total_blks << bmtd.blk_shift ||
+	    ni->signature.block_size != bmtd.blk_size ||
+	    ni->signature.page_size != bmtd.pg_size ||
+	    ni->signature.spare_size != bmtd.mtd->oobsize) {
+		nlog_err(ni, "NMBM configuration mismatch\n");
+		return -EINVAL;
+	}
+
+	success = nmbm_load_existing(ni);
+	if (!success)
+		return -ENODEV;
+
+	return 0;
+}

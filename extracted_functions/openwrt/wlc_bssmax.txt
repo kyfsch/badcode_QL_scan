@@ -1,0 +1,20 @@
+static int wlc_bssmax(wlc_param param, void *data, void *value)
+{
+	int *val = (int *) value;
+	char *iov = *((char **) data);
+	int ret = -1;
+
+	if (param & GET) {
+		ret = wl_iovar_get(interface, iov, wlbuf, BUFSIZE);
+		if (!ret) {
+			if (strstr(wlbuf, "mbss4"))
+				*val = 4;
+			else if (strstr(wlbuf, "mbss16"))
+				*val = 16;
+			else
+				*val = 1;
+		}
+	}
+
+	return ret;
+}

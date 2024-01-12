@@ -1,0 +1,9 @@
+int open_backend(const struct iwinfo_ops **iw, const char *ifname)
+{
+	*iw = iwinfo_backend(ifname);
+
+	if (!(*iw))
+		return 1;
+
+	return 0;
+}

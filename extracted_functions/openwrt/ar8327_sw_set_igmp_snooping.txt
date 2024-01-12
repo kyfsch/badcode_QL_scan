@@ -1,0 +1,14 @@
+ar8327_sw_set_igmp_snooping(struct switch_dev *dev,
+			    const struct switch_attr *attr,
+			    struct switch_val *val)
+{
+	int port;
+
+	for (port = 0; port < dev->ports; port++) {
+		val->port_vlan = port;
+		if (ar8327_sw_set_port_igmp_snooping(dev, attr, val))
+			break;
+	}
+
+	return 0;
+}

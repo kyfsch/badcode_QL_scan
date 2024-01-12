@@ -1,0 +1,56 @@
+send_packet(int type, bool (*handler)(void), unsigned int max)
+{
+	struct timeval tv;
+	fd_set fds;
+	int nfds;
+	int len;
+	int res = 0;
+
+	type = htonl(type);
+	memcpy(&msg->ip, &serverip.s_addr, sizeof(msg->ip));
+	set_nonblock(0);
+	sendto(s, msgbuf, sizeof(struct ead_msg) + ntohl(msg->len), 0, (struct sockaddr *) &remote, sizeof(remote));
+	set_nonblock(1);
+
+	tv.tv_sec = timeout / 1000;
+	tv.tv_usec = (timeout % 1000) * 1000;
+
+	FD_ZERO(&fds);
+	do {
+		FD_SET(s, &fds);
+		nfds = select(s + 1, &fds, NULL, NULL, &tv);
+
+		if (nfds <= 0)
+			break;
+
+		if (!FD_ISSET(s, &fds))
+			break;
+
+		len = read(s, msgbuf, sizeof(msgbuf));
+		if (len < 0)
+			break;
+
+		if (len < sizeof(struct ead_msg))
+			continue;
+
+		if (len < sizeof(struct ead_msg) + ntohl(msg->len))
+			continue;
+
+		if (msg->magic != htonl(EAD_MAGIC))
+			continue;
+
+		if ((nid != 0xffff) && (ntohs(msg->nid) != nid))
+			continue;
+
+		if (msg->type != type)
+			continue;
+
+		if (handler())
+			res++;
+
+		if ((max > 0) && (res >= max))
+			break;
+	} while (1);
+
+	return res;
+}

@@ -1,0 +1,4 @@
+void dc_ep_clkod_disable(struct dc_ep_priv *priv)
+{
+	wr32_mask(0, IF_CLKOD_ALL, IF_CLK);
+}

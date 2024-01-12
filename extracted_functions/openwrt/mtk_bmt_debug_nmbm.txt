@@ -1,0 +1,17 @@
+static int mtk_bmt_debug_nmbm(void *data, u64 val)
+{
+	struct nmbm_instance *ni = bmtd.ni;
+	int i;
+
+	switch (val) {
+	case 0:
+		for (i = 1; i < ni->data_block_count; i++) {
+			if (ni->block_mapping[i] < ni->mapping_blocks_ba)
+				continue;
+
+			printk("remap [%x->%x]\n", i, ni->block_mapping[i]);
+		}
+	}
+
+	return 0;
+}

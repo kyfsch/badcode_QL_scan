@@ -1,0 +1,53 @@
+static int aw9523_pconf_get(struct pinctrl_dev *pctldev, unsigned int pin,
+			    unsigned long *config)
+{
+	struct aw9523 *awi = pinctrl_dev_get_drvdata(pctldev);
+	enum pin_config_param param = pinconf_to_config_param(*config);
+	int regbit = pin % AW9523_PINS_PER_PORT;
+	unsigned int val;
+	u8 reg;
+	int rc;
+
+	rc = aw9523_pcfg_param_to_reg(param, pin, &reg);
+	if (rc)
+		return rc;
+
+	mutex_lock(&awi->i2c_lock);
+	rc = regmap_read(awi->regmap, reg, &val);
+	mutex_unlock(&awi->i2c_lock);
+	if (rc)
+		return rc;
+
+	switch (param) {
+	case PIN_CONFIG_BIAS_PULL_UP:
+	case PIN_CONFIG_INPUT_ENABLE:
+	case PIN_CONFIG_OUTPUT:
+		val &= BIT(regbit);
+		break;
+	case PIN_CONFIG_BIAS_PULL_DOWN:
+	case PIN_CONFIG_OUTPUT_ENABLE:
+		val &= BIT(regbit);
+		val = !val;
+		break;
+	case PIN_CONFIG_DRIVE_OPEN_DRAIN:
+		if (pin >= AW9523_PINS_PER_PORT)
+			val = 0;
+		else
+			val = !FIELD_GET(AW9523_GCR_GPOMD_MASK, val);
+		break;
+	case PIN_CONFIG_DRIVE_PUSH_PULL:
+		if (pin >= AW9523_PINS_PER_PORT)
+			val = 1;
+		else
+			val = FIELD_GET(AW9523_GCR_GPOMD_MASK, val);
+		break;
+	default:
+		return -ENOTSUPP;
+	}
+	if (val < 1)
+		return -EINVAL;
+
+	*config = pinconf_to_config_packed(param, !!val);
+
+	return rc;
+}

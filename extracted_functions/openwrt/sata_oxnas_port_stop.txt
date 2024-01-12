@@ -1,0 +1,17 @@
+static void sata_oxnas_port_stop(struct ata_port *ap)
+{
+	struct device *dev = ap->host->dev;
+	struct sata_oxnas_port_priv *pp = ap->private_data;
+	struct sata_oxnas_host_priv *host_priv = ap->host->private_data;
+
+	DPRINTK("ENTER\n");
+	ap->private_data = NULL;
+	if (host_priv->dma_size) {
+		iounmap(pp->sgdma_request);
+	} else {
+		dma_free_coherent(dev, SATA_OXNAS_DMA_SIZE,
+				  pp->sgdma_request, pp->sgdma_request_pa);
+	}
+
+	kfree(pp);
+}

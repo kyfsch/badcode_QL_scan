@@ -1,0 +1,16 @@
+struct b53_device *b53_swconfig_switch_alloc(struct device *base, struct b53_io_ops *ops,
+					     void *priv)
+{
+	struct b53_device *dev;
+
+	dev = devm_kzalloc(base, sizeof(*dev), GFP_KERNEL);
+	if (!dev)
+		return NULL;
+
+	dev->dev = base;
+	dev->ops = ops;
+	dev->priv = priv;
+	mutex_init(&dev->reg_mutex);
+
+	return dev;
+}

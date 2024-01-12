@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicPortIngressBandwidthBypass(rtk_uint32 enabled)
+{
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_SW_DUMMY0, RTL8367C_INGRESSBW_BYPASS_EN_OFFSET, enabled);
+}

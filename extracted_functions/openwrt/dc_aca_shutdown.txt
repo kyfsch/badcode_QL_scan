@@ -1,0 +1,9 @@
+void dc_aca_shutdown(struct dc_ep_priv *priv)
+{
+	struct dc_aca *aca = to_aca(priv);
+
+	if (aca->initialized) {
+		aca_xbar_ia_reset(priv, ACA_ACC_IA04);
+		aca_xbar_ia_reset(priv, ACA_M_IA06);
+	}
+}

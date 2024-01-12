@@ -1,0 +1,10 @@
+ret_t rtl8367c_getAsicTrunkingHashTable1(rtk_uint32 hashval, rtk_uint32* pPortId)
+{
+    if(hashval > RTL8367C_TRUNKING_HASHVALUE_MAX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if(hashval >= 8)
+        return rtl8367c_getAsicRegBits(RTL8367C_REG_PORT_TRUNK_HASH_MAPPING_CTRL3, RTL8367C_PORT_TRUNK_HASH_MAPPING_CTRL3_HASH8_MASK<<((hashval-8)*2), pPortId);
+    else
+        return rtl8367c_getAsicRegBits(RTL8367C_REG_PORT_TRUNK_HASH_MAPPING_CTRL2, RTL8367C_PORT_TRUNK_HASH_MAPPING_CTRL2_HASH0_MASK<<(hashval*2), pPortId);
+}

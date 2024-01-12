@@ -1,0 +1,30 @@
+static int aes_cbcmac_update(struct shash_desc *desc, const u8 *data, unsigned int len)
+{
+    struct aes_ctx *mctx = crypto_shash_ctx(desc->tfm);
+    const u32 avail = sizeof(mctx->block) - (mctx->byte_count & 0x0f);
+
+    mctx->byte_count += len;
+
+    if (avail > len) {
+        memcpy((char *)mctx->block + (sizeof(mctx->block) - avail),
+               data, len);
+        return 0;
+    }
+
+    memcpy((char *)mctx->block + (sizeof(mctx->block) - avail),
+           data, avail);
+
+    aes_cbcmac_transform(desc, mctx->block);
+    data += avail;
+    len -= avail;
+
+    while (len >= sizeof(mctx->block)) {
+        memcpy(mctx->block, data, sizeof(mctx->block));
+        aes_cbcmac_transform(desc, mctx->block);
+        data += sizeof(mctx->block);
+        len -= sizeof(mctx->block);
+    }
+
+    memcpy(mctx->block, data, len);
+    return 0;
+}

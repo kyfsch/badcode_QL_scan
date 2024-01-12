@@ -1,0 +1,17 @@
+ar8327_sw_set_igmp_v3(struct switch_dev *dev,
+		      const struct switch_attr *attr,
+		      struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+
+	mutex_lock(&priv->reg_mutex);
+	if (val->value.i)
+		ar8xxx_reg_set(priv, AR8327_REG_FRAME_ACK_CTRL1,
+			       AR8327_FRAME_ACK_CTRL_IGMP_V3_EN);
+	else
+		ar8xxx_reg_clear(priv, AR8327_REG_FRAME_ACK_CTRL1,
+				 AR8327_FRAME_ACK_CTRL_IGMP_V3_EN);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}

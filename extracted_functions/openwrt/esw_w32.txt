@@ -1,0 +1,4 @@
+static inline void esw_w32(struct rt305x_esw *esw, u32 val, unsigned reg)
+{
+	__raw_writel(val, esw->base + reg);
+}

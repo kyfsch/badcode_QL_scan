@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_mirror_portIso_set(rtk_enable_t enable)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (enable >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if ((retVal = rtl8367c_setAsicPortMirrorIsolation(enable)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

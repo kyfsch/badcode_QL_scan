@@ -1,0 +1,11 @@
+bss_conf_rename_vlan(struct hostapd_data *hapd, struct hostapd_vlan *vlan,
+		     const char *ifname)
+{
+	if (!strcmp(ifname, vlan->ifname))
+		return 0;
+
+	hostapd_drv_if_rename(hapd, WPA_IF_AP_VLAN, vlan->ifname, ifname);
+	os_strlcpy(vlan->ifname, ifname, sizeof(vlan->ifname));
+
+	return 0;
+}

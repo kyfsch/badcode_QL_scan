@@ -1,0 +1,10 @@
+static __inline__ void blast_dcache(unsigned long size, unsigned long lsize)
+{
+	unsigned long start = KSEG0;
+	unsigned long end = (start + size);
+
+	while(start < end) {
+		cache_unroll(start,Index_Writeback_Inv_D);
+		start += lsize;
+	}
+}

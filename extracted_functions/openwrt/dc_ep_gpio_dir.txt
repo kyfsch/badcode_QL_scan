@@ -1,0 +1,16 @@
+int dc_ep_gpio_dir(struct dc_ep_priv *priv, u32 gpio, int dir)
+{
+	struct dc_aca *aca = to_aca(priv);
+
+	if (gpio > aca->max_gpio)
+		return -EINVAL;
+
+	if ((dir != GPIO_DIR_IN) && (dir != GPIO_DIR_OUT))
+		return -EINVAL;
+
+	if (dir == GPIO_DIR_IN)
+		wr32(BIT(gpio), GPIO_DIRCLR);
+	else
+		wr32(BIT(gpio), GPIO_DIRSET);
+	return 0;
+}

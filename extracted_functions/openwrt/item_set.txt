@@ -1,0 +1,7 @@
+void item_set(int n)
+{
+	int i = 0;
+	item_foreach()
+		if (i++ == n)
+			return;
+}

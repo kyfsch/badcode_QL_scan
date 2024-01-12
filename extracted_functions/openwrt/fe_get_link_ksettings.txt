@@ -1,0 +1,17 @@
+static int fe_get_link_ksettings(struct net_device *ndev,
+			   struct ethtool_link_ksettings *cmd)
+{
+	struct fe_priv *priv = netdev_priv(ndev);
+
+	if (!priv->phy_dev)
+		return -ENODEV;
+
+	if (priv->phy_flags == FE_PHY_FLAG_ATTACH) {
+		if (phy_read_status(priv->phy_dev))
+			return -ENODEV;
+	}
+
+	phy_ethtool_ksettings_get(ndev->phydev, cmd);
+
+	return 0;
+}

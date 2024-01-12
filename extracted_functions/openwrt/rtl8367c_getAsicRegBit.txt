@@ -1,0 +1,61 @@
+ret_t rtl8367c_getAsicRegBit(rtk_uint32 reg, rtk_uint32 bit, rtk_uint32 *pValue)
+{
+
+#if defined(RTK_X86_ASICDRV)
+
+    rtk_uint32 regData;
+    ret_t retVal;
+
+    if(bit >= RTL8367C_REGBITLENGTH)
+        return RT_ERR_INPUT;
+
+    retVal = Access_Read(reg, 2, &regData);
+    if(TRUE != retVal)
+        return RT_ERR_SMI;
+
+    *pValue = (regData & (0x1 << bit)) >> bit;
+
+    if(0x8367B == cleDebuggingDisplay)
+        PRINT("R[0x%4.4x]=0x%4.4x\n", reg, regData);
+
+#elif defined(CONFIG_RTL8367C_ASICDRV_TEST)
+
+    if(bit >= RTL8367C_REGBITLENGTH)
+        return RT_ERR_INPUT;
+
+    if(reg >= CLE_VIRTUAL_REG_SIZE)
+        return RT_ERR_OUT_OF_RANGE;
+
+    *pValue = (CleVirtualReg[reg] & (0x1 << bit)) >> bit;
+
+    if(0x8367B == cleDebuggingDisplay)
+        PRINT("R[0x%4.4x]=0x%4.4x\n", reg, CleVirtualReg[reg]);
+
+#elif defined(EMBEDDED_SUPPORT)
+    rtk_uint16 tmp;
+
+    if(reg > RTL8367C_REGDATAMAX )
+        return RT_ERR_INPUT;
+
+    tmp = getReg(reg);
+    tmp = tmp >> bitIdx;
+    tmp &= 1;
+    *value = tmp;
+#else
+    rtk_uint32 regData;
+    ret_t retVal;
+
+    retVal = smi_read(reg, &regData);
+    if(retVal != RT_ERR_OK)
+        return RT_ERR_SMI;
+
+  #ifdef CONFIG_RTL865X_CLE
+    if(0x8367B == cleDebuggingDisplay)
+        PRINT("R[0x%4.4x]=0x%4.4x\n", reg, regData);
+  #endif
+
+    *pValue = (regData & (0x1 << bit)) >> bit;
+
+#endif
+    return RT_ERR_OK;
+}

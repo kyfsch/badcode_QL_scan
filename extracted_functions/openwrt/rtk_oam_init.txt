@@ -1,0 +1,4 @@
+rtk_api_ret_t rtk_oam_init(void)
+{
+    return RT_ERR_OK;
+} /* end of rtk_oam_init */

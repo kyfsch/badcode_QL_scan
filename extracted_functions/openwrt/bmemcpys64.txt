@@ -1,0 +1,11 @@
+static void bmemcpys64(void *av, const void *bv, size_t frombits, size_t nbits)
+{
+	uint64_t buf = 0;
+	const uint8_t *b = bv;
+	size_t frombyte = frombits / 8, tobyte = (frombits + nbits) / 8;
+
+	memcpy(&buf, &b[frombyte], tobyte - frombyte + 1);
+	buf = cpu_to_be64(be64_to_cpu(buf) << (frombits % 8));
+
+	bmemcpy(av, &buf, nbits);
+}

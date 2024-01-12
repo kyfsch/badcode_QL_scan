@@ -1,0 +1,21 @@
+Byte LzmaLiteralDecode(CProb *probs, CRangeDecoder *rd)
+{ 
+  int symbol = 1;
+  #ifdef _LZMA_LOC_OPT
+  RC_INIT_VAR
+  #endif
+  do
+  {
+    #ifdef _LZMA_LOC_OPT
+    CProb *prob = probs + symbol;
+    RC_GET_BIT(prob, symbol)
+    #else
+    symbol = (symbol + symbol) | RangeDecoderBitDecode(probs + symbol, rd);
+    #endif
+  }
+  while (symbol < 0x100);
+  #ifdef _LZMA_LOC_OPT
+  RC_FLUSH_VAR
+  #endif
+  return symbol;
+}

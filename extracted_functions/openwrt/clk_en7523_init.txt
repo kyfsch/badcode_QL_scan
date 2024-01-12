@@ -1,0 +1,4 @@
+static int __init clk_en7523_init(void)
+{
+	return platform_driver_register(&clk_en7523_drv);
+}

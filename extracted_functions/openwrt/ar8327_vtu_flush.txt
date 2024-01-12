@@ -1,0 +1,4 @@
+ar8327_vtu_flush(struct ar8xxx_priv *priv)
+{
+	ar8327_vtu_op(priv, AR8327_VTU_FUNC1_OP_FLUSH, 0);
+}

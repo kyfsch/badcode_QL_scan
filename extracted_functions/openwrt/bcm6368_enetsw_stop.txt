@@ -1,0 +1,51 @@
+static int bcm6368_enetsw_stop(struct net_device *ndev)
+{
+	struct bcm6368_enetsw *priv = netdev_priv(ndev);
+	struct platform_device *pdev = priv->pdev;
+	struct device *dev = &pdev->dev;
+	int i;
+
+	netif_stop_queue(ndev);
+	napi_disable(&priv->napi);
+	del_timer_sync(&priv->rx_timeout);
+
+	/* mask all interrupts */
+	dmac_writel(priv, 0, DMAC_IRMASK_REG, priv->rx_chan);
+	dmac_writel(priv, 0, DMAC_IRMASK_REG, priv->tx_chan);
+
+	/* disable dma & mac */
+	bcm6368_enetsw_disable_dma(priv, priv->tx_chan);
+	bcm6368_enetsw_disable_dma(priv, priv->rx_chan);
+
+	/* force reclaim of all tx buffers */
+	bcm6368_enetsw_tx_reclaim(ndev, 1, 0);
+
+	/* free the rx buffer ring */
+	for (i = 0; i < priv->rx_ring_size; i++) {
+		struct bcm6368_enetsw_desc *desc;
+
+		if (!priv->rx_buf[i])
+			continue;
+
+		desc = &priv->rx_desc_cpu[i];
+		dma_unmap_single_attrs(dev, desc->address, priv->rx_buf_size,
+				       DMA_FROM_DEVICE,
+				       DMA_ATTR_SKIP_CPU_SYNC);
+		skb_free_frag(priv->rx_buf[i]);
+	}
+
+	/* free remaining allocated memory */
+	kfree(priv->rx_buf);
+	kfree(priv->tx_skb);
+	dma_free_coherent(dev, priv->rx_desc_alloc_size,
+			  priv->rx_desc_cpu, priv->rx_desc_dma);
+	dma_free_coherent(dev, priv->tx_desc_alloc_size,
+			  priv->tx_desc_cpu, priv->tx_desc_dma);
+	if (priv->irq_tx != -1)
+		free_irq(priv->irq_tx, ndev);
+	free_irq(priv->irq_rx, ndev);
+
+	netdev_reset_queue(ndev);
+
+	return 0;
+}

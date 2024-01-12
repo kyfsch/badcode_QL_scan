@@ -1,0 +1,54 @@
+static int bcm6348_emac_refill_rx(struct net_device *ndev)
+{
+	struct bcm6348_emac *emac = netdev_priv(ndev);
+	struct bcm6348_iudma *iudma = emac->iudma;
+	struct platform_device *pdev = emac->pdev;
+	struct device *dev = &pdev->dev;
+
+	while (emac->rx_desc_count < emac->rx_ring_size) {
+		struct bcm6348_iudma_desc *desc;
+		struct sk_buff *skb;
+		dma_addr_t p;
+		int desc_idx;
+		u32 len_stat;
+
+		desc_idx = emac->rx_dirty_desc;
+		desc = &emac->rx_desc_cpu[desc_idx];
+
+		if (!emac->rx_skb[desc_idx]) {
+			skb = netdev_alloc_skb(ndev, emac->rx_skb_size);
+			if (!skb)
+				break;
+			emac->rx_skb[desc_idx] = skb;
+			p = dma_map_single(dev, skb->data, emac->rx_skb_size,
+					   DMA_FROM_DEVICE);
+			desc->address = p;
+		}
+
+		len_stat = emac->rx_skb_size << DMADESC_LENGTH_SHIFT;
+		len_stat |= DMADESC_OWNER_MASK;
+		if (emac->rx_dirty_desc == emac->rx_ring_size - 1) {
+			len_stat |= DMADESC_WRAP_MASK;
+			emac->rx_dirty_desc = 0;
+		} else {
+			emac->rx_dirty_desc++;
+		}
+		wmb();
+		desc->len_stat = len_stat;
+
+		emac->rx_desc_count++;
+
+		/* tell dma engine we allocated one buffer */
+		dma_writel(iudma, 1, DMA_BUFALLOC_REG(emac->rx_chan));
+	}
+
+	/* If rx ring is still empty, set a timer to try allocating
+	 * again at a later time. */
+	if (emac->rx_desc_count == 0 && netif_running(ndev)) {
+		dev_warn(dev, "unable to refill rx ring\n");
+		emac->rx_timeout.expires = jiffies + HZ;
+		add_timer(&emac->rx_timeout);
+	}
+
+	return 0;
+}

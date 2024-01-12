@@ -1,0 +1,5 @@
+check_bridge(const char *name, void *arg)
+{
+	br_foreach_port(name, check_bridge_port, arg);
+	return 0;
+}

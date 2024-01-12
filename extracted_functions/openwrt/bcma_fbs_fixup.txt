@@ -1,0 +1,33 @@
+static void bcma_fbs_fixup(struct bcma_fbs *priv, u16 *sprom)
+{
+	struct device_node *node = priv->dev->of_node;
+	u32 fixups, off, val;
+	int i = 0;
+
+	if (!of_get_property(node, "brcm,sprom-fixups", &fixups))
+		return;
+
+	fixups /= sizeof(u32);
+
+	dev_info(priv->dev, "patching SPROM with %u fixups...\n", fixups >> 1);
+
+	while (i < fixups) {
+		if (of_property_read_u32_index(node, "brcm,sprom-fixups",
+					       i++, &off)) {
+			dev_err(priv->dev, "error reading fixup[%u] offset\n",
+				i - 1);
+			return;
+		}
+
+		if (of_property_read_u32_index(node, "brcm,sprom-fixups",
+					       i++, &val)) {
+			dev_err(priv->dev, "error reading fixup[%u] value\n",
+				i - 1);
+			return;
+		}
+
+		dev_dbg(priv->dev, "fixup[%d]=0x%04x\n", off, val);
+
+		sprom[off] = val;
+	}
+}

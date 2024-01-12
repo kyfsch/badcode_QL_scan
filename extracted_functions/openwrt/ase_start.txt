@@ -1,0 +1,17 @@
+int ase_start(int pp32)
+{
+    int ret;
+
+    /*  download firmware   */
+    ret = pp32_download_code(firmware_binary_code, sizeof(firmware_binary_code) / sizeof(*firmware_binary_code), firmware_binary_data, sizeof(firmware_binary_data) / sizeof(*firmware_binary_data));
+    if ( ret != 0 )
+        return ret;
+
+    /*  run PP32    */
+    IFX_REG_W32(DBG_CTRL_RESTART, PP32_DBG_CTRL);
+
+    /*  idle for a while to let PP32 init itself    */
+    udelay(10);
+
+    return 0;
+}

@@ -1,0 +1,60 @@
+static int rtl8367s_vlan_config(int want_at_p0)
+{
+	rtk_vlan_cfg_t vlan1, vlan2;
+	
+	/* Set LAN/WAN VLAN partition */
+	memset(&vlan1, 0x00, sizeof(rtk_vlan_cfg_t));
+
+	RTK_PORTMASK_PORT_SET(vlan1.mbr, EXT_PORT0);
+	RTK_PORTMASK_PORT_SET(vlan1.mbr, UTP_PORT1);
+	RTK_PORTMASK_PORT_SET(vlan1.mbr, UTP_PORT2);
+	RTK_PORTMASK_PORT_SET(vlan1.mbr, UTP_PORT3);
+	RTK_PORTMASK_PORT_SET(vlan1.untag, EXT_PORT0);
+	RTK_PORTMASK_PORT_SET(vlan1.untag, UTP_PORT1);
+	RTK_PORTMASK_PORT_SET(vlan1.untag, UTP_PORT2);
+	RTK_PORTMASK_PORT_SET(vlan1.untag, UTP_PORT3);
+  
+	 if (want_at_p0) {
+		RTK_PORTMASK_PORT_SET(vlan1.mbr, UTP_PORT4);
+		RTK_PORTMASK_PORT_SET(vlan1.untag, UTP_PORT4);
+        } else {
+		RTK_PORTMASK_PORT_SET(vlan1.mbr, UTP_PORT0);
+		RTK_PORTMASK_PORT_SET(vlan1.untag, UTP_PORT0);
+        }
+
+	vlan1.ivl_en = 1;
+	
+	rtk_vlan_set(1, &vlan1);
+	
+	memset(&vlan2, 0x00, sizeof(rtk_vlan_cfg_t));
+	
+	RTK_PORTMASK_PORT_SET(vlan2.mbr, EXT_PORT1);
+	RTK_PORTMASK_PORT_SET(vlan2.untag, EXT_PORT1);
+
+	if (want_at_p0) {
+		RTK_PORTMASK_PORT_SET(vlan2.mbr, UTP_PORT0);
+		RTK_PORTMASK_PORT_SET(vlan2.untag, UTP_PORT0);
+	} else {
+		RTK_PORTMASK_PORT_SET(vlan2.mbr, UTP_PORT4);
+		RTK_PORTMASK_PORT_SET(vlan2.untag, UTP_PORT4);
+	}
+
+	vlan2.ivl_en = 1;
+	rtk_vlan_set(2, &vlan2);
+
+	rtk_vlan_portPvid_set(EXT_PORT0, 1, 0);
+	rtk_vlan_portPvid_set(UTP_PORT1, 1, 0);
+	rtk_vlan_portPvid_set(UTP_PORT2, 1, 0);
+	rtk_vlan_portPvid_set(UTP_PORT3, 1, 0);
+	rtk_vlan_portPvid_set(EXT_PORT1, 2, 0);
+
+	if (want_at_p0) {
+		rtk_vlan_portPvid_set(UTP_PORT0, 2, 0);
+		rtk_vlan_portPvid_set(UTP_PORT4, 1, 0);
+	} else {
+		rtk_vlan_portPvid_set(UTP_PORT0, 1, 0);
+		rtk_vlan_portPvid_set(UTP_PORT4, 2, 0);
+	}
+
+	return 0;	
+}

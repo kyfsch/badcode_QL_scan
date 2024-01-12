@@ -1,0 +1,34 @@
+load_userfile(struct radius_state *s)
+{
+	enum {
+		USERDATA_PHASE1,
+		USERDATA_PHASE2,
+		__USERDATA_MAX
+	};
+	static const struct blobmsg_policy policy[__USERDATA_MAX] = {
+		[USERDATA_PHASE1] = { "phase1", BLOBMSG_TYPE_TABLE },
+		[USERDATA_PHASE2] = { "phase2", BLOBMSG_TYPE_TABLE },
+	};
+	struct blob_attr *tb[__USERDATA_MAX], *cur;
+	static struct blob_buf b;
+	struct stat st;
+	int rem;
+
+	if (stat(s->user_file, &st))
+		return;
+
+	if (s->user_file_ts == st.st_mtime)
+		return;
+
+	s->user_file_ts = st.st_mtime;
+	radius_userdata_free(&s->phase1);
+	radius_userdata_free(&s->phase2);
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_json_from_file(&b, s->user_file);
+	blobmsg_parse(policy, __USERDATA_MAX, tb, blob_data(b.head), blob_len(b.head));
+	radius_userdata_load(&s->phase1, tb[USERDATA_PHASE1]);
+	radius_userdata_load(&s->phase2, tb[USERDATA_PHASE2]);
+
+	blob_buf_free(&b);
+}

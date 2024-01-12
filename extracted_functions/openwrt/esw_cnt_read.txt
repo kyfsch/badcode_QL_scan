@@ -1,0 +1,5 @@
+static int esw_cnt_read(struct seq_file *seq, void *v)
+{
+	rtk_hal_dump_mib();
+	return 0;
+}

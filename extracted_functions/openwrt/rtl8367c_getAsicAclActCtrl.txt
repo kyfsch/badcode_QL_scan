@@ -1,0 +1,20 @@
+ret_t rtl8367c_getAsicAclActCtrl(rtk_uint32 index, rtk_uint32 *pAclActCtrl)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+
+    if(index > RTL8367C_ACLRULEMAX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if(index >= 64)
+        retVal = rtl8367c_getAsicRegBits(RTL8367C_ACL_ACTION_CTRL2_REG(index), RTL8367C_ACL_OP_ACTION_MASK(index), &regData);
+    else
+        retVal = rtl8367c_getAsicRegBits(RTL8367C_ACL_ACTION_CTRL_REG(index), RTL8367C_ACL_OP_ACTION_MASK(index), &regData);
+
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    *pAclActCtrl = regData;
+
+    return RT_ERR_OK;
+}

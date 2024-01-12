@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_trap_unknownMacPktAction_set(rtk_trap_ucast_action_t ucast_action)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (ucast_action >= UCAST_ACTION_FLOODING)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicPortUnknownSaBehavior(ucast_action)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

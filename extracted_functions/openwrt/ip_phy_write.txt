@@ -1,0 +1,12 @@
+static int ip_phy_write(struct ip17xx_state *state, int port, int reg, u16 val)
+{
+	int err;
+
+#ifdef DUMP_MII_IO
+	pr_debug("IP17xx: Write MII(%d,%d) <- %04x\n", port, reg, val);
+#endif
+	err = mdiobus_write(state->mii_bus, port, reg, val);
+	if (err < 0)
+		pr_warn("IP17xx: Unable to write MII register %d,%d: error %d\n", port, reg, -err);
+	return err;
+}

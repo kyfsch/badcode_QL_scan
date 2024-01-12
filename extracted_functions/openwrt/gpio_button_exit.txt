@@ -1,0 +1,5 @@
+static void __exit gpio_button_exit(void)
+{
+	platform_driver_unregister(&gpio_keys_driver);
+	platform_driver_unregister(&gpio_keys_polled_driver);
+}

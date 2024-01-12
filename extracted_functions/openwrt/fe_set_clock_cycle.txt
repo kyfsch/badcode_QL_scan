@@ -1,0 +1,13 @@
+int fe_set_clock_cycle(struct fe_priv *priv)
+{
+	unsigned long sysclk = priv->sysclk;
+
+	sysclk /= FE_US_CYC_CNT_DIVISOR;
+	sysclk <<= FE_US_CYC_CNT_SHIFT;
+
+	fe_w32((fe_r32(FE_FE_GLO_CFG) &
+			~(FE_US_CYC_CNT_MASK << FE_US_CYC_CNT_SHIFT)) |
+			sysclk,
+			FE_FE_GLO_CFG);
+	return 0;
+}

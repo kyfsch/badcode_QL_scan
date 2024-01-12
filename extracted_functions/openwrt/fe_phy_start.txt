@@ -1,0 +1,17 @@
+static void fe_phy_start(struct fe_priv *priv)
+{
+	unsigned long flags;
+	int i;
+
+	for (i = 0; i < 8; i++) {
+		if (priv->phy->phy_fixed[i]) {
+			spin_lock_irqsave(&priv->phy->lock, flags);
+			priv->link[i] = 1;
+			if (priv->soc->mdio_adjust_link)
+				priv->soc->mdio_adjust_link(priv, i);
+			spin_unlock_irqrestore(&priv->phy->lock, flags);
+		} else if (priv->phy->phy[i]) {
+			phy_start(priv->phy->phy[i]);
+		}
+	}
+}

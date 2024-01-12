@@ -1,0 +1,4 @@
+void expr_gstr_print(struct expr *e, struct gstr *gs)
+{
+	expr_print(e, expr_print_gstr_helper, gs, E_NONE);
+}

@@ -1,0 +1,20 @@
+int dc_ep_dev_info_release(int dev_idx)
+{
+	struct dc_ep_priv *priv;
+
+	if ((dev_idx < 0) || (dev_idx >= DC_EP_MAX_NUM)) {
+		pr_err("%s invalid device index %d\n",
+			__func__, dev_idx);
+		return -EIO;
+	}
+
+	priv = &g_dc_ep_info.pcie_ep[dev_idx];
+	if (atomic_read(&priv->refcnt) <= 0) {
+		pr_err("%s mismatch request/release module usage\n",
+			__func__);
+		return -EIO;
+	}
+
+	atomic_dec(&priv->refcnt);
+	return 0;
+}

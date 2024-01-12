@@ -1,0 +1,10 @@
+rtk_uint32 rtk_switch_port_L2P_get(rtk_port_t logicalPort)
+{
+    if(init_state != INIT_COMPLETED)
+        return UNDEFINE_PHY_PORT;
+
+    if(logicalPort >= RTK_SWITCH_PORT_NUM)
+        return UNDEFINE_PHY_PORT;
+
+    return (halCtrl->l2p_port[logicalPort]);
+}

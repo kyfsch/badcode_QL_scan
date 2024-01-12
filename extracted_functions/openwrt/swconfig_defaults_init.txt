@@ -1,0 +1,22 @@
+static void swconfig_defaults_init(struct switch_dev *dev)
+{
+	const struct switch_dev_ops *ops = dev->ops;
+
+	dev->def_global = 0;
+	dev->def_vlan = 0;
+	dev->def_port = 0;
+
+	if (ops->get_vlan_ports || ops->set_vlan_ports)
+		set_bit(VLAN_PORTS, &dev->def_vlan);
+
+	if (ops->get_port_pvid || ops->set_port_pvid)
+		set_bit(PORT_PVID, &dev->def_port);
+
+	if (ops->get_port_link &&
+	    !swconfig_find_attr_by_name(&ops->attr_port, "link"))
+		set_bit(PORT_LINK, &dev->def_port);
+
+	/* always present, can be no-op */
+	set_bit(GLOBAL_APPLY, &dev->def_global);
+	set_bit(GLOBAL_RESET, &dev->def_global);
+}

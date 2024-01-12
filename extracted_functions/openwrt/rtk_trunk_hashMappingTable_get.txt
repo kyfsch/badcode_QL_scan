@@ -1,0 +1,38 @@
+rtk_api_ret_t rtk_trunk_hashMappingTable_get(rtk_trunk_group_t trk_gid, rtk_trunk_hashVal2Port_t *pHash2Port_array)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 hashValue;
+    rtk_uint32 hashPort;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Trunk Group Valid */
+    RTK_CHK_TRUNK_GROUP_VALID(trk_gid);
+
+    if(NULL == pHash2Port_array)
+        return RT_ERR_NULL_POINTER;
+
+    if(trk_gid <= TRUNK_GROUP1)
+    {
+        for(hashValue = 0; hashValue < RTK_MAX_NUM_OF_TRUNK_HASH_VAL; hashValue++)
+        {
+            if ((retVal = rtl8367c_getAsicTrunkingHashTable(hashValue, &hashPort)) != RT_ERR_OK)
+                return retVal;
+
+            pHash2Port_array->value[hashValue] = hashPort;
+        }
+    }
+    else
+    {
+        for(hashValue = 0; hashValue < RTK_MAX_NUM_OF_TRUNK_HASH_VAL; hashValue++)
+        {
+            if ((retVal = rtl8367c_getAsicTrunkingHashTable1(hashValue, &hashPort)) != RT_ERR_OK)
+                return retVal;
+
+            pHash2Port_array->value[hashValue] = hashPort;
+        }
+    }
+
+    return RT_ERR_OK;
+}

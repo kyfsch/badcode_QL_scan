@@ -1,0 +1,45 @@
+trx_fixup(int fd, const char *name)
+{
+	struct mtd_info_user mtdInfo;
+	unsigned long len;
+	struct trx_header *trx;
+	void *ptr, *scan;
+	int bfd;
+
+	if (ioctl(fd, MEMGETINFO, &mtdInfo) < 0) {
+		fprintf(stderr, "Failed to get mtd info\n");
+		goto err;
+	}
+
+	len = mtdInfo.size;
+	if (mtdInfo.size <= 0) {
+		fprintf(stderr, "Invalid MTD device size\n");
+		goto err;
+	}
+
+	bfd = mtd_open(name, true);
+	ptr = mmap(NULL, len, PROT_READ|PROT_WRITE, MAP_SHARED, bfd, 0);
+	if (!ptr || (ptr == (void *) -1)) {
+		perror("mmap");
+		fprintf(stderr, "Mapping the TRX header failed\n");
+		goto err1;
+	}
+
+	trx = ptr;
+	if (ntohl(trx->magic) != opt_trxmagic) {
+		fprintf(stderr, "TRX header not found\n");
+		goto err;
+	}
+
+	scan = ptr + offsetof(struct trx_header, flag_version);
+	trx->crc32 = crc32buf(scan, trx->len - (scan - ptr));
+	msync(ptr, sizeof(struct trx_header), MS_SYNC|MS_INVALIDATE);
+	munmap(ptr, len);
+	close(bfd);
+	return 0;
+
+err1:
+	close(bfd);
+err:
+	return -1;
+}

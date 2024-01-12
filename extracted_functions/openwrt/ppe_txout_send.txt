@@ -1,0 +1,21 @@
+static void ppe_txout_send(struct dc_ep_dev *dev,
+	u8 __iomem *ppe_sb_base, int num)
+{
+	int i;
+	struct aca_dma_desc_2dw desc;
+
+	memset(&desc, 0, sizeof(desc));
+	desc.status.field.own = 1;
+	desc.status.field.sop = 1;
+	desc.status.field.eop = 1;
+	desc.status.field.data_len = 127;
+	desc.data_pointer = 0x26100000;
+
+	for (i = 0; i < num; i++) {
+		desc.data_pointer += roundup(desc.status.field.data_len, 4);
+		ep_mem_write(ppe_sb_base + i * sizeof(desc),
+			(void *)&desc, sizeof(desc));
+	}
+
+	ep_wr32(num, TXOUT_ACA_ACCUM_ADD);
+}

@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsicStormFilterExtMulticastMeter(rtk_uint32 *pMeter)
+{
+    if(NULL == pMeter)
+        return RT_ERR_NULL_POINTER;
+
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_STORM_EXT_MTRIDX_CFG0, RTL8367C_MC_STORM_EXT_METERIDX_MASK, pMeter);
+}

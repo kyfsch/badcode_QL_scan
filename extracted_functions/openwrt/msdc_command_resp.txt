@@ -1,0 +1,92 @@
+static unsigned int msdc_command_resp(struct msdc_host   *host,
+				      struct mmc_command *cmd,
+				      int                 tune,
+				      unsigned long       timeout)
+	__must_hold(&host->lock)
+{
+	void __iomem *base = host->base;
+	u32 opcode = cmd->opcode;
+	//u32 rawcmd;
+	u32 resp;
+	u32 wints = MSDC_INT_CMDRDY  | MSDC_INT_RSPCRCERR  | MSDC_INT_CMDTMO  |
+		    MSDC_INT_ACMDRDY | MSDC_INT_ACMDCRCERR | MSDC_INT_ACMDTMO |
+		    MSDC_INT_ACMD19_DONE;
+
+	resp = host->cmd_rsp;
+
+	BUG_ON(in_interrupt());
+	//init_completion(&host->cmd_done);
+	//sdr_set_bits(MSDC_INTEN, wints);
+
+	spin_unlock(&host->lock);
+	if (!wait_for_completion_timeout(&host->cmd_done, 10 * timeout)) {
+		ERR_MSG("XXX CMD<%d> wait_for_completion timeout ARG<0x%.8x>", opcode, cmd->arg);
+		cmd->error = -ETIMEDOUT;
+		msdc_reset_hw(host);
+	}
+	spin_lock(&host->lock);
+
+	sdr_clr_bits(MSDC_INTEN, wints);
+	host->cmd = NULL;
+
+//end:
+#ifdef MT6575_SD_DEBUG
+	switch (resp) {
+	case RESP_NONE:
+		N_MSG(RSP, "CMD_RSP(%d): %d RSP(%d)", opcode, cmd->error, resp);
+		break;
+	case RESP_R2:
+		N_MSG(RSP, "CMD_RSP(%d): %d RSP(%d)= %.8x %.8x %.8x %.8x",
+			opcode, cmd->error, resp, cmd->resp[0], cmd->resp[1],
+			cmd->resp[2], cmd->resp[3]);
+		break;
+	default: /* Response types 1, 3, 4, 5, 6, 7(1b) */
+		N_MSG(RSP, "CMD_RSP(%d): %d RSP(%d)= 0x%.8x",
+			opcode, cmd->error, resp, cmd->resp[0]);
+		if (cmd->error == 0) {
+			switch (resp) {
+			case RESP_R1:
+			case RESP_R1B:
+				msdc_dump_card_status(host, cmd->resp[0]);
+				break;
+			case RESP_R3:
+				msdc_dump_ocr_reg(host, cmd->resp[0]);
+				break;
+			case RESP_R5:
+				msdc_dump_io_resp(host, cmd->resp[0]);
+				break;
+			case RESP_R6:
+				msdc_dump_rca_resp(host, cmd->resp[0]);
+				break;
+			}
+		}
+		break;
+	}
+#endif
+
+	/* do we need to save card's RCA when SD_SEND_RELATIVE_ADDR */
+
+	if (!tune)
+		return cmd->error;
+
+	/* memory card CRC */
+	if (host->hw->flags & MSDC_REMOVABLE && cmd->error == -EIO) {
+		if (sdr_read32(SDC_CMD) & 0x1800) { /* check if has data phase */
+			msdc_abort_data(host);
+		} else {
+			/* do basic: reset*/
+			msdc_reset_hw(host);
+			msdc_clr_fifo();
+			msdc_clr_int();
+		}
+		cmd->error = msdc_tune_cmdrsp(host, cmd);
+	}
+
+	//  check DAT0
+	/* if (resp == RESP_R1B) {
+	   while ((sdr_read32(MSDC_PS) & 0x10000) != 0x10000);
+	   } */
+	/* CMD12 Error Handle */
+
+	return cmd->error;
+}

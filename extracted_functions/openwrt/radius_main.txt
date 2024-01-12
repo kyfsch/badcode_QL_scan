@@ -1,0 +1,98 @@
+int radius_main(int argc, char **argv)
+{
+	static struct radius_state state = {};
+	static struct radius_config config = {};
+	const char *progname = argv[0];
+	int ret = 0;
+	int ch;
+
+	wpa_debug_setup_stdout();
+	wpa_debug_level = 0;
+
+	if (eloop_init()) {
+		wpa_printf(MSG_ERROR, "Failed to initialize event loop");
+		return 1;
+	}
+
+	eap_server_register_methods();
+	radius_init(&state);
+
+	while ((ch = getopt(argc, argv, "6C:c:d:i:k:K:p:P:s:u:")) != -1) {
+		switch (ch) {
+		case '6':
+			config.radius.ipv6 = 1;
+			break;
+		case 'C':
+			config.tls.ca_cert = optarg;
+			break;
+		case 'c':
+			if (config.tls.client_cert2)
+				return usage(progname);
+
+			if (config.tls.client_cert)
+				config.tls.client_cert2 = optarg;
+			else
+				config.tls.client_cert = optarg;
+			break;
+		case 'd':
+			config.tls.dh_file = optarg;
+			break;
+		case 'i':
+			state.eap.server_id = optarg;
+			state.eap.server_id_len = strlen(optarg);
+			break;
+		case 'k':
+			if (config.tls.private_key2)
+				return usage(progname);
+
+			if (config.tls.private_key)
+				config.tls.private_key2 = optarg;
+			else
+				config.tls.private_key = optarg;
+			break;
+		case 'K':
+			if (config.tls.private_key_passwd2)
+				return usage(progname);
+
+			if (config.tls.private_key_passwd)
+				config.tls.private_key_passwd2 = optarg;
+			else
+				config.tls.private_key_passwd = optarg;
+			break;
+		case 'p':
+			config.radius.auth_port = atoi(optarg);
+			break;
+		case 'P':
+			config.radius.acct_port = atoi(optarg);
+			break;
+		case 's':
+			config.radius.client_file = optarg;
+			break;
+		case 'u':
+			state.user_file = optarg;
+			break;
+		default:
+			return usage(progname);
+		}
+	}
+
+	if (!config.tls.client_cert || !config.tls.private_key ||
+	    !config.radius.client_file || !state.eap.server_id ||
+	    !state.user_file) {
+		wpa_printf(MSG_INFO, "missing options\n");
+		goto out;
+	}
+
+	ret = radius_setup(&state, &config);
+	if (ret)
+		goto out;
+
+	load_userfile(&state);
+	eloop_run();
+
+out:
+	radius_deinit(&state);
+	os_program_deinit();
+
+	return ret;
+}

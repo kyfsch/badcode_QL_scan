@@ -1,0 +1,18 @@
+const char *sym_type_name(enum symbol_type type)
+{
+	switch (type) {
+	case S_BOOLEAN:
+		return "bool";
+	case S_TRISTATE:
+		return "tristate";
+	case S_INT:
+		return "integer";
+	case S_HEX:
+		return "hex";
+	case S_STRING:
+		return "string";
+	case S_UNKNOWN:
+		return "unknown";
+	}
+	return "???";
+}

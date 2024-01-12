@@ -1,0 +1,107 @@
+int BN_is_prime_fasttest(const BIGNUM *a, int checks,
+		void (*callback)(int,int,void *),
+		BN_CTX *ctx_passed, void *cb_arg,
+		int do_trial_division)
+	{
+	int i, j, ret = -1;
+	int k;
+	BN_CTX *ctx = NULL;
+	BIGNUM *A1, *A1_odd, *check; /* taken from ctx */
+	BN_MONT_CTX *mont = NULL;
+	const BIGNUM *A = NULL;
+
+	if (checks == BN_prime_checks)
+		checks = BN_prime_checks_for_size(BN_num_bits(a));
+
+	/* first look for small factors */
+	if (!BN_is_odd(a))
+		return(0);
+	if (do_trial_division)
+		{
+		for (i = 1; i < NUMPRIMES; i++)
+			if (BN_mod_word(a, primes[i]) == 0)
+				return 0;
+		if (callback != NULL) callback(1, -1, cb_arg);
+		}
+
+	if (ctx_passed != NULL)
+		ctx = ctx_passed;
+	else
+		if ((ctx=BN_CTX_new()) == NULL)
+			goto err;
+	BN_CTX_start(ctx);
+
+	/* A := abs(a) */
+	if (a->neg)
+		{
+		BIGNUM *t;
+		if ((t = BN_CTX_get(ctx)) == NULL) goto err;
+		BN_copy(t, a);
+		t->neg = 0;
+		A = t;
+		}
+	else
+		A = a;
+	A1 = BN_CTX_get(ctx);
+	A1_odd = BN_CTX_get(ctx);
+	check = BN_CTX_get(ctx);
+	if (check == NULL) goto err;
+
+	/* compute A1 := A - 1 */
+	if (!BN_copy(A1, A))
+		goto err;
+	if (!BN_sub_word(A1, 1))
+		goto err;
+	if (BN_is_zero(A1))
+		{
+		ret = 0;
+		goto err;
+		}
+
+	/* write  A1  as  A1_odd * 2^k */
+	k = 1;
+	while (!BN_is_bit_set(A1, k))
+		k++;
+	if (!BN_rshift(A1_odd, A1, k))
+		goto err;
+
+	/* Montgomery setup for computations mod A */
+	mont = BN_MONT_CTX_new();
+	if (mont == NULL)
+		goto err;
+	if (!BN_MONT_CTX_set(mont, A, ctx))
+		goto err;
+
+	for (i = 0; i < checks; i++)
+		{
+		if (!BN_pseudo_rand(check, BN_num_bits(A1), 0, 0))
+			goto err;
+		if (BN_cmp(check, A1) >= 0)
+			if (!BN_sub(check, check, A1))
+				goto err;
+		if (!BN_add_word(check, 1))
+			goto err;
+		/* now 1 <= check < A */
+
+		j = witness(check, A, A1, A1_odd, k, ctx, mont);
+		if (j == -1) goto err;
+		if (j)
+			{
+			ret=0;
+			goto err;
+			}
+		if (callback != NULL) callback(1,i,cb_arg);
+		}
+	ret=1;
+err:
+	if (ctx != NULL)
+		{
+		BN_CTX_end(ctx);
+		if (ctx_passed == NULL)
+			BN_CTX_free(ctx);
+		}
+	if (mont != NULL)
+		BN_MONT_CTX_free(mont);
+
+	return(ret);
+	}

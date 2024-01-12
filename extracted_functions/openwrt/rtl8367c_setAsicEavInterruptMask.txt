@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicEavInterruptMask(rtk_uint32 imr)
+{
+    if ((imr&(RTL8367C_PTP_INTR_MASK<<8))>0)
+         return RT_ERR_INPUT;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_PTP_TIME_CFG2, RTL8367C_PTP_INTR_MASK, imr);
+}

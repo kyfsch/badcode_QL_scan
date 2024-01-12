@@ -1,0 +1,5 @@
+rtl_reset(struct switch_dev *dev)
+{
+	rtl_hw_init(dev);
+	return 0;
+}

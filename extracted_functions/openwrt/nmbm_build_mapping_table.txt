@@ -1,0 +1,18 @@
+static void nmbm_build_mapping_table(struct nmbm_instance *ni)
+{
+	uint32_t pb, lb;
+
+	for (pb = 0, lb = 0; pb < ni->mgmt_start_ba; pb++) {
+		if (nmbm_get_block_state(ni, pb) == BLOCK_ST_BAD)
+			continue;
+
+		/* Always map to the next good block */
+		ni->block_mapping[lb++] = pb;
+	}
+
+	ni->data_block_count = lb;
+
+	/* Unusable/Management blocks */
+	for (pb = lb; pb < ni->block_count; pb++)
+		ni->block_mapping[pb] = -1;
+}

@@ -1,0 +1,48 @@
+void aes_set_key_hw (void *ctx_arg)
+{
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+    volatile struct aes_t *aes = (volatile struct aes_t *) AES_START;
+    struct aes_ctx *ctx = (struct aes_ctx *)ctx_arg;
+    u8 *in_key = ctx->buf;
+    int key_len = ctx->key_length;
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+    if (ctx->use_tweak) in_key = ctx->tweakkey;
+
+    /* 128, 192 or 256 bit key length */
+    aes->controlr.K = key_len / 8 - 2;
+        if (key_len == 128 / 8) {
+        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
+        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
+        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
+        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
+    }
+    else if (key_len == 192 / 8) {
+        aes->K5R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
+        aes->K4R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
+        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
+        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
+        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 4));
+        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 5));
+    }
+    else if (key_len == 256 / 8) {
+        aes->K7R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
+        aes->K6R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
+        aes->K5R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
+        aes->K4R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
+        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 4));
+        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 5));
+        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 6));
+        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 7));
+    }
+    else {
+        printk (KERN_ERR "[%s %s %d]: Invalid key_len : %d\n", __FILE__, __func__, __LINE__, key_len);
+        return; //-EINVAL;
+    }
+
+    /* let HW pre-process DEcryption key in any case (even if
+       ENcryption is used). Key Valid (KV) bit is then only
+       checked in decryption routine! */
+    aes->controlr.PNK = 1;
+
+}

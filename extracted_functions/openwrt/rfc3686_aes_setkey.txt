@@ -1,0 +1,24 @@
+static int rfc3686_aes_setkey(struct crypto_ablkcipher *tfm,
+                             const u8 *in_key, unsigned int keylen)
+{
+    struct aes_ctx *ctx = crypto_ablkcipher_ctx(tfm);
+    unsigned long *flags = (unsigned long *)&tfm->base.crt_flags;
+
+    DPRINTF(2, "ctr_rfc3686_aes_set_key in %s\n", __FILE__);
+
+    memcpy(ctx->nonce, in_key + (keylen - CTR_RFC3686_NONCE_SIZE),
+           CTR_RFC3686_NONCE_SIZE);
+
+    keylen -= CTR_RFC3686_NONCE_SIZE; // remove 4 bytes of nonce
+
+    if (keylen != 16 && keylen != 24 && keylen != 32) {
+        *flags |= CRYPTO_TFM_RES_BAD_KEY_LEN;
+        return -EINVAL;
+    }
+
+    ctx->key_length = keylen;
+
+    memcpy ((u8 *) (ctx->buf), in_key, keylen);
+
+    return 0;
+}

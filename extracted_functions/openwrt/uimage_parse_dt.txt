@@ -1,0 +1,20 @@
+static void uimage_parse_dt(struct mtd_info *master, int *extralen,
+			    u32 *ih_magic, u32 *ih_type,
+			    u32 *header_offset, u32 *part_magic)
+{
+	struct device_node *np = mtd_get_of_node(master);
+
+	if (!np || !of_device_is_compatible(np, "openwrt,uimage"))
+		return;
+
+	if (!of_property_read_u32(np, "openwrt,padding", extralen))
+		pr_debug("got openwrt,padding=%d from device-tree\n", *extralen);
+	if (!of_property_read_u32(np, "openwrt,ih-magic", ih_magic))
+		pr_debug("got openwrt,ih-magic=%08x from device-tree\n", *ih_magic);
+	if (!of_property_read_u32(np, "openwrt,ih-type", ih_type))
+		pr_debug("got openwrt,ih-type=%08x from device-tree\n", *ih_type);
+	if (!of_property_read_u32(np, "openwrt,offset", header_offset))
+		pr_debug("got ih-start=%u from device-tree\n", *header_offset);
+	if (!of_property_read_u32(np, "openwrt,partition-magic", part_magic))
+		pr_debug("got openwrt,partition-magic=%08x from device-tree\n", *part_magic);
+}

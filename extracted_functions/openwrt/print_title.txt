@@ -1,0 +1,10 @@
+void print_title(WINDOW *dialog, const char *title, int width)
+{
+	if (title) {
+		int tlen = MIN(width - 2, strlen(title));
+		wattrset(dialog, dlg.title.atr);
+		mvwaddch(dialog, 0, (width - tlen) / 2 - 1, ' ');
+		mvwaddnstr(dialog, 0, (width - tlen)/2, title, tlen);
+		waddch(dialog, ' ');
+	}
+}

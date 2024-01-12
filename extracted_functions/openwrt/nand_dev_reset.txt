@@ -1,0 +1,9 @@
+void nand_dev_reset(struct nand_chip *chip)
+{
+	writeb(NAND_CMD_RESET, chip->IO_ADDR_W + BIT(NAND_CLE_ADDR_PIN));
+	udelay(chip->chip_delay);
+	writeb(NAND_CMD_STATUS, chip->IO_ADDR_W + BIT(NAND_CLE_ADDR_PIN));
+	while (!(readb(chip->IO_ADDR_R) & NAND_STATUS_READY)) {
+		;
+	}
+}

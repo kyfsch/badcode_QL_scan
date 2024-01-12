@@ -1,0 +1,115 @@
+DFE_Loopback_Test (void)
+{
+	int i = 0;
+	u32 arc_debug_data = 0, temp;
+	DSL_DEV_Device_t *pDev = &dsl_devices[0];
+	uint32_t wr_mbox[10];
+
+	IFX_MEI_ResetARC (pDev);
+	// start the clock
+	arc_debug_data = ACL_CLK_MODE_ENABLE;
+	IFX_MEI_DebugWrite (pDev, CRI_CCR0, &arc_debug_data, 1);
+
+#if defined( DFE_PING_TEST )|| defined( DFE_ATM_LOOPBACK)
+	// WriteARCreg(AUX_XMEM_LTEST,0);
+	IFX_MEI_ControlModeSet (pDev, MEI_MASTER_MODE);
+#define AUX_XMEM_LTEST 0x128
+	_IFX_MEI_DBGLongWordWrite (pDev, MEI_DEBUG_DEC_AUX_MASK,  AUX_XMEM_LTEST, 0);
+	IFX_MEI_ControlModeSet (pDev, JTAG_MASTER_MODE);
+
+	// WriteARCreg(AUX_XDMA_GAP,0);
+	IFX_MEI_ControlModeSet (pDev, MEI_MASTER_MODE);
+#define AUX_XDMA_GAP 0x114
+	_IFX_MEI_DBGLongWordWrite (pDev, MEI_DEBUG_DEC_AUX_MASK, AUX_XDMA_GAP, 0);
+	IFX_MEI_ControlModeSet (pDev, JTAG_MASTER_MODE);
+
+	IFX_MEI_ControlModeSet (pDev, MEI_MASTER_MODE);
+	temp = 0;
+	_IFX_MEI_DBGLongWordWrite (pDev, MEI_DEBUG_DEC_AUX_MASK,
+		(u32) ME_XDATA_BASE_SH +  LTQ_MEI_BASE_ADDR, temp);
+	IFX_MEI_ControlModeSet (pDev, JTAG_MASTER_MODE);
+
+	i = IFX_MEI_DFEMemoryAlloc (pDev, SDRAM_SEGMENT_SIZE * 16);
+	if (i >= 0) {
+		int idx;
+
+		for (idx = 0; idx < i; idx++) {
+			DSL_DEV_PRIVATE(pDev)->adsl_mem_info[idx].type = FREE_RELOAD;
+			IFX_MEI_WRITE_REGISTER_L ((((uint32_t) DSL_DEV_PRIVATE(pDev)->adsl_mem_info[idx].address) & 0x0fffffff),
+							LTQ_MEI_BASE_ADDR + ME_XMEM_BAR_BASE  + idx * 4);
+			IFX_MEI_DMSG("bar%d(%X)=%X\n", idx,
+				LTQ_MEI_BASE_ADDR + ME_XMEM_BAR_BASE  +
+				idx * 4, (((uint32_t)
+					   ((ifx_mei_device_private_t *)
+					    pDev->pPriv)->adsl_mem_info[idx].
+					   address) & 0x0fffffff));
+			memset ((u8 *) DSL_DEV_PRIVATE(pDev)->adsl_mem_info[idx].address, 0, SDRAM_SEGMENT_SIZE);
+		}
+
+		IFX_MEI_LongWordWriteOffset (pDev, (u32) ME_XDATA_BASE_SH,
+					   ((unsigned long) DSL_DEV_PRIVATE(pDev)->adsl_mem_info[XDATA_REGISTER].address) & 0x0FFFFFFF);
+	}
+	else {
+		IFX_MEI_EMSG ("cannot load image: no memory\n");
+		return DSL_DEV_MEI_ERR_FAILURE;
+	}
+	//WriteARCreg(AUX_IC_CTRL,2);
+	IFX_MEI_DMSG("Setting MEI_MASTER_MODE..\n");
+	IFX_MEI_ControlModeSet (pDev, MEI_MASTER_MODE);
+#define AUX_IC_CTRL 0x11
+	_IFX_MEI_DBGLongWordWrite (pDev, MEI_DEBUG_DEC_AUX_MASK,
+					 AUX_IC_CTRL, 2);
+	IFX_MEI_DMSG("Setting JTAG_MASTER_MODE..\n");
+	IFX_MEI_ControlModeSet (pDev, JTAG_MASTER_MODE);
+
+	IFX_MEI_DMSG("Halting ARC...\n");
+	IFX_MEI_HaltArc (&dsl_devices[0]);
+
+#ifdef DFE_PING_TEST
+
+	IFX_MEI_DMSG("ping test image size=%d\n", sizeof (arc_ahb_access_code));
+	memcpy ((u8 *) (DSL_DEV_PRIVATE(pDev)->
+			adsl_mem_info[0].address + 0x1004),
+		&arc_ahb_access_code[0], sizeof (arc_ahb_access_code));
+	load_jump_table (0x80000 + 0x1004);
+
+#endif //DFE_PING_TEST
+
+	IFX_MEI_DMSG("ARC ping test code download complete\n");
+#endif //defined( DFE_PING_TEST )|| defined( DFE_ATM_LOOPBACK)
+#ifdef DFE_MEM_TEST
+	IFX_MEI_LongWordWriteOffset (&dsl_devices[0], (u32) ME_ARC2ME_MASK, MSGAV_EN);
+
+	arc_code_page_download (1537, &code_array[0]);
+	IFX_MEI_DMSG("ARC mem test code download complete\n");
+#endif //DFE_MEM_TEST
+#ifdef DFE_ATM_LOOPBACK
+	arc_debug_data = 0xf;
+	arc_code_page_download (sizeof(code_array) / sizeof(*code_array), &code_array[0]);
+	wr_mbox[0] = 0;	    //TIMER_DELAY   - org: 1024
+	wr_mbox[1] = 0;		//TXFB_START0
+	wr_mbox[2] = 0x7f;	//TXFB_END0     - org: 49
+	wr_mbox[3] = 0x80;	//TXFB_START1   - org: 80
+	wr_mbox[4] = 0xff;	//TXFB_END1     - org: 109
+	wr_mbox[5] = 0x100;	//RXFB_START0   - org: 0
+	wr_mbox[6] = 0x17f;	//RXFB_END0     - org: 49
+	wr_mbox[7] = 0x180;	//RXFB_START1   - org: 256
+	wr_mbox[8] = 0x1ff;	//RXFB_END1     - org: 315
+	WriteMbox (&wr_mbox[0], 9);
+	// Start Iridia IT_AMODE (in dmp access) why is it required?
+	IFX_MEI_DebugWrite (&dsl_devices[0], 0x32010, &arc_debug_data, 1);
+#endif //DFE_ATM_LOOPBACK
+	IFX_MEI_IRQEnable (pDev);
+	IFX_MEI_DMSG("run ARC...\n");
+	IFX_MEI_RunArc (&dsl_devices[0]);
+
+#ifdef DFE_PING_TEST
+	arc_ping_testing (pDev);
+#endif //DFE_PING_TEST
+#ifdef DFE_MEM_TEST
+	wait_mem_test_result ();
+#endif //DFE_MEM_TEST
+
+	IFX_MEI_DFEMemoryFree (pDev, FREE_ALL);
+	return DSL_DEV_MEI_ERR_SUCCESS;
+}

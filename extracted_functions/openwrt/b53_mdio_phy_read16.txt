@@ -1,0 +1,9 @@
+static int b53_mdio_phy_read16(struct b53_device *dev, int addr, u8 reg,
+			       u16 *value)
+{
+	struct mii_bus *bus = dev->priv;
+
+	*value = mdiobus_read(bus, addr, reg);
+
+	return 0;
+}

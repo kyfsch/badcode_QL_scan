@@ -1,0 +1,33 @@
+static int rtl930x_find_l3_slot(struct rtl83xx_route *rt, bool must_exist)
+{
+	int slot_width, algorithm, addr, idx;
+	u32 hash;
+	struct rtl83xx_route route_entry;
+
+	/* IPv6 entries take up 3 slots */
+	slot_width = (rt->attr.type == 0) || (rt->attr.type == 2) ? 1 : 3;
+
+	for (int t = 0; t < 2; t++) {
+		algorithm = (sw_r32(RTL930X_L3_HOST_TBL_CTRL) >> (2 + t)) & 0x1;
+		hash = rtl930x_l3_hash4(rt->dst_ip, algorithm, false);
+
+		pr_debug("%s: table %d, algorithm %d, hash %04x\n", __func__, t, algorithm, hash);
+
+		for (int s = 0; s < 6; s += slot_width) {
+			addr = (t << 12) | ((hash & 0x1ff) << 3) | s;
+			pr_debug("%s physical address %d\n", __func__, addr);
+			idx = ((addr / 8) * 6) + (addr % 8);
+			pr_debug("%s logical address %d\n", __func__, idx);
+
+			rtl930x_host_route_read(idx, &route_entry);
+			pr_debug("%s route valid %d, route dest: %pI4, hit %d\n", __func__,
+				rt->attr.valid, &rt->dst_ip, rt->attr.hit);
+			if (!must_exist && rt->attr.valid)
+				return idx;
+			if (must_exist && route_entry.dst_ip == rt->dst_ip)
+				return idx;
+		}
+	}
+
+	return -1;
+}

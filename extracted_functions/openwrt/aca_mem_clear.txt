@@ -1,0 +1,8 @@
+static void aca_mem_clear(struct dc_ep_priv *priv)
+{
+	struct aca_fw_dl_addr *fw_dl = to_fw_addr(priv);
+
+	memset_io(priv->mem + fw_dl->fw_addr[0].fw_load_addr,
+		0, ACA_ACC_FW_SIZE);
+	memset_io(priv->mem + ACA_SRAM_BASE, 0, ACA_SRAM_SIZE);
+}

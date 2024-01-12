@@ -1,0 +1,8 @@
+static int lq_des_encrypt(struct ablkcipher_request *areq)
+{
+    struct crypto_ablkcipher *cipher = crypto_ablkcipher_reqtfm(areq);
+    struct des_ctx *ctx = crypto_ablkcipher_ctx(cipher);
+
+    return lq_queue_mgr(ctx, areq, NULL, CRYPTO_DIR_ENCRYPT, 5);
+
+}

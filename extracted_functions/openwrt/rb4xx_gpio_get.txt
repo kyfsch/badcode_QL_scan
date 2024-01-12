@@ -1,0 +1,11 @@
+static int rb4xx_gpio_get(struct gpio_chip *chip, unsigned int offset)
+{
+	struct rb4xx_gpio *gpio = gpiochip_get_data(chip);
+	int ret;
+
+	mutex_lock(&gpio->lock);
+	ret = (gpio->values >> offset) & 0x1;
+	mutex_unlock(&gpio->lock);
+
+	return ret;
+}

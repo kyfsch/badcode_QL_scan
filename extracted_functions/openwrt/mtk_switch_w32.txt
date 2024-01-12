@@ -1,0 +1,4 @@
+void mtk_switch_w32(struct mt7620_gsw *gsw, u32 val, unsigned reg)
+{
+	iowrite32(val, gsw->base + reg);
+}

@@ -1,0 +1,10 @@
+static int b53_global_set_4095_enable(struct switch_dev *dev,
+				      const struct switch_attr *attr,
+				      struct switch_val *val)
+{
+	struct b53_device *priv = sw_to_b53(dev);
+
+	priv->allow_vid_4095 = val->value.i;
+
+	return 0;
+}

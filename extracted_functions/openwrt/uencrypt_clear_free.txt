@@ -1,0 +1,7 @@
+static void uencrypt_clear_free(void *ptr, size_t len)
+{
+    if (ptr) {
+	memset(ptr, 0, len);
+	free(ptr);
+    }
+}

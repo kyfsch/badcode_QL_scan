@@ -1,0 +1,19 @@
+void rtl9300_sds_rst(int sds_num, u32 mode)
+{
+	pr_info("%s %d\n", __func__, mode);
+	if (sds_num < 0 || sds_num > 11) {
+		pr_err("Wrong SerDes number: %d\n", sds_num);
+		return;
+	}
+
+	sw_w32_mask(0x1f << rtl9300_sds_lsb[sds_num], 0x1f << rtl9300_sds_lsb[sds_num],
+		    rtl9300_sds_regs[sds_num]);
+	mdelay(10);
+
+	sw_w32_mask(0x1f << rtl9300_sds_lsb[sds_num], mode << rtl9300_sds_lsb[sds_num],
+		    rtl9300_sds_regs[sds_num]);
+	mdelay(10);
+
+	pr_debug("%s: 194:%08x 198:%08x 2a0:%08x 2a4:%08x\n", __func__,
+	         sw_r32(0x194), sw_r32(0x198), sw_r32(0x2a0), sw_r32(0x2a4));
+}

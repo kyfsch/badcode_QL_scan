@@ -1,0 +1,6 @@
+static inline void dma_writel(struct bcm6348_iudma *iudma, u32 val, u32 off)
+{
+	spin_lock(&iudma->dma_base_lock);
+	__raw_writel(val, iudma->dma_base + off);
+	spin_unlock(&iudma->dma_base_lock);
+}

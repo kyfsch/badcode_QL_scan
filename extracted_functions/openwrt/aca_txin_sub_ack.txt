@@ -1,0 +1,9 @@
+static inline void aca_txin_sub_ack(struct dc_ep_dev *dev, u32 val)
+{
+	if (WARN_ON(!dev))
+		return;
+	if (WARN_ON(!dev->priv))
+		return;
+
+	dc_aca_txin_sub_ack(dev->priv, val);
+}

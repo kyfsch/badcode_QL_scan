@@ -1,0 +1,17 @@
+ar8327_leds_cleanup(struct ar8xxx_priv *priv)
+{
+	struct ar8327_data *data = priv->chip_data;
+	unsigned i;
+
+	if (!IS_ENABLED(CONFIG_AR8216_PHY_LEDS))
+		return;
+
+	for (i = 0; i < data->num_leds; i++) {
+		struct ar8327_led *aled;
+
+		aled = data->leds[i];
+		ar8327_led_destroy(aled);
+	}
+
+	kfree(data->leds);
+}

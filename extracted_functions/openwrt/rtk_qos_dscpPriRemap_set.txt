@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_qos_dscpPriRemap_set(rtk_dscp_t dscp, rtk_pri_t int_pri)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (int_pri > RTL8367C_PRIMAX )
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    if (dscp > RTL8367C_DSCPMAX)
+        return RT_ERR_QOS_DSCP_VALUE;
+
+    if ((retVal = rtl8367c_setAsicPriorityDscpBased(dscp, int_pri)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

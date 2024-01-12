@@ -1,0 +1,16 @@
+static int bcm6348_emac_remove(struct platform_device *pdev)
+{
+	struct net_device *ndev = platform_get_drvdata(pdev);
+	struct bcm6348_emac *emac = netdev_priv(ndev);
+	unsigned int i;
+
+	emac_writel(emac, 0, ENET_MIISC_REG);
+
+	for (i = 0; i < emac->num_resets; i++)
+		reset_control_assert(emac->reset[i]);
+
+	for (i = 0; i < emac->num_clocks; i++)
+		clk_disable_unprepare(emac->clock[i]);
+
+	return 0;
+}

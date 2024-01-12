@@ -1,0 +1,105 @@
+ret_t rtl8367c_getAsicAclRule(rtk_uint32 index, rtl8367c_aclrule *pAclRule)
+{
+    rtl8367c_aclrulesmi aclRuleSmi;
+    rtk_uint32 regAddr, regData;
+    ret_t retVal;
+    rtk_uint16* tableAddr;
+    rtk_uint32 i;
+
+    if(index > RTL8367C_ACLRULEMAX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    memset(&aclRuleSmi, 0x00, sizeof(rtl8367c_aclrulesmi));
+
+    /* Write ACS_ADR register for data bits */
+    regAddr = RTL8367C_TABLE_ACCESS_ADDR_REG;
+    if(index >= 64)
+        regData = RTL8367C_ACLRULETBADDR2(DATABITS, index);
+    else
+        regData = RTL8367C_ACLRULETBADDR(DATABITS, index);
+
+    retVal = rtl8367c_setAsicReg(regAddr, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+
+    /* Write ACS_CMD register */
+    regAddr = RTL8367C_TABLE_ACCESS_CTRL_REG;
+    regData = RTL8367C_TABLE_ACCESS_REG_DATA(TB_OP_READ, TB_TARGET_ACLRULE);
+    retVal = rtl8367c_setAsicRegBits(regAddr, RTL8367C_TABLE_TYPE_MASK | RTL8367C_COMMAND_TYPE_MASK, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    /* Read Data Bits */
+    regAddr = RTL8367C_TABLE_ACCESS_RDDATA_BASE;
+    tableAddr = (rtk_uint16*)&aclRuleSmi.data_bits;
+    for(i = 0; i < RTL8367C_ACLRULETBLEN; i++)
+    {
+        retVal = rtl8367c_getAsicReg(regAddr, &regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        *tableAddr = regData;
+
+        regAddr ++;
+        tableAddr ++;
+    }
+
+    /* Read Valid Bit */
+    retVal = rtl8367c_getAsicRegBit(RTL8367C_TABLE_ACCESS_RDDATA_REG(RTL8367C_ACLRULETBLEN), 0, &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+    aclRuleSmi.valid = regData & 0x1;
+    /* Read active_portmsk_ext Bits */
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_TABLE_ACCESS_RDDATA_REG(RTL8367C_ACLRULETBLEN), 0x7<<1, &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+    aclRuleSmi.data_bits_ext.rule_info = (regData % 0x0007) << 1;
+
+
+    /* Write ACS_ADR register for carebits*/
+    regAddr = RTL8367C_TABLE_ACCESS_ADDR_REG;
+    if(index >= 64)
+        regData = RTL8367C_ACLRULETBADDR2(CAREBITS, index);
+    else
+        regData = RTL8367C_ACLRULETBADDR(CAREBITS, index);
+
+    retVal = rtl8367c_setAsicReg(regAddr, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    /* Write ACS_CMD register */
+    regAddr = RTL8367C_TABLE_ACCESS_CTRL_REG;
+    regData = RTL8367C_TABLE_ACCESS_REG_DATA(TB_OP_READ, TB_TARGET_ACLRULE);
+    retVal = rtl8367c_setAsicRegBits(regAddr, RTL8367C_TABLE_TYPE_MASK | RTL8367C_COMMAND_TYPE_MASK, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    /* Read Care Bits */
+    regAddr = RTL8367C_TABLE_ACCESS_RDDATA_BASE;
+    tableAddr = (rtk_uint16*)&aclRuleSmi.care_bits;
+    for(i = 0; i < RTL8367C_ACLRULETBLEN; i++)
+    {
+        retVal = rtl8367c_getAsicReg(regAddr, &regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        *tableAddr = regData;
+
+        regAddr ++;
+        tableAddr ++;
+    }
+    /* Read active_portmsk_ext care Bits */
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_TABLE_ACCESS_RDDATA_REG(RTL8367C_ACLRULETBLEN), 0x7<<1, &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+    aclRuleSmi.care_bits_ext.rule_info = (regData & 0x0007) << 1;
+
+#ifdef CONFIG_RTL8367C_ASICDRV_TEST
+    memcpy(&aclRuleSmi,&Rtl8370sVirtualAclRuleTable[index], sizeof(rtl8367c_aclrulesmi));
+#endif
+
+     _rtl8367c_aclRuleStSmi2User(pAclRule, &aclRuleSmi);
+
+    return RT_ERR_OK;
+}

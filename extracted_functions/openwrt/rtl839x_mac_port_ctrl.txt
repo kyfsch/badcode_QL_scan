@@ -1,0 +1,4 @@
+static inline int rtl839x_mac_port_ctrl(int p)
+{
+	return RTL839X_MAC_PORT_CTRL(p);
+}

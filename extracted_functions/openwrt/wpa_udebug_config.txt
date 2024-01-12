@@ -1,0 +1,21 @@
+wpa_udebug_config(struct udebug_ubus *ctx, struct blob_attr *data,
+		  bool enabled)
+{
+	udebug_ubus_apply_config(&ud, udebug_rings, ARRAY_SIZE(udebug_rings),
+				 data, enabled);
+
+	if (udebug_buf_valid(&ud_log)) {
+		wpa_printf_hook = udebug_printf_hook;
+		wpa_hexdump_hook = udebug_hexdump_hook;
+	} else {
+		wpa_printf_hook = NULL;
+		wpa_hexdump_hook = NULL;
+	}
+
+	if (udebug_buf_valid(&ud_nl[0]) ||
+	    udebug_buf_valid(&ud_nl[1]) ||
+	    udebug_buf_valid(&ud_nl[2]))
+		wpa_netlink_hook = udebug_netlink_hook;
+	else
+		wpa_netlink_hook = NULL;
+}

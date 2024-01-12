@@ -1,0 +1,118 @@
+rtk_api_ret_t rtk_qos_priSel_get(rtk_qos_priDecTbl_t index, rtk_priority_select_t *pPriDec)
+{
+
+    rtk_api_ret_t retVal;
+    rtk_int32 i;
+    rtk_uint32 port_pow;
+    rtk_uint32 dot1q_pow;
+    rtk_uint32 dscp_pow;
+    rtk_uint32 acl_pow;
+    rtk_uint32 svlan_pow;
+    rtk_uint32 cvlan_pow;
+    rtk_uint32 smac_pow;
+    rtk_uint32 dmac_pow;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (index < 0 || index >= PRIDECTBL_END)
+        return RT_ERR_ENTRY_INDEX;
+
+    if ((retVal = rtl8367c_getAsicPriorityDecision(index, PRIDEC_PORT, &port_pow)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicPriorityDecision(index, PRIDEC_ACL, &acl_pow)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicPriorityDecision(index, PRIDEC_DSCP, &dscp_pow)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicPriorityDecision(index, PRIDEC_1Q, &dot1q_pow)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicPriorityDecision(index, PRIDEC_1AD, &svlan_pow)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicPriorityDecision(index, PRIDEC_CVLAN, &cvlan_pow)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicPriorityDecision(index, PRIDEC_DA, &dmac_pow)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicPriorityDecision(index, PRIDEC_SA, &smac_pow)) != RT_ERR_OK)
+        return retVal;
+
+    for (i = 31; i >= 0; i--)
+    {
+        if (port_pow & (1 << i))
+        {
+            pPriDec->port_pri = i;
+            break;
+        }
+    }
+
+    for (i = 31; i >= 0; i--)
+    {
+        if (dot1q_pow & (1 << i))
+        {
+            pPriDec->dot1q_pri = i;
+            break;
+        }
+    }
+
+    for (i = 31; i >= 0; i--)
+    {
+        if (acl_pow & (1 << i))
+        {
+            pPriDec->acl_pri = i;
+            break;
+        }
+    }
+
+    for (i = 31; i >= 0; i--)
+    {
+        if (dscp_pow & (1 << i))
+        {
+            pPriDec->dscp_pri = i;
+            break;
+        }
+    }
+
+    for (i = 31; i >= 0; i--)
+    {
+        if (svlan_pow & (1 << i))
+        {
+            pPriDec->svlan_pri = i;
+            break;
+        }
+    }
+
+    for (i = 31;i  >= 0; i--)
+    {
+        if (cvlan_pow & (1 << i))
+        {
+            pPriDec->cvlan_pri = i;
+            break;
+        }
+    }
+
+    for (i = 31; i >= 0; i--)
+    {
+        if (dmac_pow&(1<<i))
+        {
+            pPriDec->dmac_pri = i;
+            break;
+        }
+    }
+
+    for (i = 31; i >= 0; i--)
+    {
+        if (smac_pow & (1 << i))
+        {
+            pPriDec->smac_pri = i;
+            break;
+        }
+    }
+
+    return RT_ERR_OK;
+}

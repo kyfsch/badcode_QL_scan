@@ -1,0 +1,10 @@
+static int esw_get_vlan_enable(struct switch_dev *dev,
+			   const struct switch_attr *attr,
+			   struct switch_val *val)
+{
+	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
+
+	val->value.i = esw->global_vlan_enable;
+
+	return 0;
+}

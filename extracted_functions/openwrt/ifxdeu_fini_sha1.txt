@@ -1,0 +1,6 @@
+void ifxdeu_fini_sha1 (void)
+{
+    crypto_unregister_shash(&ifxdeu_sha1_alg);
+
+
+}

@@ -1,0 +1,40 @@
+static int sata_oxnas_bug_6320_detect(struct ata_port *ap)
+{
+	struct sata_oxnas_port_priv *pd = ap->private_data;
+	void __iomem *core_base = pd->core_base;
+	int is_read;
+	int quads_transferred;
+	int remainder;
+	int sector_quads_remaining;
+	int bug_present = 0;
+
+	/* Only want to apply fix to reads */
+	is_read = !(ioread32(core_base + DM_DBG1) & (ap->port_no ?
+			BIT(CORE_PORT1_DATA_DIR_BIT) :
+				BIT(CORE_PORT0_DATA_DIR_BIT)));
+
+	/* Check for an incomplete transfer, i.e. not a multiple of 512 bytes
+	   transferred (datacount_port register counts quads transferred) */
+	quads_transferred =
+		ioread32(core_base + (ap->port_no ?
+					DATACOUNT_PORT1 : DATACOUNT_PORT0));
+
+	remainder = quads_transferred & 0x7f;
+	sector_quads_remaining = remainder ? (0x80 - remainder) : 0;
+
+	if (is_read && (sector_quads_remaining == 2)) {
+		bug_present = 1;
+	} else if (sector_quads_remaining) {
+		if (is_read) {
+			ata_port_warn(ap, "SATA read fixup cannot deal with "
+				"%d quads remaining\n",
+				sector_quads_remaining);
+		} else {
+			ata_port_warn(ap, "SATA write fixup of %d quads "
+				"remaining not supported\n",
+				sector_quads_remaining);
+		}
+	}
+
+	return bug_present;
+}

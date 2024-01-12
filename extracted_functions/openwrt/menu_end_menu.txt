@@ -1,0 +1,5 @@
+void menu_end_menu(void)
+{
+	last_entry_ptr = &current_menu->next;
+	current_menu = current_menu->parent;
+}

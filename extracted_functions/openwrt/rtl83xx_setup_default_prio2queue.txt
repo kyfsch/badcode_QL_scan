@@ -1,0 +1,9 @@
+void rtl83xx_setup_default_prio2queue(void)
+{
+	if (soc_info.family == RTL8380_FAMILY_ID) {
+		rtl838x_setup_prio2queue_matrix(max_available_queue);
+	} else {
+		rtl839x_setup_prio2queue_matrix(max_available_queue);
+	}
+	rtl83xx_setup_prio2queue_cpu_matrix(max_available_queue);
+}

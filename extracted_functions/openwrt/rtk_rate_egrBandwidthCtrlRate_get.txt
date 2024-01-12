@@ -1,0 +1,27 @@
+rtk_api_ret_t rtk_rate_egrBandwidthCtrlRate_get(rtk_port_t port, rtk_rate_t *pRate, rtk_enable_t *pIfg_include)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 regData;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if(NULL == pRate)
+        return RT_ERR_NULL_POINTER;
+
+    if(NULL == pIfg_include)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicPortEgressRate(rtk_switch_port_L2P_get(port), &regData)) != RT_ERR_OK)
+        return retVal;
+
+    *pRate = regData << 3;
+
+    if ((retVal = rtl8367c_getAsicPortEgressRateIfg((rtk_uint32*)pIfg_include)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

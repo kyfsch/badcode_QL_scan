@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsic1xGuestVidx(rtk_uint32 index)
+{
+    if(index >= RTL8367C_CVIDXNO)
+        return RT_ERR_DOT1X_GVLANIDX;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_DOT1X_CFG_REG, RTL8367C_DOT1X_GVIDX_MASK, index);
+}

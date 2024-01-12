@@ -1,0 +1,21 @@
+check_bridge_port(const char *br, const char *port, void *arg)
+{
+	struct ead_instance *in;
+	struct list_head *p;
+
+	list_for_each(p, &instances) {
+		in = list_entry(p, struct ead_instance, list);
+
+		if (strcmp(in->ifname, port) != 0)
+			continue;
+
+		in->br_check = true;
+		if (strcmp(in->bridge, br) == 0)
+			break;
+
+		strncpy(in->bridge, br, sizeof(in->bridge));
+		DEBUG(2, "assigning port %s to bridge %s\n", in->ifname, in->bridge);
+		stop_server(in, false);
+	}
+	return 0;
+}

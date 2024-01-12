@@ -1,0 +1,21 @@
+static int bcm6348_do_cfg_read(int type, unsigned int busn,
+			       unsigned int devfn, int where, int size,
+			       u32 *val)
+{
+	struct bcm6348_pci *priv = &bcm6348_pci;
+	u32 data;
+
+	/* two phase cycle, first we write address, then read data at
+	 * another location, caller already has a spinlock so no need
+	 * to add one here */
+	if (bcm6348_setup_cfg_access(type, busn, devfn, where))
+		return PCIBIOS_DEVICE_NOT_FOUND;
+	iob();
+	data = le32_to_cpu(__raw_readl(priv->io));
+	/* restore IO space normal behaviour */
+	__raw_writel(0, priv->pci + MPI_L2PCFG_REG);
+
+	*val = postprocess_read(data, where, size);
+
+	return PCIBIOS_SUCCESSFUL;
+}

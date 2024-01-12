@@ -1,0 +1,41 @@
+static int rtl83xx_alloc_egress_intf(struct rtl838x_switch_priv *priv, u64 mac, int vlan)
+{
+	int free_mac = -1;
+	struct rtl838x_l3_intf intf;
+	u64 m;
+
+	mutex_lock(&priv->reg_mutex);
+	for (int i = 0; i < MAX_SMACS; i++) {
+		m = priv->r->get_l3_egress_mac(L3_EGRESS_DMACS + i);
+		if (free_mac < 0 && !m) {
+			free_mac = i;
+			continue;
+		}
+		if (m == mac) {
+			mutex_unlock(&priv->reg_mutex);
+			return i;
+		}
+	}
+
+	if (free_mac < 0) {
+		pr_err("No free egress interface, cannot offload\n");
+		return -1;
+	}
+
+	/* Set up default egress interface 1 */
+	intf.vid = vlan;
+	intf.smac_idx = free_mac;
+	intf.ip4_mtu_id = 1;
+	intf.ip6_mtu_id = 1;
+	intf.ttl_scope = 1; /* TTL */
+	intf.hl_scope = 1;  /* Hop Limit */
+	intf.ip4_icmp_redirect = intf.ip6_icmp_redirect = 2;  /* FORWARD */
+	intf.ip4_pbr_icmp_redirect = intf.ip6_pbr_icmp_redirect = 2; /* FORWARD; */
+	priv->r->set_l3_egress_intf(free_mac, &intf);
+
+	priv->r->set_l3_egress_mac(L3_EGRESS_DMACS + free_mac, mac);
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return free_mac;
+}

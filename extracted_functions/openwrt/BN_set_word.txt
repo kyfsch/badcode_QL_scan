@@ -1,0 +1,26 @@
+int BN_set_word(BIGNUM *a, BN_ULONG w)
+	{
+	int i,n;
+	if (bn_expand(a,sizeof(BN_ULONG)*8) == NULL) return(0);
+
+	n=sizeof(BN_ULONG)/BN_BYTES;
+	a->neg=0;
+	a->top=0;
+	a->d[0]=(BN_ULONG)w&BN_MASK2;
+	if (a->d[0] != 0) a->top=1;
+	for (i=1; i<n; i++)
+		{
+		/* the following is done instead of
+		 * w>>=BN_BITS2 so compilers don't complain
+		 * on builds where sizeof(long) == BN_TYPES */
+#ifndef SIXTY_FOUR_BIT /* the data item > unsigned long */
+		w>>=BN_BITS4;
+		w>>=BN_BITS4;
+#else
+		w=0;
+#endif
+		a->d[i]=(BN_ULONG)w&BN_MASK2;
+		if (a->d[i] != 0) a->top=i+1;
+		}
+	return(1);
+	}

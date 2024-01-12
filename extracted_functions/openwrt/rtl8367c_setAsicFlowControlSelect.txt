@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicFlowControlSelect(rtk_uint32 select)
+{
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_FLOWCTRL_CTRL0, RTL8367C_FLOWCTRL_TYPE_OFFSET, select);
+}

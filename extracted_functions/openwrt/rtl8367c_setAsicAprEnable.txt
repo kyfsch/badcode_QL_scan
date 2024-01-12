@@ -1,0 +1,11 @@
+ret_t rtl8367c_setAsicAprEnable(rtk_uint32 port, rtk_uint32 aprEnable)
+{
+    ret_t retVal;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    retVal = rtl8367c_setAsicRegBit(RTL8367C_SCHEDULE_APR_CTRL_REG, RTL8367C_SCHEDULE_APR_CTRL_OFFSET(port), aprEnable);
+
+    return retVal;
+}

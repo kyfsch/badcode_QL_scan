@@ -1,0 +1,20 @@
+static int __init trelay_init(void)
+{
+	int ret;
+
+	debugfs_dir = debugfs_create_dir("trelay", NULL);
+	if (!debugfs_dir)
+		return -ENOMEM;
+
+	debugfs_create_file("add", S_IWUSR, debugfs_dir, NULL, &fops_add);
+
+	ret = register_netdevice_notifier(&tr_dev_notifier);
+	if (ret < 0)
+		goto error;
+
+	return 0;
+
+error:
+	debugfs_remove_recursive(debugfs_dir);
+	return ret;
+}

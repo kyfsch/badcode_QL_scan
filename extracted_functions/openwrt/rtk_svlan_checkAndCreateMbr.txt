@@ -1,0 +1,61 @@
+rtk_api_ret_t rtk_svlan_checkAndCreateMbr(rtk_vlan_t vid, rtk_uint32 *pIndex)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 svidx;
+    rtk_uint32 empty_idx = 0xFFFF;
+    rtl8367c_svlan_memconf_t svlan_cfg;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* vid must be 0~4095 */
+    if (vid > RTL8367C_VIDMAX)
+        return RT_ERR_VLAN_VID;
+
+    /* Null pointer check */
+    if(NULL == pIndex)
+        return RT_ERR_NULL_POINTER;
+
+    /* Search exist entry */
+    for (svidx = 0; svidx <= RTL8367C_SVIDXMAX; svidx++)
+    {
+        if(svlan_mbrCfgUsage[svidx] == TRUE)
+        {
+            if(svlan_mbrCfgVid[svidx] == vid)
+            {
+                /* Found! return index */
+                *pIndex = svidx;
+                return RT_ERR_OK;
+            }
+        }
+        else if(empty_idx == 0xFFFF)
+        {
+            empty_idx = svidx;
+        }
+
+    }
+
+    if(empty_idx == 0xFFFF)
+    {
+        /* No empty index */
+        return RT_ERR_TBL_FULL;
+    }
+
+    svlan_mbrCfgUsage[empty_idx] = TRUE;
+    svlan_mbrCfgVid[empty_idx] = vid;
+
+    memset(&svlan_cfg, 0, sizeof(rtl8367c_svlan_memconf_t));
+
+    svlan_cfg.vs_svid = vid;
+    /*for create check*/
+    if(vid == 0)
+    {
+        svlan_cfg.vs_efid = 1;
+    }
+
+    if((retVal = rtl8367c_setAsicSvlanMemberConfiguration(empty_idx, &svlan_cfg)) != RT_ERR_OK)
+        return retVal;
+
+    *pIndex = empty_idx;
+    return RT_ERR_OK;
+}

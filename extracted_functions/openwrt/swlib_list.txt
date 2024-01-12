@@ -1,0 +1,7 @@
+swlib_list(void)
+{
+	if (swlib_priv_init() < 0)
+		return;
+	swlib_call(SWITCH_CMD_GET_SWITCH, list_switch, NULL, NULL);
+	swlib_priv_free();
+}

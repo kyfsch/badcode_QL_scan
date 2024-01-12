@@ -1,0 +1,18 @@
+static int mt7621_nfc_send_command(struct mt7621_nfc *nfc, u8 command)
+{
+	struct device *dev = nfc->dev;
+	u32 val;
+	int ret;
+
+	nfi_write32(nfc, NFI_CMD, command);
+
+	ret = readl_poll_timeout_atomic(nfc->nfi_regs + NFI_STA, val,
+					!(val & STA_CMD), 10,
+					NFI_CORE_TIMEOUT);
+	if (ret) {
+		dev_warn(dev, "NFI core timed out entering command mode\n");
+		return -EIO;
+	}
+
+	return 0;
+}

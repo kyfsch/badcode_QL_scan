@@ -1,0 +1,21 @@
+ar8216_phy_read(struct ar8xxx_priv *priv, int addr, int regnum)
+{
+	u32 t, val = 0xffff;
+	int err;
+
+	if (addr >= AR8216_NUM_PORTS)
+		return 0xffff;
+	t = (regnum << AR8216_MDIO_CTRL_REG_ADDR_S) |
+	    (addr << AR8216_MDIO_CTRL_PHY_ADDR_S) |
+	    AR8216_MDIO_CTRL_MASTER_EN |
+	    AR8216_MDIO_CTRL_BUSY |
+	    AR8216_MDIO_CTRL_CMD_READ;
+
+	ar8xxx_write(priv, AR8216_REG_MDIO_CTRL, t);
+	err = ar8xxx_reg_wait(priv, AR8216_REG_MDIO_CTRL,
+			      AR8216_MDIO_CTRL_BUSY, 0, 5);
+	if (!err)
+		val = ar8xxx_read(priv, AR8216_REG_MDIO_CTRL);
+
+	return val & AR8216_MDIO_CTRL_DATA_M;
+}

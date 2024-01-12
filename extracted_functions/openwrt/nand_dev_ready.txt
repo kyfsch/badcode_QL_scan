@@ -1,0 +1,8 @@
+int nand_dev_ready(struct mtd_info *mtd)
+{
+	struct nand_chip *chip = mtd->priv;
+
+	udelay(chip->chip_delay);
+
+	return 1;
+}

@@ -1,0 +1,5 @@
+ar8xxx_set_age_time(struct ar8xxx_priv *priv, int reg)
+{
+	u32 age_time = ar8xxx_age_time_val(priv->arl_age_time);
+	ar8xxx_rmw(priv, reg, AR8216_ATU_CTRL_AGE_TIME, age_time << AR8216_ATU_CTRL_AGE_TIME_S);
+}

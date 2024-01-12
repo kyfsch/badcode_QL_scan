@@ -1,0 +1,6 @@
+static int ip17xx_read_name(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	struct ip17xx_state *state = get_state(dev);
+	val->value.s = state->regs->NAME; // Just a const pointer, won't be freed by swconfig.
+	return 0;
+}

@@ -1,0 +1,6 @@
+static void timeout_handler(int sig)
+{
+  (void)sig;
+
+  timeout_expired = 1;
+}

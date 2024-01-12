@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicRldp(rtk_uint32 *pEnabled)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_RLDP_CTRL0, RTL8367C_RLDP_ENABLE_OFFSET, pEnabled);
+}

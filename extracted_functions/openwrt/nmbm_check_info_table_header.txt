@@ -1,0 +1,18 @@
+static bool nmbm_check_info_table_header(struct nmbm_instance *ni, void *data)
+{
+	struct nmbm_info_table_header *ifthdr = data;
+
+	if (ifthdr->header.magic != NMBM_MAGIC_INFO_TABLE)
+		return false;
+
+	if (ifthdr->header.size != ni->info_table_size)
+		return false;
+
+	if (ifthdr->mapping_table_off - ifthdr->state_table_off < ni->state_table_size)
+		return false;
+
+	if (ni->info_table_size - ifthdr->mapping_table_off < ni->mapping_table_size)
+		return false;
+
+	return true;
+}

@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicSvlanPrioritySel(rtk_uint32 priSel)
+{
+    if(priSel >= SPRISEL_END)
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_SVLAN_CFG, RTL8367C_VS_SPRISEL_MASK, priSel);
+}

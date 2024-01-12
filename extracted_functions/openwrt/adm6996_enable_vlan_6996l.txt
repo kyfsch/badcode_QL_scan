@@ -1,0 +1,9 @@
+adm6996_enable_vlan_6996l(struct adm6996_priv *priv)
+{
+	u16 reg;
+
+	reg = r16(priv, ADM_SYSC3);
+	reg |= ADM_TBV;
+	reg |= ADM_MAC_CLONE;
+	w16(priv, ADM_SYSC3, reg);
+}

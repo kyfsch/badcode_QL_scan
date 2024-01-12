@@ -1,0 +1,47 @@
+static void ag71xx_dma_reset(struct ag71xx *ag)
+{
+	u32 val;
+	int i;
+
+	ag71xx_dump_dma_regs(ag);
+
+	/* stop RX and TX */
+	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, 0);
+	ag71xx_wr(ag, AG71XX_REG_TX_CTRL, 0);
+
+	/*
+	 * give the hardware some time to really stop all rx/tx activity
+	 * clearing the descriptors too early causes random memory corruption
+	 */
+	mdelay(1);
+
+	/* clear descriptor addresses */
+	ag71xx_wr(ag, AG71XX_REG_TX_DESC, ag->stop_desc_dma);
+	ag71xx_wr(ag, AG71XX_REG_RX_DESC, ag->stop_desc_dma);
+
+	/* clear pending RX/TX interrupts */
+	for (i = 0; i < 256; i++) {
+		ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_PR);
+		ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_PS);
+	}
+
+	/* clear pending errors */
+	ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_BE | RX_STATUS_OF);
+	ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_BE | TX_STATUS_UR);
+
+	val = ag71xx_rr(ag, AG71XX_REG_RX_STATUS);
+	if (val)
+		pr_alert("%s: unable to clear DMA Rx status: %08x\n",
+			 ag->dev->name, val);
+
+	val = ag71xx_rr(ag, AG71XX_REG_TX_STATUS);
+
+	/* mask out reserved bits */
+	val &= ~0xff000000;
+
+	if (val)
+		pr_alert("%s: unable to clear DMA Tx status: %08x\n",
+			 ag->dev->name, val);
+
+	ag71xx_dump_dma_regs(ag);
+}

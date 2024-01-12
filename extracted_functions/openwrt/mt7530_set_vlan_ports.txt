@@ -1,0 +1,27 @@
+mt7530_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
+{
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+	u8 member = 0;
+	u8 etags = 0;
+	int i;
+
+	if (val->port_vlan < 0 || val->port_vlan >= MT7530_NUM_VLANS ||
+			val->len > MT7530_NUM_PORTS)
+		return -EINVAL;
+
+	for (i = 0; i < val->len; i++) {
+		struct switch_port *p = &val->value.ports[i];
+
+		if (p->id >= MT7530_NUM_PORTS)
+			return -EINVAL;
+
+		member |= BIT(p->id);
+
+		if (p->flags & BIT(SWITCH_PORT_FLAG_TAGGED))
+			etags |= BIT(p->id);
+	}
+	priv->vlan_entries[val->port_vlan].member = member;
+	priv->vlan_entries[val->port_vlan].etags = etags;
+
+	return 0;
+}

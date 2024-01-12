@@ -1,0 +1,14 @@
+static const char *sha256_hash(FILE *f)
+{
+	SHA256_CTX ctx;
+	unsigned char val[SHA256_DIGEST_LENGTH];
+	void *buf;
+	int len;
+
+	SHA256_Init(&ctx);
+	while ((buf = hash_buf(f, &len)) != NULL)
+		SHA256_Update(&ctx, buf, len);
+	SHA256_Final(val, &ctx);
+
+	return hash_string(val, SHA256_DIGEST_LENGTH);
+}

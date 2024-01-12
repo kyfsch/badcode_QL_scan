@@ -1,0 +1,31 @@
+rtk_api_ret_t rtk_port_rgmiiDelayExt_set(rtk_port_t port, rtk_data_t txDelay, rtk_data_t rxDelay)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 regAddr, regData;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_IS_EXT(port);
+
+    if ((txDelay > 1) || (rxDelay > 7))
+        return RT_ERR_INPUT;
+
+    if(port == EXT_PORT0)
+        regAddr = RTL8367C_REG_EXT1_RGMXF;
+    else if(port == EXT_PORT1)
+        regAddr = RTL8367C_REG_EXT2_RGMXF;
+    else
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_getAsicReg(regAddr, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    regData = (regData & 0xFFF0) | ((txDelay << 3) & 0x0008) | (rxDelay & 0x0007);
+
+    if ((retVal = rtl8367c_setAsicReg(regAddr, regData)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

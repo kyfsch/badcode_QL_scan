@@ -1,0 +1,15 @@
+static int qca807x_get_downshift(struct phy_device *phydev, u8 *data)
+{
+	int val, cnt, enable;
+
+	val = phy_read(phydev, MII_NWAYTEST);
+	if (val < 0)
+		return val;
+
+	enable = FIELD_GET(QCA807X_SMARTSPEED_EN, val);
+	cnt = FIELD_GET(QCA807X_SMARTSPEED_RETRY_LIMIT_MASK, val) + 2;
+
+	*data = enable ? cnt : DOWNSHIFT_DEV_DISABLE;
+
+	return 0;
+}

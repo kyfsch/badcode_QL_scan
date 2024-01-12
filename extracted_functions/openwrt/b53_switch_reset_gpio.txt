@@ -1,0 +1,18 @@
+static void b53_switch_reset_gpio(struct b53_device *dev)
+{
+	int gpio = dev->reset_gpio;
+
+	if (gpio < 0)
+		return;
+
+	/*
+	 * Reset sequence: RESET low(50ms)->high(20ms)
+	 */
+	gpio_set_value(gpio, 0);
+	mdelay(50);
+
+	gpio_set_value(gpio, 1);
+	mdelay(20);
+
+	dev->current_page = 0xff;
+}

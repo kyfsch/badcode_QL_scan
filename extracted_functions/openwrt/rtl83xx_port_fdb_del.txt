@@ -1,0 +1,36 @@
+static int rtl83xx_port_fdb_del(struct dsa_switch *ds, int port,
+			   const unsigned char *addr, u16 vid)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	u64 mac = ether_addr_to_u64(addr);
+	struct rtl838x_l2_entry e;
+	int err = 0, idx;
+	u64 seed = priv->r->l2_hash_seed(mac, vid);
+
+	pr_debug("In %s, mac %llx, vid: %d\n", __func__, mac, vid);
+	mutex_lock(&priv->reg_mutex);
+
+	idx = rtl83xx_find_l2_hash_entry(priv, seed, true, &e);
+
+	if (idx >= 0) {
+		pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
+		e.valid = false;
+		priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
+		goto out;
+	}
+
+	/* Check CAM for spillover from hash buckets */
+	idx = rtl83xx_find_l2_cam_entry(priv, seed, true, &e);
+
+	if (idx >= 0) {
+		e.valid = false;
+		priv->r->write_cam(idx, &e);
+		goto out;
+	}
+	err = -ENOENT;
+
+out:
+	mutex_unlock(&priv->reg_mutex);
+
+	return err;
+}

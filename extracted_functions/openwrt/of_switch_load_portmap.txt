@@ -1,0 +1,41 @@
+of_switch_load_portmap(struct switch_dev *dev)
+{
+	struct device_node *port;
+
+	if (!dev->of_node)
+		return;
+
+	for_each_child_of_node(dev->of_node, port) {
+		const __be32 *prop;
+		const char *segment;
+		int size, phys;
+
+		if (!of_device_is_compatible(port, "swconfig,port"))
+			continue;
+
+		if (of_property_read_string(port, "swconfig,segment", &segment))
+			continue;
+
+		prop = of_get_property(port, "swconfig,portmap", &size);
+		if (!prop)
+			continue;
+
+		if (size != (2 * sizeof(*prop))) {
+			pr_err("%s: failed to parse port mapping\n",
+					port->name);
+			continue;
+		}
+
+		phys = be32_to_cpup(prop++);
+		if ((phys < 0) | (phys >= dev->ports)) {
+			pr_err("%s: physical port index out of range\n",
+					port->name);
+			continue;
+		}
+
+		dev->portmap[phys].s = kstrdup(segment, GFP_KERNEL);
+		dev->portmap[phys].virt = be32_to_cpup(prop);
+		pr_debug("Found port: %s, physical: %d, virtual: %d\n",
+			segment, phys, dev->portmap[phys].virt);
+	}
+}

@@ -1,0 +1,4 @@
+ulong get_timer (ulong base)
+{
+	return get_timer_masked () - base;
+}

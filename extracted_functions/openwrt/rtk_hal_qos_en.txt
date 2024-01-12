@@ -1,0 +1,12 @@
+void rtk_hal_qos_en(struct ra_switch_ioctl_data *data)
+{
+
+	if (data->on_off == 1) {
+		if (rtk_qos_init(8) != 0)
+			printk("rtk_qos_init(8) failed\n");
+	}
+	else {
+		if (rtk_qos_init(1) != 0)
+            printk("rtk_qos_init(1) failed\n");
+	}
+}

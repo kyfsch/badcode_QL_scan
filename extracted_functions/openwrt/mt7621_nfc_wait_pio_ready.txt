@@ -1,0 +1,12 @@
+static void mt7621_nfc_wait_pio_ready(struct mt7621_nfc *nfc)
+{
+	struct device *dev = nfc->dev;
+	int ret;
+	u16 val;
+
+	ret = readw_poll_timeout_atomic(nfc->nfi_regs + NFI_PIO_DIRDY, val,
+					val & PIO_DIRDY, 10,
+					NFI_CORE_TIMEOUT);
+	if (ret < 0)
+		dev_err(dev, "NFI core PIO mode not ready\n");
+}

@@ -1,0 +1,23 @@
+static int mt7530_sw_get_mib(struct switch_dev *dev,
+				  const struct switch_attr *attr,
+				  struct switch_val *val)
+{
+	static char buf[4096];
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+	int i, len = 0;
+
+	len += snprintf(buf + len, sizeof(buf) - len, "Switch MIB counters\n");
+
+	for (i = 0; i < ARRAY_SIZE(mt7620_mibs); ++i) {
+		u64 counter;
+		len += snprintf(buf + len, sizeof(buf) - len,
+				"%-11s: ", mt7620_mibs[i].name);
+		counter = get_mib_counter_7620(priv, i);
+		len += snprintf(buf + len, sizeof(buf) - len, "%llu\n",
+				counter);
+	}
+
+	val->value.s = buf;
+	val->len = len;
+	return 0;
+}

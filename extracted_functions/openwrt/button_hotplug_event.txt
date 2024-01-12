@@ -1,0 +1,20 @@
+static void button_hotplug_event(struct input_handle *handle,
+			   unsigned int type, unsigned int code, int value)
+{
+	struct bh_priv *priv = handle->private;
+	unsigned long seen = jiffies;
+	int btn;
+
+	BH_DBG("event type=%u, code=%u, value=%d\n", type, code, value);
+
+	if (type != EV_KEY)
+		return;
+
+	btn = button_get_index(code);
+	if (btn < 0)
+		return;
+
+	button_hotplug_create_event(button_map[btn].name,
+			(seen - priv->seen[btn]) / HZ, value);
+	priv->seen[btn] = seen;
+}

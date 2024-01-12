@@ -1,0 +1,23 @@
+static FILE *bcm4908img_open(const char *pathname, const char *mode) {
+	struct stat st;
+
+	if (pathname)
+		return fopen(pathname, mode);
+
+	if (isatty(fileno(stdin))) {
+		fprintf(stderr, "Reading from TTY stdin is unsupported\n");
+		return NULL;
+	}
+
+	if (fstat(fileno(stdin), &st)) {
+		fprintf(stderr, "Failed to fstat stdin: %d\n", -errno);
+		return NULL;
+	}
+
+	if (S_ISFIFO(st.st_mode)) {
+		fprintf(stderr, "Reading from pipe stdin is unsupported\n");
+		return NULL;
+	}
+
+	return stdin;
+}

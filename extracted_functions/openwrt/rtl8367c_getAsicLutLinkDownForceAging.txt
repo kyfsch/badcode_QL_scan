@@ -1,0 +1,11 @@
+ret_t rtl8367c_getAsicLutLinkDownForceAging(rtk_uint32 *pEnable)
+{
+    rtk_uint32  value;
+    ret_t   retVal;
+
+    if ((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_LUT_CFG, RTL8367C_LINKDOWN_AGEOUT_OFFSET, &value)) != RT_ERR_OK)
+        return retVal;
+
+    *pEnable = value ? 0 : 1;
+    return RT_ERR_OK;
+}

@@ -1,0 +1,11 @@
+fis_close(void)
+{
+	if (fis_desc)
+		munmap(fis_desc, fis_erasesize);
+
+	if (fis_fd >= 0)
+		close(fis_fd);
+
+	fis_fd = -1;
+	fis_desc = NULL;
+}

@@ -1,0 +1,17 @@
+  BigIntegerMul(u, j, k);               /* u = j * k */
+
+  BigIntegerFree(p);
+  BigIntegerFree(q);
+  BigIntegerFree(j);
+  BigIntegerFree(k);
+
+  g = BigIntegerFromInt(2);             /* g = 2 */
+
+  /* Look for a generator mod n */
+  while(1) {
+    BigIntegerModExp(t, g, u, n);       /* t = g^u % n */
+    if(BigIntegerCmpInt(t, 1) == 0)
+      BigIntegerAddInt(g, g, 1);        /* ++g */
+    else
+      break;
+  }

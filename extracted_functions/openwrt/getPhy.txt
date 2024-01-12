@@ -1,0 +1,6 @@
+static int getPhy(struct ip17xx_state *state, reg mii)
+{
+	if (!REG_SUPP(mii))
+		return -EFAULT;
+	return ip_phy_read(state, mii.p, mii.m);
+}

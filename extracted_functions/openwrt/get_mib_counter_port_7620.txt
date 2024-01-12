@@ -1,0 +1,7 @@
+static u64 get_mib_counter_port_7620(struct mt7530_priv *priv, int i, int port)
+{
+	return mt7530_r32(priv,
+			MT7620_MIB_COUNTER_BASE_PORT +
+			(MT7620_MIB_COUNTER_PORT_OFFSET * port) +
+			mt7620_port_mibs[i].offset);
+}

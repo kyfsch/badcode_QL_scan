@@ -1,0 +1,9 @@
+static int md5_init(struct shash_desc *desc)
+{
+    struct md5_ctx *mctx = shash_desc_ctx(desc);
+    //volatile struct deu_hash_t *hash = (struct deu_hash_t *) HASH_START;
+
+    mctx->byte_count = 0;
+    mctx->started = 0;
+    return 0;
+}

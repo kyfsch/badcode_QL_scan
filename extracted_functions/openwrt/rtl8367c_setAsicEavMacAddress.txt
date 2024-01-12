@@ -1,0 +1,27 @@
+ret_t rtl8367c_setAsicEavMacAddress(ether_addr_t mac)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+    rtk_uint8 *accessPtr;
+    rtk_uint32 i;
+
+    accessPtr =  (rtk_uint8*)&mac;
+
+    regData = *accessPtr;
+    accessPtr ++;
+    regData = (regData << 8) | *accessPtr;
+    accessPtr ++;
+    for(i = 0; i <=2; i++)
+    {
+        retVal = rtl8367c_setAsicReg(RTL8367C_REG_MAC_ADDR_H - i, regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        regData = *accessPtr;
+        accessPtr ++;
+        regData = (regData << 8) | *accessPtr;
+        accessPtr ++;
+    }
+
+    return retVal;
+}

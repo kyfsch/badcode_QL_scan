@@ -1,0 +1,23 @@
+static int sata_oxnas_remove(struct platform_device *ofdev)
+{
+	struct ata_host *host = dev_get_drvdata(&ofdev->dev);
+	struct sata_oxnas_host_priv *host_priv = host->private_data;
+
+	ata_host_detach(host);
+
+	irq_dispose_mapping(host_priv->irq);
+	iounmap(host_priv->port_base);
+	iounmap(host_priv->sgdma_base);
+	iounmap(host_priv->core_base);
+
+	/* reset Controller, Link and PHY */
+	reset_control_assert(host_priv->rst_sata);
+	reset_control_assert(host_priv->rst_link);
+	reset_control_assert(host_priv->rst_phy);
+
+	/* Disable the clock to the SATA block */
+	clk_disable_unprepare(host_priv->clk);
+	clk_put(host_priv->clk);
+
+	return 0;
+}

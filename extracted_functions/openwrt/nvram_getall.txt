@@ -1,0 +1,25 @@
+nvram_tuple_t * nvram_getall(nvram_handle_t *h)
+{
+	int i;
+	nvram_tuple_t *t, *l, *x;
+
+	l = NULL;
+
+	for (i = 0; i < NVRAM_ARRAYSIZE(h->nvram_hash); i++) {
+		for (t = h->nvram_hash[i]; t; t = t->next) {
+			if( (x = (nvram_tuple_t *) malloc(sizeof(nvram_tuple_t))) != NULL )
+			{
+				x->name  = t->name;
+				x->value = t->value;
+				x->next  = l;
+				l = x;
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+
+	return l;
+}

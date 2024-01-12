@@ -1,0 +1,11 @@
+void env_write_dep(FILE *f, const char *autoconfig_name)
+{
+	struct env *e, *tmp;
+
+	list_for_each_entry_safe(e, tmp, &env_list, node) {
+		fprintf(f, "ifneq \"$(%s)\" \"%s\"\n", e->name, e->value);
+		fprintf(f, "%s: FORCE\n", autoconfig_name);
+		fprintf(f, "endif\n");
+		env_del(e);
+	}
+}

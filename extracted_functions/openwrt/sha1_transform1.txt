@@ -1,0 +1,43 @@
+static void sha1_transform1 (struct sha1_ctx *sctx, u32 *state, const u32 *in)
+{
+    int i = 0;
+    volatile struct deu_hash_t *hashs = (struct deu_hash_t *) HASH_START;
+    unsigned long flag;
+
+    CRTCL_SECT_HASH_START;
+
+    SHA_HASH_INIT;
+
+    /* For context switching purposes, the previous hash output
+     * is loaded back into the output register 
+    */
+    if (sctx->started) {
+        hashs->D1R = *((u32 *) sctx->hash + 0);
+        hashs->D2R = *((u32 *) sctx->hash + 1);
+        hashs->D3R = *((u32 *) sctx->hash + 2);
+        hashs->D4R = *((u32 *) sctx->hash + 3);
+        hashs->D5R = *((u32 *) sctx->hash + 4);
+    }
+
+    for (i = 0; i < 16; i++) {
+        hashs->MR = in[i];
+    };
+
+    //wait for processing
+    while (hashs->controlr.BSY) {
+        // this will not take long
+    }
+   
+    /* For context switching purposes, the output is saved into a 
+     * context struct which can be used later on 
+    */
+    *((u32 *) sctx->hash + 0) = hashs->D1R;
+    *((u32 *) sctx->hash + 1) = hashs->D2R;
+    *((u32 *) sctx->hash + 2) = hashs->D3R;
+    *((u32 *) sctx->hash + 3) = hashs->D4R;
+    *((u32 *) sctx->hash + 4) = hashs->D5R;
+
+    sctx->started = 1;
+
+    CRTCL_SECT_HASH_END;
+}

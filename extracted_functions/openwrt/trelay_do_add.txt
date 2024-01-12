@@ -1,0 +1,57 @@
+static int trelay_do_add(char *name, char *devn1, char *devn2)
+{
+	struct net_device *dev1, *dev2;
+	struct trelay *tr, *tr1;
+	int ret;
+
+	tr = kzalloc(sizeof(*tr) + strlen(name) + 1, GFP_KERNEL);
+	if (!tr)
+		return -ENOMEM;
+
+	rtnl_lock();
+	rcu_read_lock();
+
+	ret = -EEXIST;
+	list_for_each_entry(tr1, &trelay_devs, list) {
+		if (!strcmp(tr1->name, name))
+			goto out;
+	}
+
+	ret = -ENOENT;
+	dev1 = dev_get_by_name_rcu(&init_net, devn1);
+	dev2 = dev_get_by_name_rcu(&init_net, devn2);
+	if (!dev1 || !dev2)
+		goto out;
+
+	ret = netdev_rx_handler_register(dev1, trelay_handle_frame, dev2);
+	if (ret < 0)
+		goto out;
+
+	ret = netdev_rx_handler_register(dev2, trelay_handle_frame, dev1);
+	if (ret < 0) {
+		netdev_rx_handler_unregister(dev1);
+		goto out;
+	}
+
+	dev_hold(dev1);
+	dev_hold(dev2);
+
+	strcpy(tr->name, name);
+	tr->dev1 = dev1;
+	tr->dev2 = dev2;
+	list_add_tail(&tr->list, &trelay_devs);
+
+	trelay_log(KERN_INFO, tr, "started");
+
+	tr->debugfs = debugfs_create_dir(name, debugfs_dir);
+	debugfs_create_file("remove", S_IWUSR, tr->debugfs, tr, &fops_remove);
+	ret = 0;
+
+out:
+	rcu_read_unlock();
+	rtnl_unlock();
+	if (ret < 0)
+		kfree(tr);
+
+	return ret;
+}

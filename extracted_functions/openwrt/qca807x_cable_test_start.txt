@@ -1,0 +1,12 @@
+static int qca807x_cable_test_start(struct phy_device *phydev)
+{
+	int val, ret;
+
+	val = phy_read(phydev, QCA807X_CDT);
+	/* Enable inter-pair short check as well */
+	val &= ~QCA807X_CDT_ENABLE_INTER_PAIR_SHORT;
+	val |= QCA807X_CDT_ENABLE;
+	ret = phy_write(phydev, QCA807X_CDT, val);
+
+	return ret;
+}

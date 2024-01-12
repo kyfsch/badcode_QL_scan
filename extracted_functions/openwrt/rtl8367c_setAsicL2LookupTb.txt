@@ -1,0 +1,98 @@
+ret_t rtl8367c_setAsicL2LookupTb(rtl8367c_luttb *pL2Table)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+    rtk_uint16 *accessPtr;
+    rtk_uint32 i;
+    rtk_uint16 smil2Table[RTL8367C_LUT_TABLE_SIZE];
+    rtk_uint32 tblCmd;
+    rtk_uint32 busyCounter;
+
+    memset(smil2Table, 0x00, sizeof(rtk_uint16) * RTL8367C_LUT_TABLE_SIZE);
+    _rtl8367c_fdbStUser2Smi(pL2Table, smil2Table);
+
+    if(pL2Table->wait_time == 0)
+        busyCounter = RTL8367C_LUT_BUSY_CHECK_NO;
+    else
+        busyCounter = pL2Table->wait_time;
+
+    while(busyCounter)
+    {
+        retVal = rtl8367c_getAsicRegBit(RTL8367C_TABLE_ACCESS_STATUS_REG, RTL8367C_TABLE_LUT_ADDR_BUSY_FLAG_OFFSET,&regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        pL2Table->lookup_busy = regData;
+        if(!regData)
+            break;
+
+        busyCounter --;
+        if(busyCounter == 0)
+            return RT_ERR_BUSYWAIT_TIMEOUT;
+    }
+
+    accessPtr = smil2Table;
+    regData = *accessPtr;
+    for(i = 0; i < RTL8367C_LUT_ENTRY_SIZE; i++)
+    {
+        retVal = rtl8367c_setAsicReg(RTL8367C_TABLE_ACCESS_WRDATA_BASE + i, regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        accessPtr ++;
+        regData = *accessPtr;
+
+    }
+
+    tblCmd = (RTL8367C_TABLE_ACCESS_REG_DATA(TB_OP_WRITE,TB_TARGET_L2)) & (RTL8367C_TABLE_TYPE_MASK  | RTL8367C_COMMAND_TYPE_MASK);
+    /* Write Command */
+    retVal = rtl8367c_setAsicReg(RTL8367C_TABLE_ACCESS_CTRL_REG, tblCmd);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    if(pL2Table->wait_time == 0)
+        busyCounter = RTL8367C_LUT_BUSY_CHECK_NO;
+    else
+        busyCounter = pL2Table->wait_time;
+
+    while(busyCounter)
+    {
+        retVal = rtl8367c_getAsicRegBit(RTL8367C_TABLE_ACCESS_STATUS_REG, RTL8367C_TABLE_LUT_ADDR_BUSY_FLAG_OFFSET,&regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        pL2Table->lookup_busy = regData;
+        if(!regData)
+            break;
+
+        busyCounter --;
+        if(busyCounter == 0)
+            return RT_ERR_BUSYWAIT_TIMEOUT;
+    }
+
+    /*Read access status*/
+    retVal = rtl8367c_getAsicRegBit(RTL8367C_TABLE_ACCESS_STATUS_REG, RTL8367C_HIT_STATUS_OFFSET, &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    pL2Table->lookup_hit = regData;
+    if(!pL2Table->lookup_hit)
+        return RT_ERR_FAILED;
+
+    /*Read access address*/
+    /*
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_TABLE_ACCESS_STATUS_REG, RTL8367C_TABLE_LUT_ADDR_TYPE_MASK | RTL8367C_TABLE_LUT_ADDR_ADDRESS_MASK,&regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    pL2Table->address = regData;*/
+
+    retVal = rtl8367c_getAsicReg(RTL8367C_TABLE_ACCESS_STATUS_REG, &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    pL2Table->address = (regData & 0x7ff) | ((regData & 0x4000) >> 3) | ((regData & 0x800) << 1);
+    pL2Table->lookup_busy = 0;
+
+    return RT_ERR_OK;
+}

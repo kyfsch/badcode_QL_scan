@@ -1,0 +1,6 @@
+ar8xxx_phy_mmd_prep(struct mii_bus *bus, int phy_addr, u16 addr, u16 reg)
+{
+	bus->write(bus, phy_addr, MII_ATH_MMD_ADDR, addr);
+	bus->write(bus, phy_addr, MII_ATH_MMD_DATA, reg);
+	bus->write(bus, phy_addr, MII_ATH_MMD_ADDR, addr | 0x4000);
+}

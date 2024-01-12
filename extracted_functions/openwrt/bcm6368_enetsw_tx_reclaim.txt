@@ -1,0 +1,55 @@
+static int bcm6368_enetsw_tx_reclaim(struct net_device *ndev, int force,
+				     int budget)
+{
+	struct bcm6368_enetsw *priv = netdev_priv(ndev);
+	struct platform_device *pdev = priv->pdev;
+	struct device *dev = &pdev->dev;
+	unsigned int bytes = 0;
+	int released = 0;
+
+	while (priv->tx_desc_count < priv->tx_ring_size) {
+		struct bcm6368_enetsw_desc *desc;
+		struct sk_buff *skb;
+
+		/* We run in a bh and fight against start_xmit, which
+		 * is called with bh disabled */
+		spin_lock(&priv->tx_lock);
+
+		desc = &priv->tx_desc_cpu[priv->tx_dirty_desc];
+
+		if (!force && (desc->len_stat & DMADESC_OWNER_MASK)) {
+			spin_unlock(&priv->tx_lock);
+			break;
+		}
+
+		/* ensure other field of the descriptor were not read
+		 * before we checked ownership */
+		rmb();
+
+		skb = priv->tx_skb[priv->tx_dirty_desc];
+		priv->tx_skb[priv->tx_dirty_desc] = NULL;
+		dma_unmap_single(dev, desc->address, skb->len,
+				 DMA_TO_DEVICE);
+
+		priv->tx_dirty_desc++;
+		if (priv->tx_dirty_desc == priv->tx_ring_size)
+			priv->tx_dirty_desc = 0;
+		priv->tx_desc_count++;
+
+		spin_unlock(&priv->tx_lock);
+
+		if (desc->len_stat & DMADESC_UNDER_MASK)
+			ndev->stats.tx_errors++;
+
+		bytes += skb->len;
+		napi_consume_skb(skb, budget);
+		released++;
+	}
+
+	netdev_completed_queue(ndev, released, bytes);
+
+	if (netif_queue_stopped(ndev) && released)
+		netif_wake_queue(ndev);
+
+	return released;
+}

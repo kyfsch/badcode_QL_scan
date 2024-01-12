@@ -1,0 +1,21 @@
+static inline void mt7621_nfc_hw_init(struct mt7621_nfc *nfc)
+{
+	u32 acccon;
+
+	/*
+	 * CNRNB: nand ready/busy register
+	 * -------------------------------
+	 * 7:4: timeout register for polling the NAND busy/ready signal
+	 * 0  : poll the status of the busy/ready signal after [7:4]*16 cycles.
+	 */
+	nfi_write16(nfc, NFI_CNRNB, CB2R_TIME_M | STR_CNRNB);
+
+	mt7621_nfc_hw_reset(nfc);
+
+	/* Apply default access timing */
+	acccon = ACCTIMING(ACCCON_POECS_DEF, ACCCON_PRECS_DEF, ACCCON_C2R_DEF,
+			   ACCCON_W2R_DEF, ACCCON_WH_DEF, ACCCON_WST_DEF,
+			   ACCCON_RLT_DEF);
+
+	nfi_write32(nfc, NFI_ACCCON, acccon);
+}

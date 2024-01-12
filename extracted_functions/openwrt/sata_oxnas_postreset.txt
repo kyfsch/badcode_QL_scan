@@ -1,0 +1,29 @@
+static void sata_oxnas_postreset(struct ata_link *link, unsigned int *classes)
+{
+	struct ata_port *ap = link->ap;
+	struct sata_oxnas_host_priv *hd = ap->host->private_data;
+
+	unsigned int dev;
+
+	DPRINTK("ENTER\n");
+	ata_std_postreset(link, classes);
+
+	/* turn on phy error detection by removing the masks */
+	sata_oxnas_link_write(ap->host->ports[0], 0x0c, 0x30003);
+	if (hd->n_ports > 1)
+		sata_oxnas_link_write(ap->host->ports[1], 0x0c, 0x30003);
+
+	/* bail out if no device is present */
+	if (classes[0] == ATA_DEV_NONE && classes[1] == ATA_DEV_NONE) {
+		DPRINTK("EXIT, no device\n");
+		return;
+	}
+
+	/* go through all the devices and configure them */
+	for (dev = 0; dev < ATA_MAX_DEVICES; ++dev) {
+		if (ap->link.device[dev].class == ATA_DEV_ATA)
+			sata_oxnas_dev_config(&(ap->link.device[dev]));
+	}
+
+	DPRINTK("EXIT\n");
+}

@@ -1,0 +1,26 @@
+mtk_bmt_get_mapping_mask(void)
+{
+	struct bbmt *bbmt = bmt_tbl(bmtd.bbt);
+	int main_blocks = bmtd.mtd->size >> bmtd.blk_shift;
+	unsigned long *used;
+	int i, k;
+
+	used = kcalloc(sizeof(unsigned long), BIT_WORD(bmtd.bmt_blk_idx) + 1, GFP_KERNEL);
+	if (!used)
+		return NULL;
+
+	for (i = 1; i < main_blocks; i++) {
+		if (bmtd.bbt->bb_tbl[i] == i)
+			continue;
+
+		for (k = 0; k < bmtd.bmt_blk_idx; k++) {
+			if (bmtd.bbt->bb_tbl[i] != bbmt[k].block)
+				continue;
+
+			set_bit(k, used);
+			break;
+		}
+	}
+
+	return used;
+}

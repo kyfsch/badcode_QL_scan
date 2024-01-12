@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_trunk_trafficPause_set(rtk_trunk_group_t trk_gid, rtk_enable_t enable)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Trunk Group Valid */
+    RTK_CHK_TRUNK_GROUP_VALID(trk_gid);
+
+    if(enable >= RTK_ENABLE_END)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicTrunkingFc((rtk_uint32)trk_gid, (rtk_uint32)enable)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

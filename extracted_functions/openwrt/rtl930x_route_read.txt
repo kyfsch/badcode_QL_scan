@@ -1,0 +1,68 @@
+static void rtl930x_route_read(int idx, struct rtl83xx_route *rt)
+{
+	u32 v, ip4_m;
+	bool host_route, default_route;
+	struct in6_addr ip6_m;
+
+	/* Read L3_PREFIX_ROUTE_IPUC table (2) via register RTL9300_TBL_1 */
+	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 2);
+
+	rtl_table_read(r, idx);
+	/* The table has a size of 11 registers */
+	rt->attr.valid = !!(sw_r32(rtl_table_data(r, 0)) & BIT(31));
+	if (!rt->attr.valid)
+		goto out;
+
+	rt->attr.type = (sw_r32(rtl_table_data(r, 0)) >> 29) & 0x3;
+
+	v = sw_r32(rtl_table_data(r, 10));
+	host_route = !!(v & BIT(21));
+	default_route = !!(v & BIT(20));
+	rt->prefix_len = -1;
+	pr_info("%s: host route %d, default_route %d\n", __func__, host_route, default_route);
+
+	switch (rt->attr.type) {
+	case 0: /* IPv4 Unicast route */
+		rt->dst_ip = sw_r32(rtl_table_data(r, 4));
+		ip4_m = sw_r32(rtl_table_data(r, 9));
+		pr_info("%s: Read ip4 mask: %08x\n", __func__, ip4_m);
+		rt->prefix_len = host_route ? 32 : -1;
+		rt->prefix_len = (rt->prefix_len < 0 && default_route) ? 0 : -1;
+		if (rt->prefix_len < 0)
+			rt->prefix_len = inet_mask_len(ip4_m);
+		break;
+	case 2: /* IPv6 Unicast route */
+		ipv6_addr_set(&rt->dst_ip6,
+			      sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 2)),
+			      sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 4)));
+		ipv6_addr_set(&ip6_m,
+			      sw_r32(rtl_table_data(r, 6)), sw_r32(rtl_table_data(r, 7)),
+			      sw_r32(rtl_table_data(r, 8)), sw_r32(rtl_table_data(r, 9)));
+		rt->prefix_len = host_route ? 128 : 0;
+		rt->prefix_len = (rt->prefix_len < 0 && default_route) ? 0 : -1;
+		if (rt->prefix_len < 0)
+			rt->prefix_len = find_last_bit((unsigned long int *)&ip6_m.s6_addr32,
+							 128);
+		break;
+	case 1: /* IPv4 Multicast route */
+	case 3: /* IPv6 Multicast route */
+		pr_warn("%s: route type not supported\n", __func__);
+		goto out;
+	}
+
+	rt->attr.hit = !!(v & BIT(22));
+	rt->attr.action = (v >> 18) & 3;
+	rt->nh.id = (v >> 7) & 0x7ff;
+	rt->attr.ttl_dec = !!(v & BIT(6));
+	rt->attr.ttl_check = !!(v & BIT(5));
+	rt->attr.dst_null = !!(v & BIT(4));
+	rt->attr.qos_as = !!(v & BIT(3));
+	rt->attr.qos_prio =  v & 0x7;
+	pr_info("%s: index %d is valid: %d\n", __func__, idx, rt->attr.valid);
+	pr_info("%s: next_hop: %d, hit: %d, action :%d, ttl_dec %d, ttl_check %d, dst_null %d\n",
+		__func__, rt->nh.id, rt->attr.hit, rt->attr.action,
+		rt->attr.ttl_dec, rt->attr.ttl_check, rt->attr.dst_null);
+	pr_info("%s: GW: %pI4, prefix_len: %d\n", __func__, &rt->dst_ip, rt->prefix_len);
+out:
+	rtl_table_release(r);
+}

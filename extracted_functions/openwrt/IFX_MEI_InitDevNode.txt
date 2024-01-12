@@ -1,0 +1,10 @@
+IFX_MEI_InitDevNode (int num)
+{
+	if (num == 0) {
+		if ((dev_major = register_chrdev (dev_major, IFX_MEI_DEVNAME, &bsp_mei_operations)) < 0) {
+			IFX_MEI_EMSG ("register_chrdev(%d %s) failed!\n", dev_major, IFX_MEI_DEVNAME);
+			return -ENODEV;
+		}
+	}
+	return 0;
+}

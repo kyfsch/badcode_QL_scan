@@ -1,0 +1,25 @@
+void rtl9300_phy_enable_10g_1g(int sds_num)
+{
+	u32 v;
+
+	/* Enable 1GBit PHY */
+	v = rtl930x_read_sds_phy(sds_num, PHY_PAGE_2, MII_BMCR);
+	pr_info("%s 1gbit phy: %08x\n", __func__, v);
+	v &= ~BMCR_PDOWN;
+	rtl930x_write_sds_phy(sds_num, PHY_PAGE_2, MII_BMCR, v);
+	pr_info("%s 1gbit phy enabled: %08x\n", __func__, v);
+
+	/* Enable 10GBit PHY */
+	v = rtl930x_read_sds_phy(sds_num, PHY_PAGE_4, MII_BMCR);
+	pr_info("%s 10gbit phy: %08x\n", __func__, v);
+	v &= ~BMCR_PDOWN;
+	rtl930x_write_sds_phy(sds_num, PHY_PAGE_4, MII_BMCR, v);
+	pr_info("%s 10gbit phy after: %08x\n", __func__, v);
+
+	/* dal_longan_construct_mac_default_10gmedia_fiber */
+	v = rtl930x_read_sds_phy(sds_num, 0x1f, 11);
+	pr_info("%s set medium: %08x\n", __func__, v);
+	v |= BIT(1);
+	rtl930x_write_sds_phy(sds_num, 0x1f, 11, v);
+	pr_info("%s set medium after: %08x\n", __func__, v);
+}

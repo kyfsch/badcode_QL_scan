@@ -1,0 +1,60 @@
+int dc_aca_stop(struct dc_ep_priv *priv, u32 *func, int reset)
+{
+	u32 val = *func;
+	u32 reg;
+
+	if (!val)
+		return 0;
+
+	*func = 0;
+
+	/* Only do it if reset is required. Otherwise, pending is fine */
+	if (reset) {
+		if (val & ACA_TXIN_EN) {
+			reg = rd32(TXIN_COUNTERS);
+			if (MS(reg, ACA_PENDING_JOB)
+				|| (MS(reg, ACA_AVAIL_BUF) != ACA_PP_BUFS)) {
+				*func = ACA_TXIN_EN;
+				return -EBUSY;
+			}
+		}
+
+		if (val & ACA_TXOUT_EN) {
+			reg = rd32(TXOUT_COUNTERS);
+			if (MS(reg, ACA_PENDING_JOB)
+				|| (MS(reg, ACA_AVAIL_BUF) != ACA_PP_BUFS)) {
+				*func = ACA_TXOUT_EN;
+				return -EBUSY;
+			}
+		}
+
+
+		if (val & ACA_RXIN_EN) {
+			reg = rd32(RXIN_COUNTERS);
+			if (MS(reg, ACA_PENDING_JOB)
+				|| (MS(reg, ACA_AVAIL_BUF) != ACA_PP_BUFS)) {
+				*func = ACA_RXIN_EN;
+				return -EBUSY;
+			}
+		}
+
+		if (val & ACA_RXOUT_EN) {
+			reg = rd32(RXOUT_COUNTERS);
+			if (MS(reg, ACA_PENDING_JOB)
+				|| (MS(reg, ACA_AVAIL_BUF) != ACA_PP_BUFS)) {
+				*func = ACA_RXOUT_EN;
+				return -EBUSY;
+			}
+		}
+	}
+
+	wr32_mask(val, 0, GNRC_EN_TASK_BITMAP);
+
+	if (reset) {
+		aca_dma_ch_off(priv);
+		aca_xbar_ia_reject_set(priv, ACA_ACC_IA04);
+		aca_xbar_ia_reject_set(priv, ACA_M_IA06);
+		aca_sw_reset(priv);
+	}
+	return 0;
+}

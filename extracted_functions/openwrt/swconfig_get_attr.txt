@@ -1,0 +1,84 @@
+swconfig_get_attr(struct sk_buff *skb, struct genl_info *info)
+{
+	struct genlmsghdr *hdr = nlmsg_data(info->nlhdr);
+	const struct switch_attr *attr;
+	struct switch_dev *dev;
+	struct sk_buff *msg = NULL;
+	struct switch_val val;
+	int err = -EINVAL;
+	int cmd = hdr->cmd;
+
+	dev = swconfig_get_dev(info);
+	if (!dev)
+		return -EINVAL;
+
+	memset(&val, 0, sizeof(val));
+	attr = swconfig_lookup_attr(dev, info, &val);
+	if (!attr || !attr->get)
+		goto error;
+
+	if (attr->type == SWITCH_TYPE_PORTS) {
+		val.value.ports = dev->portbuf;
+		memset(dev->portbuf, 0,
+			sizeof(struct switch_port) * dev->ports);
+	} else if (attr->type == SWITCH_TYPE_LINK) {
+		val.value.link = &dev->linkbuf;
+		memset(&dev->linkbuf, 0, sizeof(struct switch_port_link));
+	}
+
+	err = attr->get(dev, attr, &val);
+	if (err)
+		goto error;
+
+	msg = nlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
+	if (!msg)
+		goto error;
+
+	hdr = genlmsg_put(msg, info->snd_portid, info->snd_seq, &switch_fam,
+			0, cmd);
+	if (IS_ERR(hdr))
+		goto nla_put_failure;
+
+	switch (attr->type) {
+	case SWITCH_TYPE_INT:
+		if (nla_put_u32(msg, SWITCH_ATTR_OP_VALUE_INT, val.value.i))
+			goto nla_put_failure;
+		break;
+	case SWITCH_TYPE_STRING:
+		if (nla_put_string(msg, SWITCH_ATTR_OP_VALUE_STR, val.value.s))
+			goto nla_put_failure;
+		break;
+	case SWITCH_TYPE_PORTS:
+		err = swconfig_send_ports(&msg, info,
+				SWITCH_ATTR_OP_VALUE_PORTS, &val);
+		if (err < 0)
+			goto nla_put_failure;
+		break;
+	case SWITCH_TYPE_LINK:
+		err = swconfig_send_link(msg, info,
+					 SWITCH_ATTR_OP_VALUE_LINK, val.value.link);
+		if (err < 0)
+			goto nla_put_failure;
+		break;
+	default:
+		pr_debug("invalid type in attribute\n");
+		err = -EINVAL;
+		goto nla_put_failure;
+	}
+	genlmsg_end(msg, hdr);
+	err = msg->len;
+	if (err < 0)
+		goto nla_put_failure;
+
+	swconfig_put_dev(dev);
+	return genlmsg_reply(msg, info);
+
+nla_put_failure:
+	if (msg)
+		nlmsg_free(msg);
+error:
+	swconfig_put_dev(dev);
+	if (!err)
+		err = -ENOMEM;
+	return err;
+}

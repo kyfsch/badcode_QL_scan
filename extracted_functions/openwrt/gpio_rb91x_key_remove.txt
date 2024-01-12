@@ -1,0 +1,7 @@
+static int gpio_rb91x_key_remove(struct platform_device *pdev)
+{
+	struct gpio_rb91x_key *drvdata = platform_get_drvdata(pdev);
+
+	gpiochip_remove(&drvdata->gc);
+	return 0;
+}

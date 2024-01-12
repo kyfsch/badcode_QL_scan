@@ -1,0 +1,92 @@
+static void rtl931x_cmu_type_set(u32 asds, phy_interface_t mode, int chiptype)
+{
+	int cmu_type = 0; /* Clock Management Unit */
+	u32 cmu_page = 0;
+	u32 frc_cmu_spd;
+	u32 evenSds;
+	u32 lane, frc_lc_mode_bitnum, frc_lc_mode_val_bitnum;
+
+	switch (mode) {
+	case PHY_INTERFACE_MODE_NA:
+	case PHY_INTERFACE_MODE_10GKR:
+	case PHY_INTERFACE_MODE_XGMII:
+	case PHY_INTERFACE_MODE_10GBASER:
+	case PHY_INTERFACE_MODE_USXGMII:
+		return;
+
+/*	case MII_10GR1000BX_AUTO:
+		if (chiptype)
+			rtl9310_sds_field_w(asds, 0x24, 0xd, 14, 14, 0);
+		return; */
+
+	case PHY_INTERFACE_MODE_QSGMII:
+		cmu_type = 1;
+		frc_cmu_spd = 0;
+		break;
+
+	case PHY_INTERFACE_MODE_HSGMII:
+		cmu_type = 1;
+		frc_cmu_spd = 1;
+		break;
+
+	case PHY_INTERFACE_MODE_1000BASEX:
+		cmu_type = 1;
+		frc_cmu_spd = 0;
+		break;
+
+/*	case MII_1000BX100BX_AUTO:
+		cmu_type = 1;
+		frc_cmu_spd = 0;
+		break; */
+
+	case PHY_INTERFACE_MODE_SGMII:
+		cmu_type = 1;
+		frc_cmu_spd = 0;
+		break;
+
+	case PHY_INTERFACE_MODE_2500BASEX:
+		cmu_type = 1;
+		frc_cmu_spd = 1;
+		break;
+
+	default:
+		pr_info("SerDes %d mode is invalid\n", asds);
+		return;
+	}
+
+	if (cmu_type == 1)
+		cmu_page = rtl931x_sds_cmu_page_get(mode);
+
+	lane = asds % 2;
+
+	if (!lane) {
+		frc_lc_mode_bitnum = 4;
+		frc_lc_mode_val_bitnum = 5;
+	} else {
+		frc_lc_mode_bitnum = 6;
+		frc_lc_mode_val_bitnum = 7;
+	}
+
+	evenSds = asds - lane;
+
+	pr_info("%s: cmu_type %0d cmu_page %x frc_cmu_spd %d lane %d asds %d\n",
+	        __func__, cmu_type, cmu_page, frc_cmu_spd, lane, asds);
+
+	if (cmu_type == 1) {
+		pr_info("%s A CMU page 0x28 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x28, 0x7));
+		rtl9310_sds_field_w(asds, cmu_page, 0x7, 15, 15, 0);
+		pr_info("%s B CMU page 0x28 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x28, 0x7));
+		if (chiptype) {
+			rtl9310_sds_field_w(asds, cmu_page, 0xd, 14, 14, 0);
+		}
+
+		rtl9310_sds_field_w(evenSds, 0x20, 0x12, 3, 2, 0x3);
+		rtl9310_sds_field_w(evenSds, 0x20, 0x12, frc_lc_mode_bitnum, frc_lc_mode_bitnum, 1);
+		rtl9310_sds_field_w(evenSds, 0x20, 0x12, frc_lc_mode_val_bitnum, frc_lc_mode_val_bitnum, 0);
+		rtl9310_sds_field_w(evenSds, 0x20, 0x12, 12, 12, 1);
+		rtl9310_sds_field_w(evenSds, 0x20, 0x12, 15, 13, frc_cmu_spd);
+	}
+
+	pr_info("%s CMU page 0x28 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x28, 0x7));
+	return;
+}

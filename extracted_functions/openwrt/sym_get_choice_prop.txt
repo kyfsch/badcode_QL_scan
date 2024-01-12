@@ -1,0 +1,8 @@
+struct property *sym_get_choice_prop(struct symbol *sym)
+{
+	struct property *prop;
+
+	for_all_choices(sym, prop)
+		return prop;
+	return NULL;
+}

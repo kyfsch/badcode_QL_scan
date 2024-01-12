@@ -1,0 +1,4 @@
+size_t spi_max_xfer(void)
+{
+	return ESPI_MAX_DATA_TRANSFER_LEN;
+}

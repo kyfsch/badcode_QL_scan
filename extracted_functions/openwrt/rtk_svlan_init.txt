@@ -1,0 +1,76 @@
+rtk_api_ret_t rtk_svlan_init(void)
+{
+    rtk_uint32 i;
+    rtk_api_ret_t retVal;
+    rtl8367c_svlan_memconf_t svlanMemConf;
+    rtl8367c_svlan_s2c_t svlanSP2CConf;
+    rtl8367c_svlan_mc2s_t svlanMC2SConf;
+    rtk_uint32 svidx;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /*default use C-priority*/
+    if ((retVal = rtl8367c_setAsicSvlanPrioritySel(SPRISEL_CTAGPRI)) != RT_ERR_OK)
+        return retVal;
+
+    /*Drop SVLAN untag frame*/
+    if ((retVal = rtl8367c_setAsicSvlanIngressUntag(UNTAG_DROP)) != RT_ERR_OK)
+        return retVal;
+
+    /*Drop SVLAN unmatch frame*/
+    if ((retVal = rtl8367c_setAsicSvlanIngressUnmatch(UNMATCH_DROP)) != RT_ERR_OK)
+        return retVal;
+
+    /*Set TPID to 0x88a8*/
+    if ((retVal = rtl8367c_setAsicSvlanTpid(0x88a8)) != RT_ERR_OK)
+        return retVal;
+
+    /*Clean Uplink Port Mask to none*/
+    if ((retVal = rtl8367c_setAsicSvlanUplinkPortMask(0)) != RT_ERR_OK)
+        return retVal;
+
+    /*Clean SVLAN Member Configuration*/
+    for (i=0; i<= RTL8367C_SVIDXMAX; i++)
+    {
+        memset(&svlanMemConf, 0, sizeof(rtl8367c_svlan_memconf_t));
+        if ((retVal = rtl8367c_setAsicSvlanMemberConfiguration(i, &svlanMemConf)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    /*Clean C2S Configuration*/
+    for (i=0; i<= RTL8367C_C2SIDXMAX; i++)
+    {
+        if ((retVal = rtl8367c_setAsicSvlanC2SConf(i, 0,0,0)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    /*Clean SP2C Configuration*/
+    for (i=0; i <= RTL8367C_SP2CMAX ; i++)
+    {
+        memset(&svlanSP2CConf, 0, sizeof(rtl8367c_svlan_s2c_t));
+        if ((retVal = rtl8367c_setAsicSvlanSP2CConf(i, &svlanSP2CConf)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    /*Clean MC2S Configuration*/
+    for (i=0 ; i<= RTL8367C_MC2SIDXMAX; i++)
+    {
+        memset(&svlanMC2SConf, 0, sizeof(rtl8367c_svlan_mc2s_t));
+        if ((retVal = rtl8367c_setAsicSvlanMC2SConf(i, &svlanMC2SConf)) != RT_ERR_OK)
+            return retVal;
+    }
+
+
+    if ((retVal = rtk_svlan_lookupType_set(SVLAN_LOOKUP_S64MBRCGF)) != RT_ERR_OK)
+        return retVal;
+
+
+    for (svidx = 0; svidx <= RTL8367C_SVIDXMAX; svidx++)
+    {
+        svlan_mbrCfgUsage[svidx] = FALSE;
+    }
+
+
+    return RT_ERR_OK;
+}

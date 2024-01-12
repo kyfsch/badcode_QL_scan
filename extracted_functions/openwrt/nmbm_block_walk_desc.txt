@@ -1,0 +1,22 @@
+static bool nmbm_block_walk_desc(struct nmbm_instance *ni, uint32_t ba,
+				 uint32_t *nba, uint32_t count, uint32_t limit)
+{
+	int32_t nblock = count;
+
+	if (limit >= ni->block_count)
+		limit = ni->block_count - 1;
+
+	while (ba > limit) {
+		if (nmbm_get_block_state(ni, ba) == BLOCK_ST_GOOD)
+			nblock--;
+
+		if (nblock < 0) {
+			*nba = ba;
+			return true;
+		}
+
+		ba--;
+	}
+
+	return false;
+}

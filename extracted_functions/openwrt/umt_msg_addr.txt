@@ -1,0 +1,9 @@
+static inline u32 umt_msg_addr(struct dc_ep_dev *dev, u32 endian, u32 type)
+{
+	if (WARN_ON(!dev))
+		return -EINVAL;
+	if (WARN_ON(!dev->priv))
+		return -EINVAL;
+
+	return aca_umt_msg_addr(dev->priv, endian, type);
+}

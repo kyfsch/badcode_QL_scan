@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicPortMirrorRxFunction(rtk_uint32* pEnabled)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_MIRROR_CTRL_REG, RTL8367C_MIRROR_RX_OFFSET, pEnabled);
+}

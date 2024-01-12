@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicStormFilterExtBroadcastMeter(rtk_uint32 meter)
+{
+    if(meter > RTL8367C_METERMAX)
+        return RT_ERR_FILTER_METER_ID;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_STORM_EXT_MTRIDX_CFG0, RTL8367C_BC_STORM_EXT_METERIDX_MASK, meter);
+}

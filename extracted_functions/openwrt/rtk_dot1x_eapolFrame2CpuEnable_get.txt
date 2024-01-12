@@ -1,0 +1,21 @@
+rtk_api_ret_t rtk_dot1x_eapolFrame2CpuEnable_get(rtk_enable_t *pEnable)
+{
+    rtk_api_ret_t retVal;
+    rtl8367c_rma_t rmacfg;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pEnable)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicRma(3, &rmacfg)) != RT_ERR_OK)
+        return retVal;
+
+    if (RMAOP_TRAP_TO_CPU == rmacfg.operation)
+        *pEnable = ENABLED;
+    else
+        *pEnable = DISABLED;
+
+    return RT_ERR_OK;
+}

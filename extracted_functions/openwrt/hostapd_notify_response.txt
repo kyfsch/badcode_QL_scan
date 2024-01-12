@@ -1,0 +1,20 @@
+hostapd_notify_response(struct ubus_context *ctx, struct ubus_object *obj,
+			struct ubus_request_data *req, const char *method,
+			struct blob_attr *msg)
+{
+	struct blob_attr *tb[__NOTIFY_MAX];
+	struct hostapd_data *hapd = get_hapd_from_object(obj);
+	struct wpabuf *elems;
+	const char *pos;
+	size_t len;
+
+	blobmsg_parse(notify_policy, __NOTIFY_MAX, tb,
+		      blob_data(msg), blob_len(msg));
+
+	if (!tb[NOTIFY_RESPONSE])
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	hapd->ubus.notify_response = blobmsg_get_u32(tb[NOTIFY_RESPONSE]);
+
+	return UBUS_STATUS_OK;
+}

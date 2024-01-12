@@ -1,0 +1,6 @@
+static u64 rttm_read_clocksource(struct clocksource *cs)
+{
+	struct rttm_cs *rcs = container_of(cs, struct rttm_cs, cs);
+
+	return (u64)rttm_get_counter(rcs->to.of_base.base);
+}

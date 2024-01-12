@@ -1,0 +1,26 @@
+static int rtl8231_write(struct rtl8231_gpios *gpios, u32 reg, u32 data)
+{
+	u32 t = 0, n = 0;
+
+	pr_debug("%s: %x, %x, %x\n", __func__, gpios->smi_bus_id, reg, data);
+	reg &= 0x1f;
+
+	t = (gpios->smi_bus_id << 2) | (reg << 7) | (data << 16);
+	/* Set write bit */
+	t |= 2;
+
+	/* Set execution bit: cleared when operation completed */
+	t |= 1;
+
+	/* Start execution */
+	sw_w32(t, gpios->ext_gpio_indrt_access);
+	do {
+		udelay(1);
+		t = sw_r32(gpios->ext_gpio_indrt_access);
+	} while ((t & 1) && (n < USEC_TIMEOUT));
+
+	if (n >= USEC_TIMEOUT)
+		return -1;
+
+	return 0;
+}

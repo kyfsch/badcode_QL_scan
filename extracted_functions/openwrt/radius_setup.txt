@@ -1,0 +1,34 @@
+static int radius_setup(struct radius_state *s, struct radius_config *c)
+{
+	struct eap_config *eap = &s->eap;
+	struct tls_config conf = {
+		.event_cb = radius_tls_event,
+		.tls_flags = TLS_CONN_DISABLE_TLSv1_3,
+		.cb_ctx = s,
+	};
+
+	eap->eap_server = 1;
+	eap->max_auth_rounds = 100;
+	eap->max_auth_rounds_short = 50;
+	eap->ssl_ctx = tls_init(&conf);
+	if (!eap->ssl_ctx) {
+		wpa_printf(MSG_INFO, "TLS init failed\n");
+		return 1;
+	}
+
+	if (tls_global_set_params(eap->ssl_ctx, &c->tls)) {
+		wpa_printf(MSG_INFO, "failed to set TLS parameters\n");
+		return 1;
+	}
+
+	c->radius.eap_cfg = eap;
+	c->radius.conf_ctx = s;
+	c->radius.get_eap_user = radius_get_eap_user;
+	s->radius = radius_server_init(&c->radius);
+	if (!s->radius) {
+		wpa_printf(MSG_INFO, "failed to initialize radius server\n");
+		return 1;
+	}
+
+	return 0;
+}

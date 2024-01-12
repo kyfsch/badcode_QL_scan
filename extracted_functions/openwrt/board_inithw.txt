@@ -1,0 +1,27 @@
+void board_inithw(void)
+{
+	int plla_freq;
+#ifdef DEBUG
+	int i;
+#endif	/* DEBUG */
+
+	timer_init();
+	uart_init();
+	preloader_console_init();
+
+	plla_freq = plla_set_config(CONFIG_PLLA_FREQ_MHZ);
+	init_ddr(plla_freq);
+
+#ifdef DEBUG
+	if(test_memory(CONFIG_SYS_SDRAM_BASE)) {
+		puts("memory test failed\n");
+	} else {
+		puts("memory test done\n");
+	}
+#endif /* DEBUG */
+#ifdef CONFIG_SPL_BSS_DRAM_START
+	extern char __bss_dram_start[];
+	extern char __bss_dram_end[];
+	memset(&__bss_dram_start, 0, __bss_dram_end - __bss_dram_start);
+#endif
+}

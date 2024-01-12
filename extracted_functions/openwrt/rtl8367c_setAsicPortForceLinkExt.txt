@@ -1,0 +1,961 @@
+ret_t rtl8367c_setAsicPortForceLinkExt(rtk_uint32 id, rtl8367c_port_ability_t *pPortAbility)
+{
+    rtk_uint32 retVal, regValue, regValue2, type, sgmiibit, hisgmiibit;
+    rtk_uint32 reg_data = 0;
+    rtk_uint32 i = 0;
+
+    /* Invalid input parameter */
+    if(id >= RTL8367C_EXTNO)
+        return RT_ERR_OUT_OF_RANGE;
+
+    reg_data |= pPortAbility->forcemode << 12;
+    reg_data |= pPortAbility->mstfault << 9;
+    reg_data |= pPortAbility->mstmode << 8;
+    reg_data |= pPortAbility->nway << 7;
+    reg_data |= pPortAbility->txpause << 6;
+    reg_data |= pPortAbility->rxpause << 5;
+    reg_data |= pPortAbility->link << 4;
+    reg_data |= pPortAbility->duplex << 2;
+    reg_data |= pPortAbility->speed;
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0249)) != RT_ERR_OK)
+        return retVal;
+    /*get chip ID */
+    if((retVal = rtl8367c_getAsicReg(0x1300, &regValue)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0000)) != RT_ERR_OK)
+        return retVal;
+
+    type = 0;
+
+    switch (regValue)
+    {
+        case 0x0276:
+        case 0x0597:
+        case 0x6367:
+            type = 1;
+            break;
+        case 0x0652:
+        case 0x6368:
+            type = 2;
+            break;
+        case 0x0801:
+        case 0x6511:
+            type = 3;
+            break;
+        default:
+            return RT_ERR_FAILED;
+    }
+
+    if (1 == type)
+    {
+        if(1 == id)
+        {
+            if ((retVal = rtl8367c_getAsicReg(RTL8367C_REG_REG_TO_ECO4, &regValue)) != RT_ERR_OK)
+                return retVal;
+
+            if((regValue & (0x0001 << 5)) && (regValue & (0x0001 << 7)))
+            {
+                return RT_ERR_OK;
+            }
+
+            if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_FDUP_OFFSET, pPortAbility->duplex)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_SPD_MASK, pPortAbility->speed)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_LINK_OFFSET, pPortAbility->link)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_TXFC_OFFSET, pPortAbility->txpause)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_RXFC_OFFSET, pPortAbility->rxpause)) != RT_ERR_OK)
+                return retVal;
+        }
+
+        if(0 == id || 1 == id)
+            return rtl8367c_setAsicReg(RTL8367C_REG_DIGITAL_INTERFACE0_FORCE + id, reg_data);
+        else
+            return rtl8367c_setAsicReg(RTL8367C_REG_DIGITAL_INTERFACE2_FORCE, reg_data);
+    }
+    else if (2 == type)
+    {
+        if (1 == id)
+        {
+             if((retVal = rtl8367c_setAsicRegBit(0x1311, 2, pPortAbility->duplex)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBits(0x1311, 0x3, pPortAbility->speed)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(0x1311, 4, pPortAbility->link)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(0x1311, 6, pPortAbility->txpause)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(0x1311, 5, pPortAbility->rxpause)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(0x1311, 12, pPortAbility->forcemode)) != RT_ERR_OK)
+                return retVal;
+
+            if (pPortAbility->link == 1)
+            {
+                if((retVal = rtl8367c_setAsicRegBit(0x1311, 4, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                if((retVal = rtl8367c_setAsicRegBit(0x1311, 4, 1)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else
+            {
+                if((retVal = rtl8367c_setAsicRegBits(0x1311, 0x3, 2)) != RT_ERR_OK)
+                    return retVal;
+            }
+
+
+            if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_FDUP_OFFSET, pPortAbility->duplex)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_SPD_MASK, pPortAbility->speed)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_LINK_OFFSET, pPortAbility->link)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_TXFC_OFFSET, pPortAbility->txpause)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_RXFC_OFFSET, pPortAbility->rxpause)) != RT_ERR_OK)
+                return retVal;
+        }
+        else if (2 == id)
+        {
+            if((retVal = rtl8367c_setAsicRegBit(0x13c4, 2, pPortAbility->duplex)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBits(0x13c4, 0x3, pPortAbility->speed)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(0x13c4, 4, pPortAbility->link)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(0x13c4, 6, pPortAbility->txpause)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(0x13c4, 5, pPortAbility->rxpause)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(0x13c4, 12, pPortAbility->forcemode)) != RT_ERR_OK)
+                return retVal;
+
+            if (pPortAbility->link == 1)
+            {
+                if((retVal = rtl8367c_setAsicRegBit(0x13c4, 4, 0)) != RT_ERR_OK)
+                    return retVal;
+
+                if((retVal = rtl8367c_setAsicRegBit(0x13c4, 4, 1)) != RT_ERR_OK)
+                    return retVal;
+            }
+            else
+            {
+                if((retVal = rtl8367c_setAsicRegBits(0x13c4, 0x3, 2)) != RT_ERR_OK)
+                    return retVal;
+            }
+
+            if((retVal = rtl8367c_setAsicRegBit(0x1dc1, RTL8367C_CFG_SGMII_FDUP_OFFSET, pPortAbility->duplex)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBits(0x1dc1, RTL8367C_CFG_SGMII_SPD_MASK, pPortAbility->speed)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(0x1dc1, RTL8367C_CFG_SGMII_LINK_OFFSET, pPortAbility->link)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(0x1dc1, RTL8367C_CFG_SGMII_TXFC_OFFSET, pPortAbility->txpause)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicRegBit(0x1dc1, RTL8367C_CFG_SGMII_RXFC_OFFSET, pPortAbility->rxpause)) != RT_ERR_OK)
+                return retVal;
+        }
+
+    }
+    else if(3 == type)
+    {
+        if(1 == id)
+        {
+            if((retVal = rtl8367c_getAsicRegBit(0x1d11, 6, &sgmiibit)) != RT_ERR_OK)
+                return retVal;
+            if((retVal = rtl8367c_getAsicRegBit(0x1d11, 11, &hisgmiibit)) != RT_ERR_OK)
+                return retVal;
+
+            if ((sgmiibit == 1) || (hisgmiibit == 1))
+            {
+                /*for 1000x/100fx/1000x_100fx, param has to be set to serdes registers*/
+                if((retVal = rtl8367c_getAsicReg(0x1d41, &regValue)) != RT_ERR_OK)
+                    return retVal;
+
+                /*bit5: cfg_mac6_fib =1,  bit7: cfg_mac6_fib2=1*/
+                if((regValue & 0xa0) == 0xa0)
+                {
+                     /* new_cfg_sds_mode */
+                    if((retVal = rtl8367c_getAsicRegBits(0x1d95, 0x1f00, &regValue2)) != RT_ERR_OK)
+                        return retVal;
+
+                     /*1000X*/
+                    if(regValue2 == 0x4)
+                    {
+#if 0
+                        /* new_cfg_sds_mode:reset mode */
+                        if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x1f)) != RT_ERR_OK)
+                            return retVal;
+#endif
+                        /* Enable new sds mode config */
+                        if((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 1)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 4 0  bit 12  set 1,  bit15~13 = 4*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFF0FFF;
+                        reg_data |= 0x9000;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,0, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 0 2  bit 6  set 1,  bit13 set to 0, bit12 nway_en*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 0, 2, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFFDFFF;
+                        reg_data |= 0x40;
+                        if(pPortAbility->forcemode)
+                            reg_data &= 0xffffefff;
+                        else
+                            reg_data |= 0x1000;
+
+                        if((retVal = rtl8367c_setAsicSdsReg(0,0,2, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 4 2  bit 8  rx pause,  bit7 tx pause*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 2, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        if (pPortAbility->txpause)
+                            reg_data |= 0x80;
+                        else
+                            reg_data &= (~0x80);
+
+                        if (pPortAbility->rxpause)
+                            reg_data |= 0x100;
+                        else
+                            reg_data &= (~0x100);
+
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,2, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                         /* 0 4 0  bit 12  set 0*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFFEFFF;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,0, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /*new_cfg_sds_mode=1000x*/
+                        if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x4)) != RT_ERR_OK)
+                            return retVal;
+
+                    }
+                    else if(regValue2 == 0x5)
+                    {
+#if 0
+                        /*100FX*/
+                        if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x1f)) != RT_ERR_OK)
+                            return retVal;
+#endif
+                        /*cfg_sds_mode_sel_new=1  */
+                        if((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 1)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 4 0  bit 12  set 1,  bit15~13 = 5*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFF0FFF;
+                        reg_data |= 0xB000;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,0, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 0 2  bit 6  set 0,  bit13 set to 1, bit12 0*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 0, 2, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFFFFBF;
+                        reg_data |= 0x2000;
+                        reg_data &= 0xffffefff;
+
+                        if((retVal = rtl8367c_setAsicSdsReg(0,0,2, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 4 2  bit 8  rx pause,  bit7 tx pause*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 2, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        if (pPortAbility->txpause)
+                            reg_data |= 0x80;
+                        else
+                            reg_data &= (~0x80);
+                        if (pPortAbility->rxpause)
+                            reg_data |= 0x100;
+                        else
+                            reg_data &= (~0x100);
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,2, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                         /* 0 4 0  bit 12  set 0*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFFEFFF;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,0, reg_data)) != RT_ERR_OK)
+                            return retVal;
+                       /* new_cfg_sds_mode=1000x */
+                        if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x5)) != RT_ERR_OK)
+                            return retVal;
+
+                    }
+                    else if(regValue2 == 0x7)
+                    {
+#if 0
+                        /*100FX*/
+                        if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x1f)) != RT_ERR_OK)
+                            return retVal;
+#endif
+                        if((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 1)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 4 0  bit 12  set 1,  bit15~13 = 4*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFF0FFF;
+                        reg_data |= 0x9000;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,0, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 0 2  bit 6  set 1,  bit13 set to 0, bit12 nway_en*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 0, 2, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFFDFFF;
+                        reg_data |= 0x40;
+                        if(pPortAbility->forcemode)
+                            reg_data &= 0xffffefff;
+                        else
+                            reg_data |= 0x1000;
+
+                        if((retVal = rtl8367c_setAsicSdsReg(0,0,2, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 4 2  bit 8  rx pause,  bit7 tx pause*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 2, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        if (pPortAbility->txpause)
+                            reg_data |= 0x80;
+                        else
+                            reg_data &= (~0x80);
+                        if (pPortAbility->rxpause)
+                            reg_data |= 0x100;
+                        else
+                            reg_data &=(~0x100);
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,2, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                         /* 0 4 0  bit 12  set 0*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFFEFFF;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,0, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 4 0  bit 12  set 1,  bit15~13 = 5*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFF0FFF;
+                        reg_data |= 0xB000;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,0, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 0 2  bit 6  set 0,  bit13 set to 1, bit12 0*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 0, 2, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFFFFBF;
+                        reg_data |= 0x2000;
+                        reg_data &= 0xffffefff;
+
+                        if((retVal = rtl8367c_setAsicSdsReg(0,0,2, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 4 2  bit 8  rx pause,  bit7 tx pause*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 2, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        if (pPortAbility->txpause)
+                            reg_data |= 0x80;
+                        else
+                            reg_data &= 0xffffff7f;
+                        if (pPortAbility->rxpause)
+                            reg_data |= 0x100;
+                        else
+                            reg_data &= 0xfffffeff;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,2, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                         /* 0 4 0  bit 12  set 0*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFFEFFF;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,0, reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        /*sds_mode:*/
+                        if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x7)) != RT_ERR_OK)
+                            return retVal;
+
+                    }
+
+                    /*disable force ability   ---      */
+                    if((retVal = rtl8367c_setAsicRegBit(0x137c, 12, 0)) != RT_ERR_OK)
+                        return retVal;
+                    return RT_ERR_OK;
+
+                }
+
+                /* new_cfg_sds_mode */
+                if((retVal = rtl8367c_getAsicRegBits(0x1d95, 0x1f00, &regValue2)) != RT_ERR_OK)
+                    return retVal;
+                if(regValue2 == 0x2)
+                {
+#if 0
+                    /*SGMII*/
+                    if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x1f)) != RT_ERR_OK)
+                        return retVal;
+#endif
+                    if((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 1)) != RT_ERR_OK)
+                        return retVal;
+
+                    for(i=0;i<0xfff; i++);
+
+                    /* 0 2 0  bit 8-9  nway*/
+                    if((retVal = rtl8367c_getAsicSdsReg(0, 2, 0, &reg_data)) != RT_ERR_OK)
+                        return retVal;
+                    reg_data &= 0xfffffcff;
+                    if (pPortAbility->nway)
+                        reg_data &= 0xfffffcff;
+                    else
+                        reg_data |= 0x100;
+                    if((retVal = rtl8367c_setAsicSdsReg(0,2,0, reg_data)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x2)) != RT_ERR_OK)
+                        return retVal;
+
+                    for(i=0;i<0xfff; i++);
+
+                    if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_FDUP_OFFSET, pPortAbility->duplex)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_SPD_MASK, pPortAbility->speed)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_TXFC_OFFSET, pPortAbility->txpause)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_RXFC_OFFSET, pPortAbility->rxpause)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_LINK_OFFSET, pPortAbility->link)) != RT_ERR_OK)
+                        return retVal;
+
+                    /*disable force ability   ---      */
+                    if((retVal = rtl8367c_setAsicRegBit(0x137c, 12, 0)) != RT_ERR_OK)
+                        return retVal;
+                    return RT_ERR_OK;
+                }
+                else if(regValue2 == 0x12)
+                {
+#if 0
+                    /*HiSGMII*/
+                    if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x1f)) != RT_ERR_OK)
+                        return retVal;
+#endif
+                    if((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 1)) != RT_ERR_OK)
+                        return retVal;
+
+                    for(i=0;i<0xfff; i++);
+
+                    /* 0 2 0  bit 8-9  nway*/
+                    if((retVal = rtl8367c_getAsicSdsReg(0, 2, 0, &reg_data)) != RT_ERR_OK)
+                        return retVal;
+                    reg_data &= 0xfffffcff;
+                    if (pPortAbility->nway)
+                        reg_data &= 0xfffffcff;
+                    else
+                        reg_data |= 0x100;
+                    if((retVal = rtl8367c_setAsicSdsReg(0,2,0, reg_data)) != RT_ERR_OK)
+                        return retVal;
+
+
+                    if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x12)) != RT_ERR_OK)
+                        return retVal;
+
+                    for(i=0;i<0xfff; i++);
+
+                    if((retVal = rtl8367c_setAsicRegBit(0x1d11, 11, 0x1)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_FDUP_OFFSET, pPortAbility->duplex)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_SPD_MASK, pPortAbility->speed)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_TXFC_OFFSET, pPortAbility->txpause)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_RXFC_OFFSET, pPortAbility->rxpause)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_LINK_OFFSET, pPortAbility->link)) != RT_ERR_OK)
+                        return retVal;
+
+                    /*disable force ability   ---      */
+                    if((retVal = rtl8367c_setAsicRegBit(0x137c, 12, 0)) != RT_ERR_OK)
+                        return retVal;
+                    return RT_ERR_OK;
+
+                }
+            }
+            else
+            {
+                if((retVal = rtl8367c_getAsicRegBits(0x1d3d, 10, &regValue2)) != RT_ERR_OK)
+                    return retVal;
+                if (regValue2 == 0)
+                {
+                    /*ext1_force_ablty*/
+                    if((retVal = rtl8367c_setAsicRegBit(0x1311, 2, pPortAbility->duplex)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBits(0x1311, 0x3, pPortAbility->speed)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(0x1311, 4, pPortAbility->link)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(0x1311, 6, pPortAbility->txpause)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(0x1311, 5, pPortAbility->rxpause)) != RT_ERR_OK)
+                        return retVal;
+
+                    /*force mode for ext1*/
+                    if((retVal = rtl8367c_setAsicRegBit(0x1311, 12, pPortAbility->forcemode)) != RT_ERR_OK)
+                        return retVal;
+
+                    if (pPortAbility->link == 1)
+                    {
+                        if((retVal = rtl8367c_setAsicRegBit(0x1311, 4, 0)) != RT_ERR_OK)
+                            return retVal;
+
+                        if((retVal = rtl8367c_setAsicRegBit(0x1311, 4, 1)) != RT_ERR_OK)
+                            return retVal;
+                    }
+                    else
+                    {
+                        if((retVal = rtl8367c_setAsicRegBits(0x1311, 0x3, 2)) != RT_ERR_OK)
+                            return retVal;
+                    }
+
+                    /*disable force ability   ---      */
+                    if((retVal = rtl8367c_setAsicRegBit(0x137c, 12, 0)) != RT_ERR_OK)
+                        return retVal;
+                    return RT_ERR_OK;
+                }
+            }
+
+
+        }
+        else if (2 == id)
+        {
+
+            if((retVal = rtl8367c_getAsicRegBit(0x1d95, 0, &sgmiibit)) != RT_ERR_OK)
+                    return retVal;
+            if (sgmiibit == 1)
+            {
+                /*for 1000x/100fx/1000x_100fx, param has to bet set to serdes registers*/
+                if((retVal = rtl8367c_getAsicReg(0x1d95, &regValue)) != RT_ERR_OK)
+                    return retVal;
+                /*cfg_mac7_sel_sgmii=1 & cfg_mac7_fib =1*/
+                if((regValue & 0x3) == 0x3)
+                {
+                    if((retVal = rtl8367c_getAsicRegBits(0x1d95, 0x1f00, &regValue2)) != RT_ERR_OK)
+                        return retVal;
+
+                    if(regValue2 == 0x4)
+                    {
+                        /*1000X*/
+#if 0
+                        if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x1f)) != RT_ERR_OK)
+                            return retVal;
+#endif
+                        if((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 1)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 4 0  bit 12  set 1,  bit15~13 = 4*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFF0FFF;
+                        reg_data |= 0x9000;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,0, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 0 2  bit 6  set 1,  bit13 set to 0, bit12 nway_en*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 0, 2, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFFDFFF;
+                        reg_data |= 0x40;
+                        if(pPortAbility->forcemode)
+                            reg_data &= 0xffffefff;
+                        else
+                            reg_data |= 0x1000;
+
+                        if((retVal = rtl8367c_setAsicSdsReg(0,0,2, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 4 2  bit 8  rx pause,  bit7 tx pause*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 2, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        if (pPortAbility->txpause)
+                            reg_data |= 0x80;
+                        else
+                            reg_data &= 0xffffff7f;
+                        if (pPortAbility->rxpause)
+                            reg_data |= 0x100;
+                        else
+                            reg_data &= 0xfffffeff;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,2, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                         /* 0 4 0  bit 12  set 0*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFFEFFF;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,0, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x4)) != RT_ERR_OK)
+                            return retVal;
+
+                    }
+                    else if(regValue2 == 0x5)
+                    {
+                        /*100FX*/
+#if 0
+                        if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x1f)) != RT_ERR_OK)
+                            return retVal;
+#endif
+                        if((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 1)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 4 0  bit 12  set 1,  bit15~13 = 5*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFF0FFF;
+                        reg_data |= 0xB000;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,0, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 0 2  bit 6  set 0,  bit13 set to 1, bit12 0*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 0, 2, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFFFFBF;
+                        reg_data |= 0x2000;
+                        reg_data &= 0xffffefff;
+
+                        if((retVal = rtl8367c_setAsicSdsReg(0,0,2, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 4 2  bit 8  rx pause,  bit7 tx pause*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 2, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        if (pPortAbility->txpause)
+                            reg_data |= 0x80;
+                        else
+                            reg_data &= 0xffffff7f;
+                        if (pPortAbility->rxpause)
+                            reg_data |= 0x100;
+                        else
+                            reg_data &= 0xfffffeff;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,2, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                         /* 0 4 0  bit 12  set 0*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFFEFFF;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,0, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x5)) != RT_ERR_OK)
+                            return retVal;
+
+                    }
+                    else if(regValue2 == 0x7)
+                    {
+                        /*100FX*/
+#if 0
+                        if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x1f)) != RT_ERR_OK)
+                            return retVal;
+#endif
+                        if((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 1)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 4 0  bit 12  set 1,  bit15~13 = 4*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFF0FFF;
+                        reg_data |= 0x9000;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,0, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 0 2  bit 6  set 1,  bit13 set to 0, bit12 nway_en*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 0, 2, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFFDFFF;
+                        reg_data |= 0x40;
+                        if(pPortAbility->forcemode)
+                            reg_data &= 0xffffefff;
+                        else
+                            reg_data |= 0x1000;
+
+                        if((retVal = rtl8367c_setAsicSdsReg(0,0,2, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 4 2  bit 8  rx pause,  bit7 tx pause*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 2, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        if (pPortAbility->txpause)
+                            reg_data |= 0x80;
+                        else
+                            reg_data &= 0xffffff7f;
+                        if (pPortAbility->rxpause)
+                            reg_data |= 0x100;
+                        else
+                            reg_data &= 0xfffffeff;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,2, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                         /* 0 4 0  bit 12  set 0*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFFEFFF;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,0, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 4 0  bit 12  set 1,  bit15~13 = 5*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFF0FFF;
+                        reg_data |= 0xB000;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,0, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 0 2  bit 6  set 0,  bit13 set to 1, bit12 0*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 0, 2, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFFFFBF;
+                        reg_data |= 0x2000;
+                        reg_data &= 0xffffefff;
+
+                        if((retVal = rtl8367c_setAsicSdsReg(0,0,2, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        /* 0 4 2  bit 8  rx pause,  bit7 tx pause*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 2, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        if (pPortAbility->txpause)
+                            reg_data |= 0x80;
+                        else
+                            reg_data  &= 0xffffff7f;
+                        if (pPortAbility->rxpause)
+                            reg_data |= 0x100;
+                        else
+                            reg_data &= 0xfffffeff;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,2, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                         /* 0 4 0  bit 12  set 0*/
+                        if((retVal = rtl8367c_getAsicSdsReg(0, 4, 0, &reg_data)) != RT_ERR_OK)
+                            return retVal;
+                        reg_data &= 0xFFFFEFFF;
+                        if((retVal = rtl8367c_setAsicSdsReg(0,4,0, reg_data)) != RT_ERR_OK)
+                            return retVal;
+
+                        if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x7)) != RT_ERR_OK)
+                            return retVal;
+
+                    }
+
+                    if((retVal = rtl8367c_setAsicRegBit(0x137d, 12, 0)) != RT_ERR_OK)
+                        return retVal;
+                    return RT_ERR_OK;
+
+                }
+                /* new_cfg_sds_mode */
+                if((retVal = rtl8367c_getAsicRegBits(0x1d95, 0x1f00, &regValue2)) != RT_ERR_OK)
+                        return retVal;
+                if(regValue2 == 0x2)
+                {
+                    /*SGMII*/
+#if 0
+                    if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x1f)) != RT_ERR_OK)
+                        return retVal;
+#endif
+                    if((retVal = rtl8367c_setAsicRegBit(0x1d95, 13, 1)) != RT_ERR_OK)
+                        return retVal;
+
+                    for(i=0;i<0xfff; i++);
+
+                    /* 0 2 0  bit 8-9  nway*/
+                    if((retVal = rtl8367c_getAsicSdsReg(0, 2, 0, &reg_data)) != RT_ERR_OK)
+                        return retVal;
+                    reg_data &= 0xfffffcff;
+                    if (pPortAbility->nway)
+                        reg_data &= 0xfffffcff;
+                    else
+                        reg_data |= 0x100;
+                    if((retVal = rtl8367c_setAsicSdsReg(0,2,0, reg_data)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBits(0x1d95, 0x1f00, 0x2)) != RT_ERR_OK)
+                        return retVal;
+
+                    for(i=0;i<0xfff; i++);
+
+                    if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_FDUP_OFFSET, pPortAbility->duplex)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_SPD_MASK, pPortAbility->speed)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_TXFC_OFFSET, pPortAbility->txpause)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_RXFC_OFFSET, pPortAbility->rxpause)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_LINK_OFFSET, pPortAbility->link)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(0x137d, 12, 0)) != RT_ERR_OK)
+                        return retVal;
+                    return RT_ERR_OK;
+                }
+            }
+            else
+            {
+
+                /*ext2_force_ablty*/
+                if((retVal = rtl8367c_setAsicRegBit(0x13c4, 2, pPortAbility->duplex)) != RT_ERR_OK)
+                    return retVal;
+
+                if((retVal = rtl8367c_setAsicRegBits(0x13c4, 0x3, pPortAbility->speed)) != RT_ERR_OK)
+                    return retVal;
+
+                if((retVal = rtl8367c_setAsicRegBit(0x13c4, 4, pPortAbility->link)) != RT_ERR_OK)
+                    return retVal;
+
+                if((retVal = rtl8367c_setAsicRegBit(0x13c4, 6, pPortAbility->txpause)) != RT_ERR_OK)
+                    return retVal;
+
+                if((retVal = rtl8367c_setAsicRegBit(0x13c4, 5, pPortAbility->rxpause)) != RT_ERR_OK)
+                    return retVal;
+
+                /*force mode for ext2*/
+                if((retVal = rtl8367c_setAsicRegBit(0x13c4, 12, pPortAbility->forcemode)) != RT_ERR_OK)
+                    return retVal;
+
+                if (pPortAbility->link == 1)
+                {
+                    if((retVal = rtl8367c_setAsicRegBit(0x13c4, 4, 0)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(0x13c4, 4, 1)) != RT_ERR_OK)
+                        return retVal;
+                }
+                else
+                {
+                    if((retVal = rtl8367c_setAsicRegBits(0x13c4, 0x3, 2)) != RT_ERR_OK)
+                        return retVal;
+                }
+
+
+                if((retVal = rtl8367c_getAsicRegBit(0x1d3d, 10, &reg_data)) != RT_ERR_OK)
+                        return retVal;
+                if(reg_data == 1)
+                {
+                if((retVal = rtl8367c_setAsicRegBit(0x1311, 2, pPortAbility->duplex)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBits(0x1311, 0x3, pPortAbility->speed)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(0x1311, 4, pPortAbility->link)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(0x1311, 6, pPortAbility->txpause)) != RT_ERR_OK)
+                        return retVal;
+
+                    if((retVal = rtl8367c_setAsicRegBit(0x1311, 5, pPortAbility->rxpause)) != RT_ERR_OK)
+                        return retVal;
+
+                    /*force mode for ext1*/
+                    if((retVal = rtl8367c_setAsicRegBit(0x1311, 12, pPortAbility->forcemode)) != RT_ERR_OK)
+                        return retVal;
+
+                    if (pPortAbility->link == 1)
+                    {
+                        if((retVal = rtl8367c_setAsicRegBit(0x1311, 4, 0)) != RT_ERR_OK)
+                            return retVal;
+
+                        if((retVal = rtl8367c_setAsicRegBit(0x1311, 4, 1)) != RT_ERR_OK)
+                            return retVal;
+                    }
+                    else
+                    {
+                        if((retVal = rtl8367c_setAsicRegBits(0x1311, 0x3, 2)) != RT_ERR_OK)
+                            return retVal;
+                    }
+                }
+
+
+            }
+
+            /*disable force ability   ---      */
+            if((retVal = rtl8367c_setAsicRegBit(0x137d, 12, 0)) != RT_ERR_OK)
+                return retVal;
+        }
+#if 0
+        if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_FDUP_OFFSET, pPortAbility->duplex)) != RT_ERR_OK)
+            return retVal;
+
+        if((retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_SPD_MASK, pPortAbility->speed)) != RT_ERR_OK)
+            return retVal;
+
+        if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_TXFC_OFFSET, pPortAbility->txpause)) != RT_ERR_OK)
+            return retVal;
+
+        if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_RXFC_OFFSET, pPortAbility->rxpause)) != RT_ERR_OK)
+            return retVal;
+
+        if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_LINK_OFFSET, pPortAbility->link)) != RT_ERR_OK)
+            return retVal;
+#endif
+    }
+
+    return RT_ERR_OK;
+}

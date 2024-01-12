@@ -1,0 +1,6 @@
+static void md5_hmac_exit_tfm(struct crypto_tfm *tfm)
+{
+    struct md5_hmac_ctx *mctx = crypto_tfm_ctx(tfm);
+    kfree(mctx->temp);
+    kfree(mctx->desc);
+}

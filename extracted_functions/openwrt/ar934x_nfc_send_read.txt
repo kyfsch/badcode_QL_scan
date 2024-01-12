@@ -1,0 +1,25 @@
+static int ar934x_nfc_send_read(struct ar934x_nfc *nfc, unsigned command,
+				int column, int page_addr, int len)
+{
+	u32 cmd_reg;
+	int err;
+
+	nfc_dbg(nfc, "read, column=%d page=%d len=%d\n",
+		column, page_addr, len);
+
+	cmd_reg = (command & AR934X_NFC_CMD_CMD0_M) << AR934X_NFC_CMD_CMD0_S;
+
+	if (nfc->small_page) {
+		cmd_reg |= AR934X_NFC_CMD_SEQ_18;
+	} else {
+		cmd_reg |= NAND_CMD_READSTART << AR934X_NFC_CMD_CMD1_S;
+		cmd_reg |= AR934X_NFC_CMD_SEQ_1C5A1CXR;
+	}
+
+	err = ar934x_nfc_do_rw_command(nfc, column, page_addr, len,
+				       cmd_reg, nfc->ctrl_reg, false);
+
+	nfc_debug_data("[data] ", nfc->buf, len);
+
+	return err;
+}

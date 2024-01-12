@@ -1,0 +1,34 @@
+static int rtcl_set_rate(struct clk_hw *hw, unsigned long rate, unsigned long parent_rate)
+{
+	int tab_idx;
+	struct rtcl_clk *clk = rtcl_hw_to_clk(hw);
+	const struct rtcl_rtab_set *rtab = &rtcl_rtab_set[rtcl_ccu->soc][clk->idx];
+	const struct rtcl_round_set *round = &rtcl_round_set[rtcl_ccu->soc][clk->idx];
+
+	if ((parent_rate != OSC_RATE) || (!rtcl_ccu->sram.vbase))
+		return -EINVAL;
+/*
+ * Currently we do not know if SRAM is stable on these devices. Maybe someone
+ * changes memory in this region and does not care about proper allocation. So
+ * check if something might go wrong.
+ */
+	if (unlikely(*rtcl_ccu->sram.pmark != RTL_SRAM_MARKER)) {
+		dev_err(&rtcl_ccu->pdev->dev, "SRAM code lost\n");
+		return -EINVAL;
+	}
+
+	tab_idx = (rate - round->min) / round->step;
+	if ((tab_idx < 0) || (tab_idx >= rtab->count) || (rtab->rset[tab_idx].rate != rate))
+		return -EINVAL;
+
+	rtcl_ccu->clks[clk->idx].rate = rate;
+
+	switch (rtcl_ccu->soc) {
+	case SOC_RTL838X:
+		return rtcl_838x_set_rate(clk->idx, &rtab->rset[tab_idx]);
+	case SOC_RTL839X:
+		return rtcl_839x_set_rate(clk->idx, &rtab->rset[tab_idx]);
+	}
+
+	return -ENXIO;
+}

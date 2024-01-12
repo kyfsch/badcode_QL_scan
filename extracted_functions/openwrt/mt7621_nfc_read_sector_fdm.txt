@@ -1,0 +1,17 @@
+static void mt7621_nfc_read_sector_fdm(struct mt7621_nfc *nfc, u32 sect)
+{
+	struct nand_chip *nand = &nfc->nand;
+	u32 vall, valm;
+	u8 *oobptr;
+	int i;
+
+	vall = nfi_read32(nfc, NFI_FDML(sect));
+	valm = nfi_read32(nfc, NFI_FDMM(sect));
+	oobptr = oob_fdm_ptr(nand, sect);
+
+	for (i = 0; i < 4; i++)
+		oobptr[i] = (vall >> (i * 8)) & 0xff;
+
+	for (i = 0; i < 4; i++)
+		oobptr[i + 4] = (valm >> (i * 8)) & 0xff;
+}

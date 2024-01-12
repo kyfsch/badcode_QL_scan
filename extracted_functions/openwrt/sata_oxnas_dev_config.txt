@@ -1,0 +1,20 @@
+static void sata_oxnas_dev_config(struct ata_device *pdev)
+{
+	struct sata_oxnas_port_priv *pd = pdev->link->ap->private_data;
+	void __iomem *port_base = pd->port_base;
+	u32 reg;
+
+	DPRINTK("ENTER\n");
+	/* Set the bits to put the port into 28 or 48-bit node */
+	reg = ioread32(port_base + DRIVE_CONTROL);
+	reg &= ~3;
+	reg |= (pdev->flags & ATA_DFLAG_LBA48) ? DR_CON_48 : DR_CON_28;
+	iowrite32(reg, port_base + DRIVE_CONTROL);
+
+	/* if this is an ATA-6 disk, put port into ATA-5 auto translate mode */
+	if (pdev->flags & ATA_DFLAG_LBA48) {
+		reg = ioread32(port_base + PORT_CONTROL);
+		reg |= 2;
+		iowrite32(reg, port_base + PORT_CONTROL);
+	}
+}

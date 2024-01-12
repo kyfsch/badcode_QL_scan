@@ -1,0 +1,10 @@
+int dc_ep_pinmux_get(struct dc_ep_priv *priv, u32 gpio, int *func)
+{
+	struct dc_aca *aca = to_aca(priv);
+
+	if (gpio > aca->max_gpio)
+		return -EINVAL;
+
+	*func = rd32(PADC_MUX(gpio));
+	return 0;
+}

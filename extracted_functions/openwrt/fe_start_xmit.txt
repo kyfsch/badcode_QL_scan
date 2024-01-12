@@ -1,0 +1,30 @@
+static int fe_start_xmit(struct sk_buff *skb, struct net_device *dev)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+	struct fe_tx_ring *ring = &priv->tx_ring;
+	struct net_device_stats *stats = &dev->stats;
+	int tx_num;
+	int len = skb->len;
+
+	if (fe_skb_padto(skb, priv)) {
+		netif_warn(priv, tx_err, dev, "tx padding failed!\n");
+		return NETDEV_TX_OK;
+	}
+
+	tx_num = fe_cal_txd_req(skb);
+	if (unlikely(fe_empty_txd(ring) <= tx_num)) {
+		netif_stop_queue(dev);
+		netif_err(priv, tx_queued, dev,
+			  "Tx Ring full when queue awake!\n");
+		return NETDEV_TX_BUSY;
+	}
+
+	if (fe_tx_map_dma(skb, dev, tx_num, ring) < 0) {
+		stats->tx_dropped++;
+	} else {
+		stats->tx_packets++;
+		stats->tx_bytes += len;
+	}
+
+	return NETDEV_TX_OK;
+}

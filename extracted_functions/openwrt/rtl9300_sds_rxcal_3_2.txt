@@ -1,0 +1,57 @@
+void rtl9300_sds_rxcal_3_2(int sds_num, phy_interface_t phy_mode)
+{
+	u32 sum10 = 0, avg10, int10;
+	int dac_long_cable_offset;
+	bool eq_hold_enabled;
+	int i;
+
+	if (phy_mode == PHY_INTERFACE_MODE_10GBASER || phy_mode == PHY_INTERFACE_MODE_1000BASEX) {
+		/* rtl9300_rxCaliConf_serdes_myParam */
+		dac_long_cable_offset = 3;
+		eq_hold_enabled = true;
+	} else {
+		/* rtl9300_rxCaliConf_phy_myParam */
+		dac_long_cable_offset = 0;
+		eq_hold_enabled = false;
+	}
+
+	if (phy_mode == PHY_INTERFACE_MODE_1000BASEX)
+		pr_warn("%s: LEQ only valid for 10GR!\n", __func__);
+
+	pr_info("start_1.3.2");
+
+	for(i = 0; i < 10; i++) {
+		sum10 += rtl9300_sds_rxcal_leq_read(sds_num);
+		mdelay(10);
+	}
+
+	avg10 = (sum10 / 10) + (((sum10 % 10) >= 5) ? 1 : 0);
+	int10 = sum10 / 10;
+
+	pr_info("sum10:%u, avg10:%u, int10:%u", sum10, avg10, int10);
+
+	if (phy_mode == PHY_INTERFACE_MODE_10GBASER || phy_mode == PHY_INTERFACE_MODE_1000BASEX) {
+		if (dac_long_cable_offset) {
+			rtl9300_sds_rxcal_leq_offset_manual(sds_num, 1, dac_long_cable_offset);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x17, 7, 7, eq_hold_enabled);
+			if (phy_mode == PHY_INTERFACE_MODE_10GBASER)
+				rtl9300_sds_rxcal_leq_manual(sds_num, true, avg10);
+		} else {
+			if (sum10 >= 5) {
+				rtl9300_sds_rxcal_leq_offset_manual(sds_num, 1, 3);
+				rtl9300_sds_field_w(sds_num, 0x2e, 0x17, 7, 7, 0x1);
+				if (phy_mode == PHY_INTERFACE_MODE_10GBASER)
+					rtl9300_sds_rxcal_leq_manual(sds_num, true, avg10);
+			} else {
+				rtl9300_sds_rxcal_leq_offset_manual(sds_num, 1, 0);
+				rtl9300_sds_field_w(sds_num, 0x2e, 0x17, 7, 7, 0x1);
+				if (phy_mode == PHY_INTERFACE_MODE_10GBASER)
+					rtl9300_sds_rxcal_leq_manual(sds_num, true, avg10);
+			}
+		}
+	}
+
+	pr_info("Sds:%u LEQ = %u",sds_num, rtl9300_sds_rxcal_leq_read(sds_num));
+
+	pr_info("end_1.3.2");
+}

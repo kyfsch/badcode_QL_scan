@@ -1,0 +1,19 @@
+static int bcm6328_pcie_write(struct pci_bus *bus, unsigned int devfn,
+			      int where, int size, u32 val)
+{
+	struct bcm6328_pcie *priv = &bcm6328_pcie;
+	u32 data;
+	u32 reg = where & ~3;
+
+	if (!bcm6328_pcie_can_access(bus, devfn))
+		return PCIBIOS_DEVICE_NOT_FOUND;
+
+	if (bus->number == PCIE_BUS_DEVICE)
+		reg += PCIE_DEVICE_OFFSET;
+
+	data = __raw_readl(priv->base + reg);
+	data = preprocess_write(data, val, where, size);
+	__raw_writel(data, priv->base + reg);
+
+	return PCIBIOS_SUCCESSFUL;
+}

@@ -1,0 +1,26 @@
+static int rtl8231_pin_dir(struct rtl8231_gpios *gpios, u32 gpio, u32 dir)
+{
+	u32 v;
+	int pin_sel_addr = RTL8231_GPIO_PIN_SEL(gpio);
+	int pin_dir_addr = RTL8231_GPIO_DIR(gpio);
+	int dpin = gpio % 16;
+
+	if (gpio > 31) {
+		pr_debug("WARNING: HIGH pin\n");
+		dpin += 5;
+		pin_dir_addr = pin_sel_addr;
+	}
+
+	v = rtl8231_read_cached(gpios, pin_dir_addr);
+	if (v & 0x80000000) {
+		pr_err("Error reading RTL8231\n");
+		return -1;
+	}
+
+	v = (v & ~(1 << dpin)) | (dir << dpin);
+	rtl8231_write(gpios, pin_dir_addr, v);
+	gpios->reg_shadow[pin_dir_addr] = v;
+	gpios->reg_cached |= 1 << pin_dir_addr;
+
+	return 0;
+}

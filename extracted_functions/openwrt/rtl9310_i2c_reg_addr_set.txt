@@ -1,0 +1,9 @@
+static void rtl9310_i2c_reg_addr_set(struct rtl9300_i2c *i2c, u32 reg, u16 len)
+{
+	/* Set register address width */
+	REG_MASK(i2c, 0x3 << RTL9310_I2C_CTRL_MADDR_WIDTH, len << RTL9310_I2C_CTRL_MADDR_WIDTH,
+		 RTL9310_I2C_CTRL);
+
+	/* Set register address */
+	writel(reg, REG(i2c, RTL9310_I2C_MEMADDR));
+}

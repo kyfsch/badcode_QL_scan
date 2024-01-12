@@ -1,0 +1,13 @@
+static void rtl83xx_vlan_set_pvid(struct rtl838x_switch_priv *priv,
+				  int port, int pvid)
+{
+	/* Set both inner and outer PVID of the port */
+	priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_INNER, pvid);
+	priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_OUTER, pvid);
+	priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_INNER,
+					PBVLAN_MODE_UNTAG_AND_PRITAG);
+	priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_OUTER,
+					PBVLAN_MODE_UNTAG_AND_PRITAG);
+
+	priv->ports[port].pvid = pvid;
+}

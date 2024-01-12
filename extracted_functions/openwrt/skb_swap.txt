@@ -1,0 +1,3 @@
+  static void skb_swap(struct sk_buff *);
+#else
+  #define skb_swap(skb)                                 do {} while (0)

@@ -1,0 +1,93 @@
+static int lq_queue_mgr(struct des_ctx *ctx, struct ablkcipher_request *areq, 
+                        u8 *iv, int encdec, int mode)
+{
+    int err = -EINVAL;
+    unsigned long queue_flag;
+    struct scatterlist *src = areq->src;
+    struct scatterlist *dst = areq->dst;
+    struct des_container *des_con = NULL;
+    u32 remain, inc, nbytes = areq->nbytes;
+    u32 chunk_bytes = src->length;
+   
+    des_con = (struct des_container *)kmalloc(sizeof(struct des_container), 
+                                       GFP_KERNEL);
+
+    if (!(des_con)) {
+        printk("Cannot allocate memory for AES container, fn %s, ln %d\n",
+                __func__, __LINE__);
+        return -ENOMEM;
+    }
+  
+    /* DES encrypt/decrypt mode  */
+    if (mode == 5) {
+        nbytes = DES_BLOCK_SIZE;
+        chunk_bytes = DES_BLOCK_SIZE;
+        mode = 0;
+    }
+
+    des_con->bytes_processed = nbytes;
+    des_con->arequest = (*areq);
+    remain = nbytes;
+
+    //printk("debug - Line: %d, func: %s, reqsize: %d, scattersize: %d\n", 
+	//	__LINE__, __func__, nbytes, chunk_bytes);
+
+    if (remain > DEU_MAX_PACKET_SIZE)  
+        inc = DEU_MAX_PACKET_SIZE;
+    else if(remain > chunk_bytes)
+        inc = chunk_bytes;
+    else 
+        inc = remain;
+    
+    remain -= inc;
+    lq_sg_init(des_con, src, dst);
+     
+    if (remain <= 0 ) { 
+        des_con->complete = 1;
+    }
+    else 
+        des_con->complete = 0;
+        
+    des_con->nbytes = inc; 
+    des_con->iv = iv;
+    des_con->mode = mode;
+    des_con->encdec = encdec;
+
+    spin_lock_irqsave(&des_queue->lock, queue_flag);
+
+    if (des_queue->hw_status == DES_STARTED || des_queue->hw_status == DES_BUSY ||
+        des_queue->list.qlen > 0) {
+
+        des_con->flag = PROCESS_NEW_PACKET;
+        err = ablkcipher_enqueue_request(&des_queue->list, &des_con->arequest);
+        if (err == -EBUSY) {
+            spin_unlock_irqrestore(&des_queue->lock, queue_flag); 
+            printk("Fail to enqueue ablkcipher request ln: %d, err: %d\n",
+                   __LINE__, err);
+            return err;
+        }
+
+        spin_unlock_irqrestore(&des_queue->lock, queue_flag); 
+        return -EINPROGRESS;
+              
+    }
+    else if (des_queue->hw_status == DES_IDLE) {
+        des_queue->hw_status = DES_STARTED;            
+    }
+   
+    des_con->flag = PROCESS_SCATTER;
+    des_con->bytes_processed -= des_con->nbytes;
+
+    err = ablkcipher_enqueue_request(&des_queue->list, &des_con->arequest);
+    if (err == -EBUSY) {
+        printk("Fail to enqueue ablkcipher request ln: %d, err: %d\n",
+	       __LINE__, err);
+
+        spin_unlock_irqrestore(&des_queue->lock, queue_flag);
+        return err;
+     }
+                  
+     spin_unlock_irqrestore(&des_queue->lock, queue_flag); 
+     return lq_deu_des_core(ctx, des_con->dst_buf, des_con->src_buf, iv, inc, encdec, mode);
+
+}

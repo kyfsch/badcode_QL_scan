@@ -1,0 +1,6 @@
+static int __init mtdsplit_jimage_init(void)
+{
+	register_mtd_parser(&jimage_generic_parser);
+
+	return 0;
+}

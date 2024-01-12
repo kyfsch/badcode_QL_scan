@@ -1,0 +1,12 @@
+unsigned int mii_mgr_write(unsigned int phy_addr,unsigned int phy_register,unsigned int write_data)
+{
+	struct mii_bus *bus =  _gsw->bus;
+
+	mutex_lock_nested(&bus->mdio_lock, MDIO_MUTEX_NESTED);
+
+	bus->write(bus, phy_addr, phy_register, write_data);
+
+	mutex_unlock(&bus->mdio_lock);
+	
+	return 0;
+}

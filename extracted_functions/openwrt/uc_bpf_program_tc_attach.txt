@@ -1,0 +1,12 @@
+uc_bpf_program_tc_attach(uc_vm_t *vm, size_t nargs)
+{
+	struct uc_bpf_fd *f = uc_fn_thisval("bpf.program");
+	uc_value_t *ifname = uc_fn_arg(0);
+	uc_value_t *type = uc_fn_arg(1);
+	uc_value_t *prio = uc_fn_arg(2);
+
+	if (!f)
+		err_return(EINVAL, NULL);
+
+	return uc_bpf_set_tc_hook(ifname, type, prio, f->fd);
+}

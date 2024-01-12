@@ -1,0 +1,19 @@
+swlib_connect(const char *name)
+{
+	struct swlib_scan_arg arg;
+
+	if (!refcount) {
+		if (swlib_priv_init() < 0)
+			return NULL;
+	};
+
+	arg.head = NULL;
+	arg.ptr = NULL;
+	arg.name = name;
+	swlib_call(SWITCH_CMD_GET_SWITCH, add_switch, NULL, &arg);
+
+	if (!refcount)
+		swlib_priv_free();
+
+	return arg.head;
+}

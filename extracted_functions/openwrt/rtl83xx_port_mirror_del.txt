@@ -1,0 +1,35 @@
+static void rtl83xx_port_mirror_del(struct dsa_switch *ds, int port,
+				    struct dsa_mall_mirror_tc_entry *mirror)
+{
+	int group = 0;
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int ctrl_reg, dpm_reg, spm_reg;
+
+	pr_debug("In %s\n", __func__);
+	for (group = 0; group < 4; group++) {
+		if (priv->mirror_group_ports[group] == mirror->to_local_port)
+			break;
+	}
+	if (group >= 4)
+		return;
+
+	ctrl_reg = priv->r->mir_ctrl + group * 4;
+	dpm_reg = priv->r->mir_dpm + group * 4 * priv->port_width;
+	spm_reg = priv->r->mir_spm + group * 4 * priv->port_width;
+
+	mutex_lock(&priv->reg_mutex);
+	if (mirror->ingress) {
+		/* Ingress, clear source port matrix */
+		priv->r->mask_port_reg_be(1ULL << port, 0, spm_reg);
+	} else {
+		/* Egress, clear destination port matrix */
+		priv->r->mask_port_reg_be(1ULL << port, 0, dpm_reg);
+	}
+
+	if (!(sw_r32(spm_reg) || sw_r32(dpm_reg))) {
+		priv->mirror_group_ports[group] = -1;
+		sw_w32(0, ctrl_reg);
+	}
+
+	mutex_unlock(&priv->reg_mutex);
+}

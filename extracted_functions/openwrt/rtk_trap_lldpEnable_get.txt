@@ -1,0 +1,16 @@
+rtk_api_ret_t rtk_trap_lldpEnable_get(rtk_enable_t *pEnabled)
+{
+    rtk_api_ret_t retVal;
+    rtl8367c_rma_t rmacfg;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pEnabled)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicRmaLldp(pEnabled, &rmacfg)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

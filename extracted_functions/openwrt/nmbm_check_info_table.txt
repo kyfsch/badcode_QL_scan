@@ -1,0 +1,31 @@
+static bool nmbm_check_info_table(struct nmbm_instance *ni, uint32_t start_ba,
+				  uint32_t end_ba, void *data,
+				  uint32_t *mapping_blocks_top_ba)
+{
+	struct nmbm_info_table_header *ifthdr = data;
+	int32_t *block_mapping = (int32_t *)((uintptr_t)data + ifthdr->mapping_table_off);
+	u32 *block_state = (u32 *)((uintptr_t)data + ifthdr->state_table_off);
+	uint32_t minimum_mapping_pb = ni->signature_ba;
+	uint32_t ba;
+
+	for (ba = 0; ba < ni->data_block_count; ba++) {
+		if ((block_mapping[ba] >= ni->data_block_count && block_mapping[ba] < end_ba) ||
+		    block_mapping[ba] == ni->signature_ba)
+			return false;
+
+		if (block_mapping[ba] >= end_ba && block_mapping[ba] < minimum_mapping_pb)
+			minimum_mapping_pb = block_mapping[ba];
+	}
+
+	for (ba = start_ba; ba < end_ba; ba++) {
+		if (nmbm_get_block_state(ni, ba) != BLOCK_ST_GOOD)
+			continue;
+
+		if (nmbm_get_block_state_raw(block_state, ba) != BLOCK_ST_GOOD)
+			return false;
+	}
+
+	*mapping_blocks_top_ba = minimum_mapping_pb - 1;
+
+	return true;
+}

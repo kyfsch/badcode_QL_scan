@@ -1,0 +1,18 @@
+static void dma_start_write(const ulong* buffer, int num_bytes)
+{
+	// Assemble complete memory settings
+	oxnas_dma_device_settings_t mem_settings = oxnas_ram_dma_settings;
+	mem_settings.address_ = (unsigned long) buffer;
+	mem_settings.address_mode_ = OXNAS_DMA_MODE_INC;
+
+	writel(encode_control_status(&mem_settings, &oxnas_sata_dma_settings),
+		SATA_DMA_REGS_BASE + DMA_CTRL_STATUS);
+	writel(mem_settings.address_, SATA_DMA_REGS_BASE + DMA_BASE_SRC_ADR);
+	writel(oxnas_sata_dma_settings.address_,
+		SATA_DMA_REGS_BASE + DMA_BASE_DST_ADR);
+	writel(encode_final_eot(&mem_settings, &oxnas_sata_dma_settings,
+				num_bytes),
+		SATA_DMA_REGS_BASE + DMA_BYTE_CNT);
+
+	dma_start();
+}

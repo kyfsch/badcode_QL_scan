@@ -1,0 +1,25 @@
+static ssize_t swconfig_trig_mode_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+	struct swconfig_trig_data *trig_data = led_cdev->trigger_data;
+	u8 mode;
+
+	read_lock(&trig_data->lock);
+	mode = trig_data->mode;
+	read_unlock(&trig_data->lock);
+
+	if (mode == 0) {
+		strcpy(buf, "none\n");
+	} else {
+		if (mode & SWCONFIG_LED_MODE_LINK)
+			strcat(buf, "link ");
+		if (mode & SWCONFIG_LED_MODE_TX)
+			strcat(buf, "tx ");
+		if (mode & SWCONFIG_LED_MODE_RX)
+			strcat(buf, "rx ");
+		strcat(buf, "\n");
+	}
+
+	return strlen(buf)+1;
+}

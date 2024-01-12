@@ -1,0 +1,39 @@
+static ssize_t trelay_add_write(struct file *file, const char __user *ubuf,
+				size_t count, loff_t *ppos)
+{
+	char buf[256];
+	char *dev1, *dev2, *tmp;
+	ssize_t len, ret;
+
+	len = min(count, sizeof(buf) - 1);
+	if (copy_from_user(buf, ubuf, len))
+		return -EFAULT;
+
+	buf[len] = 0;
+
+	if ((tmp = strchr(buf, '\n')))
+		*tmp = 0;
+
+	dev1 = strchr(buf, ',');
+	if (!dev1)
+		return -EINVAL;
+
+	*(dev1++) = 0;
+
+	dev2 = strchr(dev1, ',');
+	if (!dev2)
+		return -EINVAL;
+
+	*(dev2++) = 0;
+	if (strchr(dev2, ','))
+		return -EINVAL;
+
+	if (!strlen(buf) || !strlen(dev1) || !strlen(dev2))
+		return -EINVAL;
+
+	ret = trelay_do_add(buf, dev1, dev2);
+	if (ret < 0)
+		return ret;
+
+	return count;
+}

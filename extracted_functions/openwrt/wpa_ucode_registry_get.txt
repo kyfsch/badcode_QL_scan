@@ -1,0 +1,7 @@
+uc_value_t *wpa_ucode_registry_get(uc_value_t *reg, int idx)
+{
+	if (!idx)
+		return NULL;
+
+	return ucv_array_get(reg, idx - 1);
+}

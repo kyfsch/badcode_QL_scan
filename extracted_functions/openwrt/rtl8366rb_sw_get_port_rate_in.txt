@@ -1,0 +1,19 @@
+static int rtl8366rb_sw_get_port_rate_in(struct switch_dev *dev,
+				    const struct switch_attr *attr,
+				    struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	u32 data;
+
+	if (val->port_vlan >= RTL8366RB_NUM_PORTS)
+		return -EINVAL;
+
+	rtl8366_smi_read_reg(smi, RTL8366RB_IB_REG(val->port_vlan), &data);
+	data &= RTL8366RB_IB_BDTH_MASK;
+	if (data < RTL8366RB_IB_BDTH_MASK)
+		data += 1;
+
+	val->value.i = (int)data * RTL8366RB_BDTH_UNIT;
+
+	return 0;
+}

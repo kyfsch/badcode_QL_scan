@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsicRemarkingDot1pParameter(rtk_uint32 priority, rtk_uint32 *pNewPriority )
+{
+    if(priority > RTL8367C_PRIMAX )
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    return rtl8367c_getAsicRegBits(RTL8367C_QOS_1Q_REMARK_REG(priority), RTL8367C_QOS_1Q_REMARK_MASK(priority), pNewPriority);
+}

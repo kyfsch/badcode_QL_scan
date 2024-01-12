@@ -1,0 +1,21 @@
+static int rtl838x_eth_remove(struct platform_device *pdev)
+{
+	struct net_device *dev = platform_get_drvdata(pdev);
+	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+
+	if (dev) {
+		pr_info("Removing platform driver for rtl838x-eth\n");
+		rtl838x_mdio_remove(priv);
+		rtl838x_hw_stop(priv);
+
+		netif_tx_stop_all_queues(dev);
+
+		for (int i = 0; i < priv->rxrings; i++)
+			netif_napi_del(&priv->rx_qs[i].napi);
+
+		unregister_netdev(dev);
+		free_netdev(dev);
+	}
+
+	return 0;
+}

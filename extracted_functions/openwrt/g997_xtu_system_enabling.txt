@@ -1,0 +1,40 @@
+static void g997_xtu_system_enabling(int fd, standard_t *standard) {
+	IOCTL(DSL_G997_XTUSystemEnabling_t, DSL_FIO_G997_XTU_SYSTEM_ENABLING_STATUS_GET)
+
+	m_array("xtse", out.data.XTSE, DSL_G997_NUM_XTSE_OCTETS);
+
+	const char *str;
+	switch (get_annex(out.data.XTSE)) {
+	STR_CASE(ANNEX_A, "A")
+	STR_CASE(ANNEX_B, "B")
+	STR_CASE(ANNEX_C, "C")
+	STR_CASE(ANNEX_I, "I")
+	STR_CASE(ANNEX_J, "J")
+	STR_CASE(ANNEX_L, "L")
+	STR_CASE(ANNEX_M, "M")
+	default:
+		str = NULL;
+		break;
+	};
+	if (str)
+		m_str("annex", str);
+
+	*standard = get_standard(out.data.XTSE);
+
+	switch (*standard) {
+	STR_CASE(STD_T1_413, "T1.413")
+	STR_CASE(STD_TS_101_388, "TS 101 388")
+	STR_CASE(STD_G_992_1, "G.992.1")
+	STR_CASE(STD_G_992_2, "G.992.2")
+	STR_CASE(STD_G_992_3, "G.992.3")
+	STR_CASE(STD_G_992_4, "G.992.4")
+	STR_CASE(STD_G_992_5, "G.992.5")
+	STR_CASE(STD_G_993_1, "G.993.1")
+	STR_CASE(STD_G_993_2, "G.993.2")
+	default:
+		str = NULL;
+		break;
+	}
+	if (str)
+		m_str("standard", str);
+}

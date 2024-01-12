@@ -1,0 +1,30 @@
+static int rtl9300_execute_xfer(struct rtl9300_i2c *i2c, char read_write,
+				int size, union i2c_smbus_data * data, int len)
+{
+	u32 v;
+
+	if (read_write == I2C_SMBUS_READ)
+		REG_MASK(i2c, BIT(RTL9300_I2C_CTRL1_RWOP), 0, RTL9300_I2C_CTRL1);
+	else
+		REG_MASK(i2c, 0, BIT(RTL9300_I2C_CTRL1_RWOP), RTL9300_I2C_CTRL1);
+
+	REG_MASK(i2c, 0, BIT(RTL9300_I2C_CTRL1_I2C_TRIG), RTL9300_I2C_CTRL1);
+	do {
+		v = readl(REG(i2c, RTL9300_I2C_CTRL1));
+	} while (v & BIT(RTL9300_I2C_CTRL1_I2C_TRIG));
+
+	if (v & BIT(RTL9300_I2C_CTRL1_I2C_FAIL))
+		return -EIO;
+
+	if (read_write == I2C_SMBUS_READ) {
+		if (size == I2C_SMBUS_BYTE || size == I2C_SMBUS_BYTE_DATA){
+			data->byte = readl(REG(i2c, RTL9300_I2C_DATA_WORD0));
+		} else if (size == I2C_SMBUS_WORD_DATA) {
+			data->word = readl(REG(i2c, RTL9300_I2C_DATA_WORD0));
+		} else if (len > 0) {
+			rtl9300_i2c_read(i2c, &data->block[0], len);
+		}
+	}
+
+	return 0;
+}

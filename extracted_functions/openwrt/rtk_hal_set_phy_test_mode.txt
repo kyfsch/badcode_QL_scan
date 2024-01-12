@@ -1,0 +1,10 @@
+void rtk_hal_set_phy_test_mode(struct ra_switch_ioctl_data *data)
+{
+	rtk_api_ret_t ret;
+
+    ret = rtk_port_phyTestMode_set(data->port, data->mode);
+	if (ret != RT_ERR_OK)
+		printk("rtk_port_phyTestMode_set failed\n");
+	else
+		printk("set port%d in test mode %d.\n", data->port, data->mode);
+}

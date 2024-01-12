@@ -1,0 +1,34 @@
+static int mt7621_nfc_read_page_raw(struct nand_chip *nand, uint8_t *buf,
+				    int oob_required, int page)
+{
+	struct mt7621_nfc *nfc = nand_get_controller_data(nand);
+	int i;
+
+	nand_read_page_op(nand, page, 0, NULL, 0);
+
+	nfi_write16(nfc, NFI_CNFG, (CNFG_OP_CUSTOM << CNFG_OP_MODE_S) |
+		    CNFG_READ_MODE);
+
+	nfi_write16(nfc, NFI_CON,
+		    CON_NFI_BRD | (nand->ecc.steps << CON_NFI_SEC_S));
+
+	for (i = 0; i < nand->ecc.steps; i++) {
+		/* Read data */
+		if (buf)
+			mt7621_nfc_read_data(nfc, page_data_ptr(nand, buf, i),
+					     nand->ecc.size);
+		else
+			mt7621_nfc_read_data_discard(nfc, nand->ecc.size);
+
+		/* Read FDM */
+		mt7621_nfc_read_data(nfc, oob_fdm_ptr(nand, i), NFI_FDM_SIZE);
+
+		/* Read ECC parity data */
+		mt7621_nfc_read_data(nfc, oob_ecc_ptr(nfc, i),
+				     nfc->spare_per_sector - NFI_FDM_SIZE);
+	}
+
+	nfi_write16(nfc, NFI_CON, 0);
+
+	return 0;
+}

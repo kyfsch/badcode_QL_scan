@@ -1,0 +1,50 @@
+static void danube_init(struct platform_device *pdev)
+{
+            volatile u32 *p = SB_RAM0_ADDR(0);
+    unsigned int i;
+
+	ltq_pmu_enable(IFX_PMU_MODULE_PPE_SLL01 |
+		IFX_PMU_MODULE_PPE_TC |
+		IFX_PMU_MODULE_PPE_EMA |
+		IFX_PMU_MODULE_PPE_QSB |
+		IFX_PMU_MODULE_TPE |
+		IFX_PMU_MODULE_DSL_DFE);
+
+	reset_ppe(pdev);
+
+    /* init ema */
+        IFX_REG_W32((EMA_CMD_BUF_LEN << 16) | (EMA_CMD_BASE_ADDR >> 2), EMA_CMDCFG);
+    IFX_REG_W32((EMA_DATA_BUF_LEN << 16) | (EMA_DATA_BASE_ADDR >> 2), EMA_DATACFG);
+    IFX_REG_W32(0x000000FF, EMA_IER);
+    IFX_REG_W32(EMA_READ_BURST | (EMA_WRITE_BURST << 2), EMA_CFG);
+
+	/* init mailbox */
+	IFX_REG_W32(0xFFFFFFFF, MBOX_IGU1_ISRC);
+	IFX_REG_W32(0x00000000, MBOX_IGU1_IER);
+	IFX_REG_W32(0xFFFFFFFF, MBOX_IGU3_ISRC);
+	IFX_REG_W32(0x00000000, MBOX_IGU3_IER);
+
+    /* init atm tc */
+    IFX_REG_W32(0x0000,     DREG_AT_CTRL);
+    IFX_REG_W32(0x0000,     DREG_AR_CTRL);
+    IFX_REG_W32(0x0,        DREG_AT_IDLE0);
+    IFX_REG_W32(0x0,        DREG_AT_IDLE1);
+    IFX_REG_W32(0x0,        DREG_AR_IDLE0);
+    IFX_REG_W32(0x0,        DREG_AR_IDLE1);
+    IFX_REG_W32(0x40,       RFBI_CFG);
+    IFX_REG_W32(0x1600,     SFSM_DBA0);
+    IFX_REG_W32(0x1718,     SFSM_DBA1);
+    IFX_REG_W32(0x1830,     SFSM_CBA0);
+    IFX_REG_W32(0x1844,     SFSM_CBA1);
+    IFX_REG_W32(0x14014,    SFSM_CFG0);
+    IFX_REG_W32(0x14014,    SFSM_CFG1);
+    IFX_REG_W32(0x1858,     FFSM_DBA0);
+    IFX_REG_W32(0x18AC,     FFSM_DBA1);
+    IFX_REG_W32(0x10006,    FFSM_CFG0);
+    IFX_REG_W32(0x10006,    FFSM_CFG1);
+    IFX_REG_W32(0x00000001, FFSM_IDLE_HEAD_BC0);
+    IFX_REG_W32(0x00000001, FFSM_IDLE_HEAD_BC1);
+
+    for ( i = 0; i < SB_RAM0_DWLEN + SB_RAM1_DWLEN + SB_RAM2_DWLEN + SB_RAM3_DWLEN; i++ )
+        IFX_REG_W32(0, p++);
+}

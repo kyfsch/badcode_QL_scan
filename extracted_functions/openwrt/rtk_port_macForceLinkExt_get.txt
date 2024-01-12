@@ -1,0 +1,37 @@
+rtk_api_ret_t rtk_port_macForceLinkExt_get(rtk_port_t port, rtk_mode_ext_t *pMode, rtk_port_mac_ability_t *pPortability)
+{
+    rtk_api_ret_t retVal;
+    rtl8367c_port_ability_t ability;
+    rtk_uint32 ext_id;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_IS_EXT(port);
+
+    if(NULL == pMode)
+        return RT_ERR_NULL_POINTER;
+
+    if(NULL == pPortability)
+        return RT_ERR_NULL_POINTER;
+
+    ext_id = port - 15;
+
+    if ((retVal = rtl8367c_getAsicPortExtMode(ext_id, (rtk_uint32 *)pMode)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicPortForceLinkExt(ext_id, &ability)) != RT_ERR_OK)
+        return retVal;
+
+    pPortability->forcemode = ability.forcemode;
+    pPortability->speed     = (*pMode == MODE_EXT_HSGMII) ? PORT_SPEED_2500M : ability.speed;
+    pPortability->duplex    = ability.duplex;
+    pPortability->link      = ability.link;
+    pPortability->nway      = ability.nway;
+    pPortability->txpause   = ability.txpause;
+    pPortability->rxpause   = ability.rxpause;
+
+    return RT_ERR_OK;
+
+}

@@ -1,0 +1,52 @@
+int expr_eq(struct expr *e1, struct expr *e2)
+{
+	int res, old_count;
+
+	/*
+	 * A NULL expr is taken to be yes, but there's also a different way to
+	 * represent yes. expr_is_yes() checks for either representation.
+	 */
+	if (!e1 || !e2)
+		return expr_is_yes(e1) && expr_is_yes(e2);
+
+	if (e1->type != e2->type)
+		return 0;
+	switch (e1->type) {
+	case E_EQUAL:
+	case E_GEQ:
+	case E_GTH:
+	case E_LEQ:
+	case E_LTH:
+	case E_UNEQUAL:
+		return e1->left.sym == e2->left.sym && e1->right.sym == e2->right.sym;
+	case E_SYMBOL:
+		return e1->left.sym == e2->left.sym;
+	case E_NOT:
+		return expr_eq(e1->left.expr, e2->left.expr);
+	case E_AND:
+	case E_OR:
+		e1 = expr_copy(e1);
+		e2 = expr_copy(e2);
+		old_count = trans_count;
+		expr_eliminate_eq(&e1, &e2);
+		res = (e1->type == E_SYMBOL && e2->type == E_SYMBOL &&
+		       e1->left.sym == e2->left.sym);
+		expr_free(e1);
+		expr_free(e2);
+		trans_count = old_count;
+		return res;
+	case E_LIST:
+	case E_RANGE:
+	case E_NONE:
+		/* panic */;
+	}
+
+	if (DEBUG_EXPR) {
+		expr_fprint(e1, stdout);
+		printf(" = ");
+		expr_fprint(e2, stdout);
+		printf(" ?\n");
+	}
+
+	return 0;
+}

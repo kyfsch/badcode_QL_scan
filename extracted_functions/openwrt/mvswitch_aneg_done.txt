@@ -1,0 +1,4 @@
+mvswitch_aneg_done(struct phy_device *phydev)
+{
+	return 1;	/* Return any positive value */
+}

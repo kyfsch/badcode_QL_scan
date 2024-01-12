@@ -1,0 +1,20 @@
+static int rtl8390_configure_generic(struct phy_device *phydev)
+{
+	int mac = phydev->mdio.addr;
+	u32 val, phy_id;
+
+	val = phy_read(phydev, 2);
+	phy_id = val << 16;
+	val = phy_read(phydev, 3);
+	phy_id |= val;
+	pr_debug("Phy on MAC %d: %x\n", mac, phy_id);
+
+	/* Read internal PHY ID */
+	phy_write_paged(phydev, 31, 27, 0x0002);
+	val = phy_read_paged(phydev, 31, 28);
+
+	/* Internal RTL8218B, version 2 */
+	phydev_info(phydev, "Detected unknown %x\n", val);
+
+	return 0;
+}

@@ -1,0 +1,5 @@
+static int rtl931x_mdio_write(struct mii_bus *bus, int mii_id,
+			      int regnum, u16 value)
+{
+	return rtl931x_mdio_write_paged(bus, mii_id, 0, regnum, value);
+}

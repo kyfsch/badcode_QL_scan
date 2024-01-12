@@ -1,0 +1,7 @@
+static int rtl83xx_port_lag_change(struct dsa_switch *ds, int port)
+{
+	pr_debug("%s: %d\n", __func__, port);
+	/* Nothing to be done... */
+
+	return 0;
+}

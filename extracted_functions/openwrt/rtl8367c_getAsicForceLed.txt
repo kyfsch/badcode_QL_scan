@@ -1,0 +1,25 @@
+ret_t rtl8367c_getAsicForceLed(rtk_uint32 port, rtk_uint32 group, rtk_uint32* pMode)
+{
+    rtk_uint16 regAddr;
+    ret_t retVal;
+
+    /* Invalid input parameter */
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(group >= RTL8367C_LEDGROUPNO)
+        return RT_ERR_INPUT;
+
+    /* Get Related Registers */
+    if(port < 8){
+        regAddr = RTL8367C_LED_FORCE_MODE_BASE + (group << 1);
+        if((retVal = rtl8367c_getAsicRegBits(regAddr, 0x3 << (port * 2), pMode)) != RT_ERR_OK)
+            return retVal;
+    }else if(port >= 8){
+        regAddr = RTL8367C_REG_CPU_FORCE_LED0_CFG1 + (group << 1);
+        if((retVal = rtl8367c_getAsicRegBits(regAddr, 0x3 << ((port-8) * 2), pMode)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    return RT_ERR_OK;
+}

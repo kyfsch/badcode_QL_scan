@@ -1,0 +1,9 @@
+static inline int gpio_get(struct dc_ep_dev *dev, u32 gpio, int *val)
+{
+	if (WARN_ON(!dev || !val))
+		return -EINVAL;
+	if (WARN_ON(!dev->priv))
+		return -EINVAL;
+
+	return dc_ep_gpio_get(dev->priv, gpio, val);
+}

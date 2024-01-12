@@ -1,0 +1,66 @@
+static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
+					  struct net_device *dev)
+{
+	struct ag71xx *ag = netdev_priv(dev);
+	struct ag71xx_ring *ring = &ag->tx_ring;
+	int ring_mask = BIT(ring->order) - 1;
+	int ring_size = BIT(ring->order);
+	struct ag71xx_desc *desc;
+	dma_addr_t dma_addr;
+	int i, n, ring_min;
+
+	if (skb->len <= 4) {
+		DBG("%s: packet len is too small\n", ag->dev->name);
+		goto err_drop;
+	}
+
+	dma_addr = dma_map_single(&ag->pdev->dev, skb->data, skb->len,
+				  DMA_TO_DEVICE);
+
+	i = ring->curr & ring_mask;
+	desc = ag71xx_ring_desc(ring, i);
+
+	/* setup descriptor fields */
+	n = ag71xx_fill_dma_desc(ring, (u32) dma_addr, skb->len & ag->desc_pktlen_mask);
+	if (n < 0)
+		goto err_drop_unmap;
+
+	i = (ring->curr + n - 1) & ring_mask;
+	ring->buf[i].len = skb->len;
+	ring->buf[i].skb = skb;
+
+	netdev_sent_queue(dev, skb->len);
+
+	skb_tx_timestamp(skb);
+
+	desc->ctrl &= ~DESC_EMPTY;
+	ring->curr += n;
+
+	/* flush descriptor */
+	wmb();
+
+	ring_min = 2;
+	if (ring->desc_split)
+	    ring_min *= AG71XX_TX_RING_DS_PER_PKT;
+
+	if (ring->curr - ring->dirty >= ring_size - ring_min) {
+		DBG("%s: tx queue full\n", dev->name);
+		netif_stop_queue(dev);
+	}
+
+	DBG("%s: packet injected into TX queue\n", ag->dev->name);
+
+	/* enable TX engine */
+	ag71xx_wr(ag, AG71XX_REG_TX_CTRL, TX_CTRL_TXE);
+
+	return NETDEV_TX_OK;
+
+err_drop_unmap:
+	dma_unmap_single(&ag->pdev->dev, dma_addr, skb->len, DMA_TO_DEVICE);
+
+err_drop:
+	dev->stats.tx_dropped++;
+
+	dev_kfree_skb(skb);
+	return NETDEV_TX_OK;
+}

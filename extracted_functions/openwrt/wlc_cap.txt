@@ -1,0 +1,9 @@
+static int wlc_cap(wlc_param param, void *data, void *value)
+{
+	char *iov = *((char **) data);
+
+	if (param & GET)
+		return wl_iovar_get(interface, iov, value, BUFSIZE);
+
+	return -1;
+}

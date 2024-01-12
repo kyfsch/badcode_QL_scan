@@ -1,0 +1,19 @@
+static unsigned int wait_not_busy(int device, unsigned long timeout_secs)
+{
+	int busy = 1;
+	unsigned long loops = (timeout_secs * 1000) / 50;
+	do {
+		// Test the ATA status register BUSY flag
+		if (!((*(sata_regs_base[device] + SATA_ORB2_OFF)
+			>> SATA_COMMAND_BIT) & (1UL << ATA_STATUS_BSY_BIT))) {
+			/* Not busy, so stop polling */
+			busy = 0;
+			break;
+		}
+
+		// Wait for 50mS before sampling ATA status register again
+		udelay(50000);
+	} while (--loops);
+
+	return busy;
+}

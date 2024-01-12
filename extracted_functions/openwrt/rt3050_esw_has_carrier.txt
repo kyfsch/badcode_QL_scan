@@ -1,0 +1,19 @@
+int rt3050_esw_has_carrier(struct fe_priv *priv)
+{
+	struct rt305x_esw *esw = priv->soc->swpriv;
+	u32 link;
+	int i;
+	bool cpuport;
+
+	link = esw_r32(esw, RT305X_ESW_REG_POA);
+	link >>= RT305X_ESW_POA_LINK_SHIFT;
+	cpuport = link & BIT(RT305X_ESW_PORT6);
+	link &= RT305X_ESW_POA_LINK_MASK;
+	for (i = 0; i <= RT305X_ESW_PORT5; i++) {
+		if (priv->link[i] != (link & BIT(i)))
+			dev_info(esw->dev, "port %d link %s\n", i, link & BIT(i) ? "up" : "down");
+		priv->link[i] = link & BIT(i);
+	}
+
+	return !!link && cpuport;
+}

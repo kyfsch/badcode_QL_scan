@@ -1,0 +1,42 @@
+static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
+{
+	struct net_device *dev = dev_id;
+	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	u32 status_rx_r = sw_r32(priv->r->dma_if_intr_rx_runout_sts);
+	u32 status_rx = sw_r32(priv->r->dma_if_intr_rx_done_sts);
+	u32 status_tx = sw_r32(priv->r->dma_if_intr_tx_done_sts);
+
+	pr_debug("In %s, status_tx: %08x, status_rx: %08x, status_rx_r: %08x\n",
+		__func__, status_tx, status_rx, status_rx_r);
+
+	/*  Ignore TX interrupt */
+	if (status_tx) {
+		/* Clear ISR */
+		pr_debug("TX done\n");
+		sw_w32(status_tx, priv->r->dma_if_intr_tx_done_sts);
+	}
+
+	/* RX interrupt */
+	if (status_rx) {
+		pr_debug("RX IRQ\n");
+		/* ACK and disable RX interrupt for given rings */
+		sw_w32(status_rx, priv->r->dma_if_intr_rx_done_sts);
+		sw_w32_mask(status_rx, 0, priv->r->dma_if_intr_rx_done_msk);
+		for (int i = 0; i < priv->rxrings; i++) {
+			if (status_rx & BIT(i)) {
+				pr_debug("Scheduling queue: %d\n", i);
+				napi_schedule(&priv->rx_qs[i].napi);
+			}
+		}
+	}
+
+	/* RX buffer overrun */
+	if (status_rx_r) {
+		pr_debug("RX buffer overrun: status %x, mask: %x\n",
+		         status_rx_r, sw_r32(priv->r->dma_if_intr_rx_runout_msk));
+		sw_w32(status_rx_r, priv->r->dma_if_intr_rx_runout_sts);
+		rtl838x_rb_cleanup(priv, status_rx_r);
+	}
+
+	return IRQ_HANDLED;
+}

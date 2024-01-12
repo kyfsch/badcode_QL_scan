@@ -1,0 +1,4 @@
+static int __init mt7988_pinctrl_init(void)
+{
+	return platform_driver_register(&mt7988_pinctrl_driver);
+}

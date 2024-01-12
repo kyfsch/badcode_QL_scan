@@ -1,0 +1,18 @@
+static ssize_t hc_tag_show_hwoptions(const u8 *pld, u16 pld_len, char *buf)
+{
+	char *out = buf;
+	u32 data;	// cpu-endian
+	int i;
+
+	if (sizeof(data) != pld_len)
+		return -EINVAL;
+
+	data = *(u32 *)pld;
+	out += sprintf(out, "raw\t\t: 0x%08x\n\n", data);
+
+	for (i = 0; i < ARRAY_SIZE(hc_hwopts); i++)
+		out += sprintf(out, "%s: %s\n", hc_hwopts[i].str,
+			       (data & hc_hwopts[i].bit) ? "true" : "false");
+
+	return out - buf;
+}

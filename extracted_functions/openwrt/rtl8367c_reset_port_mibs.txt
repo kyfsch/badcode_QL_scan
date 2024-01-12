@@ -1,0 +1,5 @@
+static int rtl8367c_reset_port_mibs(int port)
+{
+
+	return rtk_stat_port_reset(rtl8367c_sw_to_phy_port(port));
+}

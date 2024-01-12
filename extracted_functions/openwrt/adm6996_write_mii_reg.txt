@@ -1,0 +1,7 @@
+adm6996_write_mii_reg(struct adm6996_priv *priv, enum admreg reg, u16 val)
+{
+	struct phy_device *phydev = priv->priv;
+	struct mii_bus *bus = phydev->mdio.bus;
+
+	bus->write(bus, PHYADDR(reg), val);
+}

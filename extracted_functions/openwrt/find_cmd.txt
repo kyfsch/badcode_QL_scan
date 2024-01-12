@@ -1,0 +1,13 @@
+static struct wlc_call *find_cmd(char *name)
+{
+	int found = 0, i = 0;
+
+	while (!found && (i < wlc_calls_size)) {
+		if (strcmp(name, wlc_calls[i].name) == 0)
+			found = 1;
+		else
+			i++;
+	}
+
+	return (struct wlc_call *) (found ? &wlc_calls[i] : NULL);
+}

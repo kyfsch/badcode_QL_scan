@@ -1,0 +1,5 @@
+BigIntegerBitLen(b)
+     BigInteger b;
+{
+  return BN_num_bits(b);
+}

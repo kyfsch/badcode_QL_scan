@@ -1,0 +1,5 @@
+static void rtl8366_smi_mii_cleanup(struct rtl8366_smi *smi)
+{
+	mdiobus_unregister(smi->mii_bus);
+	mdiobus_free(smi->mii_bus);
+}

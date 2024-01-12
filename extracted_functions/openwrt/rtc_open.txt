@@ -1,0 +1,23 @@
+static int rtc_open(UNUSED struct inode *inode, UNUSED struct file *filp)
+{
+	spin_lock_irq(&rtc_lock);
+
+	if (rtc_status & RTC_IS_OPEN) {
+		spin_unlock_irq(&rtc_lock);
+		return -EBUSY;
+	}
+
+	rtc_status |= RTC_IS_OPEN;
+
+	/*
+	 * The following call is only necessary if we use both this driver and
+	 * the proprietary one from asus at the same time (which, b.t.w. only
+	 * makes sense during development). Otherwise, each access via the asus
+	 * driver will make access via this driver impossible.
+	 */
+	i2c_init();
+
+	spin_unlock_irq(&rtc_lock);
+
+	return 0;
+}

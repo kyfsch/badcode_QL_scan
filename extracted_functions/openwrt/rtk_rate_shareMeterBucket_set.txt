@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_rate_shareMeterBucket_set(rtk_meter_id_t index, rtk_uint32 bucket_size)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (index > RTK_MAX_METER_ID)
+        return RT_ERR_FILTER_METER_ID;
+
+    if(bucket_size > RTL8367C_METERBUCKETSIZEMAX)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicShareMeterBucketSize(index, bucket_size)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

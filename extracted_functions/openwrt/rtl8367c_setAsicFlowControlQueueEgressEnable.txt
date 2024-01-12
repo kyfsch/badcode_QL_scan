@@ -1,0 +1,10 @@
+ret_t rtl8367c_setAsicFlowControlQueueEgressEnable(rtk_uint32 port, rtk_uint32 qid, rtk_uint32 enabled)
+{
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(qid > RTL8367C_QIDMAX)
+        return RT_ERR_QUEUE_ID;
+
+    return rtl8367c_setAsicRegBit(RTL8367C_FLOWCRTL_EGRESS_QUEUE_ENABLE_REG(port), RTL8367C_FLOWCRTL_EGRESS_QUEUE_ENABLE_REG_OFFSET(port)+ qid, enabled);
+}

@@ -1,0 +1,9 @@
+ar8327_set_led_pattern(struct ar8xxx_priv *priv, unsigned int led_num,
+		       enum ar8327_led_pattern pattern)
+{
+	const struct ar8327_led_entry *entry;
+
+	entry = &ar8327_led_map[led_num];
+	ar8xxx_rmw(priv, AR8327_REG_LED_CTRL(entry->reg),
+		   (3 << entry->shift), pattern << entry->shift);
+}

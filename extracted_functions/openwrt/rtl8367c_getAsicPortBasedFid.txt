@@ -1,0 +1,14 @@
+ret_t rtl8367c_getAsicPortBasedFid(rtk_uint32 port, rtk_uint32* pFid)
+{
+    rtk_uint32  reg_addr;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(port < 8)
+        return rtl8367c_getAsicReg(RTL8367C_PORT_PBFID_REG(port), pFid);
+    else{
+        reg_addr = RTL8367C_REG_PORT8_PBFID + port-8;
+        return rtl8367c_getAsicReg(reg_addr, pFid);
+    }
+}

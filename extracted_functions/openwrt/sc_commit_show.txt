@@ -1,0 +1,16 @@
+static ssize_t sc_commit_show(struct kobject *kobj, struct kobj_attribute *attr,
+			      char *buf)
+{
+	const char *str;
+	char *out = buf;
+	u32 crc;
+
+	read_lock(&sc_bufrwl);
+	crc = RB_SC_GETCRC();
+	read_unlock(&sc_bufrwl);
+
+	str = (crc) ? "clean" : "dirty";
+	out += sprintf(out, "%s\n", str);
+
+	return out - buf;
+}

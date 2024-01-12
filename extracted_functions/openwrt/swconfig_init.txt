@@ -1,0 +1,6 @@
+swconfig_init(void)
+{
+	INIT_LIST_HEAD(&swdevs);
+
+	return genl_register_family(&switch_fam);
+}

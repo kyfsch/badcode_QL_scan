@@ -1,0 +1,6 @@
+void hostapd_ucode_free(void)
+{
+	if (wpa_ucode_call_prepare("shutdown") == 0)
+		ucv_put(wpa_ucode_call(0));
+	wpa_ucode_free_vm();
+}

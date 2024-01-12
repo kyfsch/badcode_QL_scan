@@ -1,0 +1,18 @@
+IFX_MEI_ControlModeSet (DSL_DEV_Device_t * pDev, int mode)
+{
+	u32 temp = 0x0;
+
+	IFX_MEI_LongWordReadOffset (pDev, (u32) ME_DBG_MASTER, &temp);
+	switch (mode) {
+	case JTAG_MASTER_MODE:
+		temp &= ~(HOST_MSTR);
+		break;
+	case MEI_MASTER_MODE:
+		temp |= (HOST_MSTR);
+		break;
+	default:
+		IFX_MEI_EMSG ("IFX_MEI_ControlModeSet: unkonwn mode [%d]\n", mode);
+		return;
+	}
+	IFX_MEI_LongWordWriteOffset (pDev, (u32) ME_DBG_MASTER, temp);
+}

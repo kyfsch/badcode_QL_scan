@@ -1,0 +1,49 @@
+static int ip175c_set_vlan_mode(struct ip17xx_state *state);
+static int ip175c_reset(struct ip17xx_state *state);
+
+static const struct register_mappings IP178C = {
+	.NAME = "IP178C",
+	.MODEL_NO = 0x18,
+	.VLAN_DEFAULT_TAG_REG = {
+		{30,3},{30,4},{30,5},{30,6},{30,7},{30,8},
+		{30,9},{30,10},{30,11},
+	},
+
+	.ADD_TAG_REG = {30,12},
+	.ADD_TAG_BIT = {0,1,2,3,4,5,6,7,8},
+	.REMOVE_TAG_REG = {30,13},
+	.REMOVE_TAG_BIT = {4,5,6,7,8,9,10,11,12},
+
+	.SIMPLE_VLAN_REGISTERS = 1,
+
+	.VLAN_LOOKUP_REG = {31,0},// +N
+	.VLAN_LOOKUP_REG_5 = NOTSUPPORTED, // not used with SIMPLE_VLAN_REGISTERS
+	.VLAN_LOOKUP_EVEN_BIT = {0,1,2,3,4,5,6,7,8},
+	.VLAN_LOOKUP_ODD_BIT = {0,1,2,3,4,5,6,7,8},
+
+	.TAG_VLAN_MASK_REG = {30,14}, // +N
+	.TAG_VLAN_MASK_EVEN_BIT = {0,1,2,3,4,5,6,7,8},
+	.TAG_VLAN_MASK_ODD_BIT = {0,1,2,3,4,5,6,7,8},
+
+	.RESET_VAL = 0x55AA,
+	.RESET_REG = {30,0},
+	.MODE_VAL = 0,
+	.MODE_REG = NOTSUPPORTED,
+
+	.ROUTER_CONTROL_REG = {30,30},
+	.ROUTER_EN_BIT = 11,
+	.NUMLAN_GROUPS_MAX = 8,
+	.NUMLAN_GROUPS_BIT = 8, // {0-2}
+
+	.VLAN_CONTROL_REG = {30,13},
+	.TAG_VLAN_BIT = 3,
+
+	.CPU_PORT = 8,
+	.NUM_PORTS = 9,
+
+	.MII_REGISTER_EN = NOTSUPPORTED,
+
+	.update_state = ip175c_update_state,
+	.set_vlan_mode = ip175c_set_vlan_mode,
+	.reset = ip175c_reset,
+};

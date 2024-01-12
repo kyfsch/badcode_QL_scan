@@ -1,0 +1,77 @@
+static rtk_api_ret_t _get_asic_mib_idx(rtk_stat_port_type_t cnt_idx, RTL8367C_MIBCOUNTER *pMib_idx)
+{
+    RTL8367C_MIBCOUNTER mib_asic_idx[STAT_PORT_CNTR_END]=
+    {
+        ifInOctets,                     /* STAT_IfInOctets */
+        dot3StatsFCSErrors,             /* STAT_Dot3StatsFCSErrors */
+        dot3StatsSymbolErrors,          /* STAT_Dot3StatsSymbolErrors */
+        dot3InPauseFrames,              /* STAT_Dot3InPauseFrames */
+        dot3ControlInUnknownOpcodes,    /* STAT_Dot3ControlInUnknownOpcodes */
+        etherStatsFragments,            /* STAT_EtherStatsFragments */
+        etherStatsJabbers,              /* STAT_EtherStatsJabbers */
+        ifInUcastPkts,                  /* STAT_IfInUcastPkts */
+        etherStatsDropEvents,           /* STAT_EtherStatsDropEvents */
+        etherStatsOctets,               /* STAT_EtherStatsOctets */
+        etherStatsUnderSizePkts,        /* STAT_EtherStatsUnderSizePkts */
+        etherOversizeStats,             /* STAT_EtherOversizeStats */
+        etherStatsPkts64Octets,         /* STAT_EtherStatsPkts64Octets */
+        etherStatsPkts65to127Octets,    /* STAT_EtherStatsPkts65to127Octets */
+        etherStatsPkts128to255Octets,   /* STAT_EtherStatsPkts128to255Octets */
+        etherStatsPkts256to511Octets,   /* STAT_EtherStatsPkts256to511Octets */
+        etherStatsPkts512to1023Octets,  /* STAT_EtherStatsPkts512to1023Octets */
+        etherStatsPkts1024to1518Octets, /* STAT_EtherStatsPkts1024to1518Octets */
+        ifInMulticastPkts,              /* STAT_EtherStatsMulticastPkts */
+        ifInBroadcastPkts,              /* STAT_EtherStatsBroadcastPkts */
+        ifOutOctets,                    /* STAT_IfOutOctets */
+        dot3StatsSingleCollisionFrames, /* STAT_Dot3StatsSingleCollisionFrames */
+        dot3StatMultipleCollisionFrames,/* STAT_Dot3StatsMultipleCollisionFrames */
+        dot3sDeferredTransmissions,     /* STAT_Dot3StatsDeferredTransmissions */
+        dot3StatsLateCollisions,        /* STAT_Dot3StatsLateCollisions */
+        etherStatsCollisions,           /* STAT_EtherStatsCollisions */
+        dot3StatsExcessiveCollisions,   /* STAT_Dot3StatsExcessiveCollisions */
+        dot3OutPauseFrames,             /* STAT_Dot3OutPauseFrames */
+        MIB_NOT_SUPPORT,                /* STAT_Dot1dBasePortDelayExceededDiscards */
+        dot1dTpPortInDiscards,          /* STAT_Dot1dTpPortInDiscards */
+        ifOutUcastPkts,                 /* STAT_IfOutUcastPkts */
+        ifOutMulticastPkts,             /* STAT_IfOutMulticastPkts */
+        ifOutBroadcastPkts,             /* STAT_IfOutBroadcastPkts */
+        outOampduPkts,                  /* STAT_OutOampduPkts */
+        inOampduPkts,                   /* STAT_InOampduPkts */
+        MIB_NOT_SUPPORT,                /* STAT_PktgenPkts */
+        inMldChecksumError,             /* STAT_InMldChecksumError */
+        inIgmpChecksumError,            /* STAT_InIgmpChecksumError */
+        inMldSpecificQuery,             /* STAT_InMldSpecificQuery */
+        inMldGeneralQuery,              /* STAT_InMldGeneralQuery */
+        inIgmpSpecificQuery,            /* STAT_InIgmpSpecificQuery */
+        inIgmpGeneralQuery,             /* STAT_InIgmpGeneralQuery */
+        inMldLeaves,                    /* STAT_InMldLeaves */
+        inIgmpLeaves,                   /* STAT_InIgmpInterfaceLeaves */
+        inIgmpJoinsSuccess,             /* STAT_InIgmpJoinsSuccess */
+        inIgmpJoinsFail,                /* STAT_InIgmpJoinsFail */
+        inMldJoinsSuccess,              /* STAT_InMldJoinsSuccess */
+        inMldJoinsFail,                 /* STAT_InMldJoinsFail */
+        inReportSuppressionDrop,        /* STAT_InReportSuppressionDrop */
+        inLeaveSuppressionDrop,         /* STAT_InLeaveSuppressionDrop */
+        outIgmpReports,                 /* STAT_OutIgmpReports */
+        outIgmpLeaves,                  /* STAT_OutIgmpLeaves */
+        outIgmpGeneralQuery,            /* STAT_OutIgmpGeneralQuery */
+        outIgmpSpecificQuery,           /* STAT_OutIgmpSpecificQuery */
+        outMldReports,                  /* STAT_OutMldReports */
+        outMldLeaves,                   /* STAT_OutMldLeaves */
+        outMldGeneralQuery,             /* STAT_OutMldGeneralQuery */
+        outMldSpecificQuery,            /* STAT_OutMldSpecificQuery */
+        inKnownMulticastPkts,           /* STAT_InKnownMulticastPkts */
+        ifInMulticastPkts,              /* STAT_IfInMulticastPkts */
+        ifInBroadcastPkts,              /* STAT_IfInBroadcastPkts */
+        ifOutDiscards                   /* STAT_IfOutDiscards */
+    };
+
+    if(cnt_idx >= STAT_PORT_CNTR_END)
+        return RT_ERR_STAT_INVALID_PORT_CNTR;
+
+    if(mib_asic_idx[cnt_idx] == MIB_NOT_SUPPORT)
+        return RT_ERR_CHIP_NOT_SUPPORTED;
+
+    *pMib_idx = mib_asic_idx[cnt_idx];
+    return RT_ERR_OK;
+}

@@ -1,0 +1,8 @@
+void dc_ep_deassert_device(struct dc_ep_priv *priv, u32 bits)
+{
+	struct dc_aca *aca = to_aca(priv);
+
+	spin_lock(&aca->rcu_lock);
+	wr32_mask(bits, 0, RCU_REQ);
+	spin_unlock(&aca->rcu_lock);
+}

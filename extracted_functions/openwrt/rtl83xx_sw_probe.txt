@@ -1,0 +1,221 @@
+static int __init rtl83xx_sw_probe(struct platform_device *pdev)
+{
+	int err = 0;
+	struct rtl838x_switch_priv *priv;
+	struct device *dev = &pdev->dev;
+	u64 bpdu_mask;
+
+	pr_debug("Probing RTL838X switch device\n");
+	if (!pdev->dev.of_node) {
+		dev_err(dev, "No DT found\n");
+		return -EINVAL;
+	}
+
+	/* Initialize access to RTL switch tables */
+	rtl_table_init();
+
+	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+	if (!priv)
+		return -ENOMEM;
+
+	priv->ds = devm_kzalloc(dev, sizeof(*priv->ds), GFP_KERNEL);
+
+	if (!priv->ds)
+		return -ENOMEM;
+	priv->ds->dev = dev;
+	priv->ds->priv = priv;
+	priv->ds->ops = &rtl83xx_switch_ops;
+	priv->ds->needs_standalone_vlan_filtering = true;
+	priv->dev = dev;
+
+	mutex_init(&priv->reg_mutex);
+
+	priv->family_id = soc_info.family;
+	priv->id = soc_info.id;
+	switch(soc_info.family) {
+	case RTL8380_FAMILY_ID:
+		priv->ds->ops = &rtl83xx_switch_ops;
+		priv->cpu_port = RTL838X_CPU_PORT;
+		priv->port_mask = 0x1f;
+		priv->port_width = 1;
+		priv->irq_mask = 0x0FFFFFFF;
+		priv->r = &rtl838x_reg;
+		priv->ds->num_ports = 29;
+		priv->fib_entries = 8192;
+		rtl8380_get_version(priv);
+		priv->n_lags = 8;
+		priv->l2_bucket_size = 4;
+		priv->n_pie_blocks = 12;
+		priv->port_ignore = 0x1f;
+		priv->n_counters = 128;
+		break;
+	case RTL8390_FAMILY_ID:
+		priv->ds->ops = &rtl83xx_switch_ops;
+		priv->cpu_port = RTL839X_CPU_PORT;
+		priv->port_mask = 0x3f;
+		priv->port_width = 2;
+		priv->irq_mask = 0xFFFFFFFFFFFFFULL;
+		priv->r = &rtl839x_reg;
+		priv->ds->num_ports = 53;
+		priv->fib_entries = 16384;
+		rtl8390_get_version(priv);
+		priv->n_lags = 16;
+		priv->l2_bucket_size = 4;
+		priv->n_pie_blocks = 18;
+		priv->port_ignore = 0x3f;
+		priv->n_counters = 1024;
+		break;
+	case RTL9300_FAMILY_ID:
+		priv->ds->ops = &rtl930x_switch_ops;
+		priv->cpu_port = RTL930X_CPU_PORT;
+		priv->port_mask = 0x1f;
+		priv->port_width = 1;
+		priv->irq_mask = 0x0FFFFFFF;
+		priv->r = &rtl930x_reg;
+		priv->ds->num_ports = 29;
+		priv->fib_entries = 16384;
+		priv->version = RTL8390_VERSION_A;
+		priv->n_lags = 16;
+		sw_w32(1, RTL930X_ST_CTRL);
+		priv->l2_bucket_size = 8;
+		priv->n_pie_blocks = 16;
+		priv->port_ignore = 0x3f;
+		priv->n_counters = 2048;
+		break;
+	case RTL9310_FAMILY_ID:
+		priv->ds->ops = &rtl930x_switch_ops;
+		priv->cpu_port = RTL931X_CPU_PORT;
+		priv->port_mask = 0x3f;
+		priv->port_width = 2;
+		priv->irq_mask = 0xFFFFFFFFFFFFFULL;
+		priv->r = &rtl931x_reg;
+		priv->ds->num_ports = 57;
+		priv->fib_entries = 16384;
+		priv->version = RTL8390_VERSION_A;
+		priv->n_lags = 16;
+		priv->l2_bucket_size = 8;
+		break;
+	}
+	pr_debug("Chip version %c\n", priv->version);
+
+	err = rtl83xx_mdio_probe(priv);
+	if (err) {
+		/* Probing fails the 1st time because of missing ethernet driver
+		 * initialization. Use this to disable traffic in case the bootloader left if on
+		 */
+		return err;
+	}
+
+	err = dsa_register_switch(priv->ds);
+	if (err) {
+		dev_err(dev, "Error registering switch: %d\n", err);
+		return err;
+	}
+
+	/* dsa_to_port returns dsa_port from the port list in
+	 * dsa_switch_tree, the tree is built when the switch
+	 * is registered by dsa_register_switch
+	 */
+	for (int i = 0; i <= priv->cpu_port; i++)
+		priv->ports[i].dp = dsa_to_port(priv->ds, i);
+
+	/* Enable link and media change interrupts. Are the SERDES masks needed? */
+	sw_w32_mask(0, 3, priv->r->isr_glb_src);
+
+	priv->r->set_port_reg_le(priv->irq_mask, priv->r->isr_port_link_sts_chg);
+	priv->r->set_port_reg_le(priv->irq_mask, priv->r->imr_port_link_sts_chg);
+
+	priv->link_state_irq = platform_get_irq(pdev, 0);
+	pr_info("LINK state irq: %d\n", priv->link_state_irq);
+	switch (priv->family_id) {
+	case RTL8380_FAMILY_ID:
+		err = request_irq(priv->link_state_irq, rtl838x_switch_irq,
+		                  IRQF_SHARED, "rtl838x-link-state", priv->ds);
+		break;
+	case RTL8390_FAMILY_ID:
+		err = request_irq(priv->link_state_irq, rtl839x_switch_irq,
+		                  IRQF_SHARED, "rtl839x-link-state", priv->ds);
+		break;
+	case RTL9300_FAMILY_ID:
+		err = request_irq(priv->link_state_irq, rtl930x_switch_irq,
+				  IRQF_SHARED, "rtl930x-link-state", priv->ds);
+		break;
+	case RTL9310_FAMILY_ID:
+		err = request_irq(priv->link_state_irq, rtl931x_switch_irq,
+		                  IRQF_SHARED, "rtl931x-link-state", priv->ds);
+		break;
+	}
+	if (err) {
+		dev_err(dev, "Error setting up switch interrupt.\n");
+		/* Need to free allocated switch here */
+	}
+
+	/* Enable interrupts for switch, on RTL931x, the IRQ is always on globally */
+	if (soc_info.family != RTL9310_FAMILY_ID)
+		sw_w32(0x1, priv->r->imr_glb);
+
+	rtl83xx_get_l2aging(priv);
+
+	rtl83xx_setup_qos(priv);
+
+	priv->r->l3_setup(priv);
+
+	/* Clear all destination ports for mirror groups */
+	for (int i = 0; i < 4; i++)
+		priv->mirror_group_ports[i] = -1;
+
+	/* Register netdevice event callback to catch changes in link aggregation groups */
+	priv->nb.notifier_call = rtl83xx_netdevice_event;
+	if (register_netdevice_notifier(&priv->nb)) {
+		priv->nb.notifier_call = NULL;
+		dev_err(dev, "Failed to register LAG netdev notifier\n");
+		goto err_register_nb;
+	}
+
+	/* Initialize hash table for L3 routing */
+	rhltable_init(&priv->routes, &route_ht_params);
+
+	/* Register netevent notifier callback to catch notifications about neighboring
+	 * changes to update nexthop entries for L3 routing.
+	 */
+	priv->ne_nb.notifier_call = rtl83xx_netevent_event;
+	if (register_netevent_notifier(&priv->ne_nb)) {
+		priv->ne_nb.notifier_call = NULL;
+		dev_err(dev, "Failed to register netevent notifier\n");
+		goto err_register_ne_nb;
+	}
+
+	priv->fib_nb.notifier_call = rtl83xx_fib_event;
+
+	/* Register Forwarding Information Base notifier to offload routes where
+	 * where possible
+	 * Only FIBs pointing to our own netdevs are programmed into
+	 * the device, so no need to pass a callback.
+	 */
+	err = register_fib_notifier(&init_net, &priv->fib_nb, NULL, NULL);
+	if (err)
+		goto err_register_fib_nb;
+
+	/* TODO: put this into l2_setup() */
+	/* Flood BPDUs to all ports including cpu-port */
+	if (soc_info.family != RTL9300_FAMILY_ID) {
+		bpdu_mask = soc_info.family == RTL8380_FAMILY_ID ? 0x1FFFFFFF : 0x1FFFFFFFFFFFFF;
+		priv->r->set_port_reg_be(bpdu_mask, priv->r->rma_bpdu_fld_pmask);
+
+		/* TRAP 802.1X frames (EAPOL) to the CPU-Port, bypass STP and VLANs */
+		sw_w32(7, priv->r->spcl_trap_eapol_ctrl);
+
+		rtl838x_dbgfs_init(priv);
+	} else {
+		rtl930x_dbgfs_init(priv);
+	}
+
+	return 0;
+
+err_register_fib_nb:
+	unregister_netevent_notifier(&priv->ne_nb);
+err_register_ne_nb:
+	unregister_netdevice_notifier(&priv->nb);
+err_register_nb:
+	return err;
+}

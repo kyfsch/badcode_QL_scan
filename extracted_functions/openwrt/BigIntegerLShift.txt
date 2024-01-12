@@ -1,0 +1,6 @@
+BigIntegerLShift(result, x, bits)
+     BigInteger result, x;
+     unsigned int bits;
+{
+  BN_lshift(result, x, bits);
+}

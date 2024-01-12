@@ -1,0 +1,45 @@
+static void rtl838x_mac_pcs_get_state(struct phylink_config *config,
+				  struct phylink_link_state *state)
+{
+	u32 speed;
+	struct net_device *dev = container_of(config->dev, struct net_device, dev);
+	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	int port = priv->cpu_port;
+
+	pr_info("In %s\n", __func__);
+
+	state->link = priv->r->get_mac_link_sts(port) ? 1 : 0;
+	state->duplex = priv->r->get_mac_link_dup_sts(port) ? 1 : 0;
+
+	pr_info("%s link status is %d\n", __func__, state->link);
+	speed = priv->r->get_mac_link_spd_sts(port);
+	switch (speed) {
+	case 0:
+		state->speed = SPEED_10;
+		break;
+	case 1:
+		state->speed = SPEED_100;
+		break;
+	case 2:
+		state->speed = SPEED_1000;
+		break;
+	case 5:
+		state->speed = SPEED_2500;
+		break;
+	case 6:
+		state->speed = SPEED_5000;
+		break;
+	case 4:
+		state->speed = SPEED_10000;
+		break;
+	default:
+		state->speed = SPEED_UNKNOWN;
+		break;
+	}
+
+	state->pause &= (MLO_PAUSE_RX | MLO_PAUSE_TX);
+	if (priv->r->get_mac_rx_pause_sts(port))
+		state->pause |= MLO_PAUSE_RX;
+	if (priv->r->get_mac_tx_pause_sts(port))
+		state->pause |= MLO_PAUSE_TX;
+}

@@ -1,0 +1,13 @@
+static int aw9523_gpio_get_direction(struct gpio_chip *chip,
+				     unsigned int offset)
+{
+	struct aw9523 *awi = gpiochip_get_data(chip);
+	u8 regbit = offset % AW9523_PINS_PER_PORT;
+	int ret;
+
+	mutex_lock(&awi->i2c_lock);
+	ret = aw9523_get_pin_direction(awi->regmap, offset, regbit);
+	mutex_unlock(&awi->i2c_lock);
+
+	return ret;
+}

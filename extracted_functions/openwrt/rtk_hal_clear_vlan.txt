@@ -1,0 +1,8 @@
+void rtk_hal_clear_vlan(void)
+{
+	rtk_api_ret_t ret;
+
+	ret =  rtk_vlan_reset();
+    if (ret != RT_ERR_OK)
+        printk("rtk_vlan_reset failed\n");
+}

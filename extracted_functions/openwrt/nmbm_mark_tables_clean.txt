@@ -1,0 +1,5 @@
+static void nmbm_mark_tables_clean(struct nmbm_instance *ni)
+{
+	ni->block_state_changed = 0;
+	ni->block_mapping_changed = 0;
+}

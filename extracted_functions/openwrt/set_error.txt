@@ -1,0 +1,15 @@
+set_error(int errcode, const char *fmt, ...)
+{
+	va_list ap;
+
+	free(last_error.msg);
+
+	last_error.code = errcode;
+	last_error.msg = NULL;
+
+	if (fmt) {
+		va_start(ap, fmt);
+		xvasprintf(&last_error.msg, fmt, ap);
+		va_end(ap);
+	}
+}

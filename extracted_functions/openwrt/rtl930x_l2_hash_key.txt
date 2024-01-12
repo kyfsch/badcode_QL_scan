@@ -1,0 +1,43 @@
+static u32 rtl930x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
+{
+	u32 k0, k1, h1, h2, h;
+
+	k0 = (u32) (((seed >> 55) & 0x1f) ^
+	           ((seed >> 44) & 0x7ff) ^
+	           ((seed >> 33) & 0x7ff) ^
+	           ((seed >> 22) & 0x7ff) ^
+	           ((seed >> 11) & 0x7ff) ^
+	           (seed & 0x7ff));
+
+	h1 = (seed >> 11) & 0x7ff;
+	h1 = ((h1 & 0x1f) << 6) | ((h1 >> 5) & 0x3f);
+
+	h2 = (seed >> 33) & 0x7ff;
+	h2 = ((h2 & 0x3f) << 5)| ((h2 >> 6) & 0x3f);
+
+	k1 = (u32) (((seed << 55) & 0x1f) ^
+	           ((seed >> 44) & 0x7ff) ^
+	           h2 ^
+	           ((seed >> 22) & 0x7ff) ^
+	           h1 ^
+	           (seed & 0x7ff));
+
+	/* Algorithm choice for block 0 */
+	if (sw_r32(RTL930X_L2_CTRL) & BIT(0))
+		h = k1;
+	else
+		h = k0;
+
+	/* Algorithm choice for block 1
+	 * Since k0 and k1 are < 2048, adding 2048 will offset the hash into the second
+	 * half of hash-space
+	 * 2048 is in fact the hash-table size 16384 divided by 4 hashes per bucket
+	 * divided by 2 to divide the hash space in 2
+	 */
+	if (sw_r32(RTL930X_L2_CTRL) & BIT(1))
+		h |= (k1 + 2048) << 16;
+	else
+		h |= (k0 + 2048) << 16;
+
+	return h;
+}

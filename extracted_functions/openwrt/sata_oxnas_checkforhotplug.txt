@@ -1,0 +1,7 @@
+void sata_oxnas_checkforhotplug(struct ata_port *ap)
+{
+	DPRINTK("ENTER\n");
+
+	ata_ehi_hotplugged(&ap->link.eh_info);
+	ata_port_freeze(ap);
+}

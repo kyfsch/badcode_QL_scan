@@ -1,0 +1,35 @@
+static int qca807x_led_config(struct phy_device *phydev)
+{
+	struct device_node *node = phydev->mdio.dev.of_node;
+	bool led_config = false;
+	int val;
+
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, QCA807X_MMD7_LED_1000N_1);
+	if (val < 0)
+		return val;
+
+	if (of_property_read_bool(node, "qcom,single-led-1000")) {
+		val |= QCA807X_LED_TXACT_BLK_EN_2;
+		val |= QCA807X_LED_RXACT_BLK_EN_2;
+		val |= QCA807X_LED_GT_ON_EN_2;
+
+		led_config = true;
+	}
+
+	if (of_property_read_bool(node, "qcom,single-led-100")) {
+		val |= QCA807X_LED_HT_ON_EN_2;
+
+		led_config = true;
+	}
+
+	if (of_property_read_bool(node, "qcom,single-led-10")) {
+		val |= QCA807X_LED_BT_ON_EN_2;
+
+		led_config = true;
+	}
+
+	if (led_config)
+		return phy_write_mmd(phydev, MDIO_MMD_AN, QCA807X_MMD7_LED_1000N_1, val);
+	else
+		return 0;
+}

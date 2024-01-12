@@ -1,0 +1,4 @@
+void rtl839x_update_cntr(int r, int released)
+{
+	/* This feature is not available on RTL839x SoCs */
+}

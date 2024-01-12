@@ -1,0 +1,19 @@
+show_vlan(struct switch_dev *dev, int vlan, bool all)
+{
+	struct switch_val val;
+	struct switch_attr *attr;
+
+	val.port_vlan = vlan;
+
+	if (all) {
+		attr = swlib_lookup_attr(dev, SWLIB_ATTR_GROUP_VLAN, "ports");
+		if (swlib_get_attr(dev, attr, &val) < 0)
+			return;
+
+		if (!val.len)
+			return;
+	}
+
+	printf("VLAN %d:\n", vlan);
+	show_attrs(dev, dev->vlan_ops, &val);
+}

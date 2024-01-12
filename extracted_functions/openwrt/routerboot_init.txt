@@ -1,0 +1,10 @@
+static int __init routerboot_init(void)
+{
+	rb_kobj = kobject_create_and_add("mikrotik", firmware_kobj);
+	if (!rb_kobj)
+		return -ENOMEM;
+
+	register_mtd_user(&routerboot_mtd_notifier);
+
+	return 0;
+}

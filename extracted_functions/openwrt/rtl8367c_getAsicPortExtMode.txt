@@ -1,0 +1,261 @@
+ret_t rtl8367c_getAsicPortExtMode(rtk_uint32 id, rtk_uint32 *pMode)
+{
+    ret_t   retVal;
+    rtk_uint32 regData, regValue, type;
+
+    if(id >= RTL8367C_EXTNO)
+        return RT_ERR_OUT_OF_RANGE;
+    /*cfg_magic_id  &  get chip_id*/
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0249)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_getAsicReg(0x1300, &regValue)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0000)) != RT_ERR_OK)
+        return retVal;
+
+    type = 0;
+
+    switch (regValue)
+    {
+        case 0x0276:
+        case 0x0597:
+        case 0x6367:
+            type = 1;
+            break;
+        case 0x0652:
+        case 0x6368:
+            type = 2;
+            break;
+        case 0x0801:
+        case 0x6511:
+            type = 3;
+            break;
+        default:
+            return RT_ERR_FAILED;
+    }
+
+
+    if (1 == type)
+    {
+
+        if (1 == id)
+        {
+            if( (retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_MAC8_SEL_SGMII_OFFSET, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            if(1 == regData)
+            {
+                *pMode = EXT_SGMII;
+                return RT_ERR_OK;
+            }
+
+            if( (retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_MAC8_SEL_HSGMII_OFFSET, &regData)) != RT_ERR_OK)
+                return retVal;
+
+            if(1 == regData)
+            {
+                *pMode = EXT_HSGMII;
+                return RT_ERR_OK;
+            }
+        }
+
+        if(0 == id || 1 == id)
+            return rtl8367c_getAsicRegBits(RTL8367C_REG_DIGITAL_INTERFACE_SELECT, RTL8367C_SELECT_GMII_0_MASK << (id * RTL8367C_SELECT_GMII_1_OFFSET), pMode);
+        else
+           return rtl8367c_getAsicRegBits(RTL8367C_REG_DIGITAL_INTERFACE_SELECT_1, RTL8367C_SELECT_GMII_2_MASK, pMode);
+
+    }
+    else if (2 == type)
+    {
+        if (1 == id)
+        {
+            if ((retVal = rtl8367c_getAsicReg(0x1d92, &regData))!=RT_ERR_OK)
+                return retVal;
+
+            if (regData & 0x4000)
+            {
+                *pMode = EXT_SGMII;
+                return RT_ERR_OK;
+            }
+
+            else if (((regData >> 8) & 0x1f) == 4)
+            {
+                *pMode = EXT_1000X;
+                return RT_ERR_OK;
+            }
+            else if (((regData >> 8) & 0x1f) == 5)
+            {
+                *pMode = EXT_100FX;
+                return RT_ERR_OK;
+            }
+            else if (((regData >> 8) & 0x1f) == 7)
+            {
+                *pMode = EXT_1000X_100FX;
+                return RT_ERR_OK;
+            }
+
+            return rtl8367c_getAsicRegBits(0x1305, 0xf0, pMode);
+        }
+        else if (2 == id)
+        {
+#if 0
+            if ((retVal = rtl8367c_getAsicRegBit(0x1d92, 6, &regData))!=RT_ERR_OK)
+                return retVal;
+
+            if (regData == 1)
+            {
+                *pMode = EXT_SGMII;
+                return RT_ERR_OK;
+            }
+
+            if ((retVal = rtl8367c_getAsicRegBit(0x1d92, 7, &regData))!=RT_ERR_OK)
+                return retVal;
+
+            if (regData == 1)
+            {
+                *pMode = EXT_HSGMII;
+                return RT_ERR_OK;
+            }
+#endif
+            if ((retVal = rtl8367c_getAsicReg(0x1d92, &regData))!=RT_ERR_OK)
+                return retVal;
+
+            if (regData & 0x40)
+            {
+                *pMode = EXT_SGMII;
+                return RT_ERR_OK;
+            }
+            else if (regData & 0x80)
+            {
+                *pMode = EXT_HSGMII;
+                return RT_ERR_OK;
+            }
+            else if ((regData & 0x1f) == 4)
+            {
+                *pMode = EXT_1000X;
+                return RT_ERR_OK;
+            }
+            else if ((regData & 0x1f) == 5)
+            {
+                *pMode = EXT_100FX;
+                return RT_ERR_OK;
+            }
+            else if ((regData & 0x1f) == 7)
+            {
+                *pMode = EXT_1000X_100FX;
+                return RT_ERR_OK;
+            }
+
+            return rtl8367c_getAsicRegBits(0x1305, 0xf, pMode);
+        }
+    }
+    else if(3 == type)
+    {
+        if (1 == id)
+        {
+            /* SDS_CFG_NEW */
+            if ((retVal = rtl8367c_getAsicReg(0x1d95, &regData))!=RT_ERR_OK)
+                return retVal;
+
+            if ((retVal = rtl8367c_getAsicReg(0x1d41, &regValue))!=RT_ERR_OK)
+                return retVal;
+
+            /* bit5: cfg_mac6_fib=1  &&  bit7: cfg_mac6_fib2 =1 */
+            if((regValue & 0xa0)  == 0xa0 )
+            {
+                /* new_cfg_sds_mode */
+                regData = regData >> 8;
+                if((regData & 0x1f) == 4)
+                {
+                    *pMode = EXT_1000X;
+                     return RT_ERR_OK;
+                }
+                else if((regData & 0x1f) == 5)
+                {
+                    *pMode = EXT_100FX;
+                     return RT_ERR_OK;
+                }
+                else if((regData & 0x1f) == 7)
+                {
+                    *pMode = EXT_1000X_100FX;
+                     return RT_ERR_OK;
+                }
+
+            }
+
+
+            if ((retVal = rtl8367c_getAsicReg(0x1d11, &regData))!=RT_ERR_OK)
+                return retVal;
+
+            /* check cfg_mac6_sel_sgmii */
+            if((regData >> 6) & 1)
+            {
+                *pMode = EXT_SGMII;
+                return RT_ERR_OK;
+            }
+            else if((regData >> 11) & 1)
+            {
+                *pMode = EXT_HSGMII;
+                return RT_ERR_OK;
+            }
+            else
+            {
+                /* check port6 MAC mode */
+                if ((retVal = rtl8367c_getAsicRegBits(0x1305, 0xf0, &regData))!=RT_ERR_OK)
+                    return retVal;
+
+                if(regData < 6)
+                    *pMode = regData;
+                else if(regData == 6)
+                    *pMode = EXT_RMII_MAC;
+                else if(regData == 7)
+                    *pMode = EXT_RMII_PHY;
+
+                return RT_ERR_OK;
+            }
+        }
+        else if (2 == id)
+        {
+            if ((retVal = rtl8367c_getAsicReg(0x1d95, &regData))!=RT_ERR_OK)
+                return retVal;
+
+            /* bit0: cfg_mac7_sel_sgmii
+               bit1: cfg_mac7_fib
+               bit[12:8]: new_cfg_sds_mode*/
+            if(((regData & 0x3) == 3) && (((regData >> 8) & 0x1f) == 0x4))
+            {
+                *pMode = EXT_1000X;
+                    return RT_ERR_OK;
+            }
+            else if (((regData & 0x3) == 3) && (((regData >> 8) & 0x1f) == 0x5))
+            {
+                *pMode = EXT_100FX;
+                    return RT_ERR_OK;
+            }
+            else if (((regData & 0x3) == 3) && (((regData >> 8) & 0x1f) == 0x7))
+            {
+                *pMode = EXT_1000X_100FX;
+                    return RT_ERR_OK;
+            }
+            else if(regData & 1)
+            {
+                *pMode = EXT_SGMII;
+                return RT_ERR_OK;
+            }
+            else
+            {
+            /* check port7 MAC mode */
+                if ((retVal = rtl8367c_getAsicRegBits(0x13c3, 0xf, &regData))!=RT_ERR_OK)
+                    return retVal;
+
+                *pMode = regData;
+
+                return RT_ERR_OK;
+            }
+        }
+    }
+
+    return RT_ERR_OK;
+}

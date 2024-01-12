@@ -1,0 +1,49 @@
+static void bcm6328_pcie_setup(struct bcm6328_pcie *priv)
+{
+	u32 val;
+
+	val = __raw_readl(priv->base + PCIE_BRIDGE_OPT1_REG);
+	val |= OPT1_RD_BE_OPT_EN;
+	val |= OPT1_RD_REPLY_BE_FIX_EN;
+	val |= OPT1_PCIE_BRIDGE_HOLE_DET_EN;
+	val |= OPT1_L1_INT_STATUS_MASK_POL;
+	__raw_writel(val, priv->base + PCIE_BRIDGE_OPT1_REG);
+
+	val = __raw_readl(priv->base + PCIE_BRIDGE_RC_INT_MASK_REG);
+	val |= PCIE_RC_INT_A;
+	val |= PCIE_RC_INT_B;
+	val |= PCIE_RC_INT_C;
+	val |= PCIE_RC_INT_D;
+	__raw_writel(val, priv->base + PCIE_BRIDGE_RC_INT_MASK_REG);
+
+	val = __raw_readl(priv->base + PCIE_BRIDGE_OPT2_REG);
+	/* enable credit checking and error checking */
+	val |= OPT2_TX_CREDIT_CHK_EN;
+	val |= OPT2_UBUS_UR_DECODE_DIS;
+	/* set device bus/func for the pcie device */
+	val |= (PCIE_BUS_DEVICE << OPT2_CFG_TYPE1_BUS_NO_SHIFT);
+	val |= OPT2_CFG_TYPE1_BD_SEL;
+	__raw_writel(val, priv->base + PCIE_BRIDGE_OPT2_REG);
+
+	/* setup class code as bridge */
+	val = __raw_readl(priv->base + PCIE_IDVAL3_REG);
+	val &= ~IDVAL3_CLASS_CODE_MASK;
+	val |= (PCI_CLASS_BRIDGE_PCI << IDVAL3_SUBCLASS_SHIFT);
+	__raw_writel(val, priv->base + PCIE_IDVAL3_REG);
+
+	/* disable bar1 size */
+	val = __raw_readl(priv->base + PCIE_CONFIG2_REG);
+	val &= ~CONFIG2_BAR1_SIZE_MASK;
+	__raw_writel(val, priv->base + PCIE_CONFIG2_REG);
+
+	/* set bar0 to little endian */
+	val = (bcm6328_pcie_mem_resource.start >> 20)
+	      << BASEMASK_BASE_SHIFT;
+	val |= (bcm6328_pcie_mem_resource.end >> 20) << BASEMASK_MASK_SHIFT;
+	val |= BASEMASK_REMAP_EN;
+	__raw_writel(val, priv->base + PCIE_BRIDGE_BAR0_BASEMASK_REG);
+
+	val = (bcm6328_pcie_mem_resource.start >> 20)
+	      << REBASE_ADDR_BASE_SHIFT;
+	__raw_writel(val, priv->base + PCIE_BRIDGE_BAR0_REBASE_ADDR_REG);
+}

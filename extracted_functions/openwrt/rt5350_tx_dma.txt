@@ -1,0 +1,4 @@
+static void rt5350_tx_dma(struct fe_tx_dma *txd)
+{
+	txd->txd4 = 0;
+}

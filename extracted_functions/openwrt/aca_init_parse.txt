@@ -1,0 +1,16 @@
+static void aca_init_parse(struct dc_ep_priv *priv, const char *data,
+	u32 sid)
+{
+	struct aca_fw_param *fw_param = to_aca_fw_param(priv);
+	struct aca_fw_param *param;
+	u32 hdr_sz, hdr_addr;
+
+	param = (struct aca_fw_param *)data;
+	hdr_sz = be32_to_cpu(param->st_sz);
+	hdr_addr = be32_to_cpu(param->init_addr);
+
+	fw_param->init_addr = hdr_addr;
+	fw_param->st_sz = hdr_sz;
+	dev_dbg(priv->dev, "init st size: %d, addr: 0x%x\n",
+		hdr_sz, hdr_addr);
+}

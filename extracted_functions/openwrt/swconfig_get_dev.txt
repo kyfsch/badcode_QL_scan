@@ -1,0 +1,26 @@
+swconfig_get_dev(struct genl_info *info)
+{
+	struct switch_dev *dev = NULL;
+	struct switch_dev *p;
+	int id;
+
+	if (!info->attrs[SWITCH_ATTR_ID])
+		goto done;
+
+	id = nla_get_u32(info->attrs[SWITCH_ATTR_ID]);
+	swconfig_lock();
+	list_for_each_entry(p, &swdevs, dev_list) {
+		if (id != p->id)
+			continue;
+
+		dev = p;
+		break;
+	}
+	if (dev)
+		mutex_lock(&dev->sw_mutex);
+	else
+		pr_debug("device %d not found\n", id);
+	swconfig_unlock();
+done:
+	return dev;
+}

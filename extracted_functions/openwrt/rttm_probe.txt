@@ -1,0 +1,42 @@
+static int __init rttm_probe(struct device_node *np)
+{
+	int cpu, cpu_rollback;
+	struct timer_of *to;
+	int clkidx = num_possible_cpus();
+
+	/* Use the first n timers as per CPU clock event generators */
+	for_each_possible_cpu(cpu) {
+		to = per_cpu_ptr(&rttm_to, cpu);
+		to->of_irq.index = to->of_base.index = cpu;
+		if (timer_of_init(np, to)) {
+			pr_err("%s: setup of timer %d failed\n", __func__, cpu);
+			goto rollback;
+		}
+		rttm_setup_timer(to->of_base.base);
+	}
+
+	/* Activate the n'th + 1 timer as a stable CPU clocksource. */
+	to = &rttm_cs.to;
+	to->of_base.index = clkidx;
+	timer_of_init(np, to);
+	if (rttm_cs.to.of_base.base && rttm_cs.to.of_clk.rate) {
+		rttm_enable_clocksource(&rttm_cs.cs);
+		clocksource_register_hz(&rttm_cs.cs, RTTM_TICKS_PER_SEC);
+		sched_clock_register(rttm_read_clock, RTTM_BIT_COUNT, RTTM_TICKS_PER_SEC);
+	} else
+		pr_err("%s: setup of timer %d as clocksoure failed", __func__, clkidx);
+
+	return cpuhp_setup_state(CPUHP_AP_REALTEK_TIMER_STARTING,
+				"timer/realtek:online",
+				rttm_cpu_starting, NULL);
+rollback:
+	pr_err("%s: timer registration failed\n", __func__);
+	for_each_possible_cpu(cpu_rollback) {
+		if (cpu_rollback == cpu)
+			break;
+		to = per_cpu_ptr(&rttm_to, cpu_rollback);
+		timer_of_cleanup(to);
+	}
+
+	return -EINVAL;
+}

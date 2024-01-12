@@ -1,0 +1,6 @@
+void aes_decrypt (struct crypto_tfm *tfm, uint8_t *out, const uint8_t *in)
+{
+    struct aes_ctx *ctx = crypto_tfm_ctx(tfm);
+    ifx_deu_aes (ctx, out, in, NULL, AES_BLOCK_SIZE,
+            CRYPTO_DIR_DECRYPT, 0);
+}

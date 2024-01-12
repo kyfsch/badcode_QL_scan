@@ -1,0 +1,27 @@
+static void do_swap_desc_tasklet(unsigned long);
+
+
+/*
+ *  Init & clean-up functions
+ */
+static inline int init_priv_data(void);
+static inline void clear_priv_data(void);
+static inline int init_tables(void);
+static inline void clear_tables(void);
+
+static int g_wanqos_en = 0;
+
+static int g_queue_gamma_map[4];
+
+static struct ptm_priv_data g_ptm_priv_data;
+
+static struct net_device_ops g_ptm_netdev_ops = {
+    .ndo_get_stats       = ptm_get_stats,
+    .ndo_open            = ptm_open,
+    .ndo_stop            = ptm_stop,
+    .ndo_start_xmit      = ptm_hard_start_xmit,
+    .ndo_validate_addr   = eth_validate_addr,
+    .ndo_set_mac_address = eth_mac_addr,
+    .ndo_do_ioctl        = ptm_ioctl,
+    .ndo_tx_timeout      = ptm_tx_timeout,
+};

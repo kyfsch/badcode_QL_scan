@@ -1,0 +1,32 @@
+static int conf_string(struct menu *menu)
+{
+	struct symbol *sym = menu->sym;
+	const char *def;
+
+	while (1) {
+		printf("%*s%s ", indent - 1, "", menu->prompt->text);
+		printf("(%s) ", sym->name);
+		def = sym_get_string_value(sym);
+		if (def)
+			printf("[%s] ", def);
+		if (!conf_askvalue(sym, def))
+			return 0;
+		switch (line[0]) {
+		case '\n':
+			break;
+		case '?':
+			/* print help */
+			if (line[1] == '\n') {
+				print_help(menu);
+				def = NULL;
+				break;
+			}
+			/* fall through */
+		default:
+			line[strlen(line)-1] = 0;
+			def = line;
+		}
+		if (def && sym_set_string_value(sym, def))
+			return 0;
+	}
+}

@@ -1,0 +1,37 @@
+static int l2_table_show(struct seq_file *m, void *v)
+{
+	struct rtl838x_switch_priv *priv = m->private;
+	struct rtl838x_l2_entry e;
+	int bucket, index;
+
+	mutex_lock(&priv->reg_mutex);
+
+	for (int i = 0; i < priv->fib_entries; i++) {
+		bucket = i >> 2;
+		index = i & 0x3;
+		priv->r->read_l2_entry_using_hash(bucket, index, &e);
+
+		if (!e.valid)
+			continue;
+
+		seq_printf(m, "Hash table bucket %d index %d ", bucket, index);
+		l2_table_print_entry(m, priv, &e);
+
+		if (!((i + 1) % 64))
+			cond_resched();
+	}
+
+	for (int i = 0; i < 64; i++) {
+		priv->r->read_cam(i, &e);
+
+		if (!e.valid)
+			continue;
+
+		seq_printf(m, "CAM index %d ", i);
+		l2_table_print_entry(m, priv, &e);
+	}
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}

@@ -1,0 +1,53 @@
+static void ar8327_get_arl_entry(struct ar8xxx_priv *priv,
+				 struct arl_entry *a, u32 *status, enum arl_op op)
+{
+	struct mii_bus *bus = priv->mii_bus;
+	u16 r2, page;
+	u16 r1_data0, r1_data1, r1_data2, r1_func;
+	u32 val0, val1, val2;
+
+	split_addr(AR8327_REG_ATU_DATA0, &r1_data0, &r2, &page);
+	r2 |= 0x10;
+
+	r1_data1 = (AR8327_REG_ATU_DATA1 >> 1) & 0x1e;
+	r1_data2 = (AR8327_REG_ATU_DATA2 >> 1) & 0x1e;
+	r1_func  = (AR8327_REG_ATU_FUNC >> 1) & 0x1e;
+
+	switch (op) {
+	case AR8XXX_ARL_INITIALIZE:
+		/* all ATU registers are on the same page
+		* therefore set page only once
+		*/
+		bus->write(bus, 0x18, 0, page);
+		wait_for_page_switch();
+
+		ar8327_wait_atu_ready(priv, r2, r1_func);
+
+		ar8xxx_mii_write32(priv, r2, r1_data0, 0);
+		ar8xxx_mii_write32(priv, r2, r1_data1, 0);
+		ar8xxx_mii_write32(priv, r2, r1_data2, 0);
+		break;
+	case AR8XXX_ARL_GET_NEXT:
+		ar8xxx_mii_write32(priv, r2, r1_func,
+				   AR8327_ATU_FUNC_OP_GET_NEXT |
+				   AR8327_ATU_FUNC_BUSY);
+		ar8327_wait_atu_ready(priv, r2, r1_func);
+
+		val0 = ar8xxx_mii_read32(priv, r2, r1_data0);
+		val1 = ar8xxx_mii_read32(priv, r2, r1_data1);
+		val2 = ar8xxx_mii_read32(priv, r2, r1_data2);
+
+		*status = val2 & AR8327_ATU_STATUS;
+		if (!*status)
+			break;
+
+		a->portmap = (val1 & AR8327_ATU_PORTS) >> AR8327_ATU_PORTS_S;
+		a->mac[0] = (val0 & AR8327_ATU_ADDR0) >> AR8327_ATU_ADDR0_S;
+		a->mac[1] = (val0 & AR8327_ATU_ADDR1) >> AR8327_ATU_ADDR1_S;
+		a->mac[2] = (val0 & AR8327_ATU_ADDR2) >> AR8327_ATU_ADDR2_S;
+		a->mac[3] = (val0 & AR8327_ATU_ADDR3) >> AR8327_ATU_ADDR3_S;
+		a->mac[4] = (val1 & AR8327_ATU_ADDR4) >> AR8327_ATU_ADDR4_S;
+		a->mac[5] = (val1 & AR8327_ATU_ADDR5) >> AR8327_ATU_ADDR5_S;
+		break;
+	}
+}

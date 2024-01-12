@@ -1,0 +1,19 @@
+static void oxnas_pcie_enable(struct device *dev, struct oxnas_pcie *pcie)
+{
+	struct hw_pci hw;
+	int i;
+
+	memset(&hw, 0, sizeof(hw));
+	for (i = 0; i < NUM_CONTROLLERS; i++)
+		pcie->private_data[i] = pcie;
+
+	hw.nr_controllers = NUM_CONTROLLERS;
+/* I think use stack pointer is a bad idea though it is valid in this case */
+	hw.private_data   = pcie->private_data;
+	hw.setup          = oxnas_pcie_setup;
+	hw.map_irq        = of_irq_parse_and_map_pci;
+	hw.ops            = &oxnas_pcie_ops;
+
+	/* pass dev to maintain of tree, interrupt mapping rely on this */
+	pci_common_init_dev(dev, &hw);
+}

@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_igmp_currentGroup_get(rtk_port_t port, rtk_uint32 *pGroup)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check port valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if(pGroup == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicIGMPPortCurrentGroup(rtk_switch_port_L2P_get(port), pGroup))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

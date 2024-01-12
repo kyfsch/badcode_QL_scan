@@ -1,0 +1,121 @@
+ret_t rtl8367c_setAsicAclRule(rtk_uint32 index, rtl8367c_aclrule* pAclRule)
+{
+    rtl8367c_aclrulesmi aclRuleSmi;
+    rtk_uint16* tableAddr;
+    rtk_uint32 regAddr;
+    rtk_uint32  regData;
+    rtk_uint32 i;
+    ret_t retVal;
+
+    if(index > RTL8367C_ACLRULEMAX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    memset(&aclRuleSmi, 0x00, sizeof(rtl8367c_aclrulesmi));
+
+    _rtl8367c_aclRuleStUser2Smi(pAclRule, &aclRuleSmi);
+
+    /* Write valid bit = 0 */
+    regAddr = RTL8367C_TABLE_ACCESS_ADDR_REG;
+    if(index >= 64)
+        regData = RTL8367C_ACLRULETBADDR2(DATABITS, index);
+    else
+        regData = RTL8367C_ACLRULETBADDR(DATABITS, index);
+    retVal = rtl8367c_setAsicReg(regAddr,regData);
+    if(retVal !=RT_ERR_OK)
+        return retVal;
+
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_TABLE_ACCESS_WRDATA_REG(RTL8367C_ACLRULETBLEN), 0x1, 0);
+    if(retVal !=RT_ERR_OK)
+        return retVal;
+
+    regAddr = RTL8367C_TABLE_ACCESS_CTRL_REG;
+    regData = RTL8367C_TABLE_ACCESS_REG_DATA(TB_OP_WRITE, TB_TARGET_ACLRULE);
+    retVal = rtl8367c_setAsicReg(regAddr, regData);
+    if(retVal !=RT_ERR_OK)
+        return retVal;
+
+
+
+    /* Write ACS_ADR register */
+    regAddr = RTL8367C_TABLE_ACCESS_ADDR_REG;
+    if(index >= 64)
+        regData = RTL8367C_ACLRULETBADDR2(CAREBITS, index);
+    else
+        regData = RTL8367C_ACLRULETBADDR(CAREBITS, index);
+    retVal = rtl8367c_setAsicReg(regAddr, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    /* Write Care Bits to ACS_DATA registers */
+     tableAddr = (rtk_uint16*)&aclRuleSmi.care_bits;
+     regAddr = RTL8367C_TABLE_ACCESS_WRDATA_BASE;
+
+    for(i = 0; i < RTL8367C_ACLRULETBLEN; i++)
+    {
+        regData = *tableAddr;
+        retVal = rtl8367c_setAsicReg(regAddr, regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        regAddr++;
+        tableAddr++;
+    }
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_TABLE_ACCESS_WRDATA_REG(RTL8367C_ACLRULETBLEN), (0x0007 << 1), (aclRuleSmi.care_bits_ext.rule_info >> 1) & 0x0007);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    /* Write ACS_CMD register */
+    regAddr = RTL8367C_TABLE_ACCESS_CTRL_REG;
+    regData = RTL8367C_TABLE_ACCESS_REG_DATA(TB_OP_WRITE, TB_TARGET_ACLRULE);
+    retVal = rtl8367c_setAsicRegBits(regAddr, RTL8367C_TABLE_TYPE_MASK | RTL8367C_COMMAND_TYPE_MASK,regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+
+
+    /* Write ACS_ADR register for data bits */
+    regAddr = RTL8367C_TABLE_ACCESS_ADDR_REG;
+    if(index >= 64)
+        regData = RTL8367C_ACLRULETBADDR2(DATABITS, index);
+    else
+        regData = RTL8367C_ACLRULETBADDR(DATABITS, index);
+
+    retVal = rtl8367c_setAsicReg(regAddr, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    /* Write Data Bits to ACS_DATA registers */
+     tableAddr = (rtk_uint16*)&aclRuleSmi.data_bits;
+     regAddr = RTL8367C_TABLE_ACCESS_WRDATA_BASE;
+
+    for(i = 0; i < RTL8367C_ACLRULETBLEN; i++)
+    {
+        regData = *tableAddr;
+        retVal = rtl8367c_setAsicReg(regAddr, regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        regAddr++;
+        tableAddr++;
+    }
+
+    retVal = rtl8367c_setAsicRegBit(RTL8367C_TABLE_ACCESS_WRDATA_REG(RTL8367C_ACLRULETBLEN), 0, aclRuleSmi.valid);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_TABLE_ACCESS_WRDATA_REG(RTL8367C_ACLRULETBLEN), (0x0007 << 1), (aclRuleSmi.data_bits_ext.rule_info >> 1) & 0x0007);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    /* Write ACS_CMD register for care bits*/
+    regAddr = RTL8367C_TABLE_ACCESS_CTRL_REG;
+    regData = RTL8367C_TABLE_ACCESS_REG_DATA(TB_OP_WRITE, TB_TARGET_ACLRULE);
+    retVal = rtl8367c_setAsicRegBits(regAddr, RTL8367C_TABLE_TYPE_MASK | RTL8367C_COMMAND_TYPE_MASK, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+#ifdef CONFIG_RTL8367C_ASICDRV_TEST
+    memcpy(&Rtl8370sVirtualAclRuleTable[index], &aclRuleSmi, sizeof(rtl8367c_aclrulesmi));
+#endif
+
+    return RT_ERR_OK;
+}

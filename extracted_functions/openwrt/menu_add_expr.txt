@@ -1,0 +1,4 @@
+void menu_add_expr(enum prop_type type, struct expr *expr, struct expr *dep)
+{
+	menu_add_prop(type, expr, dep);
+}

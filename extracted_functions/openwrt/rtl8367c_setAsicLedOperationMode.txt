@@ -1,0 +1,37 @@
+ret_t rtl8367c_setAsicLedOperationMode(rtk_uint32 mode)
+{
+    ret_t retVal;
+
+    /* Invalid input parameter */
+    if( mode >= LEDOP_END)
+        return RT_ERR_INPUT;
+
+    switch(mode)
+    {
+        case LEDOP_PARALLEL:
+            if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_LED_SYS_CONFIG, RTL8367C_LED_SELECT_OFFSET, 0))!=  RT_ERR_OK)
+                return retVal;
+            /*Disable serial CLK mode*/
+            if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SCAN0_LED_IO_EN1,RTL8367C_LED_SERI_CLK_EN_OFFSET, 0))!=  RT_ERR_OK)
+                return retVal;
+            /*Disable serial DATA mode*/
+            if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SCAN0_LED_IO_EN1,RTL8367C_LED_SERI_DATA_EN_OFFSET, 0))!=  RT_ERR_OK)
+                return retVal;
+            break;
+        case LEDOP_SERIAL:
+            if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_LED_SYS_CONFIG, RTL8367C_LED_SELECT_OFFSET, 1))!=  RT_ERR_OK)
+                return retVal;
+            /*Enable serial CLK mode*/
+            if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SCAN0_LED_IO_EN1,RTL8367C_LED_SERI_CLK_EN_OFFSET, 1))!=  RT_ERR_OK)
+                return retVal;
+            /*Enable serial DATA mode*/
+            if((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_SCAN0_LED_IO_EN1,RTL8367C_LED_SERI_DATA_EN_OFFSET, 1))!=  RT_ERR_OK)
+                return retVal;
+            break;
+        default:
+            return RT_ERR_INPUT;
+            break;
+    }
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,12 @@
+static int count_sgs(struct scatterlist *sl, unsigned int total_bytes)
+{
+        int i = 0;
+
+        do {
+                total_bytes -= sl[i].length;
+                i++;
+
+        } while (total_bytes > 0);
+
+        return i;
+}

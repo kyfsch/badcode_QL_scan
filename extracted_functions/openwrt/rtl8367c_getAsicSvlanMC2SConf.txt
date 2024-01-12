@@ -1,0 +1,30 @@
+ret_t rtl8367c_getAsicSvlanMC2SConf(rtk_uint32 index, rtl8367c_svlan_mc2s_t* pSvlanMc2sCfg)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+    rtk_uint16 *accessPtr;
+    rtk_uint32 i;
+    rtk_uint16 smiSvlanMC2S[RTL8367C_SVLAN_MC2S_LEN];
+
+    if(index > RTL8367C_MC2SIDXMAX)
+        return RT_ERR_ENTRY_INDEX;
+
+    memset(smiSvlanMC2S, 0x00, sizeof(rtk_uint16) * RTL8367C_SVLAN_MC2S_LEN);
+
+    accessPtr = smiSvlanMC2S;
+
+    for(i = 0; i < 5; i++)
+    {
+        retVal = rtl8367c_getAsicReg(RTL8367C_SVLAN_MCAST2S_ENTRY_BASE_REG(index) + i, &regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        *accessPtr = regData;
+        accessPtr ++;
+    }
+
+
+    _rtl8367c_svlanMc2sStSmi2User(pSvlanMc2sCfg, smiSvlanMC2S);
+
+    return RT_ERR_OK;
+}

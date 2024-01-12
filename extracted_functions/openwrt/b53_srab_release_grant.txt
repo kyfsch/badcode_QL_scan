@@ -1,0 +1,9 @@
+static void b53_srab_release_grant(struct b53_device *dev)
+{
+	u8 __iomem *regs = dev->priv;
+	u32 ctrls;
+
+	ctrls = readl(regs + B53_SRAB_CTRLS);
+	ctrls &= ~B53_SRAB_CTRLS_RCAREQ;
+	writel(ctrls, regs + B53_SRAB_CTRLS);
+}

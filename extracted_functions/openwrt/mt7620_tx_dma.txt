@@ -1,0 +1,3 @@
+static void mt7620_tx_dma(struct fe_tx_dma *txd)
+{
+}

@@ -1,0 +1,40 @@
+int rtl839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
+{
+	u32 v;
+	int err = 0;
+
+	val &= 0xffff;
+	if (port > 63 || page > 4095 || reg > 31)
+		return -ENOTSUPP;
+
+	/* Take bug on RTL839x Rev <= C into account */
+	if (port >= RTL839X_CPU_PORT)
+		return -EIO;
+
+	mutex_lock(&smi_lock);
+
+	/* Set PHY to access */
+	rtl839x_set_port_reg_le(BIT_ULL(port), RTL839X_PHYREG_PORT_CTRL);
+
+	sw_w32_mask(0xffff0000, val << 16, RTL839X_PHYREG_DATA_CTRL);
+
+	v = reg << 5 | page << 10 | ((page == 0x1fff) ? 0x1f : 0) << 23;
+	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
+
+	sw_w32(0x1ff, RTL839X_PHYREG_CTRL);
+
+	v |= BIT(3) | 1; /* Write operation and execute */
+	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
+
+	err = rtl839x_smi_wait_op(100000);
+	if (err)
+		goto errout;
+
+	if (sw_r32(RTL839X_PHYREG_ACCESS_CTRL) & 0x2)
+		err = -EIO;
+
+errout:
+	mutex_unlock(&smi_lock);
+
+	return err;
+}

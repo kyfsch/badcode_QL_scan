@@ -1,0 +1,11 @@
+swconfig_get_pvid(struct switch_dev *dev, const struct switch_attr *attr,
+			struct switch_val *val)
+{
+	if (val->port_vlan >= dev->ports)
+		return -EINVAL;
+
+	if (!dev->ops->get_port_pvid)
+		return -EOPNOTSUPP;
+
+	return dev->ops->get_port_pvid(dev, val->port_vlan, &val->value.i);
+}

@@ -1,0 +1,5 @@
+void hostapd_ubus_free_iface(struct hostapd_iface *iface)
+{
+	if (!ctx)
+		return;
+}

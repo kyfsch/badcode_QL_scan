@@ -1,0 +1,24 @@
+static inline void uninit_pmu(void);
+static inline void reset_ppe(struct platform_device *pdev);
+static inline void init_pdma(void);
+static inline void init_mailbox(void);
+static inline void init_atm_tc(void);
+static inline void clear_share_buffer(void);
+
+#define IFX_PMU_MODULE_PPE_SLL01  BIT(19)
+#define IFX_PMU_MODULE_PPE_TC     BIT(21)
+#define IFX_PMU_MODULE_PPE_EMA    BIT(22)
+#define IFX_PMU_MODULE_PPE_QSB    BIT(18)
+#define IFX_PMU_MODULE_AHBS       BIT(13)
+#define IFX_PMU_MODULE_DSL_DFE    BIT(9)
+
+
+static inline void init_pmu(void)
+{
+	ltq_pmu_enable(IFX_PMU_MODULE_PPE_SLL01 |
+		IFX_PMU_MODULE_PPE_TC |
+		IFX_PMU_MODULE_PPE_EMA |
+		IFX_PMU_MODULE_AHBS |
+		IFX_PMU_MODULE_DSL_DFE);
+
+}

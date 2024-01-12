@@ -1,0 +1,11 @@
+static void rtl839x_write_mcast_pmask(int idx, u64 portmask)
+{
+	/* Access MC_PMSK (2) via register RTL8380_TBL_L2 */
+	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 2);
+
+	portmask <<= 11; /* LSB is bit 11 in data registers */
+	sw_w32((u32)(portmask >> 32), rtl_table_data(q, 0));
+	sw_w32((u32)((portmask & 0xfffff800)), rtl_table_data(q, 1));
+	rtl_table_write(q, idx);
+	rtl_table_release(q);
+}

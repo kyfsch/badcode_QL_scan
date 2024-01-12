@@ -1,0 +1,6 @@
+mvswitch_remove(struct phy_device *pdev)
+{
+	struct mvswitch_priv *priv = to_mvsw(pdev);
+
+	kfree(priv);
+}

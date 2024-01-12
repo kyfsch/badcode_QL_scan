@@ -1,0 +1,13 @@
+int BN_num_bits(const BIGNUM *a)
+	{
+	BN_ULONG l;
+	int i;
+
+	bn_check_top(a);
+
+	if (a->top == 0) return(0);
+	l=a->d[a->top-1];
+	assert(l != 0);
+	i=(a->top-1)*BN_BITS2;
+	return(i+BN_num_bits_word(l));
+	}

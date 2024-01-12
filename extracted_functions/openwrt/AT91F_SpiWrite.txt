@@ -1,0 +1,38 @@
+static unsigned int AT91F_SpiWrite(AT91PS_DataflashDesc pDesc)
+{
+   	unsigned int timeout;
+	
+   	AT91C_BASE_SPI->SPI_PTCR = AT91C_PDC_TXTDIS + AT91C_PDC_RXTDIS;
+
+   	/* Initialize the Transmit and Receive Pointer */
+    	AT91C_BASE_SPI->SPI_RPR = (unsigned int)pDesc->rx_cmd_pt ;
+    	AT91C_BASE_SPI->SPI_TPR = (unsigned int)pDesc->tx_cmd_pt ;
+
+    	/* Intialize the Transmit and Receive Counters */
+    	AT91C_BASE_SPI->SPI_RCR = pDesc->rx_cmd_size;
+    	AT91C_BASE_SPI->SPI_TCR = pDesc->tx_cmd_size;
+
+	if ( pDesc->tx_data_size != 0 ) {
+	   	/* Initialize the Next Transmit and Next Receive Pointer */
+	   	AT91C_BASE_SPI->SPI_RNPR = (unsigned int)pDesc->rx_data_pt ;
+		AT91C_BASE_SPI->SPI_TNPR = (unsigned int)pDesc->tx_data_pt ;
+
+		/* Intialize the Next Transmit and Next Receive Counters */
+		AT91C_BASE_SPI->SPI_RNCR = pDesc->rx_data_size ;
+	 	AT91C_BASE_SPI->SPI_TNCR = pDesc->tx_data_size ;
+   	}
+
+	/* ARM simple, non interrupt dependent timer */
+	timeout = 0;
+
+	AT91C_BASE_SPI->SPI_PTCR = AT91C_PDC_TXTEN + AT91C_PDC_RXTEN;
+	while(!(AT91C_BASE_SPI->SPI_SR & AT91C_SPI_RXBUFF));
+
+   	AT91C_BASE_SPI->SPI_PTCR = AT91C_PDC_TXTDIS + AT91C_PDC_RXTDIS;
+
+	if (timeout >= AT91C_DATAFLASH_TIMEOUT){
+		return AT91C_DATAFLASH_ERROR;
+	}
+
+	return AT91C_DATAFLASH_OK;
+}

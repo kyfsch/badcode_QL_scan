@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_trunk_distributionAlgorithm_get(rtk_trunk_group_t trk_gid, rtk_uint32 *pAlgo_bitmask)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (trk_gid != RTK_WHOLE_SYSTEM)
+        return RT_ERR_LA_TRUNK_ID;
+
+    if(NULL == pAlgo_bitmask)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicTrunkingHashSelect((rtk_uint32 *)pAlgo_bitmask)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

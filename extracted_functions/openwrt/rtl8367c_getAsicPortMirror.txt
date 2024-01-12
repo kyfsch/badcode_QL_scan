@@ -1,0 +1,10 @@
+ret_t rtl8367c_getAsicPortMirror(rtk_uint32 *pSource, rtk_uint32 *pMonitor)
+{
+    ret_t retVal;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_MIRROR_CTRL_REG, RTL8367C_MIRROR_SOURCE_PORT_MASK, pSource);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return rtl8367c_getAsicRegBits(RTL8367C_MIRROR_CTRL_REG, RTL8367C_MIRROR_MONITOR_PORT_MASK, pMonitor);
+}

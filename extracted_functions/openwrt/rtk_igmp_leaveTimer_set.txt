@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_igmp_leaveTimer_set(rtk_uint32 timer)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(timer > RTL8367C_MAX_LEAVE_TIMER)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicIGMPLeaveTimer(timer))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

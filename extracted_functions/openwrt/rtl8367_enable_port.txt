@@ -1,0 +1,9 @@
+static int rtl8367_enable_port(struct rtl8366_smi *smi, int port, int enable)
+{
+	int err;
+
+	REG_WR(smi, RTL8367_PORT_ISOLATION_REG(port),
+	       (enable) ? RTL8367_PORTS_ALL : 0);
+
+	return 0;
+}

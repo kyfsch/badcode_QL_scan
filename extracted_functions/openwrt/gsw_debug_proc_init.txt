@@ -1,0 +1,50 @@
+int gsw_debug_proc_init(void)
+{
+
+	if (!proc_reg_dir)
+		proc_reg_dir = proc_mkdir(PROCREG_DIR, NULL);
+
+	proc_esw_cnt =
+	proc_create(PROCREG_ESW_CNT, 0, proc_reg_dir, &switch_count_fops);
+
+	if (!proc_esw_cnt)
+		pr_err("!! FAIL to create %s PROC !!\n", PROCREG_ESW_CNT);
+
+	proc_vlan_cnt =
+	proc_create(PROCREG_VLAN, 0, proc_reg_dir, &switch_vlan_fops);
+
+	if (!proc_vlan_cnt)
+		pr_err("!! FAIL to create %s PROC !!\n", PROCREG_VLAN);
+
+	proc_mac_tbl =
+	proc_create(PROCREG_MAC_TBL, 0, proc_reg_dir, &mac_tbl_fops);
+
+	if (!proc_mac_tbl)
+		pr_err("!! FAIL to create %s PROC !!\n", PROCREG_MAC_TBL);
+
+	proc_reg =
+	proc_create(PROCREG_REG, 0, proc_reg_dir, &reg_fops);
+
+	if (!proc_reg)
+		pr_err("!! FAIL to create %s PROC !!\n", PROCREG_REG);
+
+	proc_phyreg =
+	proc_create(PROCREG_PHYREG, 0, proc_reg_dir, &phyreg_fops);
+
+	if (!proc_phyreg)
+		pr_err("!! FAIL to create %s PROC !!\n", PROCREG_PHYREG);
+
+	proc_mirror =
+	proc_create(PROCREG_MIRROR, 0, proc_reg_dir, &mirror_fops);
+
+	if (!proc_mirror)
+		pr_err("!! FAIL to create %s PROC !!\n", PROCREG_MIRROR);
+
+	proc_igmp =
+	proc_create(PROCREG_IGMP, 0, proc_reg_dir, &igmp_fops);
+
+	if (!proc_igmp)
+		pr_err("!! FAIL to create %s PROC !!\n", PROCREG_IGMP);
+
+	return 0;
+}

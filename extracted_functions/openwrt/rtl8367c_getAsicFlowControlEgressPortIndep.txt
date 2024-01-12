@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicFlowControlEgressPortIndep(rtk_uint32 port, rtk_uint32 *pEnable)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_PORT0_MISC_CFG + (port *0x20),RTL8367C_PORT0_MISC_CFG_FLOWCTRL_INDEP_OFFSET,pEnable);
+}

@@ -1,0 +1,68 @@
+extern void ifx_usb_enable_afe_oc(void);
+
+/**
+ * MEI interrupt handler
+ *
+ * \param int1
+ * \param void0
+ * \param regs	Pointer to the structure of danube mips registers
+ * \ingroup	Internal
+ */
+static irqreturn_t IFX_MEI_IrqHandle (int int1, void *void0)
+{
+	u32 scratch;
+	DSL_DEV_Device_t *pDev = (DSL_DEV_Device_t *) void0;
+#if defined(CONFIG_LTQ_MEI_FW_LOOPBACK) && defined(DFE_PING_TEST)
+	dfe_loopback_irq_handler (pDev);
+	return IRQ_HANDLED;
+#endif //CONFIG_AMAZON_S_MEI_FW_LOOPBACK
+        DSL_BSP_CB_Type_t event;
+
+	if (pDev == NULL)
+		IFX_MEI_EMSG("Error: Got Interrupt but pDev is NULL!!!!\n");
+
+	IFX_MEI_DebugRead (pDev, ARC_MEI_MAILBOXR, &scratch, 1);
+	if (scratch & OMB_CODESWAP_MESSAGE_MSG_TYPE_MASK) {
+		IFX_MEI_EMSG("Receive Code Swap Request interrupt!!!\n");
+		return IRQ_HANDLED;
+	}
+	else if (scratch & OMB_CLEAREOC_INTERRUPT_CODE)	 {
+		// clear eoc message interrupt
+		IFX_MEI_DMSG("OMB_CLEAREOC_INTERRUPT_CODE\n");
+                event = DSL_BSP_CB_CEOC_IRQ;
+		IFX_MEI_LongWordWriteOffset (pDev, (u32) ME_ARC2ME_STAT, ARC_TO_MEI_MSGAV);
+                if (dsl_bsp_event_callback[event].function)
+			(*dsl_bsp_event_callback[event].function)(pDev, event, dsl_bsp_event_callback[event].pData);
+        } else if (scratch & OMB_REBOOT_INTERRUPT_CODE) {
+                // Reboot
+                IFX_MEI_DMSG("OMB_REBOOT_INTERRUPT_CODE\n");
+                event = DSL_BSP_CB_FIRMWARE_REBOOT;
+
+		IFX_MEI_LongWordWriteOffset (pDev, (u32) ME_ARC2ME_STAT, ARC_TO_MEI_MSGAV);
+
+                if (dsl_bsp_event_callback[event].function)
+                        (*dsl_bsp_event_callback[event].function)(pDev, event, dsl_bsp_event_callback[event].pData);
+        } else { // normal message
+                IFX_MEI_MailboxRead (pDev, DSL_DEV_PRIVATE(pDev)->CMV_RxMsg, MSG_LENGTH);
+                if (DSL_DEV_PRIVATE(pDev)-> cmv_waiting == 1) {
+                        DSL_DEV_PRIVATE(pDev)-> arcmsgav = 1;
+                        DSL_DEV_PRIVATE(pDev)-> cmv_waiting = 0;
+#if !defined(BSP_PORT_RTEMS)
+                        MEI_WAKEUP_EVENT (DSL_DEV_PRIVATE(pDev)->wait_queue_arcmsgav);
+#endif
+                }
+		else {
+			DSL_DEV_PRIVATE(pDev)-> modem_ready_cnt++;
+			memcpy ((char *) DSL_DEV_PRIVATE(pDev)->Recent_indicator,
+				(char *) DSL_DEV_PRIVATE(pDev)->CMV_RxMsg, MSG_LENGTH * 2);
+			if (((DSL_DEV_PRIVATE(pDev)->CMV_RxMsg[0] & 0xff0) >> 4) == D2H_AUTONOMOUS_MODEM_READY_MSG) {
+				//check ARC ready message
+				IFX_MEI_DMSG ("Got MODEM_READY_MSG\n");
+				DSL_DEV_PRIVATE(pDev)->modem_ready = 1;
+				MEI_WAKEUP_EVENT (DSL_DEV_PRIVATE(pDev)->wait_queue_modemready);
+			}
+		}
+	}
+
+	return IRQ_HANDLED;
+}

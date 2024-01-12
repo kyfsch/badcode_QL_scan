@@ -1,0 +1,20 @@
+static void rb91x_nand_cmd_ctrl(struct nand_chip *chip, int cmd,
+				unsigned int ctrl)
+{
+	struct rb91x_nand_drvdata *drvdata = chip->priv;
+
+	if (ctrl & NAND_CTRL_CHANGE) {
+		gpiod_set_value_cansleep(drvdata->gpio[RB91X_NAND_CLE],
+					(ctrl & NAND_CLE) ? 1 : 0);
+		gpiod_set_value_cansleep(drvdata->gpio[RB91X_NAND_ALE],
+					(ctrl & NAND_ALE) ? 1 : 0);
+		gpiod_set_value_cansleep(drvdata->gpio[RB91X_NAND_NCE],
+					(ctrl & NAND_NCE) ? 1 : 0);
+	}
+
+	if (cmd != NAND_CMD_NONE) {
+		u8 t = cmd;
+
+		rb91x_nand_write(drvdata, &t, 1);
+	}
+}

@@ -1,0 +1,18 @@
+static int rtl8367c_set_vlan( unsigned short vid, u32 mbr, u32 untag, u8 fid)
+{	
+	rtk_vlan_cfg_t vlan_cfg;
+	int i;
+
+	memset(&vlan_cfg, 0x00, sizeof(rtk_vlan_cfg_t));	
+
+	for (i = 0; i < RTL8367C_NUM_PORTS; i++) {
+		if (mbr & (1 << i)) {
+			RTK_PORTMASK_PORT_SET(vlan_cfg.mbr, rtl8367c_sw_to_phy_port(i));
+			if(untag & (1 << i))
+				RTK_PORTMASK_PORT_SET(vlan_cfg.untag, rtl8367c_sw_to_phy_port(i));			
+		}
+	}
+	vlan_cfg.fid_msti=fid;
+	vlan_cfg.ivl_en = 1;
+	return rtk_vlan_set(vid, &vlan_cfg);
+}

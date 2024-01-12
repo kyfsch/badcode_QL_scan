@@ -1,0 +1,14 @@
+void zconf_initscan(const char *name)
+{
+	yyin = zconf_fopen(name);
+	if (!yyin) {
+		fprintf(stderr, "can't find file %s\n", name);
+		exit(1);
+	}
+
+	current_buf = xmalloc(sizeof(*current_buf));
+	memset(current_buf, 0, sizeof(*current_buf));
+
+	current_file = file_lookup(name);
+	yylineno = 1;
+}

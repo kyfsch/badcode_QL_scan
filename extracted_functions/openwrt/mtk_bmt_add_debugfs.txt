@@ -1,0 +1,13 @@
+mtk_bmt_add_debugfs(void)
+{
+	struct dentry *dir;
+
+	dir = bmtd.debugfs_dir = debugfs_create_dir("mtk-bmt", NULL);
+	if (!dir)
+		return;
+
+	debugfs_create_file_unsafe("repair", S_IWUSR, dir, NULL, &fops_repair);
+	debugfs_create_file_unsafe("mark_good", S_IWUSR, dir, NULL, &fops_mark_good);
+	debugfs_create_file_unsafe("mark_bad", S_IWUSR, dir, NULL, &fops_mark_bad);
+	debugfs_create_file_unsafe("debug", S_IWUSR, dir, NULL, &fops_debug);
+}

@@ -1,0 +1,24 @@
+swconfig_load_uci(struct switch_dev *dev, const char *name)
+{
+	struct uci_context *ctx;
+	struct uci_package *p = NULL;
+	int ret = -1;
+
+	ctx = uci_alloc_context();
+	if (!ctx)
+		return;
+
+	uci_load(ctx, name, &p);
+	if (!p) {
+		uci_perror(ctx, "Failed to load config file: ");
+		goto out;
+	}
+
+	ret = swlib_apply_from_uci(dev, p);
+	if (ret < 0)
+		fprintf(stderr, "Failed to apply configuration for switch '%s'\n", dev->dev_name);
+
+out:
+	uci_free_context(ctx);
+	exit(ret);
+}

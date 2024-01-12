@@ -1,0 +1,12 @@
+static void nmbm_scan_badblocks(struct nmbm_instance *ni)
+{
+	uint32_t ba;
+
+	for (ba = 0; ba < ni->block_count; ba++) {
+		if (nmbm_check_bad_phys_block(ni, ba)) {
+			nmbm_set_block_state(ni, ba, BLOCK_ST_BAD);
+			nlog_info(ni, "Bad block %u [0x%08llx]\n", ba,
+				 ba2addr(ni, ba));
+		}
+	}
+}

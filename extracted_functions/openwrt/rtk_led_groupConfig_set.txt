@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_led_groupConfig_set(rtk_led_group_t group, rtk_led_congig_t config)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (LED_GROUP_END <= group)
+        return RT_ERR_FAILED;
+
+    if (LED_CONFIG_END <= config)
+        return RT_ERR_FAILED;
+
+    if ((retVal = rtl8367c_setAsicLedIndicateInfoConfig(group, config)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

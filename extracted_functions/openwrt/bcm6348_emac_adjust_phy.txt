@@ -1,0 +1,44 @@
+static void bcm6348_emac_adjust_phy(struct net_device *ndev)
+{
+	struct phy_device *phydev = ndev->phydev;
+	struct bcm6348_emac *emac = netdev_priv(ndev);
+	struct platform_device *pdev = emac->pdev;
+	struct device *dev = &pdev->dev;
+	bool status_changed = false;
+
+	if (emac->old_link != phydev->link) {
+		status_changed = true;
+		emac->old_link = phydev->link;
+	}
+
+	if (phydev->link && phydev->duplex != emac->old_duplex) {
+		bcm6348_emac_set_duplex(emac, phydev->duplex == DUPLEX_FULL);
+		status_changed = true;
+		emac->old_duplex = phydev->duplex;
+	}
+
+	if (phydev->link && phydev->pause != emac->old_pause) {
+		bool rx_pause_en, tx_pause_en;
+
+		if (phydev->pause) {
+			rx_pause_en = true;
+			tx_pause_en = true;
+		} else {
+			rx_pause_en = false;
+			tx_pause_en = false;
+		}
+
+		bcm6348_emac_set_flow(emac, rx_pause_en, tx_pause_en);
+		status_changed = true;
+		emac->old_pause = phydev->pause;
+	}
+
+	if (status_changed)
+		dev_info(dev, "%s: phy link %s %s/%s/%s/%s\n",
+			 ndev->name,
+			 phydev->link ? "UP" : "DOWN",
+			 phy_modes(phydev->interface),
+			 phy_speed_to_str(phydev->speed),
+			 phy_duplex_to_str(phydev->duplex),
+			 phydev->pause ? "rx/tx" : "off");
+}

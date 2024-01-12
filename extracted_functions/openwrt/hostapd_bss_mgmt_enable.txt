@@ -1,0 +1,25 @@
+hostapd_bss_mgmt_enable(struct ubus_context *ctx, struct ubus_object *obj,
+		   struct ubus_request_data *req, const char *method,
+		   struct blob_attr *msg)
+
+{
+	struct hostapd_data *hapd = get_hapd_from_object(obj);
+	struct blob_attr *tb[__BSS_MGMT_EN_MAX];
+	struct blob_attr *cur;
+	uint32_t flags = 0;
+	int i;
+	bool neigh = false, beacon = false;
+
+	blobmsg_parse(bss_mgmt_enable_policy, __BSS_MGMT_EN_MAX, tb, blob_data(msg), blob_len(msg));
+
+	for (i = 0; i < ARRAY_SIZE(tb); i++) {
+		if (!tb[i] || !blobmsg_get_bool(tb[i]))
+			continue;
+
+		flags |= (1 << i);
+	}
+
+	__hostapd_bss_mgmt_enable(hapd, flags);
+
+	return 0;
+}

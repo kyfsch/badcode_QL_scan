@@ -1,0 +1,20 @@
+static const struct firmware *aca_fetch_fw_file(struct dc_ep_priv *priv,
+	char *dir, const char *file)
+{
+	int ret;
+	char filename[100] = {0};
+	const struct firmware *fw;
+
+	if (file == NULL)
+		return ERR_PTR(-ENOENT);
+
+	if (dir == NULL)
+		dir = ".";
+
+	snprintf(filename, sizeof(filename), "%s/%s", dir, file);
+	ret = request_firmware(&fw, filename, priv->dev);
+	if (ret)
+		return ERR_PTR(ret);
+
+	return fw;
+}

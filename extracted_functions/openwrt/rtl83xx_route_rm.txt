@@ -1,0 +1,26 @@
+static void rtl83xx_route_rm(struct rtl838x_switch_priv *priv, struct rtl83xx_route *r)
+{
+	int id;
+
+	if (rhltable_remove(&priv->routes, &r->linkage, route_ht_params))
+		dev_warn(priv->dev, "Could not remove route\n");
+
+	if (r->is_host_route) {
+		id = priv->r->find_l3_slot(r, false);
+		pr_debug("%s: Got id for host route: %d\n", __func__, id);
+		r->attr.valid = false;
+		priv->r->host_route_write(id, r);
+		clear_bit(r->id - MAX_ROUTES, priv->host_route_use_bm);
+	} else {
+		/* If there is a HW representation of the route, delete it */
+		if (priv->r->route_lookup_hw) {
+			id = priv->r->route_lookup_hw(r);
+			pr_info("%s: Got id for prefix route: %d\n", __func__, id);
+			r->attr.valid = false;
+			priv->r->route_write(id, r);
+		}
+		clear_bit(r->id, priv->route_use_bm);
+	}
+
+	kfree(r);
+}

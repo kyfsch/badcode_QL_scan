@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsicTrunkingFc(rtk_uint32 group, rtk_uint32* pEnabled)
+{
+    if(group > RTL8367C_MAX_TRUNK_GID)
+        return RT_ERR_LA_TRUNK_ID;
+
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_PORT_TRUNK_FLOWCTRL, (RTL8367C_EN_FLOWCTRL_TG0_OFFSET + group), pEnabled);
+}

@@ -1,0 +1,10 @@
+ret_t rtl8367c_getAsicRldpLoopedPortPair(rtk_uint32 port, rtk_uint32 *pLoopedPair)
+{
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(port < 8)
+        return rtl8367c_getAsicRegBits(RTL8367C_RLDP_LOOP_PORT_REG(port), RTL8367C_RLDP_LOOP_PORT_MASK(port), pLoopedPair);
+    else
+        return rtl8367c_getAsicRegBits(RTL8367C_REG_RLDP_LOOP_PORT_REG4 + ((port - 8) >> 1), RTL8367C_RLDP_LOOP_PORT_MASK(port), pLoopedPair);
+}

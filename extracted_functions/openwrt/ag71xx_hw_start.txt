@@ -1,0 +1,10 @@
+static void ag71xx_hw_start(struct ag71xx *ag)
+{
+	/* start RX engine */
+	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, RX_CTRL_RXE);
+
+	/* enable interrupts */
+	ag71xx_wr(ag, AG71XX_REG_INT_ENABLE, AG71XX_INT_INIT);
+
+	netif_wake_queue(ag->dev);
+}

@@ -1,0 +1,4 @@
+int aes_set_key_skcipher (struct crypto_skcipher *tfm, const u8 *in_key, unsigned int key_len)
+{
+    return aes_set_key(crypto_skcipher_tfm(tfm), in_key, key_len);
+}

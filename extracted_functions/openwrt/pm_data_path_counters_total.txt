@@ -1,0 +1,10 @@
+static void pm_data_path_counters_total(int fd, DSL_XTUDir_t direction) {
+	IOCTL_DIR(DSL_PM_DataPathCountersTotal_t, DSL_FIO_PM_DATA_PATH_COUNTERS_TOTAL_GET, direction);
+
+	m_u32("hec", out.data.nHEC);
+	m_u32("ibe", out.data.nIBE);
+	m_u32("crc_p", out.data.nCRC_P);
+	m_u32("crcp_p", out.data.nCRCP_P);
+	m_u32("cv_p", out.data.nCV_P);
+	m_u32("cvp_p", out.data.nCVP_P);
+}

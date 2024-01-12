@@ -1,0 +1,9 @@
+static inline int aca_start(struct dc_ep_dev *dev, u32 func, int start)
+{
+	if (WARN_ON(!dev))
+		return -EINVAL;
+	if (WARN_ON(!dev->priv))
+		return -EINVAL;
+
+	return dc_aca_start(dev->priv, func, start);
+}

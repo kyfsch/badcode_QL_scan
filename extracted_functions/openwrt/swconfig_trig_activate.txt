@@ -1,0 +1,45 @@
+swconfig_trig_activate(struct led_classdev *led_cdev)
+{
+	struct switch_led_trigger *sw_trig;
+	struct swconfig_trig_data *trig_data;
+	int err;
+
+	trig_data = kzalloc(sizeof(struct swconfig_trig_data), GFP_KERNEL);
+	if (!trig_data)
+		return -ENOMEM;
+
+	sw_trig = (void *) led_cdev->trigger;
+
+	rwlock_init(&trig_data->lock);
+	trig_data->led_cdev = led_cdev;
+	trig_data->swdev = sw_trig->swdev;
+	trig_data->speed_mask = SWCONFIG_LED_PORT_SPEED_ALL;
+	trig_data->mode = SWCONFIG_LED_MODE_ALL;
+	led_cdev->trigger_data = trig_data;
+
+	err = device_create_file(led_cdev->dev, &dev_attr_port_mask);
+	if (err)
+		goto err_free;
+
+	err = device_create_file(led_cdev->dev, &dev_attr_speed_mask);
+	if (err)
+		goto err_dev_free;
+
+	err = device_create_file(led_cdev->dev, &dev_attr_mode);
+	if (err)
+		goto err_mode_free;
+
+	return 0;
+
+err_mode_free:
+	device_remove_file(led_cdev->dev, &dev_attr_speed_mask);
+
+err_dev_free:
+	device_remove_file(led_cdev->dev, &dev_attr_port_mask);
+
+err_free:
+	led_cdev->trigger_data = NULL;
+	kfree(trig_data);
+
+	return err;
+}

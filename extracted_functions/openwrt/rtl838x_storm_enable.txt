@@ -1,0 +1,8 @@
+static void rtl838x_storm_enable(struct rtl838x_switch_priv *priv, int port, bool enable)
+{
+	/* Enable Storm control for that port for UC, MC, and BC */
+	if (enable)
+		sw_w32(0x7, RTL838X_STORM_CTRL_LB_CTRL(port));
+	else
+		sw_w32(0x0, RTL838X_STORM_CTRL_LB_CTRL(port));
+}

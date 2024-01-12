@@ -1,0 +1,38 @@
+rtk_api_ret_t rtk_filter_igrAcl_init(void)
+{
+    rtl8367c_acltemplate_t       aclTemp;
+    rtk_uint32                 i, j;
+    rtk_api_ret_t          ret;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if ((ret = rtk_filter_igrAcl_cfg_delAll()) != RT_ERR_OK)
+        return ret;
+
+    for(i = 0; i < RTL8367C_ACLTEMPLATENO; i++)
+    {
+        for(j = 0; j < RTL8367C_ACLRULEFIELDNO;j++)
+            aclTemp.field[j] = filter_templateField[i][j];
+
+        if ((ret = rtl8367c_setAsicAclTemplate(i, &aclTemp)) != RT_ERR_OK)
+            return ret;
+    }
+
+    for(i = 0; i < RTL8367C_FIELDSEL_FORMAT_NUMBER; i++)
+    {
+        if ((ret = rtl8367c_setAsicFieldSelector(i, field_selector[i][0], field_selector[i][1])) != RT_ERR_OK)
+            return ret;
+    }
+
+    RTK_SCAN_ALL_PHY_PORTMASK(i)
+    {
+        if ((ret = rtl8367c_setAsicAcl(i, TRUE)) != RT_ERR_OK)
+            return ret;
+
+        if ((ret = rtl8367c_setAsicAclUnmatchedPermit(i, TRUE)) != RT_ERR_OK)
+            return ret;
+    }
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicFlowControlEgressPortIndep(rtk_uint32 port, rtk_uint32 enable)
+{
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_PORT0_MISC_CFG + (port *0x20), RTL8367C_PORT0_MISC_CFG_FLOWCTRL_INDEP_OFFSET,enable);
+}

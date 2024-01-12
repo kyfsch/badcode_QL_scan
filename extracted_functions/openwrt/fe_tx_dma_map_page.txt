@@ -1,0 +1,19 @@
+static int fe_tx_dma_map_page(struct fe_tx_ring *ring, struct fe_map_state *st,
+			      struct page *page, size_t offset, size_t size)
+{
+	int cur_size;
+	int ret;
+
+	while (size > 0) {
+		cur_size = min_t(size_t, size, TX_DMA_BUF_LEN);
+
+		ret = __fe_tx_dma_map_page(ring, st, page, offset, cur_size);
+		if (ret)
+			return ret;
+
+		size -= cur_size;
+		offset += cur_size;
+	}
+
+	return 0;
+}

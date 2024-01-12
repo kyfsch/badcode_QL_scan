@@ -1,0 +1,5 @@
+void ag71xx_debugfs_root_exit(void)
+{
+	debugfs_remove(ag71xx_debugfs_root);
+	ag71xx_debugfs_root = NULL;
+}

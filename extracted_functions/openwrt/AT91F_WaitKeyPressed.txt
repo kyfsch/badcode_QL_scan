@@ -1,0 +1,7 @@
+void AT91F_WaitKeyPressed(void)
+{
+	int c;
+    	puts("KEY");
+		c = getc();
+	putc('\n');
+}

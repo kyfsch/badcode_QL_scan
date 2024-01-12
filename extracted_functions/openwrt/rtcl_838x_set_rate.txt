@@ -1,0 +1,13 @@
+static int rtcl_838x_set_rate(int clk_idx, const struct rtcl_reg_set *reg)
+{
+	unsigned long irqflags;
+/*
+ * Runtime of this function (including locking)
+ * CPU: up to 14000 cycles / up to 56 us at 250 MHz (half default speed)
+ */
+	spin_lock_irqsave(&rtcl_ccu->lock, irqflags);
+	rtcl_838x_sram_set_rate(clk_idx, reg->ctrl0, reg->ctrl1);
+	spin_unlock_irqrestore(&rtcl_ccu->lock, irqflags);
+
+	return 0;
+}

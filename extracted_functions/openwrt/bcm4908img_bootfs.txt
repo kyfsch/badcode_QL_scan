@@ -1,0 +1,52 @@
+static int bcm4908img_bootfs(int argc, char **argv) {
+	struct bcm4908img_info info;
+	const char *pathname = NULL;
+	const char *mode;
+	const char *cmd;
+	FILE *fp;
+	int c;
+	int err = 0;
+
+	while ((c = getopt(argc, argv, "i:")) != -1) {
+		switch (c) {
+		case 'i':
+			pathname = optarg;
+			break;
+		}
+	}
+
+	if (argc - optind < 1) {
+		fprintf(stderr, "No bootfs command specified\n");
+		err = -EINVAL;
+		goto out;
+	}
+	cmd = argv[optind++];
+
+	mode = strcmp(cmd, "mv") ? "r" : "r+";
+	fp = bcm4908img_open(pathname, mode);
+	if (!fp) {
+		fprintf(stderr, "Failed to open BCM4908 image\n");
+		err = -EACCES;
+		goto out;
+	}
+
+	err = bcm4908img_parse(fp, &info);
+	if (err) {
+		fprintf(stderr, "Failed to parse BCM4908 image\n");
+		goto err_close;
+	}
+
+	if (!strcmp(cmd, "ls")) {
+		err = bcm4908img_bootfs_ls(fp, &info);
+	} else if (!strcmp(cmd, "mv")) {
+		err = bcm4908img_bootfs_mv(fp, &info, argc, argv);
+	} else {
+		err = -EINVAL;
+		fprintf(stderr, "Unsupported bootfs command: %s\n", cmd);
+	}
+
+err_close:
+	bcm4908img_close(fp);
+out:
+	return err;
+}

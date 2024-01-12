@@ -1,0 +1,5 @@
+int spl_start_uboot(void)
+{
+        /* break into full u-boot on 'c' */
+        return (serial_tstc() && serial_getc() == 'c');
+}

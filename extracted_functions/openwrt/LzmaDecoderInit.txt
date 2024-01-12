@@ -1,0 +1,40 @@
+int LzmaDecoderInit(
+    unsigned char *buffer, UInt32 bufferSize,
+    int lc, int lp, int pb,
+    unsigned char *dictionary, UInt32 dictionarySize,
+    #ifdef _LZMA_IN_CB
+    ILzmaInCallback *inCallback
+    #else
+    unsigned char *inStream, UInt32 inSize
+    #endif
+    )
+{
+  LzmaVarState *vs = (LzmaVarState *)buffer;
+  CProb *p = (CProb *)(buffer + sizeof(LzmaVarState));
+  UInt32 numProbs = Literal + ((UInt32)LZMA_LIT_SIZE << (lc + lp));
+  UInt32 i;
+  if (bufferSize < numProbs * sizeof(CProb) + sizeof(LzmaVarState))
+    return LZMA_RESULT_NOT_ENOUGH_MEM;
+  vs->Dictionary = dictionary;
+  vs->DictionarySize = dictionarySize;
+  vs->DictionaryPos = 0;
+  vs->GlobalPos = 0;
+  vs->Reps[0] = vs->Reps[1] = vs->Reps[2] = vs->Reps[3] = 1;
+  vs->lc = lc;
+  vs->lp = lp;
+  vs->pb = pb;
+  vs->State = 0;
+  vs->PreviousIsMatch = 0;
+  vs->RemainLen = 0;
+  dictionary[dictionarySize - 1] = 0;
+  for (i = 0; i < numProbs; i++)
+    p[i] = kBitModelTotal >> 1; 
+  RangeDecoderInit(&vs->RangeDecoder, 
+      #ifdef _LZMA_IN_CB
+      inCallback
+      #else
+      inStream, inSize
+      #endif
+  );
+  return LZMA_RESULT_OK;
+}

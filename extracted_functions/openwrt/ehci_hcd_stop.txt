@@ -1,0 +1,6 @@
+int ehci_hcd_stop(int index)
+{
+	reset_block(SYS_CTRL_RST_USBHS, 1);
+	disable_clock(SYS_CTRL_CLK_USBHS);
+	return 0;
+}

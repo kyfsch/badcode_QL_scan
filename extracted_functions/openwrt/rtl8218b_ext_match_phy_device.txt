@@ -1,0 +1,14 @@
+static int rtl8218b_ext_match_phy_device(struct phy_device *phydev)
+{
+	int addr = phydev->mdio.addr;
+
+	/* Both the RTL8214FC and the external RTL8218B have the same
+	 * PHY ID. On the RTL838x, the RTL8218B can only be attached_dev
+	 * at PHY IDs 0-7, while the RTL8214FC must be attached via
+	 * the pair of SGMII/1000Base-X with higher PHY-IDs
+	 */
+	if (soc_info.family == RTL8380_FAMILY_ID)
+		return phydev->phy_id == PHY_ID_RTL8218B_E && addr < 8;
+	else
+		return phydev->phy_id == PHY_ID_RTL8218B_E;
+}

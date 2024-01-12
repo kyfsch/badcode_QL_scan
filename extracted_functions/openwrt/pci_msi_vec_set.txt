@@ -1,0 +1,19 @@
+static int pci_msi_vec_set(struct pci_dev *dev, int nvec)
+{
+	int pos;
+	u16 msgctl;
+
+	if (!is_power_of_2(nvec))
+		return -EINVAL;
+
+	pos = pci_find_capability(dev, PCI_CAP_ID_MSI);
+	if (!pos)
+		return -EINVAL;
+
+	pci_read_config_word(dev, pos + PCI_MSI_FLAGS, &msgctl);
+	msgctl &= ~PCI_MSI_FLAGS_QSIZE;
+	msgctl |= ((ffs(nvec) - 1) << 4);
+	pci_write_config_word(dev, pos + PCI_MSI_FLAGS, msgctl);
+	pci_read_config_word(dev, pos + PCI_MSI_FLAGS, &msgctl);
+	return 0;
+}

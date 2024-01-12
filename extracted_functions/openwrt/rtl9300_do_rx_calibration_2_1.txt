@@ -1,0 +1,12 @@
+void rtl9300_do_rx_calibration_2_1(u32 sds_num)
+{
+	pr_info("start_1.2.1 ForegroundOffsetCal_Manual\n");
+
+	/* Gray config endis to 1 */
+	rtl9300_sds_field_w(sds_num, 0x2f, 0x02,  2,  2, 0x01);
+
+	/* ForegroundOffsetCal_Manual(auto mode) */
+	rtl9300_sds_field_w(sds_num, 0x2e, 0x01, 14, 14, 0x00);
+
+	pr_info("end_1.2.1");
+}

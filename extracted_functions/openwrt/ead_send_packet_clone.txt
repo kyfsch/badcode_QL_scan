@@ -1,0 +1,38 @@
+ead_send_packet_clone(struct ead_packet *pkt)
+{
+	u16_t len, sum;
+
+	memcpy(pktbuf, pkt, offsetof(struct ead_packet, msg));
+	memcpy(pktbuf->eh.ether_shost, ethmac, 6);
+	memcpy(pktbuf->eh.ether_dhost, pkt->eh.ether_shost, 6);
+
+	/* ip header */
+	len = sizeof(struct ead_packet) - sizeof(struct ether_header) + ntohl(pktbuf->msg.len);
+	pktbuf->len[0] = len >> 8;
+	pktbuf->len[1] = len & 0xff;
+	memcpy(pktbuf->srcipaddr, &pkt->msg.ip, 4);
+	memcpy(pktbuf->destipaddr, pkt->srcipaddr, 4);
+
+	/* ip checksum */
+	pktbuf->ipchksum = 0;
+	sum = chksum(0, (void *) &pktbuf->vhl, UIP_IPH_LEN);
+	if (sum == 0)
+		sum = 0xffff;
+	pktbuf->ipchksum = htons(~sum);
+
+	/* udp header */
+	pktbuf->srcport = pkt->destport;
+	pktbuf->destport = pkt->srcport;
+
+	/* udp checksum */
+	len -= UIP_IPH_LEN;
+	pktbuf->udplen = htons(len);
+	pktbuf->udpchksum = 0;
+	sum = len + UIP_PROTO_UDP;
+	sum = chksum(sum, (void *) &pktbuf->srcipaddr[0], 8); /* src, dest ip */
+	sum = chksum(sum, (void *) &pktbuf->srcport, len);
+	if (sum == 0)
+		sum = 0xffff;
+	pktbuf->udpchksum = htons(~sum);
+	pcap_sendpacket(pcap_fp, (void *) pktbuf, sizeof(struct ead_packet) + ntohl(pktbuf->msg.len));
+}

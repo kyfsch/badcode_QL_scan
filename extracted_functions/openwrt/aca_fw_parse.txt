@@ -1,0 +1,27 @@
+static void aca_fw_parse(struct dc_ep_priv *priv, const char *data,
+	const char *fw_base, int fw_num)
+{
+	int i;
+	size_t size;
+	u32 id, offset, addr;
+	struct aca_int_hdr *hdr;
+	struct aca_fw_dl_addr *fw_dl = to_fw_addr(priv);
+
+	fw_dl->fw_num = fw_num;
+
+	for (i = 0; i < fw_dl->fw_num; i++) {
+		hdr = (struct aca_int_hdr *)(data + i * sizeof(*hdr));
+		id = be32_to_cpu(hdr->id);
+		offset = be32_to_cpu(hdr->offset);
+		size = be32_to_cpu(hdr->size);
+		addr = be32_to_cpu(hdr->load_addr);
+
+		fw_dl->fw_addr[i].fw_id = id;
+		fw_dl->fw_addr[i].fw_load_addr = addr;
+		fw_dl->fw_addr[i].fw_size = size;
+		fw_dl->fw_addr[i].fw_base = fw_base + offset;
+		dev_dbg(priv->dev,
+			"aca %s fw offset 0x%x size %zd loc 0x%x fw base %p\n",
+			fw_id_to_str(id), offset, size, addr, fw_base + offset);
+	}
+}

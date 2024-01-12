@@ -1,0 +1,62 @@
+static void sym_calc_visibility(struct symbol *sym)
+{
+	struct property *prop;
+	struct symbol *choice_sym = NULL;
+	tristate tri;
+
+	/* any prompt visible? */
+	tri = no;
+
+	if (sym_is_choice_value(sym))
+		choice_sym = prop_get_symbol(sym_get_choice_prop(sym));
+
+	for_all_prompts(sym, prop) {
+		prop->visible.tri = expr_calc_value(prop->visible.expr);
+		/*
+		 * Tristate choice_values with visibility 'mod' are
+		 * not visible if the corresponding choice's value is
+		 * 'yes'.
+		 */
+		if (choice_sym && sym->type == S_TRISTATE &&
+		    prop->visible.tri == mod && choice_sym->curr.tri == yes)
+			prop->visible.tri = no;
+
+		tri = EXPR_OR(tri, prop->visible.tri);
+	}
+	if (tri == mod && (sym->type != S_TRISTATE || modules_val == no))
+		tri = yes;
+	if (sym->visible != tri) {
+		sym->visible = tri;
+		sym_set_changed(sym);
+	}
+	if (sym_is_choice_value(sym))
+		return;
+	/* defaulting to "yes" if no explicit "depends on" are given */
+	tri = yes;
+	if (sym->dir_dep.expr)
+		tri = expr_calc_value(sym->dir_dep.expr);
+	if (tri == mod && sym_get_type(sym) == S_BOOLEAN)
+		tri = yes;
+	if (sym->dir_dep.tri != tri) {
+		sym->dir_dep.tri = tri;
+		sym_set_changed(sym);
+	}
+	tri = no;
+	if (sym->rev_dep.expr)
+		tri = expr_calc_value(sym->rev_dep.expr);
+	if (tri == mod && sym_get_type(sym) == S_BOOLEAN)
+		tri = yes;
+	if (sym->rev_dep.tri != tri) {
+		sym->rev_dep.tri = tri;
+		sym_set_changed(sym);
+	}
+	tri = no;
+	if (sym->implied.expr)
+		tri = expr_calc_value(sym->implied.expr);
+	if (tri == mod && sym_get_type(sym) == S_BOOLEAN)
+		tri = yes;
+	if (sym->implied.tri != tri) {
+		sym->implied.tri = tri;
+		sym_set_changed(sym);
+	}
+}

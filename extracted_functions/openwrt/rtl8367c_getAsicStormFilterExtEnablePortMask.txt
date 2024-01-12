@@ -1,0 +1,20 @@
+ret_t rtl8367c_getAsicStormFilterExtEnablePortMask(rtk_uint32 *pPortmask)
+{
+    rtk_uint32 tmpPmsk;
+    ret_t retVal;
+
+    if(NULL == pPortmask)
+        return RT_ERR_NULL_POINTER;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_STORM_EXT_CFG, RTL8367C_STORM_EXT_EN_PORTMASK_MASK, &tmpPmsk);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+    *pPortmask = tmpPmsk & 0x3ff;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_STORM_EXT_CFG, RTL8367C_STORM_EXT_EN_PORTMASK_EXT_MASK, &tmpPmsk);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+    *pPortmask |= (tmpPmsk & 1) << 10;
+
+    return RT_ERR_OK;
+}

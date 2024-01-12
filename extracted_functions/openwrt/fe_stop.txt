@@ -1,0 +1,34 @@
+static int fe_stop(struct net_device *dev)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+	unsigned long flags;
+	int i;
+
+	netif_tx_disable(dev);
+	fe_int_disable(priv->soc->tx_int | priv->soc->rx_int);
+	napi_disable(&priv->rx_napi);
+
+	if (priv->phy)
+		priv->phy->stop(priv);
+
+	spin_lock_irqsave(&priv->page_lock, flags);
+
+	fe_reg_w32(fe_reg_r32(FE_REG_PDMA_GLO_CFG) &
+		     ~(FE_TX_WB_DDONE | FE_RX_DMA_EN | FE_TX_DMA_EN),
+		     FE_REG_PDMA_GLO_CFG);
+	spin_unlock_irqrestore(&priv->page_lock, flags);
+
+	/* wait dma stop */
+	for (i = 0; i < 10; i++) {
+		if (fe_reg_r32(FE_REG_PDMA_GLO_CFG) &
+				(FE_TX_DMA_BUSY | FE_RX_DMA_BUSY)) {
+			msleep(20);
+			continue;
+		}
+		break;
+	}
+
+	fe_free_dma(priv);
+
+	return 0;
+}

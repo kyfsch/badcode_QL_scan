@@ -1,0 +1,9 @@
+static void __init wsap3715i_setup_arch(void)
+{
+	if (ppc_md.progress)
+		ppc_md.progress("wsap3715i_setup_arch()", 0);
+
+	fsl_pci_assign_primary();
+
+	pr_info("WS-AP3715i from Enterasys\n");
+}

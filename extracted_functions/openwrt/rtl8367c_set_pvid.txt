@@ -1,0 +1,9 @@
+static int rtl8367c_set_pvid( int port, int pvid)
+{
+	u32 prio=0;
+	
+	if (port >= RTL8367C_NUM_PORTS)
+		return -EINVAL;		
+
+	return rtk_vlan_portPvid_set(rtl8367c_sw_to_phy_port(port),pvid,prio);
+}

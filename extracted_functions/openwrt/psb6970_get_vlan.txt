@@ -1,0 +1,7 @@
+psb6970_get_vlan(struct switch_dev *dev, const struct switch_attr *attr,
+		 struct switch_val *val)
+{
+	struct psb6970_priv *priv = to_psb6970(dev);
+	val->value.i = priv->vlan;
+	return 0;
+}

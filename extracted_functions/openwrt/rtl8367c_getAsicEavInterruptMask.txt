@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicEavInterruptMask(rtk_uint32* pImr)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_PTP_TIME_CFG2, RTL8367C_PTP_INTR_MASK, pImr);
+}

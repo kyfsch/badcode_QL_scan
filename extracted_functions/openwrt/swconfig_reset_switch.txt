@@ -1,0 +1,9 @@
+swconfig_reset_switch(struct switch_dev *dev, const struct switch_attr *attr,
+			struct switch_val *val)
+{
+	/* don't complain if not supported by the switch driver */
+	if (!dev->ops->reset_switch)
+		return 0;
+
+	return dev->ops->reset_switch(dev);
+}

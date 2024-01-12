@@ -1,0 +1,17 @@
+static void ws2812b_remove(struct spi_device *spi)
+#else
+static int ws2812b_remove(struct spi_device *spi)
+#endif
+{
+	struct ws2812b_priv *priv = spi_get_drvdata(spi);
+	int cur_led;
+
+	for (cur_led = priv->num_leds - 1; cur_led >= 0; cur_led--)
+		led_classdev_multicolor_unregister(&priv->leds[cur_led].mc_cdev);
+	kfree(priv->data_buf);
+	mutex_destroy(&priv->mutex);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,18,0)
+	return 0;
+#endif
+}

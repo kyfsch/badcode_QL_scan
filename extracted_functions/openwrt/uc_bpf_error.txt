@@ -1,0 +1,28 @@
+uc_bpf_error(uc_vm_t *vm, size_t nargs)
+{
+	uc_value_t *numeric = uc_fn_arg(0);
+	const char *msg = last_error.msg;
+	int code = last_error.code;
+	uc_stringbuf_t *buf;
+	const char *s;
+
+	if (last_error.code == 0)
+		return NULL;
+
+	set_error(0, NULL);
+
+	if (ucv_is_truish(numeric))
+		return ucv_int64_new(code);
+
+	buf = ucv_stringbuf_new();
+	if (code < 0 && msg) {
+		ucv_stringbuf_addstr(buf, msg, strlen(msg));
+	} else {
+		s = strerror(code);
+		ucv_stringbuf_addstr(buf, s, strlen(s));
+		if (msg)
+			ucv_stringbuf_printf(buf, ": %s", msg);
+	}
+
+	return ucv_stringbuf_finish(buf);
+}

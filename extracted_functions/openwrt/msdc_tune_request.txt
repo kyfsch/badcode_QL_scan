@@ -1,0 +1,29 @@
+static int msdc_tune_request(struct mmc_host *mmc, struct mmc_request *mrq)
+{
+	struct msdc_host *host = mmc_priv(mmc);
+	struct mmc_command *cmd;
+	struct mmc_data *data;
+	//u32 base = host->base;
+	int ret = 0, read;
+
+	cmd  = mrq->cmd;
+	data = mrq->cmd->data;
+
+	read = data->flags & MMC_DATA_READ ? 1 : 0;
+
+	if (read) {
+		if (data->error == -EIO)
+			ret = msdc_tune_bread(mmc, mrq);
+	} else {
+		ret = msdc_check_busy(mmc, host);
+		if (ret) {
+			ERR_MSG("XXX cmd13 wait program done failed");
+			return ret;
+		}
+		/* CRC and TO */
+		/* Fix me: don't care card status? */
+		ret = msdc_tune_bwrite(mmc, mrq);
+	}
+
+	return ret;
+}

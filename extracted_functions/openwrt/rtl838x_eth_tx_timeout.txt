@@ -1,0 +1,14 @@
+static void rtl838x_eth_tx_timeout(struct net_device *ndev, unsigned int txqueue)
+{
+	unsigned long flags;
+	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
+
+	pr_warn("%s\n", __func__);
+	spin_lock_irqsave(&priv->lock, flags);
+	rtl838x_hw_stop(priv);
+	rtl838x_hw_ring_setup(priv);
+	rtl838x_hw_en_rxtx(priv);
+	netif_trans_update(ndev);
+	netif_start_queue(ndev);
+	spin_unlock_irqrestore(&priv->lock, flags);
+}

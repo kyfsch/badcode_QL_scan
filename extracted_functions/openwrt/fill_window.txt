@@ -1,0 +1,18 @@
+void fill_window(WINDOW *win, const char *text)
+{
+	int x, y;
+	int total_lines = get_line_no(text);
+	int i;
+
+	getmaxyx(win, y, x);
+	/* do not go over end of line */
+	total_lines = min(total_lines, y);
+	for (i = 0; i < total_lines; i++) {
+		char tmp[x+10];
+		const char *line = get_line(text, i);
+		int len = get_line_length(line);
+		strncpy(tmp, line, min(len, x));
+		tmp[len] = '\0';
+		mvwprintw(win, i, 0, "%s", tmp);
+	}
+}

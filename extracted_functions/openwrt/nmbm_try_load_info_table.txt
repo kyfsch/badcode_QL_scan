@@ -1,0 +1,82 @@
+static bool nmbm_try_load_info_table(struct nmbm_instance *ni, uint32_t ba,
+				     uint32_t *eba, uint32_t *write_count,
+				     uint32_t *mapping_blocks_top_ba,
+				     bool table_loaded)
+{
+	struct nmbm_info_table_header *ifthdr = (void *)ni->info_table_cache;
+	uint8_t *off = ni->info_table_cache;
+	uint32_t limit = ba + size2blk(ni, ni->info_table_size);
+	uint32_t start_ba = 0, chunksize, sizeremain = ni->info_table_size;
+	bool success, checkhdr = true;
+	int ret;
+
+	while (sizeremain && ba < limit) {
+		if (nmbm_get_block_state(ni, ba) != BLOCK_ST_GOOD)
+			goto next_block;
+
+		if (nmbm_check_bad_phys_block(ni, ba)) {
+			nmbm_set_block_state(ni, ba, BLOCK_ST_BAD);
+			goto next_block;
+		}
+
+		chunksize = sizeremain;
+		if (chunksize > bmtd.blk_size)
+			chunksize = bmtd.blk_size;
+
+		/* Assume block with ECC error has no info table data */
+		ret = nmbn_read_data(ni, ba2addr(ni, ba), off, chunksize);
+		if (ret < 0)
+			goto skip_bad_block;
+		else if (ret > 0)
+			return false;
+
+		if (checkhdr) {
+			success = nmbm_check_info_table_header(ni, off);
+			if (!success)
+				return false;
+
+			start_ba = ba;
+			checkhdr = false;
+		}
+
+		off += chunksize;
+		sizeremain -= chunksize;
+
+		goto next_block;
+
+	skip_bad_block:
+		/* Only mark bad in memory */
+		nmbm_set_block_state(ni, ba, BLOCK_ST_BAD);
+
+	next_block:
+		ba++;
+	}
+
+	if (sizeremain)
+		return false;
+
+	success = nmbm_check_header(ni->info_table_cache, ni->info_table_size);
+	if (!success)
+		return false;
+
+	*eba = ba;
+	*write_count = ifthdr->write_count;
+
+	success = nmbm_check_info_table(ni, start_ba, ba, ni->info_table_cache,
+					mapping_blocks_top_ba);
+	if (!success)
+		return false;
+
+	if (!table_loaded || ifthdr->write_count > ni->info_table.write_count) {
+		memcpy(&ni->info_table, ifthdr, sizeof(ni->info_table));
+		memcpy(ni->block_state,
+		       (uint8_t *)ifthdr + ifthdr->state_table_off,
+		       ni->state_table_size);
+		memcpy(ni->block_mapping,
+		       (uint8_t *)ifthdr + ifthdr->mapping_table_off,
+		       ni->mapping_table_size);
+		ni->info_table.write_count = ifthdr->write_count;
+	}
+
+	return true;
+}

@@ -1,0 +1,26 @@
+static bool nmbm_write_phys_page(struct nmbm_instance *ni, uint64_t addr,
+				 const void *data, const void *oob)
+{
+	int tries, ret;
+
+	for (tries = 0; tries < NMBM_TRY_COUNT; tries++) {
+		struct mtd_oob_ops ops = {
+			.mode = MTD_OPS_PLACE_OOB,
+			.oobbuf = (void *)oob,
+			.datbuf = (void *)data,
+		};
+
+		if (data)
+			ops.len = bmtd.pg_size;
+		if (oob)
+			ops.ooblen = mtd_oobavail(bmtd.mtd, &ops);
+
+		ret = bmtd._write_oob(bmtd.mtd, addr, &ops);
+		if (!ret)
+			return true;
+	}
+
+	nlog_err(ni, "Page write failed at address 0x%08llx\n", addr);
+
+	return false;
+}

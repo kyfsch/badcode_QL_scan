@@ -1,0 +1,39 @@
+ret_t rtl8367c_setAsicAclIpRange(rtk_uint32 index, rtk_uint32 type, ipaddr_t upperIp, ipaddr_t lowerIp)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+    ipaddr_t ipData;
+
+    if(index > RTL8367C_ACLRANGEMAX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_ACL_IP_RANGE_ENTRY0_CTRL4 + index*5, RTL8367C_ACL_IP_RANGE_ENTRY0_CTRL4_MASK, type);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    ipData = upperIp;
+
+    regData = ipData & 0xFFFF;
+    retVal = rtl8367c_setAsicReg(RTL8367C_REG_ACL_IP_RANGE_ENTRY0_CTRL2 + index*5, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    regData = (ipData>>16) & 0xFFFF;
+    retVal = rtl8367c_setAsicReg(RTL8367C_REG_ACL_IP_RANGE_ENTRY0_CTRL3 + index*5, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    ipData = lowerIp;
+
+    regData = ipData & 0xFFFF;
+    retVal = rtl8367c_setAsicReg(RTL8367C_REG_ACL_IP_RANGE_ENTRY0_CTRL0 + index*5, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    regData = (ipData>>16) & 0xFFFF;
+    retVal = rtl8367c_setAsicReg(RTL8367C_REG_ACL_IP_RANGE_ENTRY0_CTRL1 + index*5, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

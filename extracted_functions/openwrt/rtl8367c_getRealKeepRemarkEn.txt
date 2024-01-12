@@ -1,0 +1,9 @@
+ret_t rtl8367c_getRealKeepRemarkEn(rtk_uint32 *pEnabled)
+{
+    ret_t   retVal;
+
+    if((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_VLAN_EXT_CTRL, RTL8367C_VLAN_1P_REMARK_BYPASS_REALKEEP_OFFSET, pEnabled)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

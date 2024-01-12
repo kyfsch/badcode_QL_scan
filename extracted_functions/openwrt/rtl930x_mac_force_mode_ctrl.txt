@@ -1,0 +1,4 @@
+static inline int rtl930x_mac_force_mode_ctrl(int p)
+{
+	return RTL930X_MAC_FORCE_MODE_CTRL + (p << 2);
+}

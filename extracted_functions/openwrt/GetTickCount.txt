@@ -1,0 +1,4 @@
+unsigned int GetTickCount(void)
+{
+	return StTick;
+}

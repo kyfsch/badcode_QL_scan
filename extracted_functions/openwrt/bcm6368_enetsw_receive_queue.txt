@@ -1,0 +1,109 @@
+static int bcm6368_enetsw_receive_queue(struct net_device *ndev, int budget)
+{
+	struct bcm6368_enetsw *priv = netdev_priv(ndev);
+	struct platform_device *pdev = priv->pdev;
+	struct device *dev = &pdev->dev;
+	struct list_head rx_list;
+	struct sk_buff *skb;
+	int processed = 0;
+
+	INIT_LIST_HEAD(&rx_list);
+
+	/* don't scan ring further than number of refilled
+	 * descriptor */
+	if (budget > priv->rx_desc_count)
+		budget = priv->rx_desc_count;
+
+	do {
+		struct bcm6368_enetsw_desc *desc;
+		unsigned int frag_size;
+		unsigned char *buf;
+		int desc_idx;
+		u32 len_stat;
+		unsigned int len;
+
+		desc_idx = priv->rx_curr_desc;
+		desc = &priv->rx_desc_cpu[desc_idx];
+
+		/* make sure we actually read the descriptor status at
+		 * each loop */
+		rmb();
+
+		len_stat = desc->len_stat;
+
+		/* break if dma ownership belongs to hw */
+		if (len_stat & DMADESC_OWNER_MASK)
+			break;
+
+		processed++;
+		priv->rx_curr_desc++;
+		if (priv->rx_curr_desc == priv->rx_ring_size)
+			priv->rx_curr_desc = 0;
+
+		/* if the packet does not have start of packet _and_
+		 * end of packet flag set, then just recycle it */
+		if ((len_stat & DMADESC_ESOP_MASK) != DMADESC_ESOP_MASK) {
+			ndev->stats.rx_dropped++;
+			continue;
+		}
+
+		/* valid packet */
+		buf = priv->rx_buf[desc_idx];
+		len = (len_stat & DMADESC_LENGTH_MASK)
+		      >> DMADESC_LENGTH_SHIFT;
+		/* don't include FCS */
+		len -= 4;
+
+		if (len < priv->copybreak) {
+			unsigned int nfrag_size = ENETSW_FRAG_SIZE(len);
+			unsigned char *nbuf = napi_alloc_frag(nfrag_size);
+
+			if (unlikely(!nbuf)) {
+				/* forget packet, just rearm desc */
+				ndev->stats.rx_dropped++;
+				continue;
+			}
+
+			dma_sync_single_for_cpu(dev, desc->address,
+						len, DMA_FROM_DEVICE);
+			memcpy(nbuf + NET_SKB_PAD, buf + NET_SKB_PAD, len);
+			dma_sync_single_for_device(dev, desc->address,
+						   len, DMA_FROM_DEVICE);
+			buf = nbuf;
+			frag_size = nfrag_size;
+		} else {
+			dma_unmap_single(dev, desc->address,
+					 priv->rx_buf_size, DMA_FROM_DEVICE);
+			priv->rx_buf[desc_idx] = NULL;
+			frag_size = priv->rx_frag_size;
+		}
+
+		skb = napi_build_skb(buf, frag_size);
+		if (unlikely(!skb)) {
+			skb_free_frag(buf);
+			ndev->stats.rx_dropped++;
+			continue;
+		}
+
+		skb_reserve(skb, NET_SKB_PAD);
+		skb_put(skb, len);
+		ndev->stats.rx_packets++;
+		ndev->stats.rx_bytes += len;
+		list_add_tail(&skb->list, &rx_list);
+	} while (processed < budget);
+
+	list_for_each_entry(skb, &rx_list, list)
+		skb->protocol = eth_type_trans(skb, ndev);
+	netif_receive_skb_list(&rx_list);
+	priv->rx_desc_count -= processed;
+
+	if (processed || !priv->rx_desc_count) {
+		bcm6368_enetsw_refill_rx(ndev, true);
+
+		/* kick rx dma */
+		dmac_writel(priv, DMAC_CHANCFG_EN_MASK,
+			    DMAC_CHANCFG_REG, priv->rx_chan);
+	}
+
+	return processed;
+}

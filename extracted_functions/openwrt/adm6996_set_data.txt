@@ -1,0 +1,12 @@
+adm6996_set_data(struct switch_dev *dev, const struct switch_attr *attr,
+		 struct switch_val *val)
+{
+	struct adm6996_priv *priv = to_adm(dev);
+
+	if (val->value.i > 65535)
+		return -EINVAL;
+
+	w16(priv, priv->addr, val->value.i);
+
+	return 0;
+};

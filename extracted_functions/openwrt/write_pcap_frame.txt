@@ -1,0 +1,23 @@
+void write_pcap_frame(FILE *o, uint32_t *sec, uint32_t *usec,
+					  uint16_t len, uint16_t olen)
+{
+	struct timeval tv;
+	pcaprec_hdr_t fhdr;
+
+	if (!sec || !usec)
+	{
+		gettimeofday(&tv, NULL);
+	}
+	else
+	{
+		tv.tv_sec  = *sec;
+		tv.tv_usec = *usec;
+	}
+
+	fhdr.ts_sec   = tv.tv_sec;
+	fhdr.ts_usec  = tv.tv_usec;
+	fhdr.incl_len = len;
+	fhdr.orig_len = olen;
+
+	fwrite(&fhdr, 1, sizeof(fhdr), o);
+}

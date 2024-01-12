@@ -1,0 +1,18 @@
+int ifx_pp32_start(int pp32)
+{
+    unsigned int mask = 1 << (pp32 << 4);
+    int ret;
+
+    /*  download firmware   */
+    ret = pp32_download_code(pp32, firmware_binary_code, sizeof(firmware_binary_code) / sizeof(*firmware_binary_code), firmware_binary_data, sizeof(firmware_binary_data) / sizeof(*firmware_binary_data));
+    if ( ret != 0 )
+        return ret;
+
+    /*  run PP32    */
+    IFX_REG_W32_MASK(mask, 0, PP32_FREEZE);
+
+    /*  idle for a while to let PP32 init itself    */
+    udelay(10);
+
+    return 0;
+}

@@ -1,0 +1,4 @@
+const char *item_str(void)
+{
+	return item_cur->node.str;
+}

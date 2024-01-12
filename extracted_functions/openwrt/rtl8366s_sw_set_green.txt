@@ -1,0 +1,8 @@
+static int rtl8366s_sw_set_green(struct switch_dev *dev,
+				 const struct switch_attr *attr,
+				 struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+
+	return rtl8366s_set_green(smi, val->value.i);
+}

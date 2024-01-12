@@ -1,0 +1,57 @@
+static void rb91x_nand_read(struct rb91x_nand_drvdata *drvdata,
+			    u8 *read_buf,
+			    unsigned len)
+{
+	void __iomem *base = drvdata->ath79_gpio_base;
+	u32 oe_reg;
+	u32 out_reg;
+	unsigned i;
+
+	/* Enable read mode */
+	gpiod_set_value_cansleep(drvdata->gpio[RB91X_NAND_READ], 1);
+
+	rb91x_nand_latch_lock(drvdata, 1);
+	rb91x_nand_rst_key_poll_disable(drvdata, 1);
+
+	/* Save registers */
+	oe_reg = __raw_readl(base + AR71XX_GPIO_REG_OE);
+	out_reg = __raw_readl(base + AR71XX_GPIO_REG_OUT);
+
+	/* Set data lines to input mode */
+	__raw_writel(oe_reg | RB91X_NAND_DATA_BITS,
+		     base + AR71XX_GPIO_REG_OE);
+
+	for (i = 0; i < len; i++) {
+		u32 in;
+		u8 data;
+
+		/* Activate RE line */
+		__raw_writel(RB91X_NAND_NRW_BIT, base + AR71XX_GPIO_REG_CLEAR);
+		/* Flush write */
+		__raw_readl(base + AR71XX_GPIO_REG_CLEAR);
+
+		/* Read input lines */
+		in = __raw_readl(base + AR71XX_GPIO_REG_IN);
+
+		/* Deactivate RE line */
+		__raw_writel(RB91X_NAND_NRW_BIT, base + AR71XX_GPIO_REG_SET);
+
+		data = (in & RB91X_NAND_LOW_DATA_MASK);
+		data |= (in >> RB91X_NAND_HIGH_DATA_SHIFT) &
+			RB91X_NAND_HIGH_DATA_MASK;
+
+		read_buf[i] = data;
+	}
+
+	/* Restore  registers */
+	__raw_writel(out_reg, base + AR71XX_GPIO_REG_OUT);
+	__raw_writel(oe_reg, base + AR71XX_GPIO_REG_OE);
+	/* Flush write */
+	__raw_readl(base + AR71XX_GPIO_REG_OUT);
+
+	rb91x_nand_rst_key_poll_disable(drvdata, 0);
+	rb91x_nand_latch_lock(drvdata, 0);
+
+	/* Disable read mode */
+	gpiod_set_value_cansleep(drvdata->gpio[RB91X_NAND_READ], 0);
+}

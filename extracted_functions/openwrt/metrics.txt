@@ -1,0 +1,134 @@
+static int metrics(struct ubus_context *ctx, struct ubus_object *obj,
+		   struct ubus_request_data *req, const char *method,
+		   struct blob_attr *msg)
+{
+	int fd, fd_mei;
+	void *c, *c2;
+	standard_t standard = STD_UNKNOWN;
+	profile_t profile = PROFILE_UNKNOWN;
+	vector_t vector = VECTOR_UNKNOWN;
+	bool retx_up = false, retx_down = false;
+
+#ifndef INCLUDE_DSL_CPE_API_DANUBE
+	fd = open(DSL_CPE_DEVICE_NAME "/0", O_RDWR, 0644);
+#else
+	fd = open(DSL_CPE_DEVICE_NAME, O_RDWR, 0644);
+#endif
+	if (fd < 0)
+		return UBUS_STATUS_UNKNOWN_ERROR;
+
+#ifdef INCLUDE_DSL_CPE_API_VRX
+	fd_mei = open(DSL_CPE_DSL_LOW_DEV "/0", O_RDWR, 0644);
+#else
+	fd_mei = -1;
+#endif
+
+	blob_buf_init(&b, 0);
+
+	version_information(fd);
+	line_state(fd);
+	pm_channel_counters_showtime(fd);
+
+	c = blobmsg_open_table(&b, "atu_c");
+	g997_line_inventory(fd);
+	blobmsg_close_table(&b, c);
+
+	g997_power_management_status(fd);
+	g997_xtu_system_enabling(fd, &standard);
+
+	if (standard == STD_G_993_2) {
+		band_plan_status(fd, &profile);
+		get_vector_status(fd_mei, &vector);
+	}
+
+	describe_mode(standard, profile, vector);
+
+	c = blobmsg_open_table(&b, "upstream");
+	switch (vector) {
+	case VECTOR_OFF:
+		m_bool("vector", false);
+		break;
+	case VECTOR_ON_DS_US:
+		m_bool("vector", true);
+		break;
+	default:
+		break;
+	};
+	line_feature_config(fd, DSL_UPSTREAM, &retx_up);
+	g997_rate_adaptation_status(fd, DSL_UPSTREAM);
+	g997_channel_status(fd, DSL_UPSTREAM);
+	g997_line_status(fd, DSL_UPSTREAM);
+	if (retx_up)
+		pm_retx_counters_showtime(fd, DSL_FAR_END);
+	blobmsg_close_table(&b, c);
+
+	c = blobmsg_open_table(&b, "downstream");
+	switch (vector) {
+	case VECTOR_OFF:
+		m_bool("vector", false);
+		break;
+	case VECTOR_ON_DS:
+	case VECTOR_ON_DS_US:
+		m_bool("vector", true);
+		break;
+	default:
+		break;
+	};
+	line_feature_config(fd, DSL_DOWNSTREAM, &retx_down);
+	g997_rate_adaptation_status(fd, DSL_DOWNSTREAM);
+	g997_channel_status(fd, DSL_DOWNSTREAM);
+	g997_line_status(fd, DSL_DOWNSTREAM);
+	if (retx_down)
+		pm_retx_counters_showtime(fd, DSL_NEAR_END);
+	blobmsg_close_table(&b, c);
+
+#ifndef INCLUDE_DSL_CPE_API_DANUBE
+	c = blobmsg_open_table(&b, "olr");
+	c2 = blobmsg_open_table(&b, "downstream");
+	olr_statistics(fd, DSL_DOWNSTREAM);
+	blobmsg_close_table(&b, c2);
+	c2 = blobmsg_open_table(&b, "upstream");
+	olr_statistics(fd, DSL_UPSTREAM);
+	blobmsg_close_table(&b, c2);
+	blobmsg_close_table(&b, c);
+#endif
+
+	c = blobmsg_open_table(&b, "errors");
+	c2 = blobmsg_open_table(&b, "near");
+	pm_line_sec_counters_total(fd, DSL_NEAR_END);
+	if (retx_down)
+		pm_retx_counters_total(fd, DSL_NEAR_END);
+	pm_channel_counters_total(fd, DSL_NEAR_END);
+	pm_data_path_counters_total(fd, DSL_NEAR_END);
+	retx_statistics(fd, DSL_NEAR_END);
+	blobmsg_close_table(&b, c2);
+
+	c2 = blobmsg_open_table(&b, "far");
+	pm_line_sec_counters_total(fd, DSL_FAR_END);
+	if (retx_up)
+		pm_retx_counters_total(fd, DSL_FAR_END);
+	pm_channel_counters_total(fd, DSL_FAR_END);
+	pm_data_path_counters_total(fd, DSL_FAR_END);
+	retx_statistics(fd, DSL_FAR_END);
+	blobmsg_close_table(&b, c2);
+	blobmsg_close_table(&b, c);
+
+	switch (vector) {
+	case VECTOR_ON_DS:
+	case VECTOR_ON_DS_US:
+		c = blobmsg_open_table(&b, "erb");
+		vector_erb(fd_mei);
+		blobmsg_close_table(&b, c);
+		break;
+	default:
+		break;
+	};
+
+	ubus_send_reply(ctx, req, b.head);
+
+	if (fd_mei >= 0)
+		close(fd_mei);
+	close(fd);
+
+	return 0;
+}

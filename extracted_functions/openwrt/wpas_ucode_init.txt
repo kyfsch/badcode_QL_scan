@@ -1,0 +1,35 @@
+int wpas_ucode_init(struct wpa_global *gl)
+{
+	static const uc_function_list_t global_fns[] = {
+		{ "printf",	uc_wpa_printf },
+		{ "getpid", uc_wpa_getpid },
+		{ "add_iface", uc_wpas_add_iface },
+		{ "remove_iface", uc_wpas_remove_iface },
+		{ "udebug_set", uc_wpa_udebug_set },
+	};
+	static const uc_function_list_t iface_fns[] = {
+		{ "status", uc_wpas_iface_status },
+	};
+	uc_value_t *data, *proto;
+
+	wpa_global = gl;
+	vm = wpa_ucode_create_vm();
+
+	global_type = uc_type_declare(vm, "wpas.global", global_fns, NULL);
+	iface_type = uc_type_declare(vm, "wpas.iface", iface_fns, NULL);
+
+	iface_registry = ucv_array_new(vm);
+	uc_vm_registry_set(vm, "wpas.iface_registry", iface_registry);
+
+	global = wpa_ucode_global_init("wpas", global_type);
+
+	if (wpa_ucode_run(HOSTAPD_UC_PATH "wpa_supplicant.uc"))
+		goto free_vm;
+
+	ucv_gc(vm);
+	return 0;
+
+free_vm:
+	wpa_ucode_free_vm();
+	return -1;
+}

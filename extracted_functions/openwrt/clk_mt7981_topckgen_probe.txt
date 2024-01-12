@@ -1,0 +1,38 @@
+static int clk_mt7981_topckgen_probe(struct platform_device *pdev)
+{
+	struct clk_onecell_data *clk_data;
+	struct device_node *node = pdev->dev.of_node;
+	int r;
+	void __iomem *base;
+	int nr = ARRAY_SIZE(top_divs) + ARRAY_SIZE(top_muxes) +
+		 ARRAY_SIZE(top_aud_divs);
+
+	base = of_iomap(node, 0);
+	if (!base) {
+		pr_err("%s(): ioremap failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	clk_data = mtk_alloc_clk_data(nr);
+	if (!clk_data)
+		return -ENOMEM;
+
+	mtk_clk_register_factors(top_divs, ARRAY_SIZE(top_divs), clk_data);
+	mtk_clk_register_muxes(top_muxes, ARRAY_SIZE(top_muxes), node,
+			       &mt7981_clk_lock, clk_data);
+	mtk_clk_register_composites(top_aud_divs, ARRAY_SIZE(top_aud_divs), base,
+                        &mt7981_clk_lock, clk_data);
+
+	r = of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
+
+	if (r) {
+		pr_err("%s(): could not register clock provider: %d\n",
+		       __func__, r);
+		goto free_topckgen_data;
+	}
+	return r;
+
+free_topckgen_data:
+	mtk_free_clk_data(clk_data);
+	return r;
+}

@@ -1,0 +1,11 @@
+static void color_setup(const char *theme)
+{
+	int use_color;
+
+	use_color = set_theme(theme);
+	if (use_color && has_colors()) {
+		start_color();
+		init_dialog_colors();
+	} else
+		set_mono_theme();
+}

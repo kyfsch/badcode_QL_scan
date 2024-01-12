@@ -1,0 +1,13 @@
+static void rtl930x_write_cam(int idx, struct rtl838x_l2_entry *e)
+{
+	u32 r[3];
+	struct table_reg *q = rtl_table_get(RTL9300_TBL_L2, 1); /* Access L2 Table 1 */
+
+	rtl930x_fill_l2_row(r, e);
+
+	for (int i = 0; i < 3; i++)
+		sw_w32(r[i], rtl_table_data(q, i));
+
+	rtl_table_write(q, idx);
+	rtl_table_release(q);
+}

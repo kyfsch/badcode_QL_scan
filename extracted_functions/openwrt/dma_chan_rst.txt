@@ -1,0 +1,7 @@
+static void dma_chan_rst(struct dc_ep_dev *dev, int cn)
+{
+	ep_wr32(cn, DMA_CS);
+	ep_wr32(0x2, DMA_CCTRL);
+	while (ep_rd32(DMA_CCTRL) & 0x01)
+		udelay(10);
+}

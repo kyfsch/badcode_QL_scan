@@ -1,0 +1,17 @@
+static int rtl8366_smi_enable_vlan(struct rtl8366_smi *smi, int enable)
+{
+	int err;
+
+	err = smi->ops->enable_vlan(smi, enable);
+	if (err)
+		return err;
+
+	smi->vlan_enabled = enable;
+
+	if (!enable) {
+		smi->vlan4k_enabled = 0;
+		err = smi->ops->enable_vlan4k(smi, enable);
+	}
+
+	return err;
+}

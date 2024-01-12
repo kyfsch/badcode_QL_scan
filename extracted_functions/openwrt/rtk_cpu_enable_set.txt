@@ -1,0 +1,21 @@
+rtk_api_ret_t rtk_cpu_enable_set(rtk_enable_t enable)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (enable >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if ((retVal = rtl8367c_setAsicCputagEnable(enable)) != RT_ERR_OK)
+        return retVal;
+
+    if (DISABLED == enable)
+    {
+        if ((retVal = rtl8367c_setAsicCputagPortmask(0)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,46 @@
+static int rtl8367_extif_set_mode(struct rtl8366_smi *smi, int id,
+				  enum rtl8367_extif_mode mode)
+{
+	int err;
+
+	/* set port mode */
+	switch (mode) {
+	case RTL8367_EXTIF_MODE_RGMII:
+	case RTL8367_EXTIF_MODE_RGMII_33V:
+		REG_WR(smi, RTL8367_CHIP_DEBUG0_REG, 0x0367);
+		REG_WR(smi, RTL8367_CHIP_DEBUG1_REG, 0x7777);
+		break;
+
+	case RTL8367_EXTIF_MODE_TMII_MAC:
+	case RTL8367_EXTIF_MODE_TMII_PHY:
+		REG_RMW(smi, RTL8367_BYPASS_LINE_RATE_REG,
+			BIT((id + 1) % 2), BIT((id + 1) % 2));
+		break;
+
+	case RTL8367_EXTIF_MODE_GMII:
+		REG_RMW(smi, RTL8367_CHIP_DEBUG0_REG,
+		        RTL8367_CHIP_DEBUG0_DUMMY0(id),
+			RTL8367_CHIP_DEBUG0_DUMMY0(id));
+		REG_RMW(smi, RTL8367_EXT_RGMXF_REG(id), BIT(6), BIT(6));
+		break;
+
+	case RTL8367_EXTIF_MODE_MII_MAC:
+	case RTL8367_EXTIF_MODE_MII_PHY:
+	case RTL8367_EXTIF_MODE_DISABLED:
+		REG_RMW(smi, RTL8367_BYPASS_LINE_RATE_REG,
+			BIT((id + 1) % 2), 0);
+		REG_RMW(smi, RTL8367_EXT_RGMXF_REG(id), BIT(6), 0);
+		break;
+
+	default:
+		dev_err(smi->parent,
+			"invalid mode for external interface %d\n", id);
+		return -EINVAL;
+	}
+
+	REG_RMW(smi, RTL8367_DIS_REG,
+		RTL8367_DIS_RGMII_MASK << RTL8367_DIS_RGMII_SHIFT(id),
+		mode << RTL8367_DIS_RGMII_SHIFT(id));
+
+	return 0;
+}

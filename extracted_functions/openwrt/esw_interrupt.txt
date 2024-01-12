@@ -1,0 +1,20 @@
+static irqreturn_t esw_interrupt(int irq, void *_esw)
+{
+	struct rt305x_esw *esw = (struct rt305x_esw *) _esw;
+	u32 status;
+
+	status = esw_r32(esw, RT305X_ESW_REG_ISR);
+	if (status & RT305X_ESW_PORT_ST_CHG) {
+		if (!esw->priv)
+			goto out;
+		if (rt3050_esw_has_carrier(esw->priv))
+			netif_carrier_on(esw->priv->netdev);
+		else
+			netif_carrier_off(esw->priv->netdev);
+	}
+
+out:
+	esw_w32(esw, status, RT305X_ESW_REG_ISR);
+
+	return IRQ_HANDLED;
+}

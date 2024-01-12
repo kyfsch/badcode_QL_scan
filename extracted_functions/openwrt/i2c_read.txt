@@ -1,0 +1,16 @@
+static int i2c_read(void __iomem *r0, u8 *buf, int len)
+{
+	if (len > 16)
+		return -EIO;
+
+	for (int i = 0; i < len; i++) {
+		u32 v;
+
+		if (i % 4 == 0)
+			v = readl(r0 + i);
+		buf[i] = v;
+		v >>= 8;
+	}
+
+	return len;
+}

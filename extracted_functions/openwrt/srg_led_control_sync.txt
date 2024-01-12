@@ -1,0 +1,11 @@
+srg_led_control_sync(struct srg_led_ctrl *sysled_ctrl)
+{
+	int i, ret;
+
+	for (i = 1; i < 5; i++) {
+		ret = srg_led_i2c_write(sysled_ctrl, i, sysled_ctrl->control[i]);
+		if (ret)
+			break;
+	}
+	return ret;
+}

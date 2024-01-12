@@ -1,0 +1,10 @@
+rtl8367_sw_set_vlan_enable(struct switch_dev *dev,
+			   const struct switch_attr *attr,
+			   struct switch_val *val)
+{
+	struct rtl8367_priv *priv = container_of(dev, struct rtl8367_priv, swdev);	
+
+	priv->global_vlan_enable = val->value.i ;
+
+	return 0;
+}

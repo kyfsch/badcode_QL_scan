@@ -1,0 +1,20 @@
+ret_t rtl8367c_getAsicEavSysTimeCtrl(rtk_uint32* pControl)
+{
+    ret_t  retVal;
+    rtk_uint32 regData;
+    rtk_uint32 mask;
+
+    mask = RTL8367C_CFG_TIMER_EN_FRC_MASK | RTL8367C_CFG_TIMER_1588_EN_MASK;
+
+    if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_PTP_TIME_CFG, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    if( (regData & mask) == mask)
+        *pControl = PTP_TIME_CTRL_START;
+    else if( (regData & mask) == 0)
+        *pControl = PTP_TIME_CTRL_STOP;
+    else
+        return RT_ERR_NOT_ALLOWED;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,27 @@
+static int md5_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int keylen) 
+{
+    struct md5_hmac_ctx *mctx = crypto_shash_ctx(tfm);
+    int err;
+    //printk("copying keys to context with length %d\n", keylen);
+
+    if (keylen > MAX_HASH_KEYLEN) {
+        char *hash_alg_name = "md5";
+
+        mctx->desc->tfm = crypto_alloc_shash(hash_alg_name, 0, 0);
+        if (IS_ERR(mctx->desc->tfm)) return PTR_ERR(mctx->desc->tfm);
+
+        memset(mctx->key, 0, MAX_HASH_KEYLEN);
+        err = crypto_shash_digest(mctx->desc, key, keylen, mctx->key);
+        if (err) return err;
+
+        mctx->keylen = MD5_DIGEST_SIZE;
+
+        crypto_free_shash(mctx->desc->tfm);
+    } else {
+        memcpy(mctx->key, key, keylen);
+        mctx->keylen = keylen;
+    }
+    memset(mctx->key + mctx->keylen, 0, MAX_HASH_KEYLEN - mctx->keylen);
+
+    return 0;
+}

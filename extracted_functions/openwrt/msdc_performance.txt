@@ -1,0 +1,48 @@
+void msdc_performance(u32 opcode, u32 sizes, u32 bRx, u32 ticks)
+{
+	struct sdio_profile *result = &sdio_perfomance;
+	struct cmd_profile *cmd;
+	u32 block;
+
+	if (sdio_pro_enable == 0)
+		return;
+
+	if (opcode == 52) {
+		cmd = bRx ?  &result->cmd52_rx : &result->cmd52_tx;
+	} else if (opcode == 53) {
+		if (sizes < 512) {
+			cmd = bRx ?  &result->cmd53_rx_byte[sizes] : &result->cmd53_tx_byte[sizes];
+		} else {
+			block = sizes / 512;
+			if (block >= 99) {
+				printk("cmd53 error blocks\n");
+				while (1)
+					;
+			}
+			cmd = bRx ?  &result->cmd53_rx_blk[block] : &result->cmd53_tx_blk[block];
+		}
+	} else {
+		return;
+	}
+
+	/* update the members */
+	if (ticks > cmd->max_tc)
+		cmd->max_tc = ticks;
+	if (cmd->min_tc == 0 || ticks < cmd->min_tc)
+		cmd->min_tc = ticks;
+	cmd->tot_tc += ticks;
+	cmd->tot_bytes += sizes;
+	cmd->count++;
+
+	if (bRx)
+		result->total_rx_bytes += sizes;
+	else
+		result->total_tx_bytes += sizes;
+	result->total_tc += ticks;
+
+	/* dump when total_tc > 30s */
+	if (result->total_tc >= sdio_pro_time * TICKS_ONE_MS * 1000) {
+		msdc_sdio_profile(result);
+		memset(result, 0, sizeof(struct sdio_profile));
+	}
+}

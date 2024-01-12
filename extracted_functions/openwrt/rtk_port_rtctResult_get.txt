@@ -1,0 +1,42 @@
+rtk_api_ret_t rtk_port_rtctResult_get(rtk_port_t port, rtk_rtctResult_t *pRtctResult)
+{
+    rtk_api_ret_t               retVal;
+    rtl8367c_port_rtct_result_t result;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_IS_UTP(port);
+
+    memset(pRtctResult, 0x00, sizeof(rtk_rtctResult_t));
+    if ((retVal = rtl8367c_getAsicPortRTCTResult(port, &result))!=RT_ERR_OK)
+        return retVal;
+
+    pRtctResult->result.ge_result.channelALen = result.channelALen;
+    pRtctResult->result.ge_result.channelBLen = result.channelBLen;
+    pRtctResult->result.ge_result.channelCLen = result.channelCLen;
+    pRtctResult->result.ge_result.channelDLen = result.channelDLen;
+
+    pRtctResult->result.ge_result.channelALinedriver = result.channelALinedriver;
+    pRtctResult->result.ge_result.channelBLinedriver = result.channelBLinedriver;
+    pRtctResult->result.ge_result.channelCLinedriver = result.channelCLinedriver;
+    pRtctResult->result.ge_result.channelDLinedriver = result.channelDLinedriver;
+
+    pRtctResult->result.ge_result.channelAMismatch = result.channelAMismatch;
+    pRtctResult->result.ge_result.channelBMismatch = result.channelBMismatch;
+    pRtctResult->result.ge_result.channelCMismatch = result.channelCMismatch;
+    pRtctResult->result.ge_result.channelDMismatch = result.channelDMismatch;
+
+    pRtctResult->result.ge_result.channelAOpen = result.channelAOpen;
+    pRtctResult->result.ge_result.channelBOpen = result.channelBOpen;
+    pRtctResult->result.ge_result.channelCOpen = result.channelCOpen;
+    pRtctResult->result.ge_result.channelDOpen = result.channelDOpen;
+
+    pRtctResult->result.ge_result.channelAShort = result.channelAShort;
+    pRtctResult->result.ge_result.channelBShort = result.channelBShort;
+    pRtctResult->result.ge_result.channelCShort = result.channelCShort;
+    pRtctResult->result.ge_result.channelDShort = result.channelDShort;
+
+    return RT_ERR_OK;
+}

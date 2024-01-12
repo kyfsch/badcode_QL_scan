@@ -1,0 +1,10 @@
+bss_conf_find_vlan(struct hostapd_bss_config *bss, int id)
+{
+	struct hostapd_vlan *vlan;
+
+	for (vlan = bss->vlan; vlan; vlan = vlan->next)
+		if (vlan->vlan_id == id)
+			return vlan;
+
+	return NULL;
+}

@@ -1,0 +1,4 @@
+void conf_set_message_callback(void (*fn)(const char *s))
+{
+	conf_message_callback = fn;
+}

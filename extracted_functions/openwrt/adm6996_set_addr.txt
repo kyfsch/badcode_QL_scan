@@ -1,0 +1,12 @@
+adm6996_set_addr(struct switch_dev *dev, const struct switch_attr *attr,
+		 struct switch_val *val)
+{
+	struct adm6996_priv *priv = to_adm(dev);
+
+	if (val->value.i > 1023)
+		return -EINVAL;
+
+	priv->addr = val->value.i;
+
+	return 0;
+};

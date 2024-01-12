@@ -1,0 +1,17 @@
+mtk_bmt_block_isbad(struct mtd_info *mtd, loff_t ofs)
+{
+	int retry_count = 0;
+	u16 orig_block = ofs >> bmtd.blk_shift;
+	u16 block;
+	int ret;
+
+retry:
+	block = bmtd.ops->get_mapping_block(orig_block);
+	ret = bmtd._block_isbad(mtd, (loff_t)block << bmtd.blk_shift);
+	if (ret) {
+		if (mtk_bmt_remap_block(orig_block, block, bmtd.blk_size) &&
+		    retry_count++ < 10)
+			goto retry;
+	}
+	return ret;
+}

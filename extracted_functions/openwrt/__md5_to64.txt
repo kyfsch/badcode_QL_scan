@@ -1,0 +1,8 @@
+__md5_to64(char *s, unsigned v, int n)
+{
+	while (--n >= 0) {
+		*s++ = ascii64[v & 0x3f];
+		v >>= 6;
+	}
+	return s;
+}

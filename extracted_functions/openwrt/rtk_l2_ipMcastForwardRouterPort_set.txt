@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_l2_ipMcastForwardRouterPort_set(rtk_enable_t enabled)
+{
+    rtk_api_ret_t       retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (enabled >= RTK_ENABLE_END)
+        return RT_ERR_ENABLE;
+
+    if((retVal = rtl8367c_setAsicLutIpmcFwdRouterPort(enabled)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

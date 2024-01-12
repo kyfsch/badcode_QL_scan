@@ -1,0 +1,5 @@
+static int mac_tbl_read(struct seq_file *seq, void *v)
+{
+	rtk_hal_dump_table();
+	return 0;
+}

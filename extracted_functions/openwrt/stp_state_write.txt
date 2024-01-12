@@ -1,0 +1,13 @@
+static ssize_t stp_state_write(struct file *filp, const char __user *buffer,
+				size_t count, loff_t *ppos)
+{
+	struct rtl838x_port *p = filp->private_data;
+	u32 value;
+	size_t res = rtl838x_common_write(buffer, count, ppos, &value);
+	if (res < 0)
+		return res;
+
+	rtl83xx_port_stp_state_set(p->dp->ds, p->dp->index, (u8)value);
+
+	return res;
+}

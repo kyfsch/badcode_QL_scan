@@ -1,0 +1,9 @@
+pwinit()
+{
+  if(syspw == NULL) {
+    if((syspw = t_openpwbyname(DEFAULT_PASSWD)) == NULL)
+      return -1;
+    syspw->state = FILE_NIS;
+  }
+  return 0;
+}

@@ -1,0 +1,4 @@
+void conf_set_changed_callback(void (*fn)(void))
+{
+	conf_changed_callback = fn;
+}

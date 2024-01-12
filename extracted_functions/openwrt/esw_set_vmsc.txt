@@ -1,0 +1,10 @@
+static void esw_set_vmsc(struct rt305x_esw *esw, unsigned vlan, unsigned msc)
+{
+	unsigned s;
+
+	s = RT305X_ESW_VMSC_MSC_S * (vlan % 4);
+	esw_rmw(esw,
+		       RT305X_ESW_REG_VMSC(vlan / 4),
+		       RT305X_ESW_VMSC_MSC_M << s,
+		       (msc & RT305X_ESW_VMSC_MSC_M) << s);
+}

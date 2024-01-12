@@ -1,0 +1,9 @@
+static int get_mapping_block_index_nmbm(int block)
+{
+	struct nmbm_instance *ni = bmtd.ni;
+
+	if (block >= ni->data_block_count)
+		return -1;
+
+	return ni->block_mapping[block];
+}

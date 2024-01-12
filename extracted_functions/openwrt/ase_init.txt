@@ -1,0 +1,14 @@
+void ase_init(struct platform_device *pdev)
+{
+    init_pmu();
+
+    reset_ppe(pdev);
+
+    init_ema();
+
+    init_mailbox();
+
+    init_atm_tc();
+
+    clear_share_buffer();
+}

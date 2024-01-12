@@ -1,0 +1,15 @@
+static int rtl838x_set_ageing_time(unsigned long msec)
+{
+	int t = sw_r32(RTL838X_L2_CTRL_1);
+
+	t &= 0x7FFFFF;
+	t = t * 128 / 625; /* Aging time in seconds. 0: L2 aging disabled */
+	pr_debug("L2 AGING time: %d sec\n", t);
+
+	t = (msec * 625 + 127000) / 128000;
+	t = t > 0x7FFFFF ? 0x7FFFFF : t;
+	sw_w32_mask(0x7FFFFF, t, RTL838X_L2_CTRL_1);
+	pr_debug("Dynamic aging for ports: %x\n", sw_r32(RTL838X_L2_PORT_AGING_OUT));
+
+	return 0;
+}

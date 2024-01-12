@@ -1,0 +1,36 @@
+struct myloader_info * __init myloader_get_info(void)
+{
+	struct mylo_system_params *sysp;
+	struct mylo_board_params *boardp;
+	struct mylo_partition_table *parts;
+
+	if (myloader_found)
+		return &myloader_info;
+
+	sysp = (struct mylo_system_params *)(SYS_PARAMS_ADDR);
+	boardp = (struct mylo_board_params *)(BOARD_PARAMS_ADDR);
+	parts = (struct mylo_partition_table *)(PART_TABLE_ADDR);
+
+	printk(KERN_DEBUG "MyLoader: sysp=%08x, boardp=%08x, parts=%08x\n",
+		sysp->magic, boardp->magic, parts->magic);
+
+	/* Check for some magic numbers */
+	if (sysp->magic != MYLO_MAGIC_SYS_PARAMS ||
+	    boardp->magic != MYLO_MAGIC_BOARD_PARAMS ||
+	    le32_to_cpu(parts->magic) != MYLO_MAGIC_PARTITIONS)
+		return NULL;
+
+	printk(KERN_DEBUG "MyLoader: id=%04x:%04x, sub_id=%04x:%04x\n",
+		sysp->vid, sysp->did, sysp->svid, sysp->sdid);
+
+	myloader_info.vid = sysp->vid;
+	myloader_info.did = sysp->did;
+	myloader_info.svid = sysp->svid;
+	myloader_info.sdid = sysp->sdid;
+
+	memcpy(myloader_info.macs, boardp->addr, sizeof(myloader_info.macs));
+
+	myloader_found = 1;
+
+	return &myloader_info;
+}

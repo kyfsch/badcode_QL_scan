@@ -1,0 +1,32 @@
+hostapd_parse_vht_capab_blobmsg(struct ieee80211_vht_capabilities *vhtc)
+{
+	void *supported_mcs;
+	void *map;
+	int i;
+
+	static const struct {
+		const char *name;
+		uint32_t flag;
+	} vht_capas[] = {
+		{ "su_beamformee", VHT_CAP_SU_BEAMFORMEE_CAPABLE },
+		{ "mu_beamformee", VHT_CAP_MU_BEAMFORMEE_CAPABLE },
+	};
+
+	for (i = 0; i < ARRAY_SIZE(vht_capas); i++)
+		blobmsg_add_u8(&b, vht_capas[i].name,
+				!!(vhtc->vht_capabilities_info & vht_capas[i].flag));
+
+	supported_mcs = blobmsg_open_table(&b, "mcs_map");
+
+	/* RX map */
+	map = blobmsg_open_table(&b, "rx");
+	hostapd_parse_vht_map_blobmsg(le_to_host16(vhtc->vht_supported_mcs_set.rx_map));
+	blobmsg_close_table(&b, map);
+
+	/* TX map */
+	map = blobmsg_open_table(&b, "tx");
+	hostapd_parse_vht_map_blobmsg(le_to_host16(vhtc->vht_supported_mcs_set.tx_map));
+	blobmsg_close_table(&b, map);
+
+	blobmsg_close_table(&b, supported_mcs);
+}

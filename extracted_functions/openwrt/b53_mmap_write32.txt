@@ -1,0 +1,15 @@
+static int b53_mmap_write32(struct b53_device *dev, u8 page, u8 reg,
+				    u32 value)
+{
+	u8 __iomem *regs = dev->priv;
+
+	if (WARN_ON(reg % 4))
+		return -EINVAL;
+
+	if (dev->pdata && dev->pdata->big_endian)
+		writel_be(value, regs + (page << 8) + reg);
+	else
+		writel(value, regs + (page << 8) + reg);
+
+	return 0;
+}

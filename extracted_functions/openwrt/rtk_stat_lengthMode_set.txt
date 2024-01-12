@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_stat_lengthMode_set(rtk_stat_lengthMode_t txMode, rtk_stat_lengthMode_t rxMode)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(txMode >= LENGTH_MODE_END)
+        return RT_ERR_INPUT;
+
+    if(rxMode >= LENGTH_MODE_END)
+        return RT_ERR_INPUT;
+
+    if((retVal = rtl8367c_setAsicMIBsLength((rtk_uint32)txMode, (rtk_uint32)rxMode)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

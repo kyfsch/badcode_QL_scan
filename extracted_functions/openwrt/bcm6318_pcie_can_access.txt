@@ -1,0 +1,16 @@
+static int bcm6318_pcie_can_access(struct pci_bus *bus, int devfn)
+{
+	struct bcm6318_pcie *priv = &bcm6318_pcie;
+
+	switch (bus->number) {
+	case PCIE_BUS_BRIDGE:
+		return PCI_SLOT(devfn) == 0;
+	case PCIE_BUS_DEVICE:
+		if (PCI_SLOT(devfn) == 0)
+			return __raw_readl(priv->base + PCIE_DLSTATUS_REG)
+					& DLSTATUS_PHYLINKUP;
+		fallthrough;
+	default:
+		return false;
+	}
+}

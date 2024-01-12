@@ -1,0 +1,16 @@
+static int rtl83xx_port_lower_walk(struct net_device *lower, struct netdev_nested_priv *_priv)
+{
+	struct rtl83xx_walk_data *data = (struct rtl83xx_walk_data *)_priv->data;
+	struct rtl838x_switch_priv *priv = data->priv;
+	int ret = 0;
+	int index;
+
+	index = rtl83xx_port_is_under(lower, priv);
+	data->port = index;
+	if (index >= 0) {
+		pr_debug("Found DSA-port, index %d\n", index);
+		ret = 1;
+	}
+
+	return ret;
+}

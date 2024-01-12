@@ -1,0 +1,39 @@
+print_attr_val(const struct switch_attr *attr, const struct switch_val *val)
+{
+	struct switch_port_link *link;
+	int i;
+
+	switch (attr->type) {
+	case SWITCH_TYPE_INT:
+		printf("%d", val->value.i);
+		break;
+	case SWITCH_TYPE_STRING:
+		printf("%s", val->value.s);
+		break;
+	case SWITCH_TYPE_PORTS:
+		for(i = 0; i < val->len; i++) {
+			printf("%d%s ",
+				val->value.ports[i].id,
+				(val->value.ports[i].flags &
+				 SWLIB_PORT_FLAG_TAGGED) ? "t" : "");
+		}
+		break;
+	case SWITCH_TYPE_LINK:
+		link = val->value.link;
+		if (link->link)
+			printf("port:%d link:up speed:%s %s-duplex %s%s%s%s%s",
+				val->port_vlan,
+				speed_str(link->speed),
+				link->duplex ? "full" : "half",
+				link->tx_flow ? "txflow " : "",
+				link->rx_flow ? "rxflow " : "",
+				link->eee & SWLIB_LINK_FLAG_EEE_100BASET ? "eee100 " : "",
+				link->eee & SWLIB_LINK_FLAG_EEE_1000BASET ? "eee1000 " : "",
+				link->aneg ? "auto" : "");
+		else
+			printf("port:%d link:down", val->port_vlan);
+		break;
+	default:
+		printf("?unknown-type?");
+	}
+}

@@ -1,0 +1,7 @@
+mtdsplit_jimage_parse_generic(struct mtd_info *master,
+			      const struct mtd_partition **pparts,
+			      struct mtd_part_parser_data *data)
+{
+	return __mtdsplit_parse_jimage(master, pparts, data,
+				      jimage_verify_default);
+}

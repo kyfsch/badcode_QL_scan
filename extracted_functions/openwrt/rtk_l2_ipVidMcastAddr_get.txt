@@ -1,0 +1,36 @@
+rtk_api_ret_t rtk_l2_ipVidMcastAddr_get(rtk_l2_ipVidMcastAddr_t *pIpVidMcastAddr)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 method;
+    rtl8367c_luttb l2Table;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pIpVidMcastAddr)
+        return RT_ERR_NULL_POINTER;
+
+    if (pIpVidMcastAddr->vid > RTL8367C_VIDMAX)
+        return RT_ERR_L2_VID;
+
+    if( (pIpVidMcastAddr->dip & 0xF0000000) != 0xE0000000)
+        return RT_ERR_INPUT;
+
+    memset(&l2Table, 0x00, sizeof(rtl8367c_luttb));
+    l2Table.sip = pIpVidMcastAddr->sip;
+    l2Table.dip = pIpVidMcastAddr->dip;
+    l2Table.l3lookup = 1;
+    l2Table.l3vidlookup = 1;
+    l2Table.l3_vid = pIpVidMcastAddr->vid;
+    method = LUTREADMETHOD_MAC;
+    if ((retVal = rtl8367c_getAsicL2LookupTb(method, &l2Table)) != RT_ERR_OK)
+        return retVal;
+
+    pIpVidMcastAddr->address = l2Table.address;
+
+     /* Get Logical port mask */
+    if ((retVal = rtk_switch_portmask_P2L_get(l2Table.mbr, &pIpVidMcastAddr->portmask)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,98 @@
+static bool nmbm_load_info_table(struct nmbm_instance *ni, uint32_t ba,
+				 uint32_t limit)
+{
+	uint32_t main_table_end_ba, backup_table_end_ba, table_end_ba;
+	uint32_t main_mapping_blocks_top_ba, backup_mapping_blocks_top_ba;
+	uint32_t main_table_write_count, backup_table_write_count;
+	uint32_t i;
+	bool success;
+
+	/* Set initial value */
+	ni->main_table_ba = 0;
+	ni->backup_table_ba = 0;
+	ni->info_table.write_count = 0;
+	ni->mapping_blocks_top_ba = ni->signature_ba - 1;
+	ni->data_block_count = ni->signature.mgmt_start_pb;
+
+	/* Find first info table */
+	success = nmbm_search_info_table(ni, ba, limit, &ni->main_table_ba,
+		&main_table_end_ba, &main_table_write_count,
+		&main_mapping_blocks_top_ba, false);
+	if (!success) {
+		nlog_warn(ni, "No valid info table found\n");
+		return false;
+	}
+
+	table_end_ba = main_table_end_ba;
+
+	nlog_table_found(ni, true, main_table_write_count, ni->main_table_ba,
+			main_table_end_ba);
+
+	/* Find second info table */
+	success = nmbm_search_info_table(ni, main_table_end_ba, limit,
+		&ni->backup_table_ba, &backup_table_end_ba,
+		&backup_table_write_count, &backup_mapping_blocks_top_ba, true);
+	if (!success) {
+		nlog_warn(ni, "Second info table not found\n");
+	} else {
+		table_end_ba = backup_table_end_ba;
+
+		nlog_table_found(ni, false, backup_table_write_count,
+				ni->backup_table_ba, backup_table_end_ba);
+	}
+
+	/* Pick mapping_blocks_top_ba */
+	if (!ni->backup_table_ba) {
+		ni->mapping_blocks_top_ba= main_mapping_blocks_top_ba;
+	} else {
+		if (main_table_write_count >= backup_table_write_count)
+			ni->mapping_blocks_top_ba = main_mapping_blocks_top_ba;
+		else
+			ni->mapping_blocks_top_ba = backup_mapping_blocks_top_ba;
+	}
+
+	/* Set final mapping_blocks_ba */
+	ni->mapping_blocks_ba = table_end_ba;
+
+	/* Set final data_block_count */
+	for (i = ni->signature.mgmt_start_pb; i > 0; i--) {
+		if (ni->block_mapping[i - 1] >= 0) {
+			ni->data_block_count = i;
+			break;
+		}
+	}
+
+	/* Regenerate the info table cache from the final selected info table */
+	nmbm_generate_info_table_cache(ni);
+
+	/*
+	 * If only one table exists, try to write another table.
+	 * If two tables have different write count, try to update info table
+	 */
+	if (!ni->backup_table_ba) {
+		success = nmbm_rescue_single_info_table(ni);
+	} else if (main_table_write_count != backup_table_write_count) {
+		/* Mark state & mapping tables changed */
+		ni->block_state_changed = 1;
+		ni->block_mapping_changed = 1;
+
+		success = nmbm_update_single_info_table(ni,
+			main_table_write_count < backup_table_write_count);
+	} else {
+		success = true;
+	}
+
+	/*
+	 * If there is no spare unmapped blocks, or still only one table
+	 * exists, set the chip to read-only
+	 */
+	if (ni->mapping_blocks_ba == ni->mapping_blocks_top_ba) {
+		nlog_warn(ni, "No spare unmapped blocks. Device is now read-only\n");
+		ni->protected = 1;
+	} else if (!success) {
+		nlog_warn(ni, "Only one info table found. Device is now read-only\n");
+		ni->protected = 1;
+	}
+
+	return true;
+}

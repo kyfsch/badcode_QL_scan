@@ -1,0 +1,22 @@
+static AT91S_DataFlashStatus AT91F_WriteBufferToMain (
+	AT91PS_DataFlash pDataFlash,
+	unsigned char BufferCommand,
+	unsigned int dest )
+{
+	int cmdsize;
+	/* Test if the buffer command is correct */
+	if ((BufferCommand != DB_BUF1_PAGE_PGM) &&
+	    (BufferCommand != DB_BUF1_PAGE_ERASE_PGM) &&
+	    (BufferCommand != DB_BUF2_PAGE_PGM) &&
+	    (BufferCommand != DB_BUF2_PAGE_ERASE_PGM) )
+		return AT91C_DATAFLASH_BAD_COMMAND;
+
+	/* no data to transmit or receive */
+	pDataFlash->pDataFlashDesc->tx_data_size = 0;
+
+	cmdsize = 4;
+	if (pDataFlash->pDevice->pages_number >= 16384)
+		cmdsize = 5;
+	/* Send the command to the dataflash */
+	return(AT91F_DataFlashSendCommand (pDataFlash, BufferCommand, cmdsize, dest));
+}

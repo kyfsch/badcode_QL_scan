@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_svlan_tpidEntry_set(rtk_svlan_tpid_t svlan_tag_id)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (svlan_tag_id>RTK_MAX_NUM_OF_PROTO_TYPE)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicSvlanTpid(svlan_tag_id)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

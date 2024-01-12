@@ -1,0 +1,13 @@
+static void wpas_ubus_ref_dec(void)
+{
+	ctx_ref--;
+	if (!ctx)
+		return;
+
+	if (ctx_ref)
+		return;
+
+	uloop_fd_delete(&ctx->sock);
+	ubus_free(ctx);
+	ctx = NULL;
+}

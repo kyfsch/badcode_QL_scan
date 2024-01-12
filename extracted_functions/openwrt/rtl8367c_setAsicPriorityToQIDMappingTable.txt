@@ -1,0 +1,13 @@
+ret_t rtl8367c_setAsicPriorityToQIDMappingTable(rtk_uint32 index, rtk_uint32 priority, rtk_uint32 qid )
+{
+    if(index >= RTL8367C_QUEUENO)
+        return RT_ERR_QUEUE_NUM;
+
+    if(priority > RTL8367C_PRIMAX)
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    if(qid > RTL8367C_QIDMAX)
+        return RT_ERR_QUEUE_ID;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_QOS_1Q_PRIORITY_TO_QID_REG(index, priority), RTL8367C_QOS_1Q_PRIORITY_TO_QID_MASK(priority), qid);
+}

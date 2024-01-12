@@ -1,0 +1,7 @@
+static void adm6996_remove(struct phy_device *pdev)
+{
+	struct adm6996_priv *priv = phy_to_adm(pdev);
+
+	if (priv && (priv->model == ADM6996M || priv->model == ADM6996L))
+		unregister_switch(&priv->dev);
+}

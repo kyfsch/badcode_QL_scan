@@ -1,0 +1,19 @@
+int danube_start(int pp32)
+{
+	int ret;
+
+	/*  download firmware   */
+	ret = danube_pp32_download_code(
+		danube_fw_bin, sizeof(danube_fw_bin) / sizeof(*danube_fw_bin),
+		danube_fw_data, sizeof(danube_fw_data) / sizeof(*danube_fw_data));
+	if ( ret != 0 )
+		return ret;
+
+	/*  run PP32    */
+	IFX_REG_W32(DBG_CTRL_START_SET(1), PP32_DBG_CTRL);
+
+	/*  idle for a while to let PP32 init itself    */
+	udelay(10);
+
+	return 0;
+}

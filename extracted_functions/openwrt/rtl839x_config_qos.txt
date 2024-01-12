@@ -1,0 +1,56 @@
+void rtl839x_config_qos(void)
+{
+	u32 v;
+	struct rtl838x_switch_priv *priv = switch_priv;
+
+	pr_info("Setting up RTL839X QoS\n");
+	pr_info("RTL839X_PRI_SEL_TBL_CTRL(i): %08x\n", sw_r32(RTL839X_PRI_SEL_TBL_CTRL(0)));
+	rtl83xx_setup_default_prio2queue();
+
+	for (int port = 0; port < soc_info.cpu_port; port++)
+		sw_w32(7, RTL839X_QM_PORT_QNUM(port));
+
+	/* CPU-port gets queue number 7 */
+	sw_w32(7, RTL839X_QM_PORT_QNUM(soc_info.cpu_port));
+
+	for (int port = 0; port <= soc_info.cpu_port; port++) {
+		rtl83xx_set_ingress_priority(port, 0);
+		rtl839x_set_scheduling_algorithm(priv, port, WEIGHTED_FAIR_QUEUE);
+		rtl839x_set_scheduling_queue_weights(priv, port, default_queue_weights);
+		/* Do re-marking based on outer tag */
+		sw_w32_mask(0, BIT(port % 32), RTL839X_RMK_PORT_DEI_TAG_CTRL(port));
+	}
+
+	/* Remap dot1p priorities to internal priority, for this the outer tag needs be re-marked */
+	v = 0;
+	for (int p = 0; p < 8; p++)
+		v |= (dot1p_priority_remapping[p] & 0x7) << (p * 3);
+	sw_w32(v, RTL839X_PRI_SEL_IPRI_REMAP);
+
+	/* Configure Drop Precedence for Drop Eligible Indicator (DEI)
+	 * Index 0: 0
+	 * Index 1: 2
+	 * Each indicator is 2 bits long
+	 */
+	sw_w32(2 << 2, RTL839X_PRI_SEL_DEI2DP_REMAP);
+
+	/* Re-mark DEI: 4 bit-fields of 2 bits each, field 0 is bits 0-1, ... */
+	sw_w32((0x1 << 2) | (0x1 << 4), RTL839X_RMK_DEI_CTRL);
+
+	/* Set Congestion avoidance drop probability to 0 for drop precedences 0-2 (bits 24-31)
+	 * low threshold (bits 0-11) to 4095 and high threshold (bits 12-23) to 4095
+	 * Weighted Random Early Detection (WRED) is used
+	 */
+	sw_w32(4095 << 12| 4095, RTL839X_WRED_PORT_THR_CTRL(0));
+	sw_w32(4095 << 12| 4095, RTL839X_WRED_PORT_THR_CTRL(1));
+	sw_w32(4095 << 12| 4095, RTL839X_WRED_PORT_THR_CTRL(2));
+
+	/* Set queue-based congestion avoidance properties, register fields are as
+	 * for forward RTL839X_WRED_PORT_THR_CTRL
+	 */
+	for (int q = 0; q < 8; q++) {
+		sw_w32(255 << 24 | 78 << 12 | 68, RTL839X_WRED_QUEUE_THR_CTRL(q, 0));
+		sw_w32(255 << 24 | 74 << 12 | 64, RTL839X_WRED_QUEUE_THR_CTRL(q, 0));
+		sw_w32(255 << 24 | 70 << 12 | 60, RTL839X_WRED_QUEUE_THR_CTRL(q, 0));
+	}
+}

@@ -1,0 +1,4 @@
+ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
+{
+	return -EINVAL;
+}

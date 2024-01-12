@@ -1,0 +1,10 @@
+static irqreturn_t button_handle_irq(int irq, void *_bdata)
+{
+	struct gpio_keys_button_data *bdata =
+		(struct gpio_keys_button_data *) _bdata;
+
+	mod_delayed_work(system_wq, &bdata->work,
+			 msecs_to_jiffies(bdata->software_debounce));
+
+	return IRQ_HANDLED;
+}

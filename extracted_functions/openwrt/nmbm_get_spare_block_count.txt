@@ -1,0 +1,12 @@
+static uint32_t nmbm_get_spare_block_count(uint32_t block_count)
+{
+	uint32_t val;
+
+	val = (block_count + NMBM_SPARE_BLOCK_DIV / 2) / NMBM_SPARE_BLOCK_DIV;
+	val *= NMBM_SPARE_BLOCK_MULTI;
+
+	if (val < NMBM_SPARE_BLOCK_MIN)
+		val = NMBM_SPARE_BLOCK_MIN;
+
+	return val;
+}

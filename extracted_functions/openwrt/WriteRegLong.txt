@@ -1,0 +1,5 @@
+WriteRegLong (u32 addr, u32 data)
+{
+	//*((volatile u32 *)(addr)) =  data;
+	IFX_MEI_WRITE_REGISTER_L (data, addr);
+}

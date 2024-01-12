@@ -1,0 +1,93 @@
+static void dma_test(struct dc_ep_dev *dev, int mode, int rcn, int tcn)
+{
+	u32 loop = 0;
+	void *tx_data;
+	void *rx_data;
+	dma_addr_t tx_data_phys = 0;
+	dma_addr_t rx_data_phys = 0;
+	u32 start, end;
+	u32 cycles;
+	struct rx_desc_2dw *rx_desc;
+	struct tx_desc_2dw *tx_desc;
+	struct tx_desc_2dw *last_tx_desc;
+	struct rx_desc_2dw *last_rx_desc;
+	dma_addr_t tx_desc_phys;
+	dma_addr_t rx_desc_phys;
+	u32 membase = (u32)(dev->membase);
+
+	rx_desc = (struct rx_desc_2dw *)(membase + PDRAM_RX_DESC_OFFSET);
+	rx_desc_phys = (dev->phy_membase + PDRAM_RX_DESC_OFFSET);
+	tx_desc = (struct tx_desc_2dw *)(membase + PDRAM_TX_DESC_OFFSET);
+	tx_desc_phys = (dev->phy_membase + PDRAM_TX_DESC_OFFSET);
+	last_rx_desc = rx_desc + (desc_num - 1);
+	last_tx_desc = tx_desc + (desc_num - 1);
+
+	if (mode == SOC_TO_EP) { /* Read from SoC DDR to local PDBRAM  */
+		tx_data = dma_alloc_coherent(NULL,
+			desc_num * dma_pkt_size, &tx_data_phys, GFP_DMA);
+		rx_data_phys = (dma_addr_t)(dev->phy_membase + PDRAM_OFFSET);
+		rx_data = (void *)(membase + PDRAM_OFFSET);
+	} else { /* Write from local PDBRAM to remote DDR */
+		tx_data_phys = (dma_addr_t)(dev->phy_membase + PDRAM_OFFSET);
+		tx_data = (void *)(membase + PDRAM_OFFSET);
+		rx_data = dma_alloc_coherent(NULL, desc_num * dma_pkt_size,
+			 &rx_data_phys, GFP_DMA);
+	}
+
+	pr_info("tx_desc_base %p tx_desc_phys 0x%08x tx_data %p tx_data_phys 0x%08x\n",
+		tx_desc, (u32)tx_desc_phys, tx_data, (u32)tx_data_phys);
+
+	pr_info("rx_desc_base %p rx_desc_phys 0x%08x rx_data %p rx_data_phys 0x%08x\n",
+		rx_desc, (u32)rx_desc_phys, rx_data, (u32)rx_data_phys);
+
+	pr_info("dma burst %d desc number %d packet size %d\n",
+		dma_burst, desc_num, dma_pkt_size);
+
+	dma_ctrl_rst(dev);
+	dma_chan_rst(dev, rcn);
+	dma_chan_rst(dev, tcn);
+	dma_port_cfg(dev);
+	dma_controller_cfg(dev);
+	dma_byte_enable(dev, 1);
+
+	dma_ctrl_global_polling_enable(dev, 24);
+
+	dma_sdram_preload(tx_data, rx_data);
+
+	dma_tx_ch_cfg(dev, tcn, (u32)tx_desc, tx_desc_phys,
+		tx_data_phys, desc_num);
+	dma_rx_ch_cfg(dev, rcn, (u32)rx_desc, rx_desc_phys,
+		rx_data_phys, desc_num);
+
+	udelay(5); /* Make sure that RX descriptor prefetched */
+
+	start = get_cycles();
+	dma_chan_on(dev, rcn);
+	dma_chan_on(dev, tcn);
+
+	/* wait till tx chan desc own is 0 */
+	while (last_tx_desc->status.field.own == 1) {
+		loop++;
+		udelay(1);
+	}
+	end = get_cycles();
+	cycles = end - start;
+	pr_info("cylces %d throughput %dMb\n", cycles,
+		plat_throughput_calc(desc_num * dma_pkt_size * 8, cycles));
+	pr_info("loop times %d\n", loop);
+	while (last_rx_desc->status.field.own == 1) {
+		loop++;
+		udelay(1);
+	}
+
+	memcopy_data_check((u32)rx_data);
+	dma_chan_off(dev, rcn);
+	dma_chan_off(dev, tcn);
+	if (mode == SOC_TO_EP) {
+		dma_free_coherent(NULL, desc_num * dma_pkt_size,
+			tx_data, tx_data_phys);
+	} else {
+		dma_free_coherent(NULL, desc_num * dma_pkt_size,
+			rx_data, rx_data_phys);
+	}
+}

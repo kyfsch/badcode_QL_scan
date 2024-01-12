@@ -1,0 +1,44 @@
+static int esw_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
+{
+	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
+	u32 vmsc, poc2;
+	int vlan_idx = -1;
+	int i;
+
+	val->len = 0;
+
+	if (val->port_vlan < 0 || val->port_vlan >= RT305X_ESW_NUM_VIDS)
+		return -EINVAL;
+
+	/* valid vlan? */
+	for (i = 0; i < RT305X_ESW_NUM_VLANS; i++) {
+		if (esw_get_vlan_id(esw, i) == val->port_vlan &&
+		    esw_get_vmsc(esw, i) != RT305X_ESW_PORTS_NONE) {
+			vlan_idx = i;
+			break;
+		}
+	}
+
+	if (vlan_idx == -1)
+		return -EINVAL;
+
+	vmsc = esw_get_vmsc(esw, vlan_idx);
+	poc2 = esw_r32(esw, RT305X_ESW_REG_POC2);
+
+	for (i = 0; i < RT305X_ESW_NUM_PORTS; i++) {
+		struct switch_port *p;
+		int port_mask = 1 << i;
+
+		if (!(vmsc & port_mask))
+			continue;
+
+		p = &val->value.ports[val->len++];
+		p->id = i;
+		if (poc2 & (port_mask << RT305X_ESW_POC2_UNTAG_EN_S))
+			p->flags = 0;
+		else
+			p->flags = 1 << SWITCH_PORT_FLAG_TAGGED;
+	}
+
+	return 0;
+}

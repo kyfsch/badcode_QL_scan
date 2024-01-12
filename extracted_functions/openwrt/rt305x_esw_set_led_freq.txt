@@ -1,0 +1,10 @@
+rt305x_esw_set_led_freq(struct switch_dev *dev,
+			const struct switch_attr *attr,
+			struct switch_val *val)
+{
+	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
+
+	esw->led_frequency = val->value.i & RT305X_ESW_GSC_LED_FREQ_MASK;
+
+	return 0;
+}

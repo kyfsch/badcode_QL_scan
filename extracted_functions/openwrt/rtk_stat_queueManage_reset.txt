@@ -1,0 +1,12 @@
+rtk_api_ret_t rtk_stat_queueManage_reset(void)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if ((retVal = rtl8367c_setAsicMIBsCounterReset(FALSE,TRUE,0)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

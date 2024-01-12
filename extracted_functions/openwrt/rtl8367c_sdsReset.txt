@@ -1,0 +1,193 @@
+ret_t rtl8367c_sdsReset(rtk_uint32 id)
+{
+    rtk_uint32 retVal, regValue, state, i, option, running = 0, retVal2;
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0249)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_getAsicReg(0x1300, &regValue)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0000)) != RT_ERR_OK)
+        return retVal;
+
+    switch (regValue)
+    {
+        case 0x0276:
+        case 0x0597:
+        case 0x6367:
+            option = 0;
+            break;
+        case 0x0652:
+        case 0x6368:
+            option = 1;
+            break;
+        case 0x0801:
+        case 0x6511:
+            option = 2;
+            break;
+        default:
+            return RT_ERR_FAILED;
+    }
+
+    if(option == 0)
+    {
+        if (1 == id)
+        {
+            if ((retVal = rtl8367c_getAsicRegBit(0x130c, 5, &running))!=RT_ERR_OK)
+                return retVal;
+
+            if(running == 1)
+            {
+                if ((retVal = rtl8367c_setAsicRegBit(0x130c, 5, 0))!=RT_ERR_OK)
+                    return retVal;
+            }
+
+            retVal = rtl8367c_setAsicReg(0x6601, 0x0000);
+
+            if(retVal == RT_ERR_OK)
+                retVal = rtl8367c_setAsicReg(0x6602, 0x1401);
+
+            if(retVal == RT_ERR_OK)
+                retVal = rtl8367c_setAsicReg(0x6600, 0x00C0);
+
+            if(retVal == RT_ERR_OK)
+                retVal = rtl8367c_setAsicReg(0x6601, 0x0000);
+
+            if(retVal == RT_ERR_OK)
+                retVal = rtl8367c_setAsicReg(0x6602, 0x1403);
+
+            if(retVal == RT_ERR_OK)
+                retVal = rtl8367c_setAsicReg(0x6600, 0x00C0);
+
+            if(running == 1)
+            {
+                if ((retVal2 = rtl8367c_setAsicRegBit(0x130c, 5, 1))!=RT_ERR_OK)
+                    return retVal2;
+            }
+
+            if(retVal != RT_ERR_OK)
+                return retVal;
+        }
+        else
+            return RT_ERR_PORT_ID;
+    }
+    else if(option == 1)
+    {
+        if (1 == id)
+        {
+            if((retVal = rtl8367c_getAsicReg(0x1311, &state)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicReg(0x1311, 0x66)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicReg(0x1311, 0x1066)) != RT_ERR_OK)
+                return retVal;
+
+            while(1)
+            {
+                if((retVal = rtl8367c_getAsicReg(0x1d9d, &regValue)) != RT_ERR_OK)
+                    return retVal;
+                if((regValue >> 8) & 1)
+                    break;
+            }
+
+            for (i=0; i<0xffff; i++);
+
+            if((retVal = rtl8367c_setAsicReg(0x133d, 0x2)) != RT_ERR_OK)
+                return retVal;
+
+            for (i=0; i<0xffff; i++);
+
+            if((retVal = rtl8367c_setAsicReg(0x6601, 0x0)) != RT_ERR_OK)
+                return retVal;
+            if((retVal = rtl8367c_setAsicReg(0x6602, 0x1401)) != RT_ERR_OK)
+                return retVal;
+            if((retVal = rtl8367c_setAsicReg(0x6600, 0xc1)) != RT_ERR_OK)
+                return retVal;
+            if((retVal = rtl8367c_setAsicReg(0x6601, 0x0)) != RT_ERR_OK)
+                return retVal;
+            if((retVal = rtl8367c_setAsicReg(0x6602, 0x1403)) != RT_ERR_OK)
+                return retVal;
+            if((retVal = rtl8367c_setAsicReg(0x6600, 0xc1)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicReg(0x133d, 0x0)) != RT_ERR_OK)
+                return retVal;
+
+            for (i=0; i<0xffff; i++);
+
+            if((retVal = rtl8367c_setAsicReg(0x1311, state)) != RT_ERR_OK)
+                return retVal;
+
+
+        }
+        else if (2== id)
+        {
+            if((retVal = rtl8367c_getAsicReg(0x13c4, &state)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicReg(0x13c4, 0x66)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicReg(0x13c4, 0x1066)) != RT_ERR_OK)
+                return retVal;
+
+            while(1)
+            {
+                if((retVal = rtl8367c_getAsicReg(0x1d9d, &regValue)) != RT_ERR_OK)
+                    return retVal;
+                if((regValue >> 9) & 1)
+                    break;
+            }
+
+            for (i=0; i<0xffff; i++);
+
+            if((retVal = rtl8367c_setAsicReg(0x133d, 0x2)) != RT_ERR_OK)
+                return retVal;
+
+            for (i=0; i<0xffff; i++);
+
+            if((retVal = rtl8367c_setAsicReg(0x6601, 0x0)) != RT_ERR_OK)
+                return retVal;
+            if((retVal = rtl8367c_setAsicReg(0x6602, 0x1401)) != RT_ERR_OK)
+                return retVal;
+            if((retVal = rtl8367c_setAsicReg(0x6600, 0xc0)) != RT_ERR_OK)
+                return retVal;
+            if((retVal = rtl8367c_setAsicReg(0x6601, 0x0)) != RT_ERR_OK)
+                return retVal;
+            if((retVal = rtl8367c_setAsicReg(0x6602, 0x1403)) != RT_ERR_OK)
+                return retVal;
+            if((retVal = rtl8367c_setAsicReg(0x6600, 0xc0)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_setAsicReg(0x133d, 0x0)) != RT_ERR_OK)
+                return retVal;
+
+            for (i=0; i<0xffff; i++);
+
+            if((retVal = rtl8367c_setAsicReg(0x13c4, state)) != RT_ERR_OK)
+                return retVal;
+        }
+        else
+            return RT_ERR_PORT_ID;
+    }
+    else if(option == 2)
+    {
+        if ((retVal = rtl8367c_getAsicSdsReg(0, 3, 0, &regValue))!=RT_ERR_OK)
+                  return retVal;
+              regValue |= 0x40;
+              if ((retVal = rtl8367c_setAsicSdsReg(0, 3, 0, regValue))!=RT_ERR_OK)
+                  return retVal;
+
+              for (i=0; i<0xffff; i++);
+
+              regValue &= ~(0x40);
+              if ((retVal = rtl8367c_setAsicSdsReg(0, 3, 0, regValue))!=RT_ERR_OK)
+                  return retVal;
+
+    }
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,19 @@
+static u32 fe_get_link(struct net_device *dev)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+	int err;
+
+	if (!priv->phy_dev)
+		goto out_get_link;
+
+	if (priv->phy_flags == FE_PHY_FLAG_ATTACH) {
+		err = genphy_update_link(priv->phy_dev);
+		if (err)
+			goto out_get_link;
+	}
+
+	return priv->phy_dev->link;
+
+out_get_link:
+	return ethtool_op_get_link(dev);
+}

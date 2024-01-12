@@ -1,0 +1,66 @@
+mtk_bmt_read(struct mtd_info *mtd, loff_t from,
+	     struct mtd_oob_ops *ops)
+{
+	struct mtd_oob_ops cur_ops = *ops;
+	int retry_count = 0;
+	loff_t cur_from;
+	int ret = 0;
+	int max_bitflips = 0;
+
+	ops->retlen = 0;
+	ops->oobretlen = 0;
+
+	while (ops->retlen < ops->len || ops->oobretlen < ops->ooblen) {
+		int cur_ret;
+
+		u32 offset = from & (bmtd.blk_size - 1);
+		u32 block = from >> bmtd.blk_shift;
+		int cur_block;
+
+		cur_block = bmtd.ops->get_mapping_block(block);
+		if (cur_block < 0)
+			return -EIO;
+
+		cur_from = ((loff_t)cur_block << bmtd.blk_shift) + offset;
+
+		cur_ops.oobretlen = 0;
+		cur_ops.retlen = 0;
+		cur_ops.len = min_t(u32, mtd->erasesize - offset,
+					 ops->len - ops->retlen);
+		cur_ret = bmtd._read_oob(mtd, cur_from, &cur_ops);
+		if (cur_ret < 0)
+			ret = cur_ret;
+		else
+			max_bitflips = max_t(int, max_bitflips, cur_ret);
+		if (cur_ret < 0 && !mtd_is_bitflip(cur_ret)) {
+			if (mtk_bmt_remap_block(block, cur_block, mtd->erasesize) &&
+				retry_count++ < 10)
+				continue;
+
+			goto out;
+		}
+
+		if (mtd->bitflip_threshold && cur_ret >= mtd->bitflip_threshold)
+			mtk_bmt_remap_block(block, cur_block, mtd->erasesize);
+
+		ops->retlen += cur_ops.retlen;
+		ops->oobretlen += cur_ops.oobretlen;
+
+		cur_ops.ooboffs = 0;
+		cur_ops.datbuf += cur_ops.retlen;
+		cur_ops.oobbuf += cur_ops.oobretlen;
+		cur_ops.ooblen -= cur_ops.oobretlen;
+
+		if (!cur_ops.len)
+			cur_ops.len = mtd->erasesize - offset;
+
+		from += cur_ops.len;
+		retry_count = 0;
+	}
+
+out:
+	if (ret < 0)
+		return ret;
+
+	return max_bitflips;
+}

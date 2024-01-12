@@ -1,0 +1,84 @@
+static int aw9523_probe(struct i2c_client *client,
+			const struct i2c_device_id *id)
+{
+	struct device *dev = &client->dev;
+	struct pinctrl_desc *pdesc;
+	struct aw9523 *awi;
+	int ret;
+
+	awi = devm_kzalloc(dev, sizeof(*awi), GFP_KERNEL);
+	if (!awi)
+		return -ENOMEM;
+
+	i2c_set_clientdata(client, awi);
+
+	awi->dev = dev;
+	awi->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
+	if (IS_ERR(awi->reset_gpio))
+		return PTR_ERR(awi->reset_gpio);
+	gpiod_set_consumer_name(awi->reset_gpio, "aw9523 reset");
+
+	awi->regmap = devm_regmap_init_i2c(client, &aw9523_regmap);
+	if (IS_ERR(awi->regmap))
+		return PTR_ERR(awi->regmap);
+
+	awi->vio_vreg = devm_regulator_get_optional(dev, "vio");
+	if (IS_ERR(awi->vio_vreg)) {
+		if (PTR_ERR(awi->vio_vreg) == -EPROBE_DEFER)
+			return -EPROBE_DEFER;
+		awi->vio_vreg = NULL;
+	} else {
+		ret = regulator_enable(awi->vio_vreg);
+		if (ret)
+			return ret;
+	}
+
+	mutex_init(&awi->i2c_lock);
+	lockdep_set_subclass(&awi->i2c_lock,
+			     i2c_adapter_depth(client->adapter));
+
+	pdesc = devm_kzalloc(dev, sizeof(*pdesc), GFP_KERNEL);
+	if (!pdesc)
+		return -ENOMEM;
+
+	ret = aw9523_hw_init(awi);
+	if (ret)
+		goto err_disable_vregs;
+
+	pdesc->name = dev_name(dev);
+	pdesc->owner = THIS_MODULE;
+	pdesc->pctlops = &aw9523_pinctrl_ops;
+	pdesc->pmxops  = &aw9523_pinmux_ops;
+	pdesc->confops = &aw9523_pinconf_ops;
+	pdesc->pins = aw9523_pins;
+	pdesc->npins = ARRAY_SIZE(aw9523_pins);
+
+	ret = aw9523_init_gpiochip(awi, pdesc->npins);
+	if (ret)
+		goto err_disable_vregs;
+
+	if (client->irq) {
+		ret = aw9523_init_irq(awi, client->irq);
+		if (ret)
+			goto err_disable_vregs;
+	}
+
+	awi->pctl = devm_pinctrl_register(dev, pdesc, awi);
+	if (IS_ERR(awi->pctl)) {
+		ret = PTR_ERR(awi->pctl);
+		dev_err(dev, "Cannot register pinctrl: %d", ret);
+		goto err_disable_vregs;
+	}
+
+	ret = devm_gpiochip_add_data(dev, &awi->gpio, awi);
+	if (ret)
+		goto err_disable_vregs;
+
+	return ret;
+
+err_disable_vregs:
+	if (awi->vio_vreg)
+		regulator_disable(awi->vio_vreg);
+	mutex_destroy(&awi->i2c_lock);
+	return ret;
+}

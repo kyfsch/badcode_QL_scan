@@ -1,0 +1,13 @@
+static int rb4xx_cpld_cmd(struct rb4xx_cpld *cpld, const void *tx_buf,
+			  unsigned int len)
+{
+	struct spi_message m;
+	struct spi_transfer t = {
+		.tx_buf = tx_buf,
+		.len = len,
+	};
+
+	spi_message_init(&m);
+	spi_message_add_tail(&t, &m);
+	return spi_sync(cpld->spi, &m);
+}

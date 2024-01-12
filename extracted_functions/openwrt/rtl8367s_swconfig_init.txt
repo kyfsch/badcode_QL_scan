@@ -1,0 +1,23 @@
+int rtl8367s_swconfig_init(void (*reset_func)(void))
+{
+	struct rtl8367_priv  *priv = &rtl8367_priv_data;
+	struct switch_dev *dev=&priv->swdev;
+	int err=0;
+
+	rtl8367_switch_reset_func = reset_func ;
+	
+	memset(priv, 0, sizeof(struct rtl8367_priv));	
+	priv->global_vlan_enable =0;
+
+	dev->name = "RTL8367C";
+	dev->cpu_port = RTL8367C_SW_CPU_PORT;
+	dev->ports = RTL8367C_NUM_PORTS;
+	dev->vlans = RTL8367C_NUM_VIDS;
+	dev->ops = &rtl8367_sw_ops;
+	dev->alias = "RTL8367C";		
+	err = register_switch(dev, NULL);
+
+	pr_info("[%s]\n",__func__);
+
+	return err;
+}

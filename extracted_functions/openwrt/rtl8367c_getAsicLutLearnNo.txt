@@ -1,0 +1,22 @@
+ret_t rtl8367c_getAsicLutLearnNo(rtk_uint32 port, rtk_uint32* pNumber)
+{
+    ret_t retVal;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(port < 10)
+    {
+     retVal = rtl8367c_getAsicReg(RTL8367C_REG_L2_LRN_CNT_REG(port), pNumber);
+        if (retVal != RT_ERR_OK)
+         return retVal;
+    }
+    else
+    {
+        retVal = rtl8367c_getAsicReg(RTL8367C_REG_L2_LRN_CNT_CTRL10, pNumber);
+        if (retVal != RT_ERR_OK)
+         return retVal;
+    }
+
+    return RT_ERR_OK;
+}

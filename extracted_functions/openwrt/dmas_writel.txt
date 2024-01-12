@@ -1,0 +1,5 @@
+static inline void dmas_writel(struct bcm6348_iudma *iudma, u32 val, u32 off,
+			       int chan)
+{
+	__raw_writel(val, iudma->dma_sram + chan * DMA_CHAN_WIDTH + off);
+}

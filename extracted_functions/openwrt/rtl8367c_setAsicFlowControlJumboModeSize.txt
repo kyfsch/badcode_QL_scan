@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicFlowControlJumboModeSize(rtk_uint32 size)
+{
+    if(size >= FC_JUMBO_SIZE_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_FLOWCTRL_JUMBO_SIZE, RTL8367C_JUMBO_SIZE_MASK, size);
+}

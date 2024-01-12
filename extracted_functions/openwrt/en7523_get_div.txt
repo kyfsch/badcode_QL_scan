@@ -1,0 +1,18 @@
+static u32 en7523_get_div(void __iomem *base, int i)
+{
+	const struct en_clk_desc *desc = &en7523_base_clks[i];
+	u32 reg, val;
+
+	if (!desc->div_bits)
+		return 1;
+
+	reg = desc->div_reg ? desc->div_reg : desc->base_reg;
+	val = readl(base + reg);
+	val >>= desc->div_shift;
+	val &= (1 << desc->div_bits) - 1;
+
+	if (!val && desc->div_val0)
+		return desc->div_val0;
+
+	return (val + 1) * desc->div_step;
+}

@@ -1,0 +1,21 @@
+swlib_set_attr(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *val)
+{
+	int cmd;
+
+	switch(attr->atype) {
+	case SWLIB_ATTR_GROUP_GLOBAL:
+		cmd = SWITCH_CMD_SET_GLOBAL;
+		break;
+	case SWLIB_ATTR_GROUP_PORT:
+		cmd = SWITCH_CMD_SET_PORT;
+		break;
+	case SWLIB_ATTR_GROUP_VLAN:
+		cmd = SWITCH_CMD_SET_VLAN;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	val->attr = attr;
+	return swlib_call(cmd, NULL, send_attr_val, val);
+}

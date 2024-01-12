@@ -1,0 +1,25 @@
+ret_t rtl8367c_getAsicPortForceLink(rtk_uint32 port, rtl8367c_port_ability_t *pPortAbility)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+
+    /* Invalid input parameter */
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    retVal = rtl8367c_getAsicReg(RTL8367C_REG_MAC0_FORCE_SELECT + port, &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    pPortAbility->forcemode = (regData >> 12) & 0x0001;
+    pPortAbility->mstfault  = (regData >> 9) & 0x0001;
+    pPortAbility->mstmode   = (regData >> 8) & 0x0001;
+    pPortAbility->nway      = (regData >> 7) & 0x0001;
+    pPortAbility->txpause   = (regData >> 6) & 0x0001;
+    pPortAbility->rxpause   = (regData >> 5) & 0x0001;
+    pPortAbility->link      = (regData >> 4) & 0x0001;
+    pPortAbility->duplex    = (regData >> 2) & 0x0001;
+    pPortAbility->speed     = regData & 0x0003;
+
+    return RT_ERR_OK;
+}

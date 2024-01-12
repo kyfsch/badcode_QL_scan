@@ -1,0 +1,35 @@
+static int mtk_bmt_init_nmbm(struct device_node *np)
+{
+	struct nmbm_instance *ni;
+	int ret;
+
+	ni = kzalloc(nmbm_calc_structure_size(), GFP_KERNEL);
+	if (!ni)
+		return -ENOMEM;
+
+	bmtd.ni = ni;
+
+	if (of_property_read_u32(np, "mediatek,bmt-max-ratio", &ni->max_ratio))
+		ni->max_ratio = 1;
+	if (of_property_read_u32(np, "mediatek,bmt-max-reserved-blocks",
+				 &ni->max_reserved_blocks))
+		ni->max_reserved_blocks = 256;
+	if (of_property_read_bool(np, "mediatek,empty-page-ecc-protected"))
+		ni->empty_page_ecc_ok = true;
+	if (of_property_read_bool(np, "mediatek,bmt-force-create"))
+		ni->force_create = true;
+
+	ret = nmbm_attach(ni);
+	if (ret)
+		goto out;
+
+	bmtd.mtd->size = ni->data_block_count << bmtd.blk_shift;
+
+	return 0;
+
+out:
+	kfree(ni);
+	bmtd.ni = NULL;
+
+	return ret;
+}

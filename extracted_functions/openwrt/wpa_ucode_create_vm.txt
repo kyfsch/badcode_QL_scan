@@ -1,0 +1,21 @@
+uc_vm_t *wpa_ucode_create_vm(void)
+{
+	static uc_parse_config_t config = {
+		.strict_declarations = true,
+		.lstrip_blocks = true,
+		.trim_blocks = true,
+		.raw_mode = true
+	};
+
+	uc_search_path_init(&config.module_search_path);
+	uc_search_path_add(&config.module_search_path, HOSTAPD_UC_PATH "*.so");
+	uc_search_path_add(&config.module_search_path, HOSTAPD_UC_PATH "*.uc");
+
+	uc_vm_init(&vm, &config);
+
+	uc_stdlib_load(uc_vm_scope_get(&vm));
+	eloop_add_uloop();
+	gc_timer.cb = uc_gc_timer;
+
+	return &vm;
+}

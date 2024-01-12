@@ -1,0 +1,9 @@
+static void rtl83xx_port_set_salrn(struct rtl838x_switch_priv *priv,
+				   int port, bool enable)
+{
+	int shift = SALRN_PORT_SHIFT(port);
+	int val = enable ? SALRN_MODE_HARDWARE : SALRN_MODE_DISABLED;
+
+	sw_w32_mask(SALRN_MODE_MASK << shift, val << shift,
+		    priv->r->l2_port_new_salrn(port));
+}

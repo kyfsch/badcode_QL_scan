@@ -1,0 +1,30 @@
+void rtk_hal_vlan_mode(struct ra_switch_ioctl_data *data)
+{
+	rtk_vlan_cfg_t vlan1, vlan2;
+	rtk_api_ret_t ret;
+
+	ret = rtk_vlan_get(1, &vlan1);
+	if (ret != RT_ERR_OK)
+		printk("rtk_vlan_get failed\n");
+
+	ret = rtk_vlan_get(2, &vlan2);
+	if (ret != RT_ERR_OK)
+		printk("rtk_vlan_get failed\n");
+
+	if (data->mode == 0) { //ivl
+		vlan1.ivl_en = 1;
+		vlan1.fid_msti = 0;
+		rtk_vlan_set(1, &vlan1);
+		vlan2.ivl_en = 1;
+		vlan2.fid_msti = 0;
+		rtk_vlan_set(2, &vlan2);
+	} else if(data->mode == 1) {//svl
+		vlan1.ivl_en = 0;
+		vlan1.fid_msti = 0;
+		rtk_vlan_set(1, &vlan1);
+		vlan2.ivl_en = 0;
+		vlan2.fid_msti = 1;
+		rtk_vlan_set(2, &vlan2);
+	} else
+		printk("mode not supported\n");
+}

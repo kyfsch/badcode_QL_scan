@@ -1,0 +1,4 @@
+uc_value_t *uc_wpa_getpid(uc_vm_t *vm, size_t nargs)
+{
+	return ucv_int64_new(getpid());
+}

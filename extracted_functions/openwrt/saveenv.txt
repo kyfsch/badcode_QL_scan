@@ -1,0 +1,43 @@
+int saveenv(void)
+{
+	env_t	env_new;
+	ssize_t	len;
+	char	*res;
+	block_dev_desc_t *dev_desc = NULL;
+	int dev = EXT4_ENV_DEVICE;
+	int part = EXT4_ENV_PART;
+	int err;
+
+	res = (char *)&env_new.data;
+	len = hexport_r(&env_htab, '\0', 0, &res, ENV_SIZE, 0, NULL);
+	if (len < 0) {
+		error("Cannot export environment: errno = %d\n", errno);
+		return 1;
+	}
+
+	dev_desc = get_dev(EXT4_ENV_INTERFACE, dev);
+	if (dev_desc == NULL) {
+		printf("Failed to find %s%d\n",
+			EXT4_ENV_INTERFACE, dev);
+		return 1;
+	}
+
+	err = ext4_register_device(dev_desc, part);
+	if (err) {
+		printf("Failed to register %s%d:%d\n",
+			EXT4_ENV_INTERFACE, dev, part);
+		return 1;
+	}
+
+	env_new.crc = crc32(0, env_new.data, ENV_SIZE);
+	err = ext4fs_write(EXT4_ENV_FILE, (void *)&env_new, sizeof(env_t));
+	ext4fs_close();
+	if (err == -1) {
+		printf("\n** Unable to write \"%s\" from %s%d:%d **\n",
+			EXT4_ENV_FILE, EXT4_ENV_INTERFACE, dev, part);
+		return 1;
+	}
+
+	puts("done\n");
+	return 0;
+}

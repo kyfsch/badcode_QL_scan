@@ -1,0 +1,3 @@
+static inline void m_null() {
+	blobmsg_add_field(&b, BLOBMSG_TYPE_UNSPEC, "", NULL, 0);
+}

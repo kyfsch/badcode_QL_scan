@@ -1,0 +1,26 @@
+static int mtdsplit_parse_bcm_wfi(struct mtd_info *master,
+				  const struct mtd_partition **pparts,
+				  struct mtd_part_parser_data *data)
+{
+	struct device_node *mtd_node;
+	bool cfe_part = true;
+	uint8_t *buf;
+	int ret;
+
+	mtd_node = mtd_get_of_node(master);
+	if (!mtd_node)
+		return -EINVAL;
+
+	buf = kzalloc(master->erasesize, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	if (of_property_read_bool(mtd_node, "brcm,no-cferam"))
+		cfe_part = false;
+
+	ret = parse_bcm_wfi(master, pparts, buf, 0, master->size, cfe_part);
+
+	kfree(buf);
+
+	return ret;
+}

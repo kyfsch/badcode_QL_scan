@@ -1,0 +1,20 @@
+static inline int find_vcc(struct atm_vcc *);
+
+static inline int ifx_atm_version(const struct ltq_atm_ops *ops, char *);
+
+/*
+ *  Init & clean-up functions
+ */
+static inline void check_parameters(void);
+static inline int init_priv_data(void);
+static inline void clear_priv_data(void);
+static inline void init_rx_tables(void);
+static inline void init_tx_tables(void);
+
+/*
+ *  Exteranl Function
+ */
+#if defined(CONFIG_IFX_OAM) || defined(CONFIG_IFX_OAM_MODULE)
+extern void ifx_push_oam(unsigned char *);
+#else
+static inline void ifx_push_oam(unsigned char *dummy) {}

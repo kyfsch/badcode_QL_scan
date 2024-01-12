@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicFlowControlPauseAllThreshold(rtk_uint32 *pThreshold)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_FLOWCTRL_ALL_ON, RTL8367C_FLOWCTRL_ALL_ON_THRESHOLD_MASK, pThreshold);
+}

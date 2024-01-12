@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicVlanUntagDscpPriorityEn(rtk_uint32 enabled)
+{
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_UNTAG_DSCP_PRI_CFG, RTL8367C_UNTAG_DSCP_PRI_CFG_OFFSET, enabled);
+}

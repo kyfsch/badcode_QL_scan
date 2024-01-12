@@ -1,0 +1,6 @@
+static void psb6970_mii_write(struct phy_device *phydev, int reg, u16 val)
+{
+	struct mii_bus *bus = phydev->mdio.bus;
+
+	bus->write(bus, PHYADDR(reg), val);
+}

@@ -1,0 +1,5 @@
+static void reset_menu(void)
+{
+	unpost_menu(curses_menu);
+	clean_items();
+}

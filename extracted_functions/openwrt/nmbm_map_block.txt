@@ -1,0 +1,27 @@
+static bool nmbm_map_block(struct nmbm_instance *ni, uint32_t lb)
+{
+	uint32_t pb;
+	bool success;
+
+	if (ni->mapping_blocks_ba == ni->mapping_blocks_top_ba) {
+		nlog_warn(ni, "No spare unmapped blocks.\n");
+		return false;
+	}
+
+	success = nmbm_block_walk(ni, false, ni->mapping_blocks_top_ba, &pb, 0,
+				  ni->mapping_blocks_ba);
+	if (!success) {
+		nlog_warn(ni, "No spare unmapped blocks.\n");
+		nmbm_update_info_table(ni);
+		ni->mapping_blocks_top_ba = ni->mapping_blocks_ba;
+		return false;
+	}
+
+	ni->block_mapping[lb] = pb;
+	ni->mapping_blocks_top_ba--;
+	ni->block_mapping_changed++;
+
+	nlog_info(ni, "Logic block %u mapped to physical block %u\n", lb, pb);
+
+	return true;
+}

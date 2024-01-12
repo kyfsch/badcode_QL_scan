@@ -1,0 +1,26 @@
+static DSL_DEV_MeiError_t IFX_MEI_ArcJtagEnable (DSL_DEV_Device_t *, int);
+static DSL_DEV_MeiError_t IFX_MEI_AdslMailboxIRQEnable (DSL_DEV_Device_t *, int);
+
+static int IFX_MEI_GetPage (DSL_DEV_Device_t *, u32, u32, u32, u32 *, u32 *);
+static int IFX_MEI_BarUpdate (DSL_DEV_Device_t *, int);
+
+static ssize_t IFX_MEI_Write (DSL_DRV_file_t *, const char *, size_t, loff_t *);
+static long IFX_MEI_UserIoctls (DSL_DRV_file_t *, unsigned int, unsigned long);
+static int IFX_MEI_Open (DSL_DRV_inode_t *, DSL_DRV_file_t *);
+static int IFX_MEI_Release (DSL_DRV_inode_t *, DSL_DRV_file_t *);
+
+void AMAZON_SE_MEI_ARC_MUX_Test(void);
+
+void IFX_MEI_ARC_MUX_Test(void);
+
+static int adsl_dummy_ledcallback(void);
+
+int (*ifx_mei_atm_showtime_enter)(struct port_cell_info *, void *) = NULL;
+EXPORT_SYMBOL(ifx_mei_atm_showtime_enter);
+
+int (*ifx_mei_atm_showtime_exit)(void) = NULL;
+EXPORT_SYMBOL(ifx_mei_atm_showtime_exit);
+
+static int (*g_adsl_ledcallback)(void) = adsl_dummy_ledcallback;
+
+static unsigned int g_tx_link_rate[2] = {0};

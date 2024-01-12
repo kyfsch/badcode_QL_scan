@@ -1,0 +1,4 @@
+static inline int block_count(size_t size)
+{
+	return (size + VFS_BLOCK_SIZE - 1) / VFS_BLOCK_SIZE;
+}

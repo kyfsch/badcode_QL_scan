@@ -1,0 +1,123 @@
+static int bcm4908img_bootfs_mv(FILE *fp, struct bcm4908img_info *info, int argc, char **argv) {
+	struct jffs2_unknown_node node;
+	struct jffs2_raw_dirent dirent;
+	const char *oldname;
+	const char *newname;
+	size_t offset;
+	size_t bytes;
+	int err = -ENOENT;
+
+	if (argc - optind < 2) {
+		fprintf(stderr, "No enough arguments passed\n");
+		return -EINVAL;
+	}
+	oldname = argv[optind++];
+	newname = argv[optind++];
+
+	if (strlen(newname) != strlen(oldname)) {
+		fprintf(stderr, "New filename must have the same length as the old one\n");
+		return -EINVAL;
+	}
+
+	for (offset = info->bootfs_offset; ; offset += (je32_to_cpu(node.totlen) + 0x03) & ~0x03) {
+		char name[FILENAME_MAX];
+		uint32_t crc32;
+
+		if (fseek(fp, offset, SEEK_SET)) {
+			err = -errno;
+			fprintf(stderr, "Failed to fseek: %d\n", err);
+			return err;
+		}
+
+		bytes = fread(&node, 1, sizeof(node), fp);
+		if (bytes != sizeof(node)) {
+			fprintf(stderr, "Failed to read %zu bytes\n", sizeof(node));
+			return -EIO;
+		}
+
+		if (je16_to_cpu(node.magic) != JFFS2_MAGIC_BITMASK) {
+			break;
+		}
+
+		if (je16_to_cpu(node.nodetype) != JFFS2_NODETYPE_DIRENT) {
+			continue;
+		}
+
+		bytes += fread((uint8_t *)&dirent + sizeof(node), 1, sizeof(dirent) - sizeof(node), fp);
+		if (bytes != sizeof(dirent)) {
+			fprintf(stderr, "Failed to read %zu bytes\n", sizeof(node));
+			return -EIO;
+		}
+
+		if (dirent.nsize + 1 > sizeof(name)) {
+			fprintf(stderr, "Too long filename\n");
+			err = -ENOMEM;
+			continue;
+		}
+
+		bytes = fread(name, 1, dirent.nsize, fp);
+		if (bytes != dirent.nsize) {
+			fprintf(stderr, "Failed to read filename\n");
+			return -EIO;
+		}
+		name[bytes] = '\0';
+
+		if (debug)
+			printf("offset:%08zx name_crc:%04x filename:%s\n", offset, je32_to_cpu(dirent.name_crc), name);
+
+		if (strcmp(name, oldname)) {
+			continue;
+		}
+
+		if (fseek(fp, offset + offsetof(struct jffs2_raw_dirent, name_crc), SEEK_SET)) {
+			err = -errno;
+			fprintf(stderr, "Failed to fseek: %d\n", err);
+			return err;
+		}
+		crc32 = bcm4908img_crc32(0, newname, dirent.nsize);
+		bytes = fwrite(&crc32, 1, sizeof(crc32), fp);
+		if (bytes != sizeof(crc32)) {
+			fprintf(stderr, "Failed to write new CRC32\n");
+			return -EIO;
+		}
+
+		if (fseek(fp, offset + offsetof(struct jffs2_raw_dirent, name), SEEK_SET)) {
+			err = -errno;
+			fprintf(stderr, "Failed to fseek: %d\n", err);
+			return err;
+		}
+		bytes = fwrite(newname, 1, dirent.nsize, fp);
+		if (bytes != dirent.nsize) {
+			fprintf(stderr, "Failed to write new filename\n");
+			return -EIO;
+		}
+
+		/* Calculate new BCM4908 image checksum */
+
+		err = bcm4908img_calc_crc32(fp, info);
+		if (err) {
+			fprintf(stderr, "Failed to write new filename\n");
+			return err;
+		}
+
+		info->tail.crc32 = cpu_to_le32(info->crc32);
+		if (fseek(fp, -sizeof(struct bcm4908img_tail), SEEK_END)) {
+			err = -errno;
+			fprintf(stderr, "Failed to write new filename\n");
+			return err;
+		}
+
+		if (fwrite(&info->tail, 1, sizeof(struct bcm4908img_tail), fp) != sizeof(struct bcm4908img_tail)) {
+			fprintf(stderr, "Failed to write updated tail\n");
+			return -EIO;
+		}
+
+		printf("Successfully renamed %s to the %s\n", oldname, newname);
+
+		return 0;
+	}
+
+	fprintf(stderr, "Failed to find %s\n", oldname);
+
+	return -ENOENT;
+}

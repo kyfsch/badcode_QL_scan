@@ -1,0 +1,46 @@
+static void rtl930x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
+{
+	u32 port;
+
+	if (!e->valid) {
+		r[0] = r[1] = r[2] = 0;
+		return;
+	}
+
+	r[2] = BIT(31);	/* Set valid bit */
+
+	r[0] = ((u32)e->mac[0]) << 24 |
+	       ((u32)e->mac[1]) << 16 |
+	       ((u32)e->mac[2]) << 8 |
+	       ((u32)e->mac[3]);
+	r[1] = ((u32)e->mac[4]) << 24 |
+	       ((u32)e->mac[5]) << 16;
+
+	r[2] |= e->next_hop ? BIT(12) : 0;
+
+	if (e->type == L2_UNICAST) {
+		r[2] |= e->is_static ? BIT(14) : 0;
+		r[1] |= e->rvid & 0xfff;
+		r[2] |= (e->port & 0x3ff) << 20;
+		if (e->is_trunk) {
+			r[2] |= BIT(30);
+			port = e->stack_dev << 9 | (e->port & 0x3f);
+		} else {
+			port = (e->stack_dev & 0xf) << 6;
+			port |= e->port & 0x3f;
+		}
+		r[2] |= port << 20;
+		r[2] |= e->block_da ? BIT(15) : 0;
+		r[2] |= e->block_sa ? BIT(17) : 0;
+		r[2] |= e->suspended ? BIT(13) : 0;
+		r[2] |= (e->age & 0x3) << 17;
+		/* the UC_VID field in hardware is used for the VID or for the route id */
+		if (e->next_hop)
+			r[2] |= e->nh_route_id & 0x7ff;
+		else
+			r[2] |= e->vid & 0xfff;
+	} else { /* L2_MULTICAST */
+		r[2] |= (e->mc_portmask_index & 0x3ff) << 16;
+		r[2] |= e->mc_mac_index & 0x7ff;
+	}
+}

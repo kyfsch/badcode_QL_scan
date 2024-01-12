@@ -1,0 +1,13 @@
+uc_bpf_map_iter_next(uc_vm_t *vm, size_t nargs)
+{
+	struct uc_bpf_map_iter *iter = uc_fn_thisval("bpf.map_iter");
+	uc_value_t *rv;
+
+	if (!iter->has_next)
+		return NULL;
+
+	rv = ucv_string_new_length((const char *)iter->key, iter->key_size);
+	iter->has_next = !bpf_map_get_next_key(iter->fd, &iter->key, &iter->key);
+
+	return rv;
+}

@@ -1,0 +1,4 @@
+static void rtl839x_enable_bcast_flood(int port, bool enable)
+{
+
+}

@@ -1,0 +1,12 @@
+static void stop_oxnas_usb_ehci(struct oxnas_hcd *oxnas)
+{
+	reset_control_assert(oxnas->rst_host);
+	reset_control_assert(oxnas->rst_phya);
+	reset_control_assert(oxnas->rst_phyb);
+
+	if (oxnas->use_pllb) {
+		clk_disable_unprepare(oxnas->phyref);
+		clk_disable_unprepare(oxnas->refsrc);
+	}
+	clk_disable_unprepare(oxnas->clk);
+}

@@ -1,0 +1,6 @@
+void refresh_all_windows(WINDOW *main_window)
+{
+	update_panels();
+	touchwin(main_window);
+	refresh();
+}

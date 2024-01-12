@@ -1,0 +1,13 @@
+static int mt7621_nfc_ooblayout_ecc(struct mtd_info *mtd, int section,
+				    struct mtd_oob_region *oob_region)
+{
+	struct nand_chip *nand = mtd_to_nand(mtd);
+
+	if (section)
+		return -ERANGE;
+
+	oob_region->offset = NFI_FDM_SIZE * nand->ecc.steps;
+	oob_region->length = mtd->oobsize - oob_region->offset;
+
+	return 0;
+}

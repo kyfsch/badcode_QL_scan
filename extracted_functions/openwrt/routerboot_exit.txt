@@ -1,0 +1,8 @@
+static void __exit routerboot_exit(void)
+{
+	unregister_mtd_user(&routerboot_mtd_notifier);
+	/* Exit routines are idempotent */
+	rb_softconfig_exit();
+	rb_hardconfig_exit();
+	kobject_put(rb_kobj);	// recursive afaict
+}

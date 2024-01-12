@@ -1,0 +1,19 @@
+static int rtl8367c_get_vlan( unsigned short vid, struct rtl8367_vlan_info *vlan)
+{	
+	rtk_vlan_cfg_t vlan_cfg;
+
+	memset(vlan, '\0', sizeof(struct rtl8367_vlan_info));
+
+	if (vid >= RTL8367C_NUM_VIDS)
+		return -EINVAL;	
+
+	if(rtk_vlan_get(vid,&vlan_cfg))
+       	return -EINVAL;		
+	
+	vlan->vid = vid;
+	vlan->member = rtl8367c_portmask_phy_to_sw(vlan_cfg.mbr);	
+	vlan->untag = rtl8367c_portmask_phy_to_sw(vlan_cfg.untag);	
+	vlan->fid = vlan_cfg.fid_msti;
+
+	return 0;
+}

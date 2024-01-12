@@ -1,0 +1,41 @@
+static int ssb_fbs_probe(struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
+	struct device_node *node = dev->of_node;
+	struct ssb_fbs *priv;
+	unsigned long flags;
+	u8 mac[ETH_ALEN];
+
+	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+	if (!priv)
+		return -ENOMEM;
+
+	priv->dev = dev;
+
+	ssb_fbs_set(priv, node);
+
+	of_property_read_u32(node, "pci-bus", &priv->pci_bus);
+	of_property_read_u32(node, "pci-dev", &priv->pci_dev);
+
+	of_get_mac_address(node, mac);
+	if (is_valid_ether_addr(mac)) {
+		dev_info(dev, "mtd mac %pM\n", mac);
+	} else {
+		eth_random_addr(mac);
+		dev_info(dev, "random mac %pM\n", mac);
+	}
+
+	memcpy(priv->sprom.il0mac, mac, ETH_ALEN);
+ 	memcpy(priv->sprom.et0mac, mac, ETH_ALEN);
+ 	memcpy(priv->sprom.et1mac, mac, ETH_ALEN);
+	memcpy(priv->sprom.et2mac, mac, ETH_ALEN);
+
+	spin_lock_irqsave(&ssb_fbs_lock, flags);
+	list_add(&priv->list, &ssb_fbs_list);
+	spin_unlock_irqrestore(&ssb_fbs_lock, flags);
+
+	dev_info(dev, "registered SPROM for [%x:%x]\n",
+		 priv->pci_bus, priv->pci_dev);
+
+	return 0;
+}

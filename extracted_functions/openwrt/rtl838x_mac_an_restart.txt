@@ -1,0 +1,15 @@
+static void rtl838x_mac_an_restart(struct phylink_config *config)
+{
+	struct net_device *dev = container_of(config->dev, struct net_device, dev);
+	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+
+	/* This works only on RTL838x chips */
+	if (priv->family_id != RTL8380_FAMILY_ID)
+		return;
+
+	pr_debug("In %s\n", __func__);
+	/* Restart by disabling and re-enabling link */
+	sw_w32(0x6192D, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
+	mdelay(20);
+	sw_w32(0x6192F, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
+}

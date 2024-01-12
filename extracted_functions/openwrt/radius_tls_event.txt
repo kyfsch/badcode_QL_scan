@@ -1,0 +1,33 @@
+static void radius_tls_event(void *ctx, enum tls_event ev,
+			      union tls_event_data *data)
+{
+	switch (ev) {
+	case TLS_CERT_CHAIN_SUCCESS:
+		wpa_printf(MSG_DEBUG, "radius: remote certificate verification success");
+		break;
+	case TLS_CERT_CHAIN_FAILURE:
+		wpa_printf(MSG_INFO, "radius: certificate chain failure: reason=%d depth=%d subject='%s' err='%s'",
+			   data->cert_fail.reason,
+			   data->cert_fail.depth,
+			   data->cert_fail.subject,
+			   data->cert_fail.reason_txt);
+		break;
+	case TLS_PEER_CERTIFICATE:
+		wpa_printf(MSG_DEBUG, "radius: peer certificate: depth=%d serial_num=%s subject=%s",
+			   data->peer_cert.depth,
+			   data->peer_cert.serial_num ? data->peer_cert.serial_num : "N/A",
+			   data->peer_cert.subject);
+		break;
+	case TLS_ALERT:
+		if (data->alert.is_local)
+			wpa_printf(MSG_DEBUG, "radius: local TLS alert: %s",
+				   data->alert.description);
+		else
+			wpa_printf(MSG_DEBUG, "radius: remote TLS alert: %s",
+				   data->alert.description);
+		break;
+	case TLS_UNSAFE_RENEGOTIATION_DISABLED:
+		/* Not applicable to TLS server */
+		break;
+	}
+}

@@ -1,0 +1,24 @@
+IFX_MEI_DMAWrite (DSL_DEV_Device_t * pDev, u32 destaddr,
+			u32 * databuff, u32 databuffsize)
+{
+	u32 *p = databuff;
+	u32 temp;
+
+	if (destaddr & 3)
+		return DSL_DEV_MEI_ERR_FAILURE;
+
+	//      Set the write transfer address
+	IFX_MEI_LongWordWriteOffset (pDev, ME_DX_AD, destaddr);
+
+	//      Write the data pushed across DMA
+	while (databuffsize--) {
+		temp = *p;
+		if (destaddr == MEI_TO_ARC_MAILBOX)
+			MEI_HALF_WORD_SWAP (temp);
+		IFX_MEI_LongWordWriteOffset (pDev, (u32) ME_DX_DATA, temp);
+		p++;
+	}
+
+	return DSL_DEV_MEI_ERR_SUCCESS;
+
+}

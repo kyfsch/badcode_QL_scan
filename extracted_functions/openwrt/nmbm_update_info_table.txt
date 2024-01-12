@@ -1,0 +1,17 @@
+static bool nmbm_update_info_table(struct nmbm_instance *ni)
+{
+	bool success;
+
+	if (ni->protected)
+		return true;
+
+	while (ni->block_state_changed || ni->block_mapping_changed) {
+		success = nmbm_update_info_table_once(ni, false);
+		if (!success) {
+			nlog_err(ni, "Failed to update info table\n");
+			return false;
+		}
+	}
+
+	return true;
+}

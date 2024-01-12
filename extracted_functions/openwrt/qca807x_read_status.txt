@@ -1,0 +1,14 @@
+static int qca807x_read_status(struct phy_device *phydev)
+{
+	if (linkmode_test_bit(ETHTOOL_LINK_MODE_FIBRE_BIT, phydev->supported)) {
+		switch (phydev->port) {
+		case PORT_FIBRE:
+			return qca807x_read_fiber_status(phydev);
+		case PORT_TP:
+			return qca807x_read_copper_status(phydev);
+		default:
+			return -EINVAL;
+		}
+	} else
+		return qca807x_read_copper_status(phydev);
+}

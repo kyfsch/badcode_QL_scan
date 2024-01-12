@@ -1,0 +1,11 @@
+static int __init button_hotplug_init(void)
+{
+	int ret;
+
+	printk(KERN_INFO DRV_DESC " version " DRV_VERSION "\n");
+	ret = input_register_handler(&button_hotplug_handler);
+	if (ret)
+		BH_ERR("unable to register input handler\n");
+
+	return ret;
+}

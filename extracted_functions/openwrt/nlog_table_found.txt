@@ -1,0 +1,13 @@
+static void nlog_table_found(struct nmbm_instance *ni, bool first_table,
+			    uint32_t write_count, uint32_t start_ba,
+			    uint32_t end_ba)
+{
+	if (start_ba == end_ba - 1)
+		nlog_info(ni, "%s info table with writecount %u found in block %u\n",
+			 first_table ? "First" : "Second", write_count,
+			 start_ba);
+	else
+		nlog_info(ni, "%s info table with writecount %u found in block %u-%u\n",
+			 first_table ? "First" : "Second", write_count,
+			 start_ba, end_ba - 1);
+}

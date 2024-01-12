@@ -1,0 +1,15 @@
+  fchmod(fileno(bakfp), st.st_mode & 0777);
+#endif
+
+  t_pwcopy(bakfp, passfp, diff);
+
+  fclose(bakfp);
+  fclose(passfp);
+
+#ifdef USE_RENAME
+  unlink(bakfile);
+  if(rename(pwname, bakfile) < 0) {
+    free(bakfile);
+    free(bakfile2);
+    return -1;
+  }

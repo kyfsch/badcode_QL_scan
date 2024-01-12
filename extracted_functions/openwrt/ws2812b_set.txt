@@ -1,0 +1,21 @@
+static int ws2812b_set(struct led_classdev *cdev,
+		       enum led_brightness brightness)
+{
+	struct led_classdev_mc *mc_cdev = lcdev_to_mccdev(cdev);
+	struct ws2812b_led *led =
+		container_of(mc_cdev, struct ws2812b_led, mc_cdev);
+	struct ws2812b_priv *priv = dev_get_drvdata(cdev->dev->parent);
+	int ret;
+	int i;
+
+	led_mc_calc_color_components(mc_cdev, brightness);
+
+	mutex_lock(&priv->mutex);
+	for (i = 0; i < WS2812B_NUM_COLORS; i++)
+		ws2812b_set_byte(priv, led->cascade * WS2812B_NUM_COLORS + i,
+				 led->subled[i].brightness);
+	ret = spi_write(priv->spi, priv->data_buf, priv->data_len);
+	mutex_unlock(&priv->mutex);
+
+	return ret;
+}

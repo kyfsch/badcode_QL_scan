@@ -1,0 +1,5 @@
+void put_u8(uint8_t v)
+{
+	put_u4(v >> 4);
+	put_u4(v);
+}

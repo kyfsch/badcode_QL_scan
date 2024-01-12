@@ -1,0 +1,17 @@
+ar8316_init_globals(struct ar8xxx_priv *priv)
+{
+	/* standard atheros magic */
+	ar8xxx_write(priv, 0x38, 0xc000050e);
+
+	/* enable cpu port to receive multicast and broadcast frames */
+	ar8xxx_write(priv, AR8216_REG_FLOOD_MASK, 0x003f003f);
+
+	/* enable jumbo frames */
+	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+		   AR8316_GCTRL_MTU, 9018 + 8 + 2);
+
+	/* Enable MIB counters */
+	ar8xxx_rmw(priv, AR8216_REG_MIB_FUNC, AR8216_MIB_FUNC | AR8236_MIB_EN,
+		   (AR8216_MIB_FUNC_NO_OP << AR8216_MIB_FUNC_S) |
+		   AR8236_MIB_EN);
+}

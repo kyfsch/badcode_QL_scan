@@ -1,0 +1,31 @@
+handle_packet(u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)
+{
+	struct ead_packet *pkt = (struct ead_packet *) bytes;
+
+	if (h->len < sizeof(struct ead_packet))
+		return;
+
+	if (pkt->eh.ether_type != htons(ETHERTYPE_IP))
+		return;
+
+	if (memcmp(pkt->eh.ether_dhost, "\xff\xff\xff\xff\xff\xff", 6) != 0)
+		return;
+
+	if (pkt->proto != UIP_PROTO_UDP)
+		return;
+
+	if (pkt->destport != htons(EAD_PORT))
+		return;
+
+	if (pkt->msg.magic != htonl(EAD_MAGIC))
+		return;
+
+	if (h->len < sizeof(struct ead_packet) + ntohl(pkt->msg.len))
+		return;
+
+	if ((pkt->msg.nid != 0xffff) &&
+		(pkt->msg.nid != htons(nid)))
+		return;
+
+	parse_message(pkt, h->len);
+}

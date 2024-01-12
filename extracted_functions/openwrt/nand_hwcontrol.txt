@@ -1,0 +1,17 @@
+void nand_hwcontrol(struct mtd_info *mtd, int cmd, unsigned int ctrl)
+{
+	struct nand_chip *this = mtd->priv;
+	unsigned long nandaddr = (unsigned long) this->IO_ADDR_W;
+
+	if (ctrl & NAND_CTRL_CHANGE) {
+		nandaddr &= ~(BIT(NAND_ALE_ADDR_PIN) | BIT(NAND_CLE_ADDR_PIN));
+		if (ctrl & NAND_CLE)
+			nandaddr |= BIT(NAND_CLE_ADDR_PIN);
+		else if (ctrl & NAND_ALE)
+			nandaddr |= BIT(NAND_ALE_ADDR_PIN);
+		this->IO_ADDR_W = (void __iomem *) nandaddr;
+	}
+
+	if (cmd != NAND_CMD_NONE)
+		writeb(cmd, (void __iomem *) nandaddr);
+}

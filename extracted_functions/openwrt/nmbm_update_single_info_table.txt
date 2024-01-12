@@ -1,0 +1,52 @@
+static bool nmbm_update_single_info_table(struct nmbm_instance *ni,
+					  bool update_main_table)
+{
+	uint32_t write_start_ba, write_limit, table_start_ba, table_end_ba;
+	bool success;
+
+	/* Determine the write range */
+	if (update_main_table) {
+		write_start_ba = ni->main_table_ba;
+		write_limit = ni->backup_table_ba;
+	} else {
+		write_start_ba = ni->backup_table_ba;
+		write_limit = ni->mapping_blocks_top_ba;
+	}
+
+	success = nmbm_write_info_table(ni, write_start_ba, write_limit,
+					&table_start_ba, &table_end_ba);
+	if (success) {
+		if (update_main_table) {
+			ni->main_table_ba = table_start_ba;
+		} else {
+			ni->backup_table_ba = table_start_ba;
+			ni->mapping_blocks_ba = table_end_ba;
+		}
+
+		nmbm_mark_tables_clean(ni);
+
+		nlog_table_update(ni, update_main_table, table_start_ba,
+				 table_end_ba);
+
+		return true;
+	}
+
+	if (update_main_table) {
+		/*
+		 * If failed to update main table, make backup table the new
+		 * main table, and call nmbm_rescue_single_info_table()
+		 */
+		nlog_warn(ni, "Unable to update %s info table\n",
+			 update_main_table ? "Main" : "Backup");
+
+		ni->main_table_ba = ni->backup_table_ba;
+		ni->backup_table_ba = 0;
+		return nmbm_rescue_single_info_table(ni);
+	}
+
+	/* Only one table left */
+	ni->mapping_blocks_ba = ni->backup_table_ba;
+	ni->backup_table_ba = 0;
+
+	return false;
+}

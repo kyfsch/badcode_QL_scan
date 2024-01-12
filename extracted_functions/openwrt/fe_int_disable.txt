@@ -1,0 +1,7 @@
+static inline void fe_int_disable(u32 mask)
+{
+	fe_reg_w32(fe_reg_r32(FE_REG_FE_INT_ENABLE) & ~mask,
+		   FE_REG_FE_INT_ENABLE);
+	/* flush write */
+	fe_reg_r32(FE_REG_FE_INT_ENABLE);
+}

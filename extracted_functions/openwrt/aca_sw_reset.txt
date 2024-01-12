@@ -1,0 +1,10 @@
+static void aca_sw_reset(struct dc_ep_priv *priv)
+{
+	u32 val = SW_RST_GENRISC | SW_RST_HOSTIF_REG | SW_RST_RXIN
+		| SW_RST_RXOUT | SW_RST_TXIN | SW_RST_TXOUT;
+
+	wr32(val, HT_SW_RST_ASSRT);
+	udelay(1);
+	wr32(val, HT_SW_RST_RELEASE);
+	wmb();
+}

@@ -1,0 +1,38 @@
+IFX_MEI_DownloadBootPages (DSL_DEV_Device_t * pDev)
+{
+	int boot_loop;
+	int page_size;
+	u32 dest_addr;
+
+	/*
+	 **     DMA the boot code page(s)
+	 */
+
+	for (boot_loop = 1;
+	     boot_loop <
+	     (DSL_DEV_PRIVATE(pDev)->img_hdr-> count); boot_loop++) {
+		if ((DSL_DEV_PRIVATE(pDev)-> img_hdr->page[boot_loop].p_size) & BOOT_FLAG) {
+			page_size = IFX_MEI_GetPage (pDev, boot_loop,
+						       GET_PROG, MAXSWAPSIZE,
+						       mei_arc_swap_buff,
+						       &dest_addr);
+			if (page_size > 0) {
+				IFX_MEI_DMAWrite (pDev, dest_addr,
+							mei_arc_swap_buff,
+							page_size);
+			}
+		}
+		if ((DSL_DEV_PRIVATE(pDev)-> img_hdr->page[boot_loop].d_size) & BOOT_FLAG) {
+			page_size = IFX_MEI_GetPage (pDev, boot_loop,
+						       GET_DATA, MAXSWAPSIZE,
+						       mei_arc_swap_buff,
+						       &dest_addr);
+			if (page_size > 0) {
+				IFX_MEI_DMAWrite (pDev, dest_addr,
+							mei_arc_swap_buff,
+							page_size);
+			}
+		}
+	}
+	return DSL_DEV_MEI_ERR_SUCCESS;
+}

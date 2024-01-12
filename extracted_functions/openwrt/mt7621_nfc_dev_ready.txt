@@ -1,0 +1,9 @@
+static int mt7621_nfc_dev_ready(struct mt7621_nfc *nfc,
+				unsigned int timeout_ms)
+{
+	u32 val;
+
+	return readl_poll_timeout_atomic(nfc->nfi_regs + NFI_STA, val,
+					 !(val & STA_BUSY), 10,
+					 timeout_ms * 1000);
+}

@@ -1,0 +1,4 @@
+static int rtl9300_i2c_mux_deselect(struct i2c_mux_core *muxc, u32 chan)
+{
+	return 0;
+}

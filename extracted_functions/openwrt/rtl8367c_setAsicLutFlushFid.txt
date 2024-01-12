@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicLutFlushFid(rtk_uint32 fid)
+{
+    if( fid > RTL8367C_FIDMAX )
+        return RT_ERR_L2_FID;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_L2_FLUSH_CTRL1, RTL8367C_LUT_FLUSH_FID_MASK, fid);
+}

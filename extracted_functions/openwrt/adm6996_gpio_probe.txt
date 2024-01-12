@@ -1,0 +1,42 @@
+static int adm6996_gpio_probe(struct platform_device *pdev)
+{
+	struct adm6996_gpio_platform_data *pdata = pdev->dev.platform_data;
+	struct adm6996_priv *priv;
+	int ret;
+
+	if (!pdata)
+		return -EINVAL;
+
+	priv = devm_kzalloc(&pdev->dev, sizeof(struct adm6996_priv), GFP_KERNEL);
+	if (!priv)
+		return -ENOMEM;
+
+	mutex_init(&priv->reg_mutex);
+	mutex_init(&priv->mib_lock);
+
+	priv->eecs = pdata->eecs;
+	priv->eedi = pdata->eedi;
+	priv->eesk = pdata->eesk;
+
+	priv->model = pdata->model;
+	priv->read = adm6996_read_gpio_reg;
+	priv->write = adm6996_write_gpio_reg;
+
+	ret = devm_gpio_request(&pdev->dev, priv->eecs, "adm_eecs");
+	if (ret)
+		return ret;
+	ret = devm_gpio_request(&pdev->dev, priv->eedi, "adm_eedi");
+	if (ret)
+		return ret;
+	ret = devm_gpio_request(&pdev->dev, priv->eesk, "adm_eesk");
+	if (ret)
+		return ret;
+
+	ret = adm6996_switch_init(priv, dev_name(&pdev->dev), NULL);
+	if (ret < 0)
+		return ret;
+
+	platform_set_drvdata(pdev, priv);
+
+	return 0;
+}

@@ -1,0 +1,23 @@
+bool mapping_block_in_range(int block, int *start, int *end)
+{
+	const __be32 *cur = bmtd.remap_range;
+	u32 addr = block << bmtd.blk_shift;
+	int i;
+
+	if (!cur || !bmtd.remap_range_len) {
+		*start = 0;
+		*end = bmtd.total_blks;
+		return true;
+	}
+
+	for (i = 0; i < bmtd.remap_range_len; i++, cur += 2) {
+		if (addr < be32_to_cpu(cur[0]) || addr >= be32_to_cpu(cur[1]))
+			continue;
+
+		*start = be32_to_cpu(cur[0]);
+		*end = be32_to_cpu(cur[1]);
+		return true;
+	}
+
+	return false;
+}

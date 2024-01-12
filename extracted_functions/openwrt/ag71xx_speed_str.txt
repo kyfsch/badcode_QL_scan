@@ -1,0 +1,13 @@
+static unsigned char *ag71xx_speed_str(struct ag71xx *ag)
+{
+	switch (ag->speed) {
+	case SPEED_1000:
+		return "1000";
+	case SPEED_100:
+		return "100";
+	case SPEED_10:
+		return "10";
+	}
+
+	return "?";
+}

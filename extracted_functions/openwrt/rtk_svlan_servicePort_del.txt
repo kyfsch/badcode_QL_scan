@@ -1,0 +1,21 @@
+rtk_api_ret_t rtk_svlan_servicePort_del(rtk_port_t port)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 pmsk;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* check port valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if ((retVal = rtl8367c_getAsicSvlanUplinkPortMask(&pmsk)) != RT_ERR_OK)
+        return retVal;
+
+    pmsk = pmsk & ~(1<<rtk_switch_port_L2P_get(port));
+
+    if ((retVal = rtl8367c_setAsicSvlanUplinkPortMask(pmsk)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

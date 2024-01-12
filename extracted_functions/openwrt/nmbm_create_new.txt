@@ -1,0 +1,48 @@
+static bool nmbm_create_new(struct nmbm_instance *ni)
+{
+	bool success;
+
+	/* Determine the boundary of management blocks */
+	ni->mgmt_start_ba = ni->block_count * (NMBM_MGMT_DIV - ni->max_ratio) / NMBM_MGMT_DIV;
+
+	if (ni->max_reserved_blocks && ni->block_count - ni->mgmt_start_ba > ni->max_reserved_blocks)
+		ni->mgmt_start_ba = ni->block_count - ni->max_reserved_blocks;
+
+	nlog_info(ni, "NMBM management region starts at block %u [0x%08llx]\n",
+		  ni->mgmt_start_ba, ba2addr(ni, ni->mgmt_start_ba));
+
+	/* Fill block state table & mapping table */
+	nmbm_scan_badblocks(ni);
+	nmbm_build_mapping_table(ni);
+
+	/* Write signature */
+	ni->signature.header.magic = NMBM_MAGIC_SIGNATURE;
+	ni->signature.header.version = NMBM_VER;
+	ni->signature.header.size = sizeof(ni->signature);
+	ni->signature.nand_size = bmtd.total_blks << bmtd.blk_shift;
+	ni->signature.block_size = bmtd.blk_size;
+	ni->signature.page_size = bmtd.pg_size;
+	ni->signature.spare_size = bmtd.mtd->oobsize;
+	ni->signature.mgmt_start_pb = ni->mgmt_start_ba;
+	ni->signature.max_try_count = NMBM_TRY_COUNT;
+	nmbm_update_checksum(&ni->signature.header);
+
+	success = nmbm_write_signature(ni, ni->mgmt_start_ba,
+				       &ni->signature, &ni->signature_ba);
+	if (!success) {
+		nlog_err(ni, "Failed to write signature to a proper offset\n");
+		return false;
+	}
+
+	nlog_info(ni, "Signature has been written to block %u [0x%08llx]\n",
+		 ni->signature_ba, ba2addr(ni, ni->signature_ba));
+
+	/* Write info table(s) */
+	success = nmbm_create_info_table(ni);
+	if (success) {
+		nlog_info(ni, "NMBM has been successfully created\n");
+		return true;
+	}
+
+	return false;
+}

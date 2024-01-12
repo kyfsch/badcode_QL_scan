@@ -1,0 +1,8 @@
+static int msdc_drv_resume(struct platform_device *pdev)
+{
+	struct pm_message state;
+
+	state.event = PM_EVENT_RESUME;
+	msdc_drv_pm(pdev, state);
+	return 0;
+}

@@ -1,0 +1,10 @@
+static void rtl931x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
+{
+	u32 cmd = 1 << 20 | /* Execute cmd */
+	          1 << 19 | /* Write */
+	          5 << 15 | /* Table type 0b101 */
+	          (msti & 0x3fff);
+	for (int i = 0; i < 4; i++)
+		sw_w32(port_state[i], priv->r->tbl_access_data_0(i));
+	priv->r->exec_tbl0_cmd(cmd);
+}

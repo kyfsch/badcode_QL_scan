@@ -1,0 +1,41 @@
+static int rtl8366s_get_vlan_4k(struct rtl8366_smi *smi, u32 vid,
+				struct rtl8366_vlan_4k *vlan4k)
+{
+	u32 data[2];
+	int err;
+	int i;
+
+	memset(vlan4k, '\0', sizeof(struct rtl8366_vlan_4k));
+
+	if (vid >= RTL8366S_NUM_VIDS)
+		return -EINVAL;
+
+	/* write VID */
+	err = rtl8366_smi_write_reg(smi, RTL8366S_VLAN_TABLE_WRITE_BASE,
+				    vid & RTL8366S_VLAN_VID_MASK);
+	if (err)
+		return err;
+
+	/* write table access control word */
+	err = rtl8366_smi_write_reg(smi, RTL8366S_TABLE_ACCESS_CTRL_REG,
+				    RTL8366S_TABLE_VLAN_READ_CTRL);
+	if (err)
+		return err;
+
+	for (i = 0; i < 2; i++) {
+		err = rtl8366_smi_read_reg(smi,
+					   RTL8366S_VLAN_TABLE_READ_BASE + i,
+					   &data[i]);
+		if (err)
+			return err;
+	}
+
+	vlan4k->vid = vid;
+	vlan4k->untag = (data[1] >> RTL8366S_VLAN_UNTAG_SHIFT) &
+			RTL8366S_VLAN_UNTAG_MASK;
+	vlan4k->member = data[1] & RTL8366S_VLAN_MEMBER_MASK;
+	vlan4k->fid = (data[1] >> RTL8366S_VLAN_FID_SHIFT) &
+			RTL8366S_VLAN_FID_MASK;
+
+	return 0;
+}

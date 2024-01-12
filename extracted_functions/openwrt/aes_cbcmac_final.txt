@@ -1,0 +1,4 @@
+static int aes_cbcmac_final(struct shash_desc *desc, u8 *out)
+{
+    return aes_cbcmac_final_impl(desc, out, true);
+}

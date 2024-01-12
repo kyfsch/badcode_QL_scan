@@ -1,0 +1,104 @@
+static int mtk_bmt_init_v2(struct device_node *np)
+{
+	u32 bmt_pool_size, bmt_table_size;
+	u32 bufsz, block;
+	u16 pmt_block;
+
+	if (of_property_read_u32(np, "mediatek,bmt-pool-size",
+				 &bmt_pool_size) != 0)
+		bmt_pool_size = 80;
+
+	if (of_property_read_u8(np, "mediatek,bmt-oob-offset",
+				 &bmtd.oob_offset) != 0)
+		bmtd.oob_offset = 0;
+
+	if (of_property_read_u32(np, "mediatek,bmt-table-size",
+				 &bmt_table_size) != 0)
+		bmt_table_size = 0x2000U;
+
+	bmtd.table_size = bmt_table_size;
+
+	pmt_block = bmtd.total_blks - bmt_pool_size - 2;
+
+	bmtd.mtd->size = pmt_block << bmtd.blk_shift;
+
+	/*
+	 *  ---------------------------------------
+	 * | PMT(2blks) | BMT POOL(totalblks * 2%) |
+	 *  ---------------------------------------
+	 * ^            ^
+	 * |            |
+	 * pmt_block	pmt_block + 2blocks(pool_lba)
+	 *
+	 * ATTETION!!!!!!
+	 *     The blocks ahead of the boundary block are stored in bb_tbl
+	 *     and blocks behind are stored in bmt_tbl
+	 */
+
+	bmtd.pool_lba = (u16)(pmt_block + 2);
+	bmtd.bb_max = bmtd.total_blks * BBPOOL_RATIO / 100;
+
+	bufsz = round_up(sizeof(struct bbbt) +
+			 bmt_table_size * sizeof(struct bbmt), bmtd.pg_size);
+	bmtd.bmt_pgs = bufsz >> bmtd.pg_shift;
+
+	bmtd.bbt_buf = kzalloc(bufsz, GFP_KERNEL);
+	if (!bmtd.bbt_buf)
+		return -ENOMEM;
+
+	memset(bmtd.bbt_buf, 0xff, bufsz);
+
+	/* Scanning start from the first page of the last block
+	 * of whole flash
+	 */
+	bmtd.bbt = NULL;
+	for (u16 block = bmtd.total_blks - 1; !bmtd.bbt && block >= bmtd.pool_lba; block--) {
+		u8 fdm[4];
+
+		if (bbt_nand_read(blk_pg(block), bmtd.bbt_buf, bufsz, fdm, sizeof(fdm))) {
+			/* Read failed, try the previous block */
+			continue;
+		}
+
+		if (!is_valid_bmt(bmtd.bbt_buf, fdm)) {
+			/* No valid BMT found, try the previous block */
+			continue;
+		}
+
+		bmtd.bmt_blk_idx = get_bmt_index(bmt_tbl((struct bbbt *)bmtd.bbt_buf));
+		if (bmtd.bmt_blk_idx == 0) {
+			pr_info("[BBT] FATAL ERR: bmt block index is wrong!\n");
+			break;
+		}
+
+		pr_info("[BBT] BMT.v2 is found at 0x%x\n", block);
+		bmtd.bbt = (struct bbbt *)bmtd.bbt_buf;
+	}
+
+	if (!bmtd.bbt) {
+		/* BMT not found */
+		if (bmtd.total_blks > BB_TABLE_MAX + BMT_TABLE_MAX) {
+			pr_info("nand: FATAL: Too many blocks, can not support!\n");
+			return -1;
+		}
+
+		bmtd.bbt = (struct bbbt *)bmtd.bbt_buf;
+		memset(bmt_tbl(bmtd.bbt), BMT_TBL_DEF_VAL,
+		       bmtd.table_size * sizeof(struct bbmt));
+
+		if (scan_bad_blocks(bmtd.bbt))
+			return -1;
+
+		/* BMT always in the last valid block in pool */
+		bmtd.bmt_blk_idx = upload_bmt(bmtd.bbt, bmtd.bmt_blk_idx);
+		block = bmt_tbl(bmtd.bbt)[bmtd.bmt_blk_idx].block;
+		pr_notice("[BBT] BMT.v2 is written into PBA:0x%x\n", block);
+
+		if (bmtd.bmt_blk_idx == 0)
+			pr_info("nand: Warning: no available block in BMT pool!\n");
+		else if (bmtd.bmt_blk_idx == (u16)-1)
+			return -1;
+	}
+
+	return 0;
+}

@@ -1,0 +1,17 @@
+static int rtl9300_i2c_mux_select(struct i2c_mux_core *muxc, u32 chan)
+{
+	struct rtl9300_mux *mux = i2c_mux_priv(muxc);
+
+	/* Set SCL pin */
+	REG_MASK(channels[chan].scl_num, 0,
+		 BIT(RTL9300_I2C_CTRL1_GPIO8_SCL_SEL), RTL9300_I2C_CTRL1);
+
+	/* Set SDA pin */
+	REG_MASK(channels[chan].scl_num, 0x7 << RTL9300_I2C_CTRL1_SDA_OUT_SEL,
+		 channels[chan].sda_num << RTL9300_I2C_CTRL1_SDA_OUT_SEL, RTL9300_I2C_CTRL1);
+
+	mux->i2c->sda_num = channels[chan].sda_num;
+	mux->i2c->scl_num = channels[chan].scl_num;
+
+	return 0;
+}

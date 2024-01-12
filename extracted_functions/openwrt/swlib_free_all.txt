@@ -1,0 +1,10 @@
+swlib_free_all(struct switch_dev *dev)
+{
+	struct switch_dev *p;
+
+	while (dev) {
+		p = dev->next;
+		swlib_free(dev);
+		dev = p;
+	}
+}

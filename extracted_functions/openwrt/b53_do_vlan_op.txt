@@ -1,0 +1,18 @@
+static int b53_do_vlan_op(struct b53_device *dev, u8 op)
+{
+	unsigned int i;
+
+	b53_write8(dev, B53_ARLIO_PAGE, dev->vta_regs[0], VTA_START_CMD | op);
+
+	for (i = 0; i < 10; i++) {
+		u8 vta;
+
+		b53_read8(dev, B53_ARLIO_PAGE, dev->vta_regs[0], &vta);
+		if (!(vta & VTA_START_CMD))
+			return 0;
+
+		usleep_range(100, 200);
+	}
+
+	return -EIO;
+}

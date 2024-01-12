@@ -1,0 +1,12 @@
+static int rtl8367b_mii_read(struct mii_bus *bus, int addr, int reg)
+{
+	struct rtl8366_smi *smi = bus->priv;
+	u32 val = 0;
+	int err;
+
+	err = rtl8367b_read_phy_reg(smi, addr, reg, &val);
+	if (err)
+		return 0xffff;
+
+	return val;
+}

@@ -1,0 +1,6 @@
+void	green_LED_on(void)
+{
+	AT91PS_PIO	PIOB	= AT91C_BASE_PIOB;
+//	PIOB->PIO_CODR		= GREEN_LED;
+	PIOB->PIO_CODR		= (1 << 0);
+}

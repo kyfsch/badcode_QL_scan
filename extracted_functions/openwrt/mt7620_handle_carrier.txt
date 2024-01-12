@@ -1,0 +1,10 @@
+void mt7620_handle_carrier(struct fe_priv *priv)
+{
+	if (!priv->phy)
+		return;
+
+	if (mt7620_has_carrier(priv))
+		netif_carrier_on(priv->netdev);
+	else
+		netif_carrier_off(priv->netdev);
+}

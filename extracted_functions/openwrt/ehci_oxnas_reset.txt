@@ -1,0 +1,23 @@
+static int ehci_oxnas_reset(struct usb_hcd *hcd)
+{
+	#define  txttfill_tuning	reserved2[0]
+
+	struct ehci_hcd	*ehci;
+	u32 tmp;
+	int retval = ehci_setup(hcd);
+	if (retval)
+		return retval;
+
+	ehci = hcd_to_ehci(hcd);
+	tmp = ehci_readl(ehci, &ehci->regs->txfill_tuning);
+	tmp &= ~0x00ff0000;
+	tmp |= 0x003f0000; /* set burst pre load count to 0x40 (63 * 4 bytes)  */
+	tmp |= 0x16; /* set sheduler overhead to 22 * 1.267us (HS) or 22 * 6.33us (FS/LS)*/
+	ehci_writel(ehci, tmp,  &ehci->regs->txfill_tuning);
+
+	tmp = ehci_readl(ehci, &ehci->regs->txttfill_tuning);
+	tmp |= 0x2; /* set sheduler overhead to 2 * 6.333us */
+	ehci_writel(ehci, tmp,  &ehci->regs->txttfill_tuning);
+
+	return retval;
+}

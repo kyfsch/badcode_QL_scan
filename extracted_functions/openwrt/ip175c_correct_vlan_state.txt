@@ -1,0 +1,24 @@
+static void ip175c_correct_vlan_state(struct ip17xx_state *state)
+{
+	int i, j;
+	state->num_vlans = 0;
+	for (i=0; i<MAX_VLANS; i++) {
+		if (state->vlans[i].ports != 0) {
+			state->num_vlans = i+1; // Hack -- we need to store the "set" vlans somewhere...
+		}
+	}
+
+	for (i=0; i<state->regs->NUM_PORTS; i++) {
+		unsigned int portmask = (1<<i);
+		if (!state->vlan_enabled) {
+			// Share with everybody!
+			state->ports[i].shareports = (1<<state->regs->NUM_PORTS)-1;
+			continue;
+		}
+		state->ports[i].shareports = portmask;
+		for (j=0; j<MAX_VLANS; j++) {
+			if (state->vlans[j].ports & portmask)
+				state->ports[i].shareports |= state->vlans[j].ports;
+		}
+	}
+}

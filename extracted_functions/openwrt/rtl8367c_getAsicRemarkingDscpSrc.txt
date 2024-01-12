@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicRemarkingDscpSrc(rtk_uint32 *pType)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_RMK_CFG_SEL_CTRL, RTL8367C_RMK_DSCP_CFG_SEL_MASK, pType);
+}

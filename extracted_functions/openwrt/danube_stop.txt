@@ -1,0 +1,4 @@
+void danube_stop(int pp32)
+{
+	IFX_REG_W32(DBG_CTRL_STOP_SET(1), PP32_DBG_CTRL);
+}

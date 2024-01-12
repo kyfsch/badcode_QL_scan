@@ -1,0 +1,21 @@
+static int bcm6348_emac_mdio_op(struct bcm6348_emac *emac, uint32_t data)
+{
+	int limit;
+
+	/* Make sure mii interrupt status is cleared */
+	emac_writel(emac, ENET_IR_MII, ENET_IR_REG);
+
+	/* Issue mii op */
+	emac_writel(emac, data, ENET_MIID_REG);
+	wmb();
+
+	/* busy wait on mii interrupt bit, with timeout */
+	limit = 1000;
+	do {
+		if (emac_readl(emac, ENET_IR_REG) & ENET_IR_MII)
+			break;
+		udelay(1);
+	} while (limit-- > 0);
+
+	return (limit < 0) ? 1 : 0;
+}

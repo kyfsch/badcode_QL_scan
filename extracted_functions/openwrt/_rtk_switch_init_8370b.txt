@@ -1,0 +1,111 @@
+static rtk_api_ret_t _rtk_switch_init_8370b(void)
+{
+    ret_t retVal;
+    rtk_uint32 regData, tmp = 0;
+    rtk_uint32 i, prf, counter;
+    rtk_uint32 long_link[8] = {0x0210, 0x03e8, 0x0218, 0x03f0, 0x0220, 0x03f8, 0x0208, 0x03e0 };
+
+    if((retVal = rtl8367c_setAsicRegBits(0x1205, 0x0300, 3)) != RT_ERR_OK)
+        return retVal;
+
+
+    for(i=0; i<8; i++)
+    {
+      if ((retVal = rtl8367c_getAsicPHYOCPReg(i, 0xa420, &regData)) != RT_ERR_OK)
+          return retVal;
+        tmp = regData & 0x7 ;
+       if(tmp == 0x3)
+       {
+           prf = 1;
+           if((retVal = rtl8367c_setAsicPHYOCPReg(i, 0xb83e, 0x6fa9)) != RT_ERR_OK)
+              return retVal;
+           if((retVal = rtl8367c_setAsicPHYOCPReg(i, 0xb840, 0xa9)) != RT_ERR_OK)
+               return retVal;
+           for(counter = 0; counter < 10000; counter++); //delay
+
+           if ((retVal = rtl8367c_getAsicPHYOCPReg(i, 0xb820, &regData)) != RT_ERR_OK)
+               return retVal;
+           tmp = regData | 0x10;
+           if ((retVal = rtl8367c_setAsicPHYOCPReg(i, 0xb820, tmp)) != RT_ERR_OK)
+               return retVal;
+           for(counter = 0; counter < 10000; counter++); //delay
+           counter = 0;
+           do{
+              counter = counter + 1;
+              if ((retVal = rtl8367c_getAsicPHYOCPReg(i, 0xb800, &regData)) != RT_ERR_OK)
+                   return retVal;
+              tmp = regData & 0x40;
+              if(tmp != 0)
+                break;
+           } while (counter < 20);   //Wait for patch ready = 1...
+       }
+   }
+    if ((retVal = rtl8367c_getAsicReg(0x1d01, &regData)) != RT_ERR_OK)
+        return retVal;
+    tmp = regData;
+    tmp = tmp | 0x3BE0; /*Broadcast port enable*/
+    tmp = tmp & 0xFFE0; /*Phy_id = 0 */
+    if((retVal = rtl8367c_setAsicReg(0x1d01, tmp)) != RT_ERR_OK)
+        return retVal;
+
+    for(i=0;i < 210; i++)
+    {
+        if((retVal = rtl8367c_setAsicPHYOCPReg(0, PatchChipData[i][0], PatchChipData[i][1])) != RT_ERR_OK)
+             return retVal;
+    }
+
+   if((retVal = rtl8367c_setAsicReg(0x1d01, regData)) != RT_ERR_OK)
+        return retVal;
+
+    for(i=0; i < 8; i++)
+    {
+        if((retVal = rtl8367c_setAsicPHYOCPReg(i, 0xa4b4, long_link[i])) != RT_ERR_OK)
+             return retVal;
+    }
+
+  if (prf == 0x1)
+     {
+        for(i=0; i<8; i++)
+        {
+         if ((retVal = rtl8367c_getAsicPHYOCPReg(i, 0xb820, &regData)) != RT_ERR_OK)
+             return retVal;
+       tmp = regData & 0xFFEF;
+       if ((retVal = rtl8367c_setAsicPHYOCPReg(i, 0xb820, tmp)) != RT_ERR_OK)
+             return retVal;
+
+       for(counter = 0; counter < 10000; counter++); //delay
+
+       counter = 0;
+       do{
+            counter = counter + 1;
+            if ((retVal = rtl8367c_getAsicPHYOCPReg(i, 0xb800, &regData)) != RT_ERR_OK)
+              return retVal;
+            tmp = regData & 0x40;
+            if( tmp == 0 )
+               break;
+       } while (counter < 20);   //Wait for patch ready = 1...
+      if ((retVal = rtl8367c_setAsicPHYOCPReg(i, 0xb83e, 0x6f48)) != RT_ERR_OK)
+          return retVal;
+      if ((retVal = rtl8367c_setAsicPHYOCPReg(i, 0xb840, 0xfa)) != RT_ERR_OK)
+          return retVal;
+          }
+   }
+
+    /*Check phy link status*/
+    for(i=0; i<8; i++)
+    {
+      if ((retVal = rtl8367c_getAsicPHYOCPReg(i, 0xa400, &regData)) != RT_ERR_OK)
+          return retVal;
+      tmp = regData & 0x800;
+        if(tmp == 0x0)
+            {
+              tmp = regData | 0x200;
+          if ((retVal = rtl8367c_setAsicPHYOCPReg(i, 0xa400, tmp)) != RT_ERR_OK)
+             return retVal;
+            }
+    }
+
+  for(counter = 0; counter < 10000; counter++); //delay
+
+  return RT_ERR_OK;
+}

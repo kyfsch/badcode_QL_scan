@@ -1,0 +1,4 @@
+static inline int rtl839x_l2_port_new_salrn(int p)
+{
+	return RTL839X_L2_PORT_NEW_SALRN(p);
+}

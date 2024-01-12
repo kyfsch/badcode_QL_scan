@@ -1,0 +1,17 @@
+ret_t rtl8367c_getAsicLutForceFlushStatus(rtk_uint32 *pPortmask)
+{
+    rtk_uint32 tmpMask;
+    ret_t retVal;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_FORCE_FLUSH_REG, RTL8367C_BUSY_STATUS_MASK,&tmpMask);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+    *pPortmask = tmpMask & 0xff;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_FORCE_FLUSH1, RTL8367C_BUSY_STATUS1_MASK,&tmpMask);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+    *pPortmask |= (tmpMask & 7) << 8;
+
+    return RT_ERR_OK;
+}

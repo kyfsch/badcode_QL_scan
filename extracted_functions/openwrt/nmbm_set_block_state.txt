@@ -1,0 +1,23 @@
+static bool nmbm_set_block_state(struct nmbm_instance *ni, uint32_t ba,
+				 uint32_t state)
+{
+	uint32_t unit, shift, orig;
+	u32 uv;
+
+	unit = ba / NMBM_BITMAP_BLOCKS_PER_UNIT;
+	shift = (ba % NMBM_BITMAP_BLOCKS_PER_UNIT) * NMBM_BITMAP_BITS_PER_BLOCK;
+
+	orig = (ni->block_state[unit] >> shift) & BLOCK_ST_MASK;
+	state &= BLOCK_ST_MASK;
+
+	uv = ni->block_state[unit] & (~(BLOCK_ST_MASK << shift));
+	uv |= state << shift;
+	ni->block_state[unit] = uv;
+
+	if (orig != state) {
+		ni->block_state_changed++;
+		return true;
+	}
+
+	return false;
+}

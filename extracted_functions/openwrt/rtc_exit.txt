@@ -1,0 +1,5 @@
+static void __exit rtc_exit (void)
+{
+	misc_deregister(&rtc_dev);
+	printk(KERN_INFO "Successfully removed RTC RV5C386A driver\n");
+}

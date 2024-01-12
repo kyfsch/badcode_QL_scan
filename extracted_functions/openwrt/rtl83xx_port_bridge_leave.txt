@@ -1,0 +1,39 @@
+static void rtl83xx_port_bridge_leave(struct dsa_switch *ds, int port,
+					struct net_device *bridge)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	u64 port_bitmap = 0, v;
+
+	pr_debug("%s %x: %d", __func__, (u32)priv, port);
+	mutex_lock(&priv->reg_mutex);
+	for (int i = 0; i < ds->num_ports; i++) {
+		/* Remove this port from the port matrix of the other ports
+		 * in the same bridge. If the port is disabled, port matrix
+		 * is kept and not being setup until the port becomes enabled.
+		 * And the other port's port matrix cannot be broken when the
+		 * other port is still a VLAN-aware port.
+		 */
+		if (dsa_is_user_port(ds, i) && i != port) {
+			if (dsa_to_port(ds, i)->bridge_dev != bridge)
+				continue;
+			if (priv->ports[i].enable)
+				priv->r->traffic_disable(i, port);
+
+			priv->ports[i].pm &= ~BIT_ULL(port);
+			port_bitmap |= BIT_ULL(i);
+		}
+	}
+
+	/* Remove all other ports from this port matrix. */
+	if (priv->ports[port].enable) {
+		v = priv->r->traffic_get(port);
+		v &= ~port_bitmap;
+		priv->r->traffic_set(port, v);
+	}
+	priv->ports[port].pm &= ~port_bitmap;
+
+	if (priv->r->set_static_move_action)
+		priv->r->set_static_move_action(port, true);
+
+	mutex_unlock(&priv->reg_mutex);
+}

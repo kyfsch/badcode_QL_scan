@@ -1,0 +1,13 @@
+static int nct5104d_gpio_remove(struct platform_device *pdev)
+{
+	int i;
+	struct nct5104d_gpio_data *data = platform_get_drvdata(pdev);
+
+	for (i = 0; i < data->nr_bank; i++) {
+		struct nct5104d_gpio_bank *bank = &data->bank[i];
+
+		gpiochip_remove (&bank->chip);
+	}
+
+	return 0;
+}

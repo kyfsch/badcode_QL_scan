@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicFlowControlDropAll(rtk_uint32* pDropall)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_FLOWCTRL_CTRL0, RTL8367C_DROP_ALL_THRESHOLD_MASK, pDropall);
+}

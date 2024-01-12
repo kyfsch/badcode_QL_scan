@@ -1,0 +1,11 @@
+ret_t rtl8367c_setAsicAclNot(rtk_uint32 index, rtk_uint32 not)
+{
+    if(index > RTL8367C_ACLRULEMAX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if(index < 64)
+        return rtl8367c_setAsicRegBit(RTL8367C_ACL_ACTION_CTRL_REG(index), RTL8367C_ACL_OP_NOT_OFFSET(index), not);
+    else
+        return rtl8367c_setAsicRegBit(RTL8367C_ACL_ACTION_CTRL2_REG(index), RTL8367C_ACL_OP_NOT_OFFSET(index), not);
+
+}

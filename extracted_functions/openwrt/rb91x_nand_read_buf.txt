@@ -1,0 +1,4 @@
+static void rb91x_nand_read_buf(struct nand_chip *chip, u8 *buf, int len)
+{
+	rb91x_nand_read(chip->priv, buf, len);
+}

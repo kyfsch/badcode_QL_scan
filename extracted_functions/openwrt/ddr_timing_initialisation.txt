@@ -1,0 +1,48 @@
+static void ddr_timing_initialisation(
+	const T_DDR_TIMING_PARAMETERS *ddr_timing_parameters)
+{
+	volatile UINT reg_tmp = 0;
+	/* update the DDR controller registers for timing parameters */
+	reg_tmp = (ddr_timing_parameters->holdoff_cmd_A << 0);
+	reg_tmp = reg_tmp + (ddr_timing_parameters->holdoff_cmd_ARW << 4);
+	reg_tmp = reg_tmp + (ddr_timing_parameters->holdoff_cmd_N << 8);
+	reg_tmp = reg_tmp + (ddr_timing_parameters->holdoff_cmd_LM << 12);
+	reg_tmp = reg_tmp + (ddr_timing_parameters->holdoff_cmd_R << 16);
+	reg_tmp = reg_tmp + (ddr_timing_parameters->holdoff_cmd_W << 20);
+	reg_tmp = reg_tmp + (ddr_timing_parameters->holdoff_cmd_PC << 24);
+	*(volatile UINT *) C_DDR_REG_TIMING0 = reg_tmp;
+
+	reg_tmp = (ddr_timing_parameters->holdoff_cmd_RF << 0);
+	reg_tmp = reg_tmp + (ddr_timing_parameters->holdoff_bank_R << 8);
+	reg_tmp = reg_tmp + (ddr_timing_parameters->holdoff_bank_W << 16);
+	reg_tmp = reg_tmp + (ddr_timing_parameters->holdoff_dir_RW << 24);
+	reg_tmp = reg_tmp + (ddr_timing_parameters->holdoff_dir_WR << 28);
+	*(volatile UINT *) C_DDR_REG_TIMING1 = reg_tmp;
+
+	reg_tmp = (ddr_timing_parameters->latency_CAS << 0);
+	reg_tmp = reg_tmp + (ddr_timing_parameters->latency_WL << 4);
+	reg_tmp = reg_tmp + (ddr_timing_parameters->holdoff_FAW << 8);
+	reg_tmp = reg_tmp + (ddr_timing_parameters->width_update << 16);
+	reg_tmp = reg_tmp + (ddr_timing_parameters->odt_offset << 21);
+	reg_tmp = reg_tmp + (ddr_timing_parameters->odt_drive_all << 24);
+
+	*(volatile UINT *) C_DDR_REG_TIMING2 = reg_tmp;
+
+	/* Program the timing parameters in the PHY too */
+	reg_tmp = (ddr_timing_parameters->use_fixed_re << 16)
+			| (ddr_timing_parameters->delay_wr_to_re << 8)
+			| (ddr_timing_parameters->latency_WL << 4)
+			| (ddr_timing_parameters->latency_CAS << 0);
+
+	*(volatile UINT *) C_DDR_REG_PHY_TIMING = reg_tmp;
+
+	reg_tmp = ddr_timing_parameters->wr_slave_ratio;
+
+	*(volatile UINT *) C_DDR_REG_PHY_WR_RATIO = reg_tmp;
+
+	reg_tmp = ddr_timing_parameters->rd_slave_ratio0;
+	reg_tmp += ddr_timing_parameters->rd_slave_ratio1 << 8;
+
+	*(volatile UINT *) C_DDR_REG_PHY_RD_RATIO = reg_tmp;
+
+}

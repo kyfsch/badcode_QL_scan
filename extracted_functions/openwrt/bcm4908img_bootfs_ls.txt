@@ -1,0 +1,56 @@
+static int bcm4908img_bootfs_ls(FILE *fp, struct bcm4908img_info *info) {
+	struct jffs2_unknown_node node;
+	struct jffs2_raw_dirent dirent;
+	size_t offset;
+	size_t bytes;
+	int err = 0;
+
+	for (offset = info->bootfs_offset; ; offset += (je32_to_cpu(node.totlen) + 0x03) & ~0x03) {
+		char name[FILENAME_MAX + 1];
+
+		if (fseek(fp, offset, SEEK_SET)) {
+			err = -errno;
+			fprintf(stderr, "Failed to fseek: %d\n", err);
+			return err;
+		}
+
+		bytes = fread(&node, 1, sizeof(node), fp);
+		if (bytes != sizeof(node)) {
+			fprintf(stderr, "Failed to read %zu bytes\n", sizeof(node));
+			return -EIO;
+		}
+
+		if (je16_to_cpu(node.magic) != JFFS2_MAGIC_BITMASK) {
+			break;
+		}
+
+		if (je16_to_cpu(node.nodetype) != JFFS2_NODETYPE_DIRENT) {
+			continue;
+		}
+
+		memcpy(&dirent, &node, sizeof(node));
+		bytes += fread((uint8_t *)&dirent + sizeof(node), 1, sizeof(dirent) - sizeof(node), fp);
+		if (bytes != sizeof(dirent)) {
+			fprintf(stderr, "Failed to read %zu bytes\n", sizeof(node));
+			return -EIO;
+		}
+
+		if (dirent.nsize + 1 > sizeof(name)) {
+			/* Keep reading & printing BUT exit with error code */
+			fprintf(stderr, "Too long filename\n");
+			err = -ENOMEM;
+			continue;
+		}
+
+		bytes = fread(name, 1, dirent.nsize, fp);
+		if (bytes != dirent.nsize) {
+			fprintf(stderr, "Failed to read filename\n");
+			return -EIO;
+		}
+		name[bytes] = '\0';
+
+		printf("%s\n", name);
+	}
+
+	return err;
+}

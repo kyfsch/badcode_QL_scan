@@ -1,0 +1,29 @@
+static u16 find_valid_block(u16 block)
+{
+	u8 fdm[4];
+	int ret;
+	int loop = 0;
+
+retry:
+	if (block >= bmtd.total_blks)
+		return 0;
+
+	ret = bbt_nand_read(blk_pg(block), bmtd.data_buf, bmtd.pg_size,
+			    fdm, sizeof(fdm));
+	/* Read the 1st byte of FDM to judge whether it's a bad
+	 * or not
+	 */
+	if (ret || fdm[0] != 0xff) {
+		pr_info("nand: found bad block 0x%x\n", block);
+		if (loop >= bmtd.bb_max) {
+			pr_info("nand: FATAL ERR: too many bad blocks!!\n");
+			return 0;
+		}
+
+		loop++;
+		block++;
+		goto retry;
+	}
+
+	return block;
+}

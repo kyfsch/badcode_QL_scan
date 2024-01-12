@@ -1,0 +1,13 @@
+void hostapd_ucode_add_bss(struct hostapd_data *hapd)
+{
+	uc_value_t *val;
+
+	if (wpa_ucode_call_prepare("bss_add"))
+		return;
+
+	val = hostapd_ucode_bss_get_uval(hapd);
+	uc_value_push(ucv_get(ucv_string_new(hapd->conf->iface)));
+	uc_value_push(ucv_get(val));
+	ucv_put(wpa_ucode_call(2));
+	ucv_gc(vm);
+}

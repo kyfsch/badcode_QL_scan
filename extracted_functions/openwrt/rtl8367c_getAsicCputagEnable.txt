@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicCputagEnable(rtk_uint32 *pEnabled)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_CPU_CTRL, RTL8367C_CPU_EN_OFFSET, pEnabled);
+}

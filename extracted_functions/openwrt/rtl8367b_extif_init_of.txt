@@ -1,0 +1,5 @@
+static int rtl8367b_extif_init_of(struct rtl8366_smi *smi, int id,
+				  const char *name)
+{
+	return -EINVAL;
+}

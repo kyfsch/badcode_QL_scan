@@ -1,0 +1,19 @@
+ret_t rtl8367c_getAsicSystemLutLearnPortMask(rtk_uint32 *pPortmask)
+{
+    rtk_uint32 tmpmask;
+    ret_t retVal;
+
+    if(NULL == pPortmask)
+        return RT_ERR_NULL_POINTER;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_LUT_LRN_SYS_LMT_CTRL, RTL8367C_LUT_SYSTEM_LEARN_PMASK_MASK, &tmpmask);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+    *pPortmask = tmpmask & 0xff;
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_LUT_LRN_SYS_LMT_CTRL, RTL8367C_LUT_SYSTEM_LEARN_PMASK1_MASK, &tmpmask);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+    *pPortmask |= (tmpmask & 0x7) << 8;
+
+    return RT_ERR_OK;
+}

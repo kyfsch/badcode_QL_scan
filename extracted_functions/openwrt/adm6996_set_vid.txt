@@ -1,0 +1,14 @@
+adm6996_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
+		struct switch_val *val)
+{
+	struct adm6996_priv *priv = to_adm(dev);
+
+	pr_devel("set_vid port %d vid %d\n", val->port_vlan, val->value.i);
+
+	if (val->value.i > ADM_VLAN_MAX_ID)
+		return -EINVAL;
+
+	priv->vlan_id[val->port_vlan] = val->value.i;
+
+	return 0;
+};

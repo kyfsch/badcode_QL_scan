@@ -1,0 +1,71 @@
+rtk_api_ret_t rtk_port_phyComboPortMedia_set(rtk_port_t port, rtk_port_media_t media)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 regData;
+    rtk_uint32 idx;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_IS_UTP(port);
+
+    /* Check Combo Port ID */
+    RTK_CHK_PORT_IS_COMBO(port);
+
+    if (media >= PORT_MEDIA_END)
+        return RT_ERR_INPUT;
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0249)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_getAsicReg(0x1300, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0000)) != RT_ERR_OK)
+        return retVal;
+
+    if(regData != 0x6367)
+        return RT_ERR_CHIP_NOT_SUPPORTED;
+
+    if(media == PORT_MEDIA_FIBER)
+    {
+        /* software init */
+        if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_CHIP_RESET, RTL8367C_DW8051_RST_OFFSET, 1)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_MISCELLANEOUS_CONFIGURE0, RTL8367C_DW8051_EN_OFFSET, 1)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_DW8051_RDY, RTL8367C_ACS_IROM_ENABLE_OFFSET, 1)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_DW8051_RDY, RTL8367C_IROM_MSB_OFFSET, 0)) != RT_ERR_OK)
+            return retVal;
+
+        for(idx = 0; idx < FIBER_INIT_SIZE; idx++)
+        {
+            if ((retVal = rtl8367c_setAsicReg(0xE000 + idx, (rtk_uint32)Fiber[idx])) != RT_ERR_OK)
+                return retVal;
+        }
+
+        if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_DW8051_RDY, RTL8367C_IROM_MSB_OFFSET, 0)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_DW8051_RDY, RTL8367C_ACS_IROM_ENABLE_OFFSET, 0)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_CHIP_RESET, RTL8367C_DW8051_RST_OFFSET, 0)) != RT_ERR_OK)
+            return retVal;
+    }
+    else
+    {
+        if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_UTP_FIB_DET, RTL8367C_UTP_FIRST_OFFSET, 1))!=RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_DW8051_RDY, RTL8367C_DW8051_READY_OFFSET, 0)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    return RT_ERR_OK;
+}

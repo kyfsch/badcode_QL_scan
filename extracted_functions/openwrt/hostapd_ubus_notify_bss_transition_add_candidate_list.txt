@@ -1,0 +1,15 @@
+static void hostapd_ubus_notify_bss_transition_add_candidate_list(
+	const u8 *candidate_list, u16 candidate_list_len)
+{
+	char *cl_str;
+	int i;
+
+	if (candidate_list_len == 0)
+		return;
+
+	cl_str = blobmsg_alloc_string_buffer(&b, "candidate-list", candidate_list_len * 2 + 1);
+	for (i = 0; i < candidate_list_len; i++)
+		snprintf(&cl_str[i*2], 3, "%02X", candidate_list[i]);
+	blobmsg_add_string_buffer(&b);
+
+}

@@ -1,0 +1,19 @@
+static bool nmbm_erase_phys_block(struct nmbm_instance *ni, uint64_t addr)
+{
+	int tries, ret;
+
+	for (tries = 0; tries < NMBM_TRY_COUNT; tries++) {
+		struct erase_info ei = {
+			.addr = addr,
+			.len = bmtd.mtd->erasesize,
+		};
+
+		ret = bmtd._erase(bmtd.mtd, &ei);
+		if (!ret)
+			return true;
+	}
+
+	nlog_err(ni, "Block erasure failed at address 0x%08llx\n", addr);
+
+	return false;
+}

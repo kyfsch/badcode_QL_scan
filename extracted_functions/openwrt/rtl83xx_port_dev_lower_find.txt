@@ -1,0 +1,13 @@
+int rtl83xx_port_dev_lower_find(struct net_device *dev, struct rtl838x_switch_priv *priv)
+{
+	struct rtl83xx_walk_data data;
+	struct netdev_nested_priv _priv;
+
+	data.priv = priv;
+	data.port = 0;
+	_priv.data = (void *)&data;
+
+	netdev_walk_all_lower_dev(dev, rtl83xx_port_lower_walk, &_priv);
+
+	return data.port;
+}

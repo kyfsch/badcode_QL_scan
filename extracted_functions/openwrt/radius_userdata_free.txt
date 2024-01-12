@@ -1,0 +1,10 @@
+static void radius_userdata_free(struct radius_user_data *u)
+{
+	struct radius_user_state *s, *tmp;
+
+	kvlist_free(&u->users);
+	free(u->wildcard);
+	u->wildcard = NULL;
+	avl_remove_all_elements(&u->user_state, s, node, tmp)
+		free(s);
+}

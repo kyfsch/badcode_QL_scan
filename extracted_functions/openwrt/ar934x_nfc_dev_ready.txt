@@ -1,0 +1,6 @@
+static int ar934x_nfc_dev_ready(struct nand_chip *chip)
+{
+	struct ar934x_nfc *nfc = chip->priv;
+
+	return __ar934x_nfc_dev_ready(nfc);
+}

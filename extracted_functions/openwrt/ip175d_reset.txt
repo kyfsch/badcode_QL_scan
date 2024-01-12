@@ -1,0 +1,43 @@
+static int ip175d_reset(struct ip17xx_state *state);
+
+static const struct register_mappings IP175D = {
+	.NAME = "IP175D",
+	.MODEL_NO = 0x18,
+
+	// The IP175D has a completely different interface, so we leave most
+	// of the registers undefined and switch to different code paths.
+
+	.VLAN_DEFAULT_TAG_REG = {
+		NOTSUPPORTED,NOTSUPPORTED,NOTSUPPORTED,NOTSUPPORTED,
+		NOTSUPPORTED,NOTSUPPORTED,NOTSUPPORTED,NOTSUPPORTED,
+	},
+
+	.ADD_TAG_REG = NOTSUPPORTED,
+	.REMOVE_TAG_REG = NOTSUPPORTED,
+
+	.SIMPLE_VLAN_REGISTERS = 0,
+
+	.VLAN_LOOKUP_REG = NOTSUPPORTED,
+	.VLAN_LOOKUP_REG_5 = NOTSUPPORTED,
+	.TAG_VLAN_MASK_REG = NOTSUPPORTED,
+
+	.RESET_VAL = 0x175D,
+	.RESET_REG = {20,2},
+	.MODE_REG = NOTSUPPORTED,
+
+	.ROUTER_CONTROL_REG = NOTSUPPORTED,
+	.ROUTER_EN_BIT = -1,
+	.NUMLAN_GROUPS_BIT = -1,
+
+	.VLAN_CONTROL_REG = NOTSUPPORTED,
+	.TAG_VLAN_BIT = -1,
+
+	.NUM_PORTS = 6,
+	.CPU_PORT = 5,
+
+	.MII_REGISTER_EN = NOTSUPPORTED,
+
+	.update_state = ip175d_update_state,
+	.set_vlan_mode = ip175d_set_vlan_mode,
+	.reset = ip175d_reset,
+};

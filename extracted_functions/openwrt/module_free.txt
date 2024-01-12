@@ -1,0 +1,6 @@
+static void module_free(void *ptr)
+{
+	struct bpf_object *obj = ptr;
+
+	bpf_object__close(obj);
+}

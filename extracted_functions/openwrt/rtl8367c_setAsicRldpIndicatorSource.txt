@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicRldpIndicatorSource(rtk_uint32 src)
+{
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_RLDP_CTRL0, RTL8367C_RLDP_INDICATOR_SOURCE_OFFSET, src);
+}

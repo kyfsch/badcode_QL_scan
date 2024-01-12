@@ -1,0 +1,4 @@
+static inline void ecc_write32(struct mt7621_nfc *nfc, u32 reg, u32 val)
+{
+	return writel(val, nfc->ecc_regs + reg);
+}

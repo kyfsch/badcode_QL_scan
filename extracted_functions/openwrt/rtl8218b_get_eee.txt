@@ -1,0 +1,27 @@
+static int rtl8218b_get_eee(struct phy_device *phydev,
+			    struct ethtool_eee *e)
+{
+	u32 val;
+	int addr = phydev->mdio.addr;
+
+	pr_debug("In %s, port %d, was enabled: %d\n", __func__, addr, e->eee_enabled);
+
+	/* Set GPHY page to copper */
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
+
+	val = phy_read_paged(phydev, 7, MDIO_AN_EEE_ADV);
+	if (e->eee_enabled) {
+		/* Verify vs MAC-based EEE */
+		e->eee_enabled = !!(val & BIT(7));
+		if (!e->eee_enabled) {
+			val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
+			e->eee_enabled = !!(val & BIT(4));
+		}
+	}
+	pr_debug("%s: enabled: %d\n", __func__, e->eee_enabled);
+
+	/* GPHY page to auto */
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+
+	return 0;
+}

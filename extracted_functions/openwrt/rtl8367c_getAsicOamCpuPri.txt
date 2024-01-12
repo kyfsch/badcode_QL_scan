@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicOamCpuPri(rtk_uint32 *pPriority)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_QOS_TRAP_PRIORITY0, RTL8367C_OAM_PRIOIRTY_MASK, pPriority);
+}

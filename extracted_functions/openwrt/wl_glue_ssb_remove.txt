@@ -1,0 +1,9 @@
+static void wl_glue_ssb_remove(struct ssb_device *dev)
+{
+	void *wldev = ssb_get_drvdata(dev);
+
+	if (remove_cb)
+		remove_cb(wldev);
+
+	ssb_set_drvdata(dev, NULL);
+}

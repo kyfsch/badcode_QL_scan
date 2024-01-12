@@ -1,0 +1,20 @@
+static INLINE struct sk_buff *get_skb_rx_pointer(unsigned int);
+static INLINE int get_tx_desc(unsigned int, unsigned int *);
+
+/*
+ *  Mailbox handler and signal function
+ */
+static INLINE int mailbox_rx_irq_handler(unsigned int);
+static irqreturn_t mailbox_irq_handler(int, void *);
+static INLINE void mailbox_signal(unsigned int, int);
+#ifdef CONFIG_IFX_PTM_RX_TASKLET
+  static void do_ptm_tasklet(unsigned long);
+#endif
+
+/*
+ *  Debug Functions
+ */
+#if defined(DEBUG_DUMP_SKB) && DEBUG_DUMP_SKB
+  static void dump_skb(struct sk_buff *, u32, char *, int, int, int);
+#else
+  #define dump_skb(skb, len, title, port, ch, is_tx)    do {} while (0)

@@ -1,0 +1,5 @@
+void menu_add_visibility(struct expr *expr)
+{
+	current_entry->visibility = expr_alloc_and(current_entry->visibility,
+	    expr);
+}

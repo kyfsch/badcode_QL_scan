@@ -1,0 +1,18 @@
+void rtl9300_do_rx_calibration_5_2(u32 sds_num)
+{
+	u32 tap1_list[4] = {0};
+	u32 tap2_list[4] = {0};
+	u32 tap3_list[4] = {0};
+	u32 tap4_list[4] = {0};
+
+	pr_info("start_1.5.2");
+
+	rtl9300_sds_rxcal_tap_manual(sds_num, 1, false, tap1_list);
+	rtl9300_sds_rxcal_tap_manual(sds_num, 2, false, tap2_list);
+	rtl9300_sds_rxcal_tap_manual(sds_num, 3, false, tap3_list);
+	rtl9300_sds_rxcal_tap_manual(sds_num, 4, false, tap4_list);
+
+	mdelay(30);
+
+	pr_info("end_1.5.2");
+}

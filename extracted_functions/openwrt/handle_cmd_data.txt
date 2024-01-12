@@ -1,0 +1,14 @@
+handle_cmd_data(void)
+{
+	struct ead_msg_cmd_data *cmd = EAD_ENC_DATA(msg, cmd_data);
+	int datalen = ead_decrypt_message(msg) - sizeof(struct ead_msg_cmd_data);
+
+	if (datalen < 0)
+		return false;
+
+	if (datalen > 0) {
+		write(1, cmd->data, datalen);
+	}
+
+	return !!cmd->done;
+}

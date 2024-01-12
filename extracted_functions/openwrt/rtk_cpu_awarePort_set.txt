@@ -1,0 +1,23 @@
+rtk_api_ret_t rtk_cpu_awarePort_set(rtk_portmask_t *pPortmask)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 phyMbrPmask;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Valid port mask */
+    if(NULL == pPortmask)
+        return RT_ERR_NULL_POINTER;
+
+    /* Check port mask valid */
+    RTK_CHK_PORTMASK_VALID(pPortmask);
+
+    if(rtk_switch_portmask_L2P_get(pPortmask, &phyMbrPmask) != RT_ERR_OK)
+        return RT_ERR_FAILED;
+
+    if ((retVal = rtl8367c_setAsicCputagPortmask(phyMbrPmask)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

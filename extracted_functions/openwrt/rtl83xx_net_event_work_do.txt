@@ -1,0 +1,10 @@
+static void rtl83xx_net_event_work_do(struct work_struct *work)
+{
+	struct net_event_work *net_work =
+		container_of(work, struct net_event_work, work);
+	struct rtl838x_switch_priv *priv = net_work->priv;
+
+	rtl83xx_l3_nexthop_update(priv, net_work->gw_addr, net_work->mac);
+
+	kfree(net_work);
+}

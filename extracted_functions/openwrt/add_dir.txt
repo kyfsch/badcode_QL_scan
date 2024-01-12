@@ -1,0 +1,30 @@
+static int add_dir(const char *name, int parent)
+{
+	struct jffs2_raw_inode ri;
+	int inode;
+
+	inode = add_dirent(name, IFTODT(S_IFDIR), parent);
+
+	if (rbytes() < sizeof(ri))
+		pad(erasesize);
+	prep_eraseblock();
+
+	memset(&ri, 0, sizeof(ri));
+	ri.magic = JFFS2_MAGIC_BITMASK;
+	ri.nodetype = JFFS2_NODETYPE_INODE;
+	ri.totlen = sizeof(ri);
+	ri.hdr_crc = crc32(0, &ri, sizeof(struct jffs2_unknown_node) - 4);
+
+	ri.ino = inode;
+	ri.mode = S_IFDIR | 0755;
+	ri.uid = ri.gid = 0;
+	ri.atime = ri.ctime = ri.mtime = 0;
+	ri.isize = ri.csize = ri.dsize = 0;
+	ri.version = 1;
+	ri.node_crc = crc32(0, &ri, sizeof(ri) - 8);
+	ri.data_crc = 0;
+
+	add_data((char *) &ri, sizeof(ri));
+	pad(4);
+	return inode;
+}

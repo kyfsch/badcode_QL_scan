@@ -1,0 +1,21 @@
+handle_send_a(struct ead_packet *pkt, int len, int *nstate)
+{
+	struct ead_msg *msg = &pkt->msg;
+	struct ead_msg_number *number = EAD_DATA(msg, number);
+	len = ntohl(msg->len) - sizeof(struct ead_msg_number);
+
+	if (len > MAXPARAMLEN + 1)
+		return false;
+
+	A.len = len;
+	A.data = abuf;
+	memcpy(A.data, number->data, len);
+
+	msg = &pktbuf->msg;
+	number = EAD_DATA(msg, number);
+	msg->len = htonl(sizeof(struct ead_msg_number) + B->len);
+	memcpy(number->data, B->data, B->len);
+
+	*nstate = EAD_TYPE_SEND_AUTH;
+	return true;
+}

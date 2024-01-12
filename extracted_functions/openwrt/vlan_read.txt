@@ -1,0 +1,5 @@
+static int vlan_read(struct seq_file *seq, void *v)
+{
+	rtk_hal_dump_vlan();
+	return 0;
+}

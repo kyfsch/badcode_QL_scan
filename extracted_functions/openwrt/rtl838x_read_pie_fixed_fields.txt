@@ -1,0 +1,52 @@
+static void rtl838x_read_pie_fixed_fields(u32 r[], struct pie_rule *pr)
+{
+	pr->spmmask_fix = (r[6] >> 22) & 0x3;
+	pr->spn = (r[6] >> 16) & 0x3f;
+	pr->mgnt_vlan = (r[6] >> 15) & 1;
+	pr->dmac_hit_sw = (r[6] >> 14) & 1;
+	pr->not_first_frag = (r[6] >> 13) & 1;
+	pr->frame_type_l4 = (r[6] >> 10) & 7;
+	pr->frame_type = (r[6] >> 8) & 3;
+	pr->otag_fmt = (r[6] >> 7) & 1;
+	pr->itag_fmt = (r[6] >> 6) & 1;
+	pr->otag_exist = (r[6] >> 5) & 1;
+	pr->itag_exist = (r[6] >> 4) & 1;
+	pr->frame_type_l2 = (r[6] >> 2) & 3;
+	pr->tid = r[6] & 3;
+
+	pr->spmmask_fix_m = (r[13] >> 22) & 0x3;
+	pr->spn_m = (r[13] >> 16) & 0x3f;
+	pr->mgnt_vlan_m = (r[13] >> 15) & 1;
+	pr->dmac_hit_sw_m = (r[13] >> 14) & 1;
+	pr->not_first_frag_m = (r[13] >> 13) & 1;
+	pr->frame_type_l4_m = (r[13] >> 10) & 7;
+	pr->frame_type_m = (r[13] >> 8) & 3;
+	pr->otag_fmt_m = (r[13] >> 7) & 1;
+	pr->itag_fmt_m = (r[13] >> 6) & 1;
+	pr->otag_exist_m = (r[13] >> 5) & 1;
+	pr->itag_exist_m = (r[13] >> 4) & 1;
+	pr->frame_type_l2_m = (r[13] >> 2) & 3;
+	pr->tid_m = r[13] & 3;
+
+	pr->valid = r[14] & BIT(31);
+	pr->cond_not = r[14] & BIT(30);
+	pr->cond_and1 = r[14] & BIT(29);
+	pr->cond_and2 = r[14] & BIT(28);
+	pr->ivalid = r[14] & BIT(27);
+
+	pr->drop = (r[17] >> 14) & 3;
+	pr->fwd_sel = r[17] & BIT(13);
+	pr->ovid_sel = r[17] & BIT(12);
+	pr->ivid_sel = r[17] & BIT(11);
+	pr->flt_sel = r[17] & BIT(10);
+	pr->log_sel = r[17] & BIT(9);
+	pr->rmk_sel = r[17] & BIT(8);
+	pr->meter_sel = r[17] & BIT(7);
+	pr->tagst_sel = r[17] & BIT(6);
+	pr->mir_sel = r[17] & BIT(5);
+	pr->nopri_sel = r[17] & BIT(4);
+	pr->cpupri_sel = r[17] & BIT(3);
+	pr->otpid_sel = r[17] & BIT(2);
+	pr->itpid_sel = r[17] & BIT(1);
+	pr->shaper_sel = r[17] & BIT(0);
+}

@@ -1,0 +1,6 @@
+static loff_t ubootenv_llseek(struct file *file, loff_t off, int whence)
+{
+	struct ubootenv_drvdata *data = to_ubootenv_drvdata(file);
+
+	return fixed_size_llseek(file, off, whence, data->rmem->size);
+}

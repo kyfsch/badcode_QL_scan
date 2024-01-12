@@ -1,0 +1,13 @@
+static int rtl8366_smi_enable_all_ports(struct rtl8366_smi *smi, int enable)
+{
+	int port;
+	int err;
+
+	for (port = 0; port < smi->num_ports; port++) {
+		err = smi->ops->enable_port(smi, port, enable);
+		if (err)
+			return err;
+	}
+
+	return 0;
+}

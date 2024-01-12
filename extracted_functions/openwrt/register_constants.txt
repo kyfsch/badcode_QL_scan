@@ -1,0 +1,11 @@
+register_constants(uc_vm_t *vm, uc_value_t *scope)
+{
+#define ADD_CONST(x) ucv_object_add(scope, #x, ucv_int64_new(x))
+	ADD_CONST(BPF_PROG_TYPE_SCHED_CLS);
+	ADD_CONST(BPF_PROG_TYPE_SCHED_ACT);
+
+	ADD_CONST(BPF_ANY);
+	ADD_CONST(BPF_NOEXIST);
+	ADD_CONST(BPF_EXIST);
+	ADD_CONST(BPF_F_LOCK);
+}

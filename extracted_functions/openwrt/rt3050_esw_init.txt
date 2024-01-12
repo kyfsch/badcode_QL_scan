@@ -1,0 +1,63 @@
+int rt3050_esw_init(struct fe_priv *priv)
+{
+	struct device_node *np = priv->switch_np;
+	struct platform_device *pdev = of_find_device_by_node(np);
+	struct switch_dev *swdev;
+	struct rt305x_esw *esw;
+	const __be32 *rgmii;
+	int ret;
+
+	if (!pdev)
+		return -ENODEV;
+
+	if (!of_device_is_compatible(np, ralink_esw_match->compatible))
+		return -EINVAL;
+
+	esw = platform_get_drvdata(pdev);
+	if (!esw)
+		return -EPROBE_DEFER;
+
+	priv->soc->swpriv = esw;
+	esw->priv = priv;
+
+	esw_hw_init(esw);
+
+	rgmii = of_get_property(np, "ralink,rgmii", NULL);
+	if (rgmii && be32_to_cpu(*rgmii) == 1) {
+		/*
+		 * External switch connected to RGMII interface.
+		 * Unregister the switch device after initialization.
+		 */
+		dev_err(&pdev->dev, "RGMII mode, not exporting switch device.\n");
+		unregister_switch(&esw->swdev);
+		platform_set_drvdata(pdev, NULL);
+		return -ENODEV;
+	}
+
+	swdev = &esw->swdev;
+	swdev->of_node = pdev->dev.of_node;
+	swdev->name = "rt305x-esw";
+	swdev->alias = "rt305x";
+	swdev->cpu_port = RT305X_ESW_PORT6;
+	swdev->ports = RT305X_ESW_NUM_PORTS;
+	swdev->vlans = RT305X_ESW_NUM_VIDS;
+	swdev->ops = &esw_ops;
+
+	ret = register_switch(swdev, NULL);
+	if (ret < 0) {
+		dev_err(&pdev->dev, "register_switch failed\n");
+		return ret;
+	}
+
+	ret = devm_request_irq(&pdev->dev, esw->irq, esw_interrupt, 0, "esw",
+			esw);
+	if (!ret) {
+		esw_w32(esw, RT305X_ESW_PORT_ST_CHG, RT305X_ESW_REG_ISR);
+		esw_w32(esw, ~RT305X_ESW_PORT_ST_CHG, RT305X_ESW_REG_IMR);
+	}
+
+	dev_info(&pdev->dev, "mediatek esw at 0x%08lx, irq %d initialized\n",
+		 (long unsigned int)esw->base, esw->irq);
+
+	return 0;
+}

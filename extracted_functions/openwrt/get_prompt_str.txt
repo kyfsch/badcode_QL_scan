@@ -1,0 +1,69 @@
+static void get_prompt_str(struct gstr *r, struct property *prop,
+			   struct list_head *head)
+{
+	int i, j;
+	struct menu *submenu[8], *menu, *location = NULL;
+	struct jump_key *jump = NULL;
+
+	str_printf(r, "  Prompt: %s\n", prop->text);
+
+	get_dep_str(r, prop->menu->dep, "  Depends on: ");
+	/*
+	 * Most prompts in Linux have visibility that exactly matches their
+	 * dependencies. For these, we print only the dependencies to improve
+	 * readability. However, prompts with inline "if" expressions and
+	 * prompts with a parent that has a "visible if" expression have
+	 * differing dependencies and visibility. In these rare cases, we
+	 * print both.
+	 */
+	if (!expr_eq(prop->menu->dep, prop->visible.expr))
+		get_dep_str(r, prop->visible.expr, "  Visible if: ");
+
+	menu = prop->menu->parent;
+	for (i = 0; menu != &rootmenu && i < 8; menu = menu->parent) {
+		bool accessible = menu_is_visible(menu);
+
+		submenu[i++] = menu;
+		if (location == NULL && accessible)
+			location = menu;
+	}
+	if (head && location) {
+		jump = xmalloc(sizeof(struct jump_key));
+
+		if (menu_is_visible(prop->menu)) {
+			/*
+			 * There is not enough room to put the hint at the
+			 * beginning of the "Prompt" line. Put the hint on the
+			 * last "Location" line even when it would belong on
+			 * the former.
+			 */
+			jump->target = prop->menu;
+		} else
+			jump->target = location;
+
+		if (list_empty(head))
+			jump->index = 0;
+		else
+			jump->index = list_entry(head->prev, struct jump_key,
+						 entries)->index + 1;
+
+		list_add_tail(&jump->entries, head);
+	}
+
+	if (i > 0) {
+		str_printf(r, "  Location:\n");
+		for (j = 4; --i >= 0; j += 2) {
+			menu = submenu[i];
+			if (jump && menu == location)
+				jump->offset = strlen(r->s);
+			str_printf(r, "%*c-> %s", j, ' ',
+				   menu_get_prompt(menu));
+			if (menu->sym) {
+				str_printf(r, " (%s [=%s])", menu->sym->name ?
+					menu->sym->name : "<choice>",
+					sym_get_string_value(menu->sym));
+			}
+			str_append(r, "\n");
+		}
+	}
+}

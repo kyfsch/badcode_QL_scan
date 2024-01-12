@@ -1,0 +1,7 @@
+void rtl9300_do_rx_calibration_2_2(int sds_num)
+{
+	/* Force Rx-Run = 0 */
+	rtl9300_sds_field_w(sds_num, 0x2e, 0x15, 8, 8, 0x0);
+
+	rtl930x_sds_rx_rst(sds_num, PHY_INTERFACE_MODE_10GBASER);
+}

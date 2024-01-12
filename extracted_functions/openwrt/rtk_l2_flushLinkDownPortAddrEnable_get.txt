@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_l2_flushLinkDownPortAddrEnable_get(rtk_port_t port, rtk_enable_t *pEnable)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (port != RTK_WHOLE_SYSTEM)
+        return RT_ERR_PORT_ID;
+
+    if(NULL == pEnable)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicLutLinkDownForceAging(pEnable)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

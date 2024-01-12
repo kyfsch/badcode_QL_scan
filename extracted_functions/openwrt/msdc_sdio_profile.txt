@@ -1,0 +1,56 @@
+void msdc_sdio_profile(struct sdio_profile *result)
+{
+	struct cmd_profile *cmd;
+	u32 i;
+
+	printk("sdio === performance dump ===\n");
+	printk("sdio === total execute tick<%d> time<%dms> Tx<%dB> Rx<%dB>\n",
+		result->total_tc, result->total_tc / TICKS_ONE_MS,
+		result->total_tx_bytes, result->total_rx_bytes);
+
+	/* CMD52 Dump */
+	cmd = &result->cmd52_rx;
+	printk("sdio === CMD52 Rx <%d>times tick<%d> Max<%d> Min<%d> Aver<%d>\n", cmd->count, cmd->tot_tc,
+	       cmd->max_tc, cmd->min_tc, cmd->tot_tc / cmd->count);
+	cmd = &result->cmd52_tx;
+	printk("sdio === CMD52 Tx <%d>times tick<%d> Max<%d> Min<%d> Aver<%d>\n", cmd->count, cmd->tot_tc,
+	       cmd->max_tc, cmd->min_tc, cmd->tot_tc / cmd->count);
+
+	/* CMD53 Rx bytes + block mode */
+	for (i = 0; i < 512; i++) {
+		cmd = &result->cmd53_rx_byte[i];
+		if (cmd->count) {
+			printk("sdio<%6d><%3dB>_Rx_<%9d><%9d><%6d><%6d>_<%9dB><%2dM>\n", cmd->count, i, cmd->tot_tc,
+			       cmd->max_tc, cmd->min_tc, cmd->tot_tc / cmd->count,
+			       cmd->tot_bytes, (cmd->tot_bytes / 10) * 13 / (cmd->tot_tc / 10));
+		}
+	}
+	for (i = 0; i < 100; i++) {
+		cmd = &result->cmd53_rx_blk[i];
+		if (cmd->count) {
+			printk("sdio<%6d><%3d>B_Rx_<%9d><%9d><%6d><%6d>_<%9dB><%2dM>\n", cmd->count, i, cmd->tot_tc,
+			       cmd->max_tc, cmd->min_tc, cmd->tot_tc / cmd->count,
+			       cmd->tot_bytes, (cmd->tot_bytes / 10) * 13 / (cmd->tot_tc / 10));
+		}
+	}
+
+	/* CMD53 Tx bytes + block mode */
+	for (i = 0; i < 512; i++) {
+		cmd = &result->cmd53_tx_byte[i];
+		if (cmd->count) {
+			printk("sdio<%6d><%3dB>_Tx_<%9d><%9d><%6d><%6d>_<%9dB><%2dM>\n", cmd->count, i, cmd->tot_tc,
+			       cmd->max_tc, cmd->min_tc, cmd->tot_tc / cmd->count,
+			       cmd->tot_bytes, (cmd->tot_bytes / 10) * 13 / (cmd->tot_tc / 10));
+		}
+	}
+	for (i = 0; i < 100; i++) {
+		cmd = &result->cmd53_tx_blk[i];
+		if (cmd->count) {
+			printk("sdio<%6d><%3d>B_Tx_<%9d><%9d><%6d><%6d>_<%9dB><%2dM>\n", cmd->count, i, cmd->tot_tc,
+			       cmd->max_tc, cmd->min_tc, cmd->tot_tc / cmd->count,
+			       cmd->tot_bytes, (cmd->tot_bytes / 10) * 13 / (cmd->tot_tc / 10));
+		}
+	}
+
+	printk("sdio === performance dump done ===\n");
+}

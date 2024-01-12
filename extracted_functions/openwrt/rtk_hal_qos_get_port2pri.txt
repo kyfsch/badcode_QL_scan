@@ -1,0 +1,11 @@
+void rtk_hal_qos_get_port2pri(struct ra_switch_ioctl_data *data)
+{
+	rtk_api_ret_t ret;
+	rtk_pri_t Int_pri;
+
+	ret = rtk_qos_portPri_get(data->port, &Int_pri);
+	if (ret != 0)
+		printk("rtk_qos_portPri_set failed\n");
+	else
+		printk("port%d priority = %d\n", data->port, Int_pri);
+}

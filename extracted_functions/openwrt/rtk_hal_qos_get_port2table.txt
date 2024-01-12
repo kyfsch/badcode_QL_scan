@@ -1,0 +1,11 @@
+void rtk_hal_qos_get_port2table(struct ra_switch_ioctl_data *data)
+{
+	rtk_api_ret_t ret;
+	rtk_qos_priDecTbl_t Index;
+	
+	ret = rtk_qos_portPriSelIndex_get(data->port, &Index);
+	if (ret != 0)
+		printk("rtk_qos_portPriSelIndex_set failed\n");
+	else
+		printk("port%d belongs to table%d\n", data->port, Index);
+}

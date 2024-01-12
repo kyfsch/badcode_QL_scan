@@ -1,0 +1,57 @@
+rtk_api_ret_t rtk_l2_ipMcastGroupEntry_add(ipaddr_t ip_addr, rtk_uint32 vid, rtk_portmask_t *pPortmask)
+{
+    rtk_uint32      empty_idx = 0xFFFF;
+    rtk_int32       index;
+    ipaddr_t        group_addr;
+    rtk_uint32      group_vid;
+    rtk_uint32      pmask;
+    rtk_uint32      valid;
+    rtk_uint32      physicalPortmask;
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (vid > RTL8367C_VIDMAX)
+        return RT_ERR_L2_VID;
+
+    if(NULL == pPortmask)
+        return RT_ERR_NULL_POINTER;
+
+    if((ip_addr & 0xF0000000) != 0xE0000000)
+        return RT_ERR_INPUT;
+
+    /* Get Physical port mask */
+    if ((retVal = rtk_switch_portmask_L2P_get(pPortmask, &physicalPortmask))!=RT_ERR_OK)
+        return retVal;
+
+    for(index = 0; index <= RTL8367C_LUT_IPMCGRP_TABLE_MAX; index++)
+    {
+        if ((retVal = rtl8367c_getAsicLutIPMCGroup((rtk_uint32)index, &group_addr, &group_vid, &pmask, &valid))!=RT_ERR_OK)
+            return retVal;
+
+        if( (valid == ENABLED) && (group_addr == ip_addr) && (group_vid == vid) )
+        {
+            if(pmask != physicalPortmask)
+            {
+                pmask = physicalPortmask;
+                if ((retVal = rtl8367c_setAsicLutIPMCGroup(index, ip_addr, vid, pmask, valid))!=RT_ERR_OK)
+                    return retVal;
+            }
+
+            return RT_ERR_OK;
+        }
+
+        if( (valid == DISABLED) && (empty_idx == 0xFFFF) ) /* Unused */
+            empty_idx = (rtk_uint32)index;
+    }
+
+    if(empty_idx == 0xFFFF)
+        return RT_ERR_TBL_FULL;
+
+    pmask = physicalPortmask;
+    if ((retVal = rtl8367c_setAsicLutIPMCGroup(empty_idx, ip_addr, vid, pmask, ENABLED))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

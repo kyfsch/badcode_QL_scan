@@ -1,0 +1,36 @@
+static int dc_ep_ppe_mbox_int_stress_test(struct dc_ep_dev *dev)
+{
+	int i;
+	int j;
+	int ret;
+
+	/* Clear it first */
+	ep_wr32(PPE_MBOX_TEST_BIT, MBOX_IGU0_ISRC);
+
+	ret = request_irq(dev->irq, dc_ep_ppe_intr, 0, "PPE_MSI", dev);
+	if (ret) {
+		pr_err("%s request irq %d failed\n", __func__, dev->irq);
+		return -1;
+	}
+	pr_info("PPE test\n");
+	ep_wr32(PPE_MBOX_TEST_BIT, MBOX_IGU0_IER);
+	ppe_irq_num = 0;
+	/* Purposely trigger interrupt */
+	for (i = 0; i < PPE_MBOX_IRQ_TEST_NUM; i++) {
+		j = 0;
+		while ((ep_rd32(MBOX_IGU0_ISR) & PPE_MBOX_TEST_BIT)) {
+			j++;
+			if (j > PPE_INT_TIMEOUT)
+				break;
+		}
+		ep_wr32(PPE_MBOX_TEST_BIT, MBOX_IGU0_ISRS);
+		/* Write flush */
+		ep_rd32(MBOX_IGU0_ISR);
+	}
+	mdelay(10);
+	pr_info("irq triggered %d expected %d\n", ppe_irq_num,
+		PPE_MBOX_IRQ_TEST_NUM);
+	dc_ep_ppe_mbox_reg_dump(dev);
+	ppe_irq_num = 0;
+	return 0;
+}

@@ -1,0 +1,50 @@
+static int nct5104d_gpio_probe(struct platform_device *pdev)
+{
+	int err;
+	int i;
+	struct nct5104d_sio *sio = pdev->dev.platform_data;
+	struct nct5104d_gpio_data *data;
+
+	data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
+	if (!data)
+		return -ENOMEM;
+
+	switch (sio->type) {
+	case nct5104d:
+		data->nr_bank = ARRAY_SIZE(nct5104d_gpio_bank);
+		data->bank = nct5104d_gpio_bank;
+		break;
+	default:
+		return -ENODEV;
+	}
+	data->sio = sio;
+
+	platform_set_drvdata(pdev, data);
+
+	/* For each GPIO bank, register a GPIO chip. */
+	for (i = 0; i < data->nr_bank; i++) {
+		struct nct5104d_gpio_bank *bank = &data->bank[i];
+
+		bank->chip.parent = &pdev->dev;
+		bank->data = data;
+
+		err = gpiochip_add(&bank->chip);
+		if (err) {
+			dev_err(&pdev->dev,
+				"Failed to register gpiochip %d: %d\n",
+				i, err);
+			goto err_gpiochip;
+		}
+	}
+
+	return 0;
+
+err_gpiochip:
+	for (i = i - 1; i >= 0; i--) {
+		struct nct5104d_gpio_bank *bank = &data->bank[i];
+
+		gpiochip_remove (&bank->chip);
+	}
+
+	return err;
+}

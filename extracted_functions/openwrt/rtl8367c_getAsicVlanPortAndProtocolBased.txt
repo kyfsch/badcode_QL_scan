@@ -1,0 +1,63 @@
+ret_t rtl8367c_getAsicVlanPortAndProtocolBased(rtk_uint32 port, rtk_uint32 index, rtl8367c_protocolvlancfg *pPpbCfg)
+{
+    rtk_uint32  reg_addr, bit_mask, bit_value;
+    ret_t   retVal;
+
+    /* Error Checking */
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(index > RTL8367C_PROTOVLAN_GIDX_MAX)
+        return RT_ERR_VLAN_PROTO_AND_PORT;
+
+    if(pPpbCfg == NULL)
+        return RT_ERR_INPUT;
+
+    /* Valid bit */
+    reg_addr  = RTL8367C_VLAN_PPB_VALID_REG(index);
+    bit_mask  = 0x0001 << port;
+    retVal    = rtl8367c_getAsicRegBits(reg_addr, bit_mask, &bit_value);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    pPpbCfg->valid = bit_value;
+
+    /* CVLAN index */
+    if(port < 8)
+    {
+        reg_addr = RTL8367C_VLAN_PPB_CTRL_REG(index, port);
+        bit_mask = RTL8367C_VLAN_PPB_CTRL_MASK(port);
+    }
+    else if(port == 8)
+    {
+        reg_addr = RTL8367C_REG_VLAN_PPB0_CTRL4;
+        bit_mask = RTL8367C_VLAN_PPB0_CTRL4_PORT8_INDEX_MASK;
+    }
+    else if(port == 9)
+    {
+        reg_addr = RTL8367C_REG_VLAN_PPB0_CTRL4;
+        bit_mask = RTL8367C_VLAN_PPB0_CTRL4_PORT9_INDEX_MASK;
+    }
+    else if(port == 10)
+    {
+        reg_addr = RTL8367C_REG_VLAN_PPB0_CTRL4;
+        bit_mask = RTL8367C_VLAN_PPB0_CTRL4_PORT10_INDEX_MASK;
+    }
+
+    retVal = rtl8367c_getAsicRegBits(reg_addr, bit_mask, &bit_value);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    pPpbCfg->vlan_idx = bit_value;
+
+
+    /* priority */
+    reg_addr = RTL8367C_VLAN_PPB_PRIORITY_ITEM_REG(port,index);
+    bit_mask = RTL8367C_VLAN_PPB_PRIORITY_ITEM_MASK(port);
+    retVal = rtl8367c_getAsicRegBits(reg_addr, bit_mask, &bit_value);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    pPpbCfg->priority = bit_value;
+    return RT_ERR_OK;
+}

@@ -1,0 +1,15 @@
+void menu_set_type(int type)
+{
+	struct symbol *sym = current_entry->sym;
+
+	if (sym->type == type)
+		return;
+	if (sym->type == S_UNKNOWN) {
+		sym->type = type;
+		return;
+	}
+	menu_warn(current_entry,
+		"ignoring type redefinition of '%s' from '%s' to '%s'",
+		sym->name ? sym->name : "<choice>",
+		sym_type_name(sym->type), sym_type_name(type));
+}

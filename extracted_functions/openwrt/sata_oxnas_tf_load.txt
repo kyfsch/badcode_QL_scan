@@ -1,0 +1,19 @@
+static void sata_oxnas_tf_load(struct ata_port *ap,
+				const struct ata_taskfile *tf);
+static void sata_oxnas_irq_on(struct ata_port *ap);
+static void sata_oxnas_post_reset_init(struct ata_port *ap);
+
+static int sata_oxnas_acquire_hw(struct ata_port *ap, int may_sleep,
+				 int timeout_jiffies);
+static void sata_oxnas_release_hw(struct ata_port *ap);
+
+static const void *HW_LOCKER_UID = (void *)0xdeadbeef;
+
+/***************************************************************************
+* ASIC access
+***************************************************************************/
+static void wait_cr_ack(void __iomem *phy_base)
+{
+	while ((ioread32(phy_base + PHY_STAT) >> 16) & 0x1f)
+		; /* wait for an ack bit to be set */
+}

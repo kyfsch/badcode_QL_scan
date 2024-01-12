@@ -1,0 +1,23 @@
+send_attr(struct nl_msg *msg, void *arg)
+{
+	struct switch_val *val = arg;
+	struct switch_attr *attr = val->attr;
+
+	NLA_PUT_U32(msg, SWITCH_ATTR_ID, attr->dev->id);
+	NLA_PUT_U32(msg, SWITCH_ATTR_OP_ID, attr->id);
+	switch(attr->atype) {
+	case SWLIB_ATTR_GROUP_PORT:
+		NLA_PUT_U32(msg, SWITCH_ATTR_OP_PORT, val->port_vlan);
+		break;
+	case SWLIB_ATTR_GROUP_VLAN:
+		NLA_PUT_U32(msg, SWITCH_ATTR_OP_VLAN, val->port_vlan);
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+
+nla_put_failure:
+	return -1;
+}

@@ -1,0 +1,22 @@
+static void aca_xbar_ia_reject_set(struct dc_ep_priv *priv, int ia_id)
+{
+	u32 val;
+	int timeout = 1000;
+	struct device *dev = priv->dev;
+
+	/* Set reject bit */
+	wr32(XBAR_CTRL_REJECT, ACA_AGENT_CTRL(ia_id));
+
+	/* Poll burst, readex, resp_waiting, req_active */
+	val = XBAR_STAT_REQ_ACTIVE | XBAR_STAT_RESP_WAITING
+		| XBAR_STAT_BURST | XBAR_STAT_READEX;
+	while (--timeout && !!(rd32(ACA_AGENT_STATUS(ia_id)) & val))
+		udelay(1);
+
+	if (timeout <= 0) {
+		dev_dbg(dev,
+			"ACA XBAR IA: %d reset timeout, pending on 0x%x\n",
+			ia_id, rd32(ACA_AGENT_STATUS(ia_id)));
+		return;
+	}
+}

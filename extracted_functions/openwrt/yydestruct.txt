@@ -1,0 +1,43 @@
+yydestruct (const char *yymsg,
+            yysymbol_kind_t yykind, YYSTYPE *yyvaluep)
+{
+  YY_USE (yyvaluep);
+  if (!yymsg)
+    yymsg = "Deleting";
+  YY_SYMBOL_PRINT (yymsg, yykind, yyvaluep, yylocationp);
+
+  YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
+  switch (yykind)
+    {
+    case YYSYMBOL_choice_entry: /* choice_entry  */
+            {
+	fprintf(stderr, "%s:%d: missing end statement for this entry\n",
+		((*yyvaluep).menu)->file->name, ((*yyvaluep).menu)->lineno);
+	if (current_menu == ((*yyvaluep).menu))
+		menu_end_menu();
+}
+        break;
+
+    case YYSYMBOL_if_entry: /* if_entry  */
+            {
+	fprintf(stderr, "%s:%d: missing end statement for this entry\n",
+		((*yyvaluep).menu)->file->name, ((*yyvaluep).menu)->lineno);
+	if (current_menu == ((*yyvaluep).menu))
+		menu_end_menu();
+}
+        break;
+
+    case YYSYMBOL_menu_entry: /* menu_entry  */
+            {
+	fprintf(stderr, "%s:%d: missing end statement for this entry\n",
+		((*yyvaluep).menu)->file->name, ((*yyvaluep).menu)->lineno);
+	if (current_menu == ((*yyvaluep).menu))
+		menu_end_menu();
+}
+        break;
+
+      default:
+        break;
+    }
+  YY_IGNORE_MAYBE_UNINITIALIZED_END
+}

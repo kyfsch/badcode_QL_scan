@@ -1,0 +1,21 @@
+int RangeDecoderBitTreeDecode(CProb *probs, int numLevels, CRangeDecoder *rd)
+{
+  int mi = 1;
+  int i;
+  #ifdef _LZMA_LOC_OPT
+  RC_INIT_VAR
+  #endif
+  for(i = numLevels; i > 0; i--)
+  {
+    #ifdef _LZMA_LOC_OPT
+    CProb *prob = probs + mi;
+    RC_GET_BIT(prob, mi)
+    #else
+    mi = (mi + mi) + RangeDecoderBitDecode(probs + mi, rd);
+    #endif
+  }
+  #ifdef _LZMA_LOC_OPT
+  RC_FLUSH_VAR
+  #endif
+  return mi - (1 << numLevels);
+}

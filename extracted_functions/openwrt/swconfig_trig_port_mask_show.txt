@@ -1,0 +1,15 @@
+swconfig_trig_port_mask_show(struct device *dev, struct device_attribute *attr,
+			     char *buf)
+{
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+	struct swconfig_trig_data *trig_data = led_cdev->trigger_data;
+	u32 port_mask;
+
+	read_lock(&trig_data->lock);
+	port_mask = trig_data->port_mask;
+	read_unlock(&trig_data->lock);
+
+	sprintf(buf, "%#x\n", port_mask);
+
+	return strlen(buf) + 1;
+}

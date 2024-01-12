@@ -1,0 +1,10 @@
+static int md5_hmac_init_tfm(struct crypto_tfm *tfm)
+{
+    struct md5_hmac_ctx *mctx = crypto_tfm_ctx(tfm);
+    mctx->temp = kzalloc(4 * MD5_HMAC_DBN_TEMP_SIZE, GFP_KERNEL);
+    if (IS_ERR(mctx->temp)) return PTR_ERR(mctx->temp);
+    mctx->desc = kzalloc(sizeof(struct shash_desc), GFP_KERNEL);
+    if (IS_ERR(mctx->desc)) return PTR_ERR(mctx->desc);
+
+    return 0;
+}

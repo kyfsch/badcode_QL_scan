@@ -1,0 +1,4 @@
+static int qca807x_gpio_get_reg(unsigned int offset)
+{
+	return QCA807X_MMD7_LED_100N_2 + (offset % 2) * 2;
+}

@@ -1,0 +1,5 @@
+void Uart16550Put(uint8 byte)
+{
+    while ((UART16550_READ(OFS_LINE_STATUS) &0x20) == 0);
+    UART16550_WRITE(OFS_SEND_BUFFER, byte);
+}

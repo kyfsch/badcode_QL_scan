@@ -1,0 +1,6 @@
+void	yellow_LED_off(void)
+{
+	AT91PS_PIO	PIOB	= AT91C_BASE_PIOB;
+//	PIOB->PIO_SODR		= YELLOW_LED;
+	PIOB->PIO_SODR		= (1 << 1);
+}

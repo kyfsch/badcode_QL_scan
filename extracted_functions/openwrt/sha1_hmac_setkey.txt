@@ -1,0 +1,28 @@
+static int sha1_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int keylen)
+{
+    struct sha1_hmac_ctx *sctx = crypto_shash_ctx(tfm);
+    int err;
+
+    if (keylen > SHA1_HMAC_MAX_KEYLEN) {
+        char *hash_alg_name = "sha1";
+
+        sctx->desc->tfm = crypto_alloc_shash(hash_alg_name, 0, 0);
+        if (IS_ERR(sctx->desc->tfm)) return PTR_ERR(sctx->desc->tfm);
+
+        memset(sctx->key, 0, SHA1_HMAC_MAX_KEYLEN);
+        err = crypto_shash_digest(sctx->desc, key, keylen, sctx->key);
+        if (err) return err;
+
+        sctx->keylen = SHA1_DIGEST_SIZE;
+
+        crypto_free_shash(sctx->desc->tfm);
+    } else {
+        memcpy(sctx->key, key, keylen);
+        sctx->keylen = keylen;
+    }
+    memset(sctx->key + sctx->keylen, 0, SHA1_HMAC_MAX_KEYLEN - sctx->keylen);
+
+    //printk("Setting keys of len: %d\n", keylen);
+
+    return 0;
+}

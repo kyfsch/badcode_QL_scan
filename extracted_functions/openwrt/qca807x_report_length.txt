@@ -1,0 +1,24 @@
+static int qca807x_report_length(struct phy_device *phydev,
+				 int pair, int result)
+{
+	int length;
+	int ret;
+
+	ret = phy_read_mmd(phydev, MDIO_MMD_PCS, QCA807X_CDT_MMD3_MDI0_LENGTH + pair);
+	if (ret < 0)
+		return ret;
+
+	switch (result) {
+	case ETHTOOL_A_CABLE_RESULT_CODE_SAME_SHORT:
+		length = (FIELD_GET(QCA807X_CDT_SAME_SHORT_LENGTH_MASK, ret) * 800) / 10;
+		break;
+	case ETHTOOL_A_CABLE_RESULT_CODE_OPEN:
+	case ETHTOOL_A_CABLE_RESULT_CODE_CROSS_SHORT:
+		length = (FIELD_GET(QCA807X_CDT_CROSS_SHORT_LENGTH_MASK, ret) * 800) / 10;
+		break;
+	}
+
+	ethnl_cable_test_fault_length(phydev, pair, length);
+
+	return 0;
+}

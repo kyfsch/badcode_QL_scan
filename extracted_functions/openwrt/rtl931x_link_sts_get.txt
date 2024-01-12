@@ -1,0 +1,30 @@
+int rtl931x_link_sts_get(u32 sds)
+{
+	u32 sts, sts1, latch_sts, latch_sts1;
+	if (0){
+		u32 xsg_sdsid_0, xsg_sdsid_1;
+
+		xsg_sdsid_0 = sds < 2 ? sds : (sds - 1) * 2;
+		xsg_sdsid_1 = xsg_sdsid_0 + 1;
+
+		sts = rtl9310_sds_field_r(xsg_sdsid_0, 0x1, 29, 8, 0);
+		sts1 = rtl9310_sds_field_r(xsg_sdsid_1, 0x1, 29, 8, 0);
+		latch_sts = rtl9310_sds_field_r(xsg_sdsid_0, 0x1, 30, 8, 0);
+		latch_sts1 = rtl9310_sds_field_r(xsg_sdsid_1, 0x1, 30, 8, 0);
+	} else {
+		u32  asds, dsds;
+
+		asds = rtl931x_get_analog_sds(sds);
+		sts = rtl9310_sds_field_r(asds, 0x5, 0, 12, 12);
+		latch_sts = rtl9310_sds_field_r(asds, 0x4, 1, 2, 2);
+
+		dsds = sds < 2 ? sds : (sds - 1) * 2;
+		latch_sts1 = rtl9310_sds_field_r(dsds, 0x2, 1, 2, 2);
+		sts1 = rtl9310_sds_field_r(dsds, 0x2, 1, 2, 2);
+	}
+
+	pr_info("%s: serdes %d sts %d, sts1 %d, latch_sts %d, latch_sts1 %d\n", __func__,
+		sds, sts, sts1, latch_sts, latch_sts1);
+
+	return sts1;
+}

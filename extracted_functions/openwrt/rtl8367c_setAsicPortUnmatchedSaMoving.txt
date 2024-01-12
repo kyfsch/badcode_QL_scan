@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicPortUnmatchedSaMoving(rtk_uint32 port, rtk_uint32 enabled)
+{
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_L2_SA_MOVING_FORBID, port, (enabled == 1) ? 0 : 1);
+}

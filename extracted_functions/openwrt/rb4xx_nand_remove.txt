@@ -1,0 +1,9 @@
+static int rb4xx_nand_remove(struct platform_device *pdev)
+{
+	struct rb4xx_nand *nand = platform_get_drvdata(pdev);
+
+	mtd_device_unregister(nand_to_mtd(&nand->chip));
+	nand_cleanup(&nand->chip);
+
+	return 0;
+}

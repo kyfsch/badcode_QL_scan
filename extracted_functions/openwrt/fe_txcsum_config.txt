@@ -1,0 +1,11 @@
+static void fe_txcsum_config(bool enable)
+{
+	if (enable)
+		fe_w32(fe_r32(FE_CDMA_CSG_CFG) | (FE_ICS_GEN_EN |
+					FE_TCS_GEN_EN | FE_UCS_GEN_EN),
+				FE_CDMA_CSG_CFG);
+	else
+		fe_w32(fe_r32(FE_CDMA_CSG_CFG) & ~(FE_ICS_GEN_EN |
+					FE_TCS_GEN_EN | FE_UCS_GEN_EN),
+				FE_CDMA_CSG_CFG);
+}

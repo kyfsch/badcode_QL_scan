@@ -1,0 +1,13 @@
+rtk_api_ret_t rtk_switch_isPortMaskExt(rtk_portmask_t *pPmask)
+{
+    if(init_state != INIT_COMPLETED)
+        return RT_ERR_NOT_INIT;
+
+    if(NULL == pPmask)
+        return RT_ERR_NULL_POINTER;
+
+    if( (pPmask->bits[0] | halCtrl->valid_ext_portmask) != halCtrl->valid_ext_portmask )
+        return RT_ERR_FAILED;
+    else
+        return RT_ERR_OK;
+}

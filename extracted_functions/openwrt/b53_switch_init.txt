@@ -1,0 +1,98 @@
+static int b53_switch_init(struct b53_device *dev)
+{
+	struct switch_dev *sw_dev = &dev->sw_dev;
+	unsigned i;
+	int ret;
+
+	for (i = 0; i < ARRAY_SIZE(b53_switch_chips); i++) {
+		const struct b53_chip_data *chip = &b53_switch_chips[i];
+
+		if (chip->chip_id == dev->chip_id) {
+			sw_dev->name = chip->dev_name;
+			if (!sw_dev->alias)
+				sw_dev->alias = chip->alias;
+			if (!dev->enabled_ports)
+				dev->enabled_ports = chip->enabled_ports;
+			dev->duplex_reg = chip->duplex_reg;
+			dev->vta_regs[0] = chip->vta_regs[0];
+			dev->vta_regs[1] = chip->vta_regs[1];
+			dev->vta_regs[2] = chip->vta_regs[2];
+			dev->jumbo_pm_reg = chip->jumbo_pm_reg;
+			sw_dev->ops = chip->sw_ops;
+			sw_dev->cpu_port = chip->cpu_port;
+			sw_dev->vlans = chip->vlans;
+			break;
+		}
+	}
+
+	if (!sw_dev->name)
+		return -EINVAL;
+
+	/* check which BCM5325x version we have */
+	if (is5325(dev)) {
+		u8 vc4;
+
+		b53_read8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL4_25, &vc4);
+
+		/* check reserved bits */
+		switch (vc4 & 3) {
+		case 1:
+			/* BCM5325E */
+			break;
+		case 3:
+			/* BCM5325F - do not use port 4 */
+			dev->enabled_ports &= ~BIT(4);
+			break;
+		default:
+/* On the BCM47XX SoCs this is the supported internal switch.*/
+#ifndef CONFIG_BCM47XX
+			/* BCM5325M */
+			return -EINVAL;
+#else
+			break;
+#endif
+		}
+	} else if (dev->chip_id == BCM53115_DEVICE_ID) {
+		u64 strap_value;
+
+		b53_read48(dev, B53_STAT_PAGE, B53_STRAP_VALUE, &strap_value);
+		/* use second IMP port if GMII is enabled */
+		if (strap_value & SV_GMII_CTRL_115)
+			sw_dev->cpu_port = 5;
+	}
+
+	if (dev_of_node(dev->dev)) {
+		ret = b53_switch_init_of(dev);
+		if (ret)
+			return ret;
+	}
+
+	dev->enabled_ports |= BIT(sw_dev->cpu_port);
+	sw_dev->ports = fls(dev->enabled_ports);
+
+	dev->ports = devm_kzalloc(dev->dev,
+				  sizeof(struct b53_port) * sw_dev->ports,
+				  GFP_KERNEL);
+	if (!dev->ports)
+		return -ENOMEM;
+
+	dev->vlans = devm_kzalloc(dev->dev,
+				  sizeof(struct b53_vlan) * sw_dev->vlans,
+				  GFP_KERNEL);
+	if (!dev->vlans)
+		return -ENOMEM;
+
+	dev->buf = devm_kzalloc(dev->dev, B53_BUF_SIZE, GFP_KERNEL);
+	if (!dev->buf)
+		return -ENOMEM;
+
+	dev->reset_gpio = b53_switch_get_reset_gpio(dev);
+	if (dev->reset_gpio >= 0) {
+		ret = devm_gpio_request_one(dev->dev, dev->reset_gpio,
+					    GPIOF_OUT_INIT_HIGH, "robo_reset");
+		if (ret)
+			return ret;
+	}
+
+	return b53_switch_reset(dev);
+}

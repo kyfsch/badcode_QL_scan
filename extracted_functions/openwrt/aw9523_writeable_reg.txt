@@ -1,0 +1,4 @@
+static bool aw9523_writeable_reg(struct device *dev, unsigned int reg)
+{
+	return !aw9523_is_reg_hole(reg) && reg != AW9523_REG_CHIPID;
+}

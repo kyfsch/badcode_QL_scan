@@ -1,0 +1,60 @@
+static int ar934x_nfc_setup_hwecc(struct ar934x_nfc *nfc)
+{
+	struct nand_chip *nand = &nfc->nand_chip;
+	struct mtd_info *mtd = nand_to_mtd(nand);
+	u32 ecc_cap;
+	u32 ecc_thres;
+	struct mtd_oob_region oobregion;
+
+	switch (mtd->writesize) {
+	case 2048:
+		/*
+		 * Writing a subpage separately is not supported, because
+		 * the controller only does ECC on full-page accesses.
+		 */
+
+		nand->ecc.size = 512;
+		nand->ecc.bytes = 7;
+		nand->ecc.strength = 4;
+		mtd_set_ooblayout(mtd, &ar934x_nfc_ecclayout_ops);
+		break;
+
+	default:
+		dev_err(nfc->parent,
+			"hardware ECC is not available for %d byte pages\n",
+			mtd->writesize);
+		return -EINVAL;
+	}
+
+	BUG_ON(!mtd->ooblayout->ecc);
+
+	switch (nand->ecc.strength) {
+	case 4:
+		ecc_cap = AR934X_NFC_ECC_CTRL_ECC_CAP_4;
+		ecc_thres = 4;
+		break;
+
+	default:
+		dev_err(nfc->parent, "unsupported ECC strength %u\n",
+			nand->ecc.strength);
+		return -EINVAL;
+	}
+
+	nfc->ecc_thres = ecc_thres;
+	mtd->ooblayout->ecc(mtd, 0, &oobregion);
+	nfc->ecc_oob_pos = oobregion.offset;
+
+	nfc->ecc_ctrl_reg = ecc_cap << AR934X_NFC_ECC_CTRL_ECC_CAP_S;
+	nfc->ecc_ctrl_reg |= ecc_thres << AR934X_NFC_ECC_CTRL_ERR_THRES_S;
+
+	nfc->ecc_offset_reg = mtd->writesize + nfc->ecc_oob_pos;
+
+	nand->ecc.read_page = ar934x_nfc_read_page;
+	nand->ecc.read_page_raw = ar934x_nfc_read_page_raw;
+	nand->ecc.write_page = ar934x_nfc_write_page;
+	nand->ecc.write_page_raw = ar934x_nfc_write_page_raw;
+	nand->ecc.read_oob = ar934x_nfc_read_oob;
+	nand->ecc.write_oob = ar934x_nfc_write_oob;
+
+	return 0;
+}

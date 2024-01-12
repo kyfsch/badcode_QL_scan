@@ -1,0 +1,16 @@
+int rtl931x_sds_cmu_band_get(int sds, phy_interface_t mode)
+{
+	int page = rtl931x_sds_cmu_page_get(mode);
+	u32 asds, band;
+
+	sds -= (sds % 2);
+	asds = rtl931x_get_analog_sds(sds);
+	page += 1;
+	rtl931x_write_sds_phy(asds, 0x1f, 0x02, 73);
+
+	rtl9310_sds_field_w(asds, page, 0x5, 15, 15, 1);
+	band = rtl9310_sds_field_r(asds, 0x1f, 0x15, 8, 3);
+	pr_info("%s band is: %d\n", __func__, band);
+
+	return band;
+}

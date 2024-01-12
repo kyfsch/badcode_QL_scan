@@ -1,0 +1,9 @@
+static inline int b53_prepare_reg_access(struct spi_device *spi, u8 page)
+{
+	int ret = b53_spi_clear_status(spi);
+
+	if (ret)
+		return ret;
+
+	return b53_spi_set_page(spi, page);
+}

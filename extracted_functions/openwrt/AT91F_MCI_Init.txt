@@ -1,0 +1,46 @@
+int AT91F_MCI_Init(void)
+{
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//  MCI Init : common to MMC and SDCard
+///////////////////////////////////////////////////////////////////////////////////////////
+
+    // Set up PIO SDC_TYPE to switch on MMC/SDCard and not DataFlash Card
+	AT91F_PIO_CfgOutput(AT91C_BASE_PIOB,AT91C_PIO_PB7);
+	AT91F_PIO_SetOutput(AT91C_BASE_PIOB,AT91C_PIO_PB7);
+	
+	// Init MCI for MMC and SDCard interface
+	AT91F_MCI_CfgPIO();	
+	AT91F_MCI_CfgPMC();
+	AT91F_PDC_Open(AT91C_BASE_PDC_MCI);
+
+    // Disable all the interrupts
+    AT91C_BASE_MCI->MCI_IDR = 0xFFFFFFFF;
+
+	// Init MCI Device Structures
+	AT91F_CfgDevice();
+
+	// Configure MCI interrupt 
+	AT91F_AIC_ConfigureIt(AT91C_BASE_AIC,
+						 AT91C_ID_MCI,
+						 AT91C_AIC_PRIOR_HIGHEST,
+						 AT91C_AIC_SRCTYPE_INT_LEVEL_SENSITIVE,
+						 AT91F_ASM_MCI_Handler);
+
+	// Enable MCI interrupt
+	AT91F_AIC_EnableIt(AT91C_BASE_AIC,AT91C_ID_MCI);
+
+	// Enable Receiver
+	AT91F_US_EnableRx((AT91PS_USART) AT91C_BASE_DBGU);
+
+	AT91F_MCI_Configure(AT91C_BASE_MCI,
+						AT91C_MCI_DTOR_1MEGA_CYCLES,
+						AT91C_MCI_MR_PDCMODE,			// 15MHz for MCK = 60MHz (CLKDIV = 1)
+						AT91C_MCI_SDCARD_4BITS_SLOTA);
+	
+	if(AT91F_MCI_SDCard_Init(&MCI_Device) != AT91C_INIT_OK)
+		return FALSE;
+	else
+		return TRUE;
+
+}

@@ -1,0 +1,79 @@
+static int process_next_packet(struct aes_container *aes_con, struct ablkcipher_request *areq,
+                               int state)
+{
+    u8 *iv;
+    int mode, dir, err = -EINVAL;
+    unsigned long queue_flag;
+    u32 inc, nbytes, remain, chunk_size;
+    struct scatterlist *src = NULL;
+    struct scatterlist *dst = NULL;
+    struct crypto_ablkcipher *cipher;
+    struct aes_ctx *ctx;
+
+    spin_lock_irqsave(&aes_queue->lock, queue_flag);
+
+    dir = aes_con->encdec;
+    mode = aes_con->mode;
+    iv = aes_con->iv;
+ 
+    if (state & PROCESS_SCATTER) {
+        src = scatterwalk_sg_next(areq->src);
+        dst = scatterwalk_sg_next(areq->dst);
+ 
+        if (!src || !dst) {
+            spin_unlock_irqrestore(&aes_queue->lock, queue_flag);
+            return 1;
+        }
+    }
+    else if (state & PROCESS_NEW_PACKET) { 
+        src = areq->src;
+        dst = areq->dst;
+    }
+
+    remain = aes_con->bytes_processed;
+    chunk_size = src->length;
+
+    if (remain > DEU_MAX_PACKET_SIZE)
+       inc = DEU_MAX_PACKET_SIZE;
+    else if (remain > chunk_size)
+       inc = chunk_size;
+    else
+       inc = remain;
+
+    remain -= inc;
+    aes_con->nbytes = inc;
+ 
+    if (state & PROCESS_SCATTER) {
+        aes_con->src_buf += aes_con->nbytes;
+        aes_con->dst_buf += aes_con->nbytes;
+    }
+
+    lq_sg_init(aes_con, src, dst);
+
+    nbytes = aes_con->nbytes;
+
+    //printk("debug - Line: %d, func: %s, reqsize: %d, scattersize: %d\n",
+    //          __LINE__, __func__, nbytes, chunk_size);
+
+    cipher = crypto_ablkcipher_reqtfm(areq);
+    ctx = crypto_ablkcipher_ctx(cipher);
+
+
+    if (aes_queue->hw_status == AES_IDLE)
+        aes_queue->hw_status = AES_STARTED;
+
+    aes_con->bytes_processed -= aes_con->nbytes;
+    err = ablkcipher_enqueue_request(&aes_queue->list, &aes_con->arequest);
+    if (err == -EBUSY) {
+        spin_unlock_irqrestore(&aes_queue->lock, queue_flag);
+        printk("Failed to enqueue request, ln: %d, err: %d\n",
+                __LINE__, err);
+        return -EINVAL;
+    }
+
+    spin_unlock_irqrestore(&aes_queue->lock, queue_flag);
+
+    err = lq_deu_aes_core(ctx, aes_con->dst_buf, aes_con->src_buf, iv, nbytes, dir, mode);
+    return err;
+
+}

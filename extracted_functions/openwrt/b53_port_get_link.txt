@@ -1,0 +1,55 @@
+static int b53_port_get_link(struct switch_dev *dev, int port,
+			     struct switch_port_link *link)
+{
+	struct b53_device *priv = sw_to_b53(dev);
+
+	if (is_cpu_port(priv, port)) {
+		link->link = 1;
+		link->duplex = 1;
+		link->speed = is5325(priv) || is5365(priv) ?
+				SWITCH_PORT_SPEED_100 : SWITCH_PORT_SPEED_1000;
+		link->aneg = 0;
+	} else if (priv->enabled_ports & BIT(port)) {
+		u32 speed;
+		u16 lnk, duplex;
+
+		b53_read16(priv, B53_STAT_PAGE, B53_LINK_STAT, &lnk);
+		b53_read16(priv, B53_STAT_PAGE, priv->duplex_reg, &duplex);
+
+		lnk = (lnk >> port) & 1;
+		duplex = (duplex >> port) & 1;
+
+		if (is5325(priv) || is5365(priv)) {
+			u16 tmp;
+
+			b53_read16(priv, B53_STAT_PAGE, B53_SPEED_STAT, &tmp);
+			speed = SPEED_PORT_FE(tmp, port);
+		} else {
+			b53_read32(priv, B53_STAT_PAGE, B53_SPEED_STAT, &speed);
+			speed = SPEED_PORT_GE(speed, port);
+		}
+
+		link->link = lnk;
+		if (lnk) {
+			link->duplex = duplex;
+			switch (speed) {
+			case SPEED_STAT_10M:
+				link->speed = SWITCH_PORT_SPEED_10;
+				break;
+			case SPEED_STAT_100M:
+				link->speed = SWITCH_PORT_SPEED_100;
+				break;
+			case SPEED_STAT_1000M:
+				link->speed = SWITCH_PORT_SPEED_1000;
+				break;
+			}
+		}
+
+		link->aneg = 1;
+	} else {
+		link->link = 0;
+	}
+
+	return 0;
+
+}

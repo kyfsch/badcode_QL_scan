@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicLutFlushType(rtk_uint32* pType)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_L2_FLUSH_CTRL2, RTL8367C_LUT_FLUSH_TYPE_OFFSET,pType);
+}

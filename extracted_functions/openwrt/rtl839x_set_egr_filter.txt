@@ -1,0 +1,5 @@
+static void rtl839x_set_egr_filter(int port,  enum egr_filter state)
+{
+	sw_w32_mask(0x1 << (port % 0x20), state << (port % 0x20),
+			RTL839X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));
+}

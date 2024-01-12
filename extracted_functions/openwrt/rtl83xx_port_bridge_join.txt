@@ -1,0 +1,46 @@
+static int rtl83xx_port_bridge_join(struct dsa_switch *ds, int port,
+					struct net_device *bridge)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	u64 port_bitmap = BIT_ULL(priv->cpu_port), v;
+
+	pr_debug("%s %x: %d %llx", __func__, (u32)priv, port, port_bitmap);
+
+	if (priv->is_lagmember[port]) {
+		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
+		return 0;
+	}
+
+	mutex_lock(&priv->reg_mutex);
+	for (int i = 0; i < ds->num_ports; i++) {
+		/* Add this port to the port matrix of the other ports in the
+		 * same bridge. If the port is disabled, port matrix is kept
+		 * and not being setup until the port becomes enabled.
+		 */
+		if (dsa_is_user_port(ds, i) && !priv->is_lagmember[i] && i != port) {
+			if (dsa_to_port(ds, i)->bridge_dev != bridge)
+				continue;
+			if (priv->ports[i].enable)
+				priv->r->traffic_enable(i, port);
+
+			priv->ports[i].pm |= BIT_ULL(port);
+			port_bitmap |= BIT_ULL(i);
+		}
+	}
+
+	/* Add all other ports to this port matrix. */
+	if (priv->ports[port].enable) {
+		priv->r->traffic_enable(priv->cpu_port, port);
+		v = priv->r->traffic_get(port);
+		v |= port_bitmap;
+		priv->r->traffic_set(port, v);
+	}
+	priv->ports[port].pm |= port_bitmap;
+
+	if (priv->r->set_static_move_action)
+		priv->r->set_static_move_action(port, false);
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}

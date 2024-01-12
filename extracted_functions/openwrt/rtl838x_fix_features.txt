@@ -1,0 +1,5 @@
+static netdev_features_t rtl838x_fix_features(struct net_device *dev,
+					  netdev_features_t features)
+{
+	return features;
+}

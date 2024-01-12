@@ -1,0 +1,41 @@
+rtk_api_ret_t rtk_port_phyComboPortMedia_get(rtk_port_t port, rtk_port_media_t *pMedia)
+{
+    rtk_api_ret_t   retVal;
+    rtk_uint32      regData;
+    rtk_uint32      data;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_IS_UTP(port);
+
+    /* Check Combo Port ID */
+    RTK_CHK_PORT_IS_COMBO(port);
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0249)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_getAsicReg(0x1300, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0000)) != RT_ERR_OK)
+        return retVal;
+
+    if(regData != 0x6367)
+    {
+        *pMedia = PORT_MEDIA_COPPER;
+    }
+    else
+    {
+        if ((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_UTP_FIB_DET, RTL8367C_UTP_FIRST_OFFSET, &data))!=RT_ERR_OK)
+                return retVal;
+
+        if(data == 1)
+            *pMedia = PORT_MEDIA_COPPER;
+        else
+            *pMedia = PORT_MEDIA_FIBER;
+    }
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,91 @@
+static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
+{
+	u32 val, phy_id;
+	int mac = phydev->mdio.addr;
+	struct fw_header *h;
+	u32 *rtl838x_6275B_intPhy_perport;
+	u32 *rtl8218b_6276B_hwEsd_perport;
+
+	val = phy_read(phydev, 2);
+	phy_id = val << 16;
+	val = phy_read(phydev, 3);
+	phy_id |= val;
+	pr_debug("Phy on MAC %d: %x\n", mac, phy_id);
+
+	/* Read internal PHY ID */
+	phy_write_paged(phydev, 31, 27, 0x0002);
+	val = phy_read_paged(phydev, 31, 28);
+	if (val != 0x6275) {
+		phydev_err(phydev, "Expected internal RTL8218B, found PHY-ID %x\n", val);
+		return -1;
+	}
+
+	/* Internal RTL8218B, version 2 */
+	phydev_info(phydev, "Detected internal RTL8218B\n");
+
+	h = rtl838x_request_fw(phydev, &rtl838x_8380_fw, FIRMWARE_838X_8380_1);
+	if (!h)
+		return -1;
+
+	if (h->phy != 0x83800000) {
+		phydev_err(phydev, "Wrong firmware file: PHY mismatch.\n");
+		return -1;
+	}
+
+	rtl838x_6275B_intPhy_perport = (void *)h + sizeof(struct fw_header) + h->parts[8].start;
+	rtl8218b_6276B_hwEsd_perport = (void *)h + sizeof(struct fw_header) + h->parts[9].start;
+
+	// Currently not used
+	// if (sw_r32(RTL838X_DMY_REG31) == 0x1) {
+	// 	int ipd_flag = 1;
+	// }
+
+	val = phy_read(phydev, MII_BMCR);
+	if (val & BMCR_PDOWN)
+		rtl8380_int_phy_on_off(phydev, true);
+	else
+		rtl8380_phy_reset(phydev);
+	msleep(100);
+
+	/* Ready PHY for patch */
+	for (int p = 0; p < 8; p++) {
+		phy_package_port_write_paged(phydev, p, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PATCH);
+		phy_package_port_write_paged(phydev, p, RTL83XX_PAGE_RAW, 0x10, 0x0010);
+	}
+	msleep(500);
+	for (int p = 0; p < 8; p++) {
+		int i;
+
+		for (i = 0; i < 100 ; i++) {
+			val = phy_package_port_read_paged(phydev, p, RTL821X_PAGE_STATE, 0x10);
+			if (val & 0x40)
+				break;
+		}
+		if (i >= 100) {
+			phydev_err(phydev,
+			           "ERROR: Port %d not ready for patch.\n",
+			           mac + p);
+			return -1;
+		}
+	}
+	for (int p = 0; p < 8; p++) {
+		int i;
+
+		i = 0;
+		while (rtl838x_6275B_intPhy_perport[i * 2]) {
+			phy_package_port_write_paged(phydev, p, RTL83XX_PAGE_RAW,
+			                             rtl838x_6275B_intPhy_perport[i * 2],
+			                             rtl838x_6275B_intPhy_perport[i * 2 + 1]);
+			i++;
+		}
+		i = 0;
+		while (rtl8218b_6276B_hwEsd_perport[i * 2]) {
+			phy_package_port_write_paged(phydev, p, RTL83XX_PAGE_RAW,
+			                             rtl8218b_6276B_hwEsd_perport[i * 2],
+			                             rtl8218b_6276B_hwEsd_perport[i * 2 + 1]);
+			i++;
+		}
+	}
+
+	return 0;
+}

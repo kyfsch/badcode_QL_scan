@@ -1,0 +1,5 @@
+static inline u8 *page_data_ptr(struct nand_chip *nand, const u8 *buf,
+				int sect)
+{
+	return (u8 *)buf + sect * nand->ecc.size;
+}

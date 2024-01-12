@@ -1,0 +1,7 @@
+static void sata_oxnas_post_internal_cmd(struct ata_queued_cmd *qc)
+{
+	DPRINTK("ENTER\n");
+	/* If the core is busy here, make it idle */
+	if (qc->flags & ATA_QCFLAG_FAILED)
+		sata_oxnas_cleanup(qc->ap->host);
+}

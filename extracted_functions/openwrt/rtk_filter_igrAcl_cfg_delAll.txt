@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_filter_igrAcl_cfg_delAll(void)
+{
+    rtk_uint32            i;
+    rtk_api_ret_t     ret;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    for(i = 0; i < RTL8367C_ACLRULENO; i++)
+    {
+        if((ret = rtl8367c_setAsicAclActCtrl(i, FILTER_ENACT_INIT_MASK))!= RT_ERR_OK)
+            return ret;
+        if((ret = rtl8367c_setAsicAclNot(i, DISABLED)) != RT_ERR_OK )
+            return ret;
+    }
+
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_ACL_RESET_CFG, RTL8367C_ACL_RESET_CFG_OFFSET, TRUE);;
+}

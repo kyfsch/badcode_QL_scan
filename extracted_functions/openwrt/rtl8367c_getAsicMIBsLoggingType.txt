@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsicMIBsLoggingType(rtk_uint32 index, rtk_uint32* pType)
+{
+    if(index > RTL8367C_MIB_MAX_LOG_MODE_IDX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_MIB_CTRL5, index,pType);
+}

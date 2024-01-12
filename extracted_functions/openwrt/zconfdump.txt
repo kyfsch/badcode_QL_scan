@@ -1,0 +1,46 @@
+void zconfdump(FILE *out)
+{
+	struct property *prop;
+	struct symbol *sym;
+	struct menu *menu;
+
+	menu = rootmenu.list;
+	while (menu) {
+		if ((sym = menu->sym))
+			print_symbol(out, menu);
+		else if ((prop = menu->prompt)) {
+			switch (prop->type) {
+			case P_COMMENT:
+				fputs("\ncomment ", out);
+				print_quoted_string(out, prop->text);
+				fputs("\n", out);
+				break;
+			case P_MENU:
+				fputs("\nmenu ", out);
+				print_quoted_string(out, prop->text);
+				fputs("\n", out);
+				break;
+			default:
+				;
+			}
+			if (!expr_is_yes(prop->visible.expr)) {
+				fputs("  depends ", out);
+				expr_fprint(prop->visible.expr, out);
+				fputc('\n', out);
+			}
+		}
+
+		if (menu->list)
+			menu = menu->list;
+		else if (menu->next)
+			menu = menu->next;
+		else while ((menu = menu->parent)) {
+			if (menu->prompt && menu->prompt->type == P_MENU)
+				fputs("\nendmenu\n", out);
+			if (menu->next) {
+				menu = menu->next;
+				break;
+			}
+		}
+	}
+}

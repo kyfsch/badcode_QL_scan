@@ -1,0 +1,19 @@
+void rtk_hal_vlan_tag(struct ra_switch_ioctl_data *data)
+{
+	rtk_api_ret_t ret;
+	rtk_vlan_cfg_t vlan;
+
+    ret = rtk_vlan_get(data->vid, &vlan);
+	if (ret != RT_ERR_OK)
+		printk("rtk_vlan_get failed\n");
+	else {
+		if (data->on_off == 0)
+			RTK_PORTMASK_PORT_SET(vlan.untag, data->port);
+		else
+			RTK_PORTMASK_PORT_CLEAR(vlan.untag, data->port);
+		
+		ret = rtk_vlan_set(data->vid, &vlan);
+		if (ret != RT_ERR_OK)
+			printk("rtk_vlan_set failed\n");
+	}
+}

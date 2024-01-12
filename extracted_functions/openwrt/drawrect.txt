@@ -1,0 +1,47 @@
+void drawrect(void *videoram, struct rect *r, const struct pixelformat *pixf, const struct vidsize *vids){
+	int x,y,corwidth, bpp = 0, tocopy = 1;
+	struct pixel pix;
+	unsigned char *pmem = videoram;
+	corwidth = r->width;	// actually only "corrected" for 4 Bit
+
+	if (pixf->pixenum!=CLUT4&&pixf->pixenum!=CLUT8){
+		switch (pixf->pixenum){
+			case ARGB1555:
+			case RGB565:
+				bpp = 16;
+				tocopy = 2;
+				break;
+			case ARGB:
+				bpp = 32;
+				tocopy = 4;
+				break;
+			default:
+				printf ("drawrect: unknown pixelformat(%d) bpp:%d\n",pixf->pixenum,pixf->bpp);
+				exit(1);
+		}
+		col2pixel(&pix,pixf,r->col);
+	} else {
+		switch (pixf->pixenum){	// CLUT = Colour LookUp Table (palette)
+			case CLUT4:	// take red value as index in this case
+				pix.byte[0]=(r->col->r)<<4|(r->col->r&0xf);	// slightly cryptic... "rect->colour->red"
+				corwidth>>=1;	// we copy bytes
+				bpp=4;
+				tocopy=1;
+				break;
+			case CLUT8:
+				pix.byte[0]=(r->col->r&0xff);
+				bpp=8;
+				tocopy=1;
+				break;
+		}
+	}
+	pmem=videoram+((((r->y*vids->width)+r->x)*bpp)>>3);
+	for (y=0;y<r->height;y++){
+		int offset = 0;
+		for (x=0;x<corwidth;x++){
+			memcpy (pmem+offset,pix.byte,tocopy);
+			offset+=tocopy;
+		}
+		pmem +=((vids->width*bpp)>>3);	// skip one whole line, actually should be taken from "fix-info"
+	}
+}

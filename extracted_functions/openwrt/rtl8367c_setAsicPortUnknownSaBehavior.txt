@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicPortUnknownSaBehavior(rtk_uint32 behavior)
+{
+    if(behavior >= L2_BEHAVE_SA_END)
+        return RT_ERR_NOT_ALLOWED;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_PORT_SECURIT_CTRL_REG, RTL8367C_UNKNOWN_SA_BEHAVE_MASK, behavior);
+}

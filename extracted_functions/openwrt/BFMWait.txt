@@ -1,0 +1,5 @@
+BFMWait (u32 cycle)
+{
+	u32 i;
+	for (i = 0; i < cycle; i++);
+}

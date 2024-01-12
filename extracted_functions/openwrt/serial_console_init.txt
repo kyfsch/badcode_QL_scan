@@ -1,0 +1,4 @@
+void serial_console_init(void)
+{
+	out_8(reg_base + (UART_FCR << reg_shift), 0x06);
+}

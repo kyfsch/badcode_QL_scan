@@ -1,0 +1,16 @@
+static void fe_reset_pending(struct fe_priv *priv)
+{
+	struct net_device *dev = priv->netdev;
+	int err;
+
+	rtnl_lock();
+	fe_stop(dev);
+
+	err = fe_open(dev);
+	if (err) {
+		netif_alert(priv, ifup, dev,
+			    "Driver up/down cycle failed, closing device.\n");
+		dev_close(dev);
+	}
+	rtnl_unlock();
+}

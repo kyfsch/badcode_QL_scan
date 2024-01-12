@@ -1,0 +1,4 @@
+static u64 rtl931x_read_cam(int idx, struct rtl838x_l2_entry *e)
+{
+	return 0;
+}

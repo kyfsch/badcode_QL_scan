@@ -1,0 +1,11 @@
+ret_t rtl8367c_setAsicMeterExceedStatus(rtk_uint32 index)
+{
+    if(index > RTL8367C_METERMAX)
+        return RT_ERR_FILTER_METER_ID;
+
+    if(index < 32)
+        return rtl8367c_setAsicRegBit(RTL8367C_METER_OVERRATE_INDICATOR_REG(index), RTL8367C_METER_EXCEED_OFFSET(index), 1);
+    else
+        return rtl8367c_setAsicRegBit(RTL8367C_REG_METER_OVERRATE_INDICATOR2 + ((index - 32) >> 4), RTL8367C_METER_EXCEED_OFFSET(index), 1);
+
+}

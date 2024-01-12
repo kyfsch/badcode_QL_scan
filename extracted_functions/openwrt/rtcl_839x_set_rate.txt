@@ -1,0 +1,16 @@
+static int rtcl_839x_set_rate(int clk_idx, const struct rtcl_reg_set *reg)
+{
+	unsigned long vpflags;
+	unsigned long irqflags;
+/*
+ * Runtime of this function (including locking)
+ * CPU: up to 31000 cycles / up to 89 us at 350 MHz (half default speed)
+ */
+	spin_lock_irqsave(&rtcl_ccu->lock, irqflags);
+	vpflags = dvpe();
+	rtcl_839x_sram_set_rate(clk_idx, reg->ctrl0, reg->ctrl1);
+	evpe(vpflags);
+	spin_unlock_irqrestore(&rtcl_ccu->lock, irqflags);
+
+	return 0;
+}

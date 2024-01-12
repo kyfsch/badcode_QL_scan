@@ -1,0 +1,6 @@
+static int rtc_release(UNUSED struct inode *inode, UNUSED struct file *filp)
+{
+	/* No need for locking here. */
+	rtc_status &= ~RTC_IS_OPEN;
+	return 0;
+}

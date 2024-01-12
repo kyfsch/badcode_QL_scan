@@ -1,0 +1,121 @@
+static rtk_api_ret_t _rtk_port_FiberModeAbility_set(rtk_port_t port, rtk_port_phy_ability_t *pAbility)
+{
+    rtk_api_ret_t   retVal;
+    rtk_uint32      regData;
+
+    /* Check Combo port or not */
+    RTK_CHK_PORT_IS_COMBO(port);
+
+    /* Flow Control */
+    if ((retVal = rtl8367c_getAsicReg(RTL8367C_REG_FIB0_CFG04, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    if (pAbility->AsyFC == 1)
+        regData |= (0x0001 << 8);
+    else
+        regData &= ~(0x0001 << 8);
+
+    if (pAbility->FC == 1)
+        regData |= (0x0001 << 7);
+    else
+        regData &= ~(0x0001 << 7);
+
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_FIB0_CFG04, regData)) != RT_ERR_OK)
+        return retVal;
+
+    /* Speed ability */
+    if( (pAbility->Full_1000 == 1) && (pAbility->Full_100 == 1) && (pAbility->AutoNegotiation == 1) )
+    {
+        if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_FIBER_CFG_1, RTL8367C_SDS_FRC_MODE_OFFSET, 0)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_FIBER_CFG_1, RTL8367C_SDS_MODE_MASK, 7)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_FIB0_CFG00, 0x1140)) != RT_ERR_OK)
+            return retVal;
+    }
+    else if(pAbility->Full_1000 == 1)
+    {
+        if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_FIBER_CFG_1, RTL8367C_SDS_FRC_MODE_OFFSET, 1)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_FIBER_CFG_1, RTL8367C_SDS_MODE_MASK, 4)) != RT_ERR_OK)
+            return retVal;
+
+        if(pAbility->AutoNegotiation == 1)
+        {
+            if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_FIB0_CFG00, 0x1140)) != RT_ERR_OK)
+                return retVal;
+        }
+        else
+        {
+            if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_FIB0_CFG00, 0x0140)) != RT_ERR_OK)
+                return retVal;
+        }
+    }
+    else if(pAbility->Full_100 == 1)
+    {
+        if ((retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_FIBER_CFG_1, RTL8367C_SDS_FRC_MODE_OFFSET, 1)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_FIBER_CFG_1, RTL8367C_SDS_MODE_MASK, 5)) != RT_ERR_OK)
+            return retVal;
+
+        if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_FIB0_CFG00, 0x2100)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    /* Digital software reset */
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, 0x0003)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x0080)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicReg(RTL8367C_REG_SDS_INDACS_DATA, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    regData |= (0x0001 << 6);
+
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, regData)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, 0x0003)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+        return retVal;
+
+    regData &= ~(0x0001 << 6);
+
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, regData)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, 0x0003)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0)) != RT_ERR_OK)
+        return retVal;
+
+    /* CDR reset */
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, 0x1401))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, 0x0000))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_DATA, 0x1403))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_ADR, 0x0000))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicReg(RTL8367C_REG_SDS_INDACS_CMD, 0x00C0))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

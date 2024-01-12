@@ -1,0 +1,5 @@
+rtl_get_cpuport(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	val->value.i = dev->cpu_port;
+	return 0;
+}

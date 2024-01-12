@@ -1,0 +1,6 @@
+static int ag71xx_ethtool_get_sset_count(struct net_device *ndev, int sset)
+{
+	if (sset == ETH_SS_STATS)
+		return ARRAY_SIZE(ag71xx_statistics);
+	return -EOPNOTSUPP;
+}

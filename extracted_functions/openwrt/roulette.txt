@@ -1,0 +1,30 @@
+roulette()
+{
+#ifdef OLD_TRUERAND
+	if (setjmp(env)) {
+		count ^= (count>>3) ^ (count>>6) ^ ocount;
+		count &= 0x7;
+		ocount=count;
+		buffer = (buffer<<3) ^ count;
+		return buffer;
+	}
+#else
+	done = 0;
+#endif
+	(void) signal(SIGALRM, interrupt);
+	count = 0;
+	tick();
+#ifdef OLD_TRUERAND
+	for (;;)
+#else
+	while(done == 0)
+#endif
+		count++;        /* about 1 MHz on VAX 11/780 */
+#ifndef OLD_TRUERAND
+	count ^= (count>>3) ^ (count>>6) ^ ocount;
+	count &= 0x7;
+	ocount=count;
+	buffer = (buffer<<3) ^ count;
+	return buffer;
+#endif
+}

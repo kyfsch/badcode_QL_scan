@@ -1,0 +1,12 @@
+uc_hostapd_remove_iface(uc_vm_t *vm, size_t nargs)
+{
+	uc_value_t *iface = uc_fn_arg(0);
+
+	if (ucv_type(iface) != UC_STRING)
+		return NULL;
+
+	hostapd_remove_iface(interfaces, ucv_string_get(iface));
+	hostapd_ucode_update_interfaces();
+
+	return NULL;
+}

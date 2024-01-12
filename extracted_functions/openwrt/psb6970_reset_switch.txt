@@ -1,0 +1,17 @@
+static int psb6970_reset_switch(struct switch_dev *dev)
+{
+	struct psb6970_priv *priv = to_psb6970(dev);
+	int i;
+
+	mutex_lock(&priv->reg_mutex);
+
+	memset(&priv->psb6970_priv_volatile, 0,
+		sizeof(priv->psb6970_priv_volatile));
+
+	for (i = 0; i < PSB6970_MAX_VLANS; i++)
+		priv->vlan_id[i] = i;
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return psb6970_hw_apply(dev);
+}

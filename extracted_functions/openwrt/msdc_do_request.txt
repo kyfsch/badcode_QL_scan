@@ -1,0 +1,151 @@
+static int msdc_do_request(struct mmc_host *mmc, struct mmc_request *mrq)
+	__must_hold(&host->lock)
+{
+	struct msdc_host *host = mmc_priv(mmc);
+	struct mmc_command *cmd;
+	struct mmc_data *data;
+	void __iomem *base = host->base;
+	//u32 intsts = 0;
+	int read = 1, send_type = 0;
+
+#define SND_DAT 0
+#define SND_CMD 1
+
+	BUG_ON(mmc == NULL);
+	BUG_ON(mrq == NULL);
+
+	host->error = 0;
+
+	cmd  = mrq->cmd;
+	data = mrq->cmd->data;
+
+#if 0 /* --- by chhung */
+	//if(host->id ==1){
+	N_MSG(OPS, "enable clock!");
+	msdc_ungate_clock(host->id);
+	//}
+#endif /* end of --- */
+
+	if (!data) {
+		send_type = SND_CMD;
+		if (msdc_do_command(host, cmd, 1, CMD_TIMEOUT) != 0)
+			goto done;
+	} else {
+		BUG_ON(data->blksz > HOST_MAX_BLKSZ);
+		send_type = SND_DAT;
+
+		data->error = 0;
+		read = data->flags & MMC_DATA_READ ? 1 : 0;
+		host->data = data;
+		host->xfer_size = data->blocks * data->blksz;
+		host->blksz = data->blksz;
+
+		if (read) {
+			if ((host->timeout_ns != data->timeout_ns) ||
+				(host->timeout_clks != data->timeout_clks)) {
+				msdc_set_timeout(host, data->timeout_ns, data->timeout_clks);
+			}
+		}
+
+		sdr_write32(SDC_BLK_NUM, data->blocks);
+		//msdc_clr_fifo();  /* no need */
+
+		msdc_dma_on();  /* enable DMA mode first!! */
+		init_completion(&host->xfer_done);
+
+		/* start the command first*/
+		if (msdc_command_start(host, cmd, 1, CMD_TIMEOUT) != 0)
+			goto done;
+
+		data->sg_count = dma_map_sg(mmc_dev(mmc), data->sg,
+					    data->sg_len,
+					    mmc_get_dma_dir(data));
+		msdc_dma_setup(host, &host->dma, data->sg,
+			       data->sg_count);
+
+		/* then wait command done */
+		if (msdc_command_resp(host, cmd, 1, CMD_TIMEOUT) != 0)
+			goto done;
+
+		/* for read, the data coming too fast, then CRC error
+		   start DMA no business with CRC. */
+		//init_completion(&host->xfer_done);
+		msdc_dma_start(host);
+
+		spin_unlock(&host->lock);
+		if (!wait_for_completion_timeout(&host->xfer_done, DAT_TIMEOUT)) {
+			ERR_MSG("XXX CMD<%d> wait xfer_done<%d> timeout!!", cmd->opcode, data->blocks * data->blksz);
+			ERR_MSG("    DMA_SA   = 0x%x", sdr_read32(MSDC_DMA_SA));
+			ERR_MSG("    DMA_CA   = 0x%x", sdr_read32(MSDC_DMA_CA));
+			ERR_MSG("    DMA_CTRL = 0x%x", sdr_read32(MSDC_DMA_CTRL));
+			ERR_MSG("    DMA_CFG  = 0x%x", sdr_read32(MSDC_DMA_CFG));
+			data->error = -ETIMEDOUT;
+
+			msdc_reset_hw(host);
+			msdc_clr_fifo();
+			msdc_clr_int();
+		}
+		spin_lock(&host->lock);
+		msdc_dma_stop(host);
+
+		/* Last: stop transfer */
+		if (data->stop) {
+			if (msdc_do_command(host, data->stop, 0, CMD_TIMEOUT) != 0)
+				goto done;
+		}
+	}
+
+done:
+	if (data != NULL) {
+		host->data = NULL;
+		dma_unmap_sg(mmc_dev(mmc), data->sg, data->sg_len,
+			     mmc_get_dma_dir(data));
+		host->blksz = 0;
+
+#if 0 // don't stop twice!
+		if (host->hw->flags & MSDC_REMOVABLE && data->error) {
+			msdc_abort_data(host);
+			/* reset in IRQ, stop command has issued. -> No need */
+		}
+#endif
+
+		N_MSG(OPS, "CMD<%d> data<%s %s> blksz<%d> block<%d> error<%d>", cmd->opcode, (dma ? "dma" : "pio"),
+			(read ? "read " : "write"), data->blksz, data->blocks, data->error);
+	}
+
+#if 0 /* --- by chhung */
+#if 1
+	//if(host->id==1) {
+	if (send_type == SND_CMD) {
+		if (cmd->opcode == MMC_SEND_STATUS) {
+			if ((cmd->resp[0] & CARD_READY_FOR_DATA) || (CARD_CURRENT_STATE(cmd->resp[0]) != 7)) {
+				N_MSG(OPS, "disable clock, CMD13 IDLE");
+				msdc_gate_clock(host->id);
+			}
+		} else {
+			N_MSG(OPS, "disable clock, CMD<%d>", cmd->opcode);
+			msdc_gate_clock(host->id);
+		}
+	} else {
+		if (read) {
+			N_MSG(OPS, "disable clock!!! Read CMD<%d>", cmd->opcode);
+			msdc_gate_clock(host->id);
+		}
+	}
+	//}
+#else
+	msdc_gate_clock(host->id);
+#endif
+#endif /* end of --- */
+
+	if (mrq->cmd->error)
+		host->error = 0x001;
+	if (mrq->data && mrq->data->error)
+		host->error |= 0x010;
+	if (mrq->stop && mrq->stop->error)
+		host->error |= 0x100;
+
+	//if (host->error) ERR_MSG("host->error<%d>", host->error);
+
+	return host->error;
+}

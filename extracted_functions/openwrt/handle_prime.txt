@@ -1,0 +1,21 @@
+handle_prime(void)
+{
+	struct ead_msg_salt *sb = EAD_DATA(msg, salt);
+
+	salt.len = sb->len;
+	memcpy(salt.data, sb->salt, salt.len);
+
+	if (auth_type == EAD_AUTH_MD5) {
+		memcpy(pw_salt, sb->ext_salt, MAXSALTLEN);
+		pw_salt[MAXSALTLEN - 1] = 0;
+	}
+
+	tcp = t_getpreparam(sb->prime);
+	tc = t_clientopen(username, &tcp->modulus, &tcp->generator, &salt);
+	if (!tc) {
+		fprintf(stderr, "Client open failed\n");
+		return false;
+	}
+
+	return true;
+}

@@ -1,0 +1,26 @@
+ret_t rtl8367c_getAsicIGMPv3Opeartion(rtk_uint32 port, rtk_uint32 *igmpv3_op)
+{
+    ret_t   retVal;
+    rtk_uint32  value;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    /* IGMPv3 operation */
+    if(port < 8)
+    {
+        retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_IGMP_PORT0_CONTROL + port, RTL8367C_IGMP_PORT0_CONTROL_IGMPV3_OP_MASK, &value);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+    }
+    else
+    {
+        retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_IGMP_PORT8_CONTROL + port - 8, RTL8367C_IGMP_PORT0_CONTROL_IGMPV3_OP_MASK, &value);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+    }
+
+    *igmpv3_op = value;
+
+    return RT_ERR_OK;
+}

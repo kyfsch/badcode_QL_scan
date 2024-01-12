@@ -1,0 +1,6 @@
+static int __init wsap3715i_probe(void)
+{
+	if (of_machine_is_compatible("enterasys,ws-ap3715i"))
+		return 1;
+	return 0;
+}

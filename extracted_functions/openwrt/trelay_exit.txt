@@ -1,0 +1,13 @@
+static void __exit trelay_exit(void)
+{
+	struct trelay *tr, *tmp;
+
+	unregister_netdevice_notifier(&tr_dev_notifier);
+
+	rtnl_lock();
+	list_for_each_entry_safe(tr, tmp, &trelay_devs, list)
+		trelay_do_remove(tr);
+	rtnl_unlock();
+
+	debugfs_remove_recursive(debugfs_dir);
+}

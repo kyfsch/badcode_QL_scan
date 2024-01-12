@@ -1,0 +1,18 @@
+u32 _mt7620_mii_write(struct mt7620_gsw *gsw, u32 phy_addr,
+			     u32 phy_register, u32 write_data)
+{
+	if (mt7620_mii_busy_wait(gsw))
+		return -1;
+
+	write_data &= 0xffff;
+
+	mtk_switch_w32(gsw, GSW_MDIO_ACCESS | GSW_MDIO_START | GSW_MDIO_WRITE |
+		(phy_register << GSW_MDIO_REG_SHIFT) |
+		(phy_addr << GSW_MDIO_ADDR_SHIFT) | write_data,
+		MT7620A_GSW_REG_PIAC);
+
+	if (mt7620_mii_busy_wait(gsw))
+		return -1;
+
+	return 0;
+}

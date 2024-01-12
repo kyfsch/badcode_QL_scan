@@ -1,0 +1,5 @@
+DSL_BSP_ATMLedCBRegister (int (*ifx_adsl_ledcallback) (void))
+{
+    g_adsl_ledcallback = ifx_adsl_ledcallback;
+    return 0;
+}

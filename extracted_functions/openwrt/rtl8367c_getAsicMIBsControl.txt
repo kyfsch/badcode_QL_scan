@@ -1,0 +1,13 @@
+ret_t rtl8367c_getAsicMIBsControl(rtk_uint32* pMask)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+
+    retVal = rtl8367c_getAsicReg(RTL8367C_MIB_CTRL_REG, &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    *pMask = regData & (RTL8367C_MIB_CTRL0_BUSY_FLAG_MASK | RTL8367C_RESET_FLAG_MASK);
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,4 @@
+void ase_shutdown(void)
+{
+    uninit_pmu();
+}

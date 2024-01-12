@@ -1,0 +1,44 @@
+static irqreturn_t sata_oxnas_interrupt(int irq, void *dev_instance)
+{
+	struct ata_host *ah = dev_instance;
+	struct sata_oxnas_host_priv *hd = ah->private_data;
+	void __iomem *core_base = hd->core_base;
+
+	u32 int_status;
+	irqreturn_t ret = IRQ_NONE;
+	u32 port_no;
+	u32 mask;
+	int bug_present;
+
+	/* loop until there are no more interrupts */
+	while ((int_status = (ioread32(core_base + CORE_INT_STATUS)) &
+		(COREINT_END | (COREINT_END << 1)))) {
+
+		/* clear any interrupt */
+		iowrite32(int_status, core_base + CORE_INT_CLEAR);
+
+		/* Only need workaround_bug_6320 for single disk systems as dual
+		 * disk will use uCode which prevents this read underrun problem
+		 * from occurring.
+		 * All single disk systems will use port 0 */
+		for (port_no = 0; port_no < hd->n_ports; ++port_no) {
+			/* check the raw end of command interrupt to see if the
+			 * port is done */
+			mask = (COREINT_END << port_no);
+			if (!(int_status & mask))
+				continue;
+
+			/* this port had an interrupt, clear it */
+			iowrite32(mask, core_base + CORE_INT_CLEAR);
+			/* check for bug 6320 only if no microcode was loaded */
+			bug_present = (hd->current_ucode == UNKNOWN_MODE) &&
+				sata_oxnas_bug_6320_detect(ah->ports[port_no]);
+
+			sata_oxnas_port_irq(ah->ports[port_no],
+						bug_present);
+			ret = IRQ_HANDLED;
+		}
+	}
+
+	return ret;
+}

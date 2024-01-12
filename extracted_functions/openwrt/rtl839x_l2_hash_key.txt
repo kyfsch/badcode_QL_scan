@@ -1,0 +1,21 @@
+static u32 rtl839x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
+{
+	u32 h1, h2, h;
+
+	if (sw_r32(priv->r->l2_ctrl_0) & 1) {
+		h1 = (u32) (((seed >> 60) & 0x3f) ^ ((seed >> 54) & 0x3f) ^
+		           ((seed >> 36) & 0x3f) ^ ((seed >> 30) & 0x3f) ^
+		           ((seed >> 12) & 0x3f) ^ ((seed >> 6) & 0x3f));
+		h2 = (u32) (((seed >> 48) & 0x3f) ^ ((seed >> 42) & 0x3f) ^
+		           ((seed >> 24) & 0x3f) ^ ((seed >> 18) & 0x3f) ^
+		           (seed & 0x3f));
+		h = (h1 << 6) | h2;
+	} else {
+		h = (seed >> 60) ^
+		    ((((seed >> 48) & 0x3f) << 6) | ((seed >> 54) & 0x3f)) ^
+		    ((seed >> 36) & 0xfff) ^ ((seed >> 24) & 0xfff) ^
+		    ((seed >> 12) & 0xfff) ^ (seed & 0xfff);
+	}
+
+	return h;
+}

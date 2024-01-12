@@ -1,0 +1,211 @@
+static int bcm6348_emac_open(struct net_device *ndev)
+{
+	struct bcm6348_emac *emac = netdev_priv(ndev);
+	struct bcm6348_iudma *iudma = emac->iudma;
+	struct platform_device *pdev = emac->pdev;
+	struct device *dev = &pdev->dev;
+	struct sockaddr addr;
+	unsigned int i, size;
+	int ret;
+	void *p;
+	u32 val;
+
+	/* mask all interrupts and request them */
+	emac_writel(emac, 0, ENET_IRMASK_REG);
+	dmac_writel(iudma, 0, DMAC_IRMASK_REG, emac->rx_chan);
+	dmac_writel(iudma, 0, DMAC_IRMASK_REG, emac->tx_chan);
+
+	ret = request_irq(ndev->irq, bcm6348_emac_isr_mac, 0, ndev->name,
+			  ndev);
+	if (ret)
+		return ret;
+
+	ret = request_irq(emac->irq_rx, bcm6348_emac_isr_dma,
+			  0, ndev->name, ndev);
+	if (ret)
+		goto out_freeirq;
+
+	ret = request_irq(emac->irq_tx, bcm6348_emac_isr_dma,
+			  0, ndev->name, ndev);
+	if (ret)
+		goto out_freeirq_rx;
+
+	/* initialize perfect match registers */
+	for (i = 0; i < 4; i++) {
+		emac_writel(emac, 0, ENET_PML_REG(i));
+		emac_writel(emac, 0, ENET_PMH_REG(i));
+	}
+
+	/* write device mac address */
+	memcpy(addr.sa_data, ndev->dev_addr, ETH_ALEN);
+	bcm6348_emac_set_mac_address(ndev, &addr);
+
+	/* allocate rx dma ring */
+	size = emac->rx_ring_size * sizeof(struct bcm6348_iudma_desc);
+	p = dma_alloc_coherent(dev, size, &emac->rx_desc_dma, GFP_KERNEL);
+	if (!p) {
+		dev_err(dev, "cannot allocate rx ring %u\n", size);
+		ret = -ENOMEM;
+		goto out_freeirq_tx;
+	}
+
+	memset(p, 0, size);
+	emac->rx_desc_alloc_size = size;
+	emac->rx_desc_cpu = p;
+
+	/* allocate tx dma ring */
+	size = emac->tx_ring_size * sizeof(struct bcm6348_iudma_desc);
+	p = dma_alloc_coherent(dev, size, &emac->tx_desc_dma, GFP_KERNEL);
+	if (!p) {
+		dev_err(dev, "cannot allocate tx ring\n");
+		ret = -ENOMEM;
+		goto out_free_rx_ring;
+	}
+
+	memset(p, 0, size);
+	emac->tx_desc_alloc_size = size;
+	emac->tx_desc_cpu = p;
+
+	emac->tx_skb = kzalloc(sizeof(struct sk_buff *) * emac->tx_ring_size,
+			       GFP_KERNEL);
+	if (!emac->tx_skb) {
+		dev_err(dev, "cannot allocate rx skb queue\n");
+		ret = -ENOMEM;
+		goto out_free_tx_ring;
+	}
+
+	emac->tx_desc_count = emac->tx_ring_size;
+	emac->tx_dirty_desc = 0;
+	emac->tx_curr_desc = 0;
+	spin_lock_init(&emac->tx_lock);
+
+	/* init & fill rx ring with skbs */
+	emac->rx_skb = kzalloc(sizeof(struct sk_buff *) * emac->rx_ring_size,
+			       GFP_KERNEL);
+	if (!emac->rx_skb) {
+		dev_err(dev, "cannot allocate rx skb queue\n");
+		ret = -ENOMEM;
+		goto out_free_tx_skb;
+	}
+
+	emac->rx_desc_count = 0;
+	emac->rx_dirty_desc = 0;
+	emac->rx_curr_desc = 0;
+
+	/* initialize flow control buffer allocation */
+	dma_writel(iudma, DMA_BUFALLOC_FORCE_MASK | 0,
+		   DMA_BUFALLOC_REG(emac->rx_chan));
+
+	if (bcm6348_emac_refill_rx(ndev)) {
+		dev_err(dev, "cannot allocate rx skb queue\n");
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	/* write rx & tx ring addresses */
+	dmas_writel(iudma, emac->rx_desc_dma,
+		    DMAS_RSTART_REG, emac->rx_chan);
+	dmas_writel(iudma, emac->tx_desc_dma,
+		    DMAS_RSTART_REG, emac->tx_chan);
+
+	/* clear remaining state ram for rx & tx channel */
+	dmas_writel(iudma, 0, DMAS_SRAM2_REG, emac->rx_chan);
+	dmas_writel(iudma, 0, DMAS_SRAM2_REG, emac->tx_chan);
+	dmas_writel(iudma, 0, DMAS_SRAM3_REG, emac->rx_chan);
+	dmas_writel(iudma, 0, DMAS_SRAM3_REG, emac->tx_chan);
+	dmas_writel(iudma, 0, DMAS_SRAM4_REG, emac->rx_chan);
+	dmas_writel(iudma, 0, DMAS_SRAM4_REG, emac->tx_chan);
+
+	/* set max rx/tx length */
+	emac_writel(emac, ndev->mtu, ENET_RXMAXLEN_REG);
+	emac_writel(emac, ndev->mtu, ENET_TXMAXLEN_REG);
+
+	/* set dma maximum burst len */
+	dmac_writel(iudma, ENET_DMA_MAXBURST,
+		    DMAC_MAXBURST_REG, emac->rx_chan);
+	dmac_writel(iudma, ENET_DMA_MAXBURST,
+		    DMAC_MAXBURST_REG, emac->tx_chan);
+
+	/* set correct transmit fifo watermark */
+	emac_writel(emac, ENET_TX_FIFO_TRESH, ENET_TXWMARK_REG);
+
+	/* set flow control low/high threshold to 1/3 / 2/3 */
+	val = emac->rx_ring_size / 3;
+	dma_writel(iudma, val, DMA_FLOWCL_REG(emac->rx_chan));
+	val = (emac->rx_ring_size * 2) / 3;
+	dma_writel(iudma, val, DMA_FLOWCH_REG(emac->rx_chan));
+
+	/* all set, enable emac and interrupts, start dma engine and
+	 * kick rx dma channel
+	 */
+	wmb();
+	val = emac_readl(emac, ENET_CTL_REG);
+	val |= ENET_CTL_ENABLE_MASK;
+	emac_writel(emac, val, ENET_CTL_REG);
+	dmac_writel(iudma, DMAC_CHANCFG_EN_MASK,
+		    DMAC_CHANCFG_REG, emac->rx_chan);
+
+	/* watch "mib counters about to overflow" interrupt */
+	emac_writel(emac, ENET_IR_MIB, ENET_IR_REG);
+	emac_writel(emac, ENET_IR_MIB, ENET_IRMASK_REG);
+
+	/* watch "packet transferred" interrupt in rx and tx */
+	dmac_writel(iudma, DMAC_IR_PKTDONE_MASK,
+		    DMAC_IR_REG, emac->rx_chan);
+	dmac_writel(iudma, DMAC_IR_PKTDONE_MASK,
+		    DMAC_IR_REG, emac->tx_chan);
+
+	/* make sure we enable napi before rx interrupt  */
+	napi_enable(&emac->napi);
+
+	dmac_writel(iudma, DMAC_IR_PKTDONE_MASK,
+		    DMAC_IRMASK_REG, emac->rx_chan);
+	dmac_writel(iudma, DMAC_IR_PKTDONE_MASK,
+		    DMAC_IRMASK_REG, emac->tx_chan);
+
+	if (ndev->phydev)
+		phy_start(ndev->phydev);
+
+	netif_carrier_on(ndev);
+	netif_start_queue(ndev);
+
+	return 0;
+
+out:
+	for (i = 0; i < emac->rx_ring_size; i++) {
+		struct bcm6348_iudma_desc *desc;
+
+		if (!emac->rx_skb[i])
+			continue;
+
+		desc = &emac->rx_desc_cpu[i];
+		dma_unmap_single(dev, desc->address, emac->rx_skb_size,
+				 DMA_FROM_DEVICE);
+		kfree_skb(emac->rx_skb[i]);
+	}
+	kfree(emac->rx_skb);
+
+out_free_tx_skb:
+	kfree(emac->tx_skb);
+
+out_free_tx_ring:
+	dma_free_coherent(dev, emac->tx_desc_alloc_size,
+			  emac->tx_desc_cpu, emac->tx_desc_dma);
+
+out_free_rx_ring:
+	dma_free_coherent(dev, emac->rx_desc_alloc_size,
+			  emac->rx_desc_cpu, emac->rx_desc_dma);
+
+out_freeirq_tx:
+	if (emac->irq_tx != -1)
+		free_irq(emac->irq_tx, ndev);
+
+out_freeirq_rx:
+	free_irq(emac->irq_rx, ndev);
+
+out_freeirq:
+	if (ndev->phydev)
+		phy_disconnect(ndev->phydev);
+
+	return ret;
+}

@@ -1,0 +1,66 @@
+static void dc_ep_info_xchange(struct pci_dev *pdev, int card_num)
+{
+	/* More cards supported, exchange address information
+	 * For example, suppose three cards dected.
+	 * 0, <1, 2>
+	 * 1, <0, 2>
+	 * 2, <0, 1>
+	 * For four cards detected
+	 * 0, <1, 2, 3>
+	 * 1, <0, 2, 3>
+	 * 2, <0, 1, 3>
+	 * 3, <0, 1, 2>
+	 * and etc
+	 */
+	int i, j, k;
+	int peer_num;
+#ifdef DC_EP_DBG
+	struct dc_ep_priv *priv;
+#endif /* DC_EP_DBG */
+	spin_lock(&dc_ep_lock);
+	if (card_num > 1) {
+		peer_num = card_num - 1;
+		for (i = 0; i < card_num; i++) {
+			struct dc_ep_priv *ep = &g_dc_ep_info.pcie_ep[i];
+			j = 0;
+			k = 0;
+			ep->peer_num = peer_num;
+			do {
+				struct dc_ep_priv *partner;
+
+				if (j == i) {
+					j++;
+					continue;
+				}
+				partner = &g_dc_ep_info.pcie_ep[j];
+				ep->peer_mem[k] = partner->mem;
+				ep->peer_phymem[k] = partner->phymem;
+				ep->peer_memsize[k] = partner->memsize;
+				k++;
+				j++;
+			} while ((k < peer_num) && (j < card_num));
+		}
+	}
+	spin_unlock(&dc_ep_lock);
+
+#ifdef DC_EP_DBG
+	dev_dbg(&pdev->dev, "Total cards found %d\n", card_num);
+	/* Dump detailed debug information */
+	for (i = 0; i < card_num; i++) {
+		priv = &g_dc_ep_info.pcie_ep[i];
+		dev_dbg(&pdev->dev, "card %d attached\n", priv->ep_idx);
+		dev_dbg(&pdev->dev, "irq base %d irq numbers %d\n",
+			priv->irq_base, priv->irq_num);
+		dev_dbg(&pdev->dev,
+			"its own phymem 0x%08x mem 0x%p size 0x%08x\n",
+			priv->phymem, priv->mem, priv->memsize);
+		if (card_num > 1) {
+			for (j = 0; j < priv->peer_num; j++)
+				dev_dbg(&pdev->dev,
+				"its peer phymem 0x%08x mem 0x%p size 0x%08x\n",
+				priv->peer_phymem[j],
+				priv->peer_mem[j], priv->peer_memsize[j]);
+		}
+	}
+#endif /* DC_EP_DBG */
+}

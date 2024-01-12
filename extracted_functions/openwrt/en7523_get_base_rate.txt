@@ -1,0 +1,17 @@
+static unsigned int en7523_get_base_rate(void __iomem *base, unsigned int i)
+{
+	const struct en_clk_desc *desc = &en7523_base_clks[i];
+	u32 val;
+
+	if (!desc->base_bits)
+		return desc->base_value;
+
+	val = readl(base + desc->base_reg);
+	val >>= desc->base_shift;
+	val &= (1 << desc->base_bits) - 1;
+
+	if (val >= desc->n_base_values)
+		return 0;
+
+	return desc->base_values[val];
+}

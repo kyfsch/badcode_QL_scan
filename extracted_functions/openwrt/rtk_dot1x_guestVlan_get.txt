@@ -1,0 +1,22 @@
+rtk_api_ret_t rtk_dot1x_guestVlan_get(rtk_vlan_t *pVid)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 gvidx;
+    rtl8367c_vlanconfiguser vlanMC;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pVid)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsic1xGuestVidx(&gvidx)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicVlanMemberConfig(gvidx, &vlanMC)) != RT_ERR_OK)
+        return retVal;
+
+    *pVid = vlanMC.evid;
+
+    return RT_ERR_OK;
+}

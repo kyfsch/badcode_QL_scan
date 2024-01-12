@@ -1,0 +1,31 @@
+void AT91F_ST_HANDLER(void)
+{
+	volatile unsigned int csr = *AT91C_DBGU_CSR;
+#ifdef XMODEM
+	unsigned int error;
+#endif
+	
+	if (AT91C_BASE_ST->ST_SR & 0x01) {
+		StTick++;
+		ctlTempo.CtlTempoTick(&ctlTempo);
+		return;
+	}
+
+#ifdef XMODEM
+	error = AT91F_US_Error((AT91PS_USART)AT91C_BASE_DBGU);
+	if (csr & error) {
+		/* Stop previous Xmodem transmition*/
+		*(AT91C_DBGU_CR) = AT91C_US_RSTSTA;
+		AT91F_US_DisableIt((AT91PS_USART)AT91C_BASE_DBGU, AT91C_US_ENDRX);
+		AT91F_US_EnableIt((AT91PS_USART)AT91C_BASE_DBGU, AT91C_US_RXRDY);
+
+	}
+	
+	else if (csr & (AT91C_US_TXRDY | AT91C_US_ENDTX | AT91C_US_TXEMPTY | 
+	                AT91C_US_RXRDY | AT91C_US_ENDRX | AT91C_US_TIMEOUT | 
+	                AT91C_US_RXBUFF)) {
+		if ( !(svcXmodem.eot) )
+			svcXmodem.Handler(&svcXmodem, csr);
+	}
+#endif
+}

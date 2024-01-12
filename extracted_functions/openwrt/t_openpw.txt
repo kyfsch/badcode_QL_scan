@@ -1,0 +1,9 @@
+  t = t_openpw(fp);
+  t->close_on_exit = 1;
+  return t;
+}
+
+_TYPE( void )
+t_closepw(tpw)
+     struct t_pw * tpw;
+{

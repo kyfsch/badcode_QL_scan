@@ -1,0 +1,18 @@
+static void aca_dma_parse(struct dc_ep_priv *priv, const char *data, int chn)
+{
+	int i;
+	u32 cid, dbase;
+	struct aca_fw_dma *fw_dma;
+	struct aca_fw_info *fw_info = to_fw_info(priv);
+
+	fw_info->chan_num = chn;
+
+	for (i = 0; i < fw_info->chan_num; i++) {
+		fw_dma = (struct aca_fw_dma *)(data + i * sizeof(*fw_dma));
+		cid = be32_to_cpu(fw_dma->cid);
+		dbase = be32_to_cpu(fw_dma->base);
+		fw_info->adma_desc_base[cid] = dbase;
+		dev_dbg(priv->dev, "dma channel %d desc base 0x%08x\n",
+			cid, dbase);
+	}
+}

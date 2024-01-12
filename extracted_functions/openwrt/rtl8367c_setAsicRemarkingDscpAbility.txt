@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicRemarkingDscpAbility(rtk_uint32 enabled)
+{
+    return rtl8367c_setAsicRegBit(RTL8367C_REMARKING_CTRL_REG, RTL8367C_REMARKING_DSCP_ENABLE_OFFSET, enabled);
+}

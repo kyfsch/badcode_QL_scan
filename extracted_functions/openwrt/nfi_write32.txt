@@ -1,0 +1,4 @@
+static inline void nfi_write32(struct mt7621_nfc *nfc, u32 reg, u32 val)
+{
+	writel(val, nfc->nfi_regs + reg);
+}

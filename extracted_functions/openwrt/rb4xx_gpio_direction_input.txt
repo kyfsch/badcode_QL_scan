@@ -1,0 +1,5 @@
+static int rb4xx_gpio_direction_input(struct gpio_chip *chip,
+				      unsigned int offset)
+{
+	return -EOPNOTSUPP;
+}

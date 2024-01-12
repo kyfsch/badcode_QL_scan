@@ -1,0 +1,6 @@
+static int __init mtdsplit_lzma_init(void)
+{
+	register_mtd_parser(&mtdsplit_lzma_parser);
+
+	return 0;
+}

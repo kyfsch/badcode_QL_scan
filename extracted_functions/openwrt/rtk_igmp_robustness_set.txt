@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_igmp_robustness_set(rtk_uint32 robustness)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(robustness > RTL8367C_MAX_ROB_VAR)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicIGMPRobVar(robustness))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

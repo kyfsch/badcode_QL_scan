@@ -1,0 +1,4 @@
+static int rtl8367c_get_port_mib_counter(int idx, int port, unsigned long long *counter)
+{
+	return rtk_stat_port_get(rtl8367c_sw_to_phy_port(port), idx, counter);
+}

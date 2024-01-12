@@ -1,0 +1,10 @@
+ret_t rtl8367c_setAsicIGMPBypassStormCTRL(rtk_uint32 bypass)
+{
+    ret_t   retVal;
+
+    retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_IGMP_MLD_CFG0, RTL8367C_IGMP_MLD_DISCARD_STORM_FILTER_OFFSET, bypass);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

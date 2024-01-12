@@ -1,0 +1,9 @@
+static void rtl83xx_get_strings(struct dsa_switch *ds,
+				int port, u32 stringset, u8 *data)
+{
+	if (stringset != ETH_SS_STATS)
+		return;
+
+	for (int i = 0; i < ARRAY_SIZE(rtl83xx_mib); i++)
+		ethtool_puts(&data, rtl83xx_mib[i].name);
+}

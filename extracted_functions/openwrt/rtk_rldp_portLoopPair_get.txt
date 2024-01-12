@@ -1,0 +1,19 @@
+rtk_api_ret_t rtk_rldp_portLoopPair_get(rtk_port_t port, rtk_portmask_t *pPortmask)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 pmsk;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if ((retVal = rtl8367c_getAsicRldpLoopedPortPair(rtk_switch_port_L2P_get(port), &pmsk))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtk_switch_portmask_P2L_get(pmsk, pPortmask)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

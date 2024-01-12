@@ -1,0 +1,9 @@
+static void esw_set_gsc(struct rt305x_esw *esw)
+{
+	esw_rmw(esw, RT305X_ESW_REG_SGC,
+		RT305X_ESW_GSC_BC_STROM_MASK << RT305X_ESW_GSC_BC_STROM_SHIFT,
+		esw->bc_storm_protect << RT305X_ESW_GSC_BC_STROM_SHIFT);
+	esw_rmw(esw, RT305X_ESW_REG_SGC,
+		RT305X_ESW_GSC_LED_FREQ_MASK << RT305X_ESW_GSC_LED_FREQ_SHIFT,
+		esw->led_frequency << RT305X_ESW_GSC_LED_FREQ_SHIFT);
+}

@@ -1,0 +1,56 @@
+int AT91F_MCI_WriteBlock(
+	AT91PS_MciDevice pMCI_Device,
+	int dest,
+	unsigned int *dataBuffer,
+	int sizeToWrite )
+{
+    ////////////////////////////////////////////////////////////////////////////////////////////
+	if( pMCI_Device->pMCI_DeviceDesc->state != AT91C_MCI_IDLE)
+    	return AT91C_WRITE_ERROR;
+    
+    if( (AT91F_MCI_GetStatus(pMCI_Device,pMCI_Device->pMCI_DeviceFeatures->Relative_Card_Address) & AT91C_SR_READY_FOR_DATA) != AT91C_SR_READY_FOR_DATA)
+    	return AT91C_WRITE_ERROR;
+    	
+    if ( (dest + sizeToWrite) > pMCI_Device->pMCI_DeviceFeatures->Memory_Capacity )
+		return AT91C_WRITE_ERROR;
+
+    // If source does not fit a begin of a block
+	if ( (dest % pMCI_Device->pMCI_DeviceFeatures->Max_Read_DataBlock_Length) != 0 )
+		return AT91C_WRITE_ERROR;
+   
+    // Test if the MMC supports Partial Write Block 
+    if( (sizeToWrite < pMCI_Device->pMCI_DeviceFeatures->Max_Write_DataBlock_Length) 
+    	&& (pMCI_Device->pMCI_DeviceFeatures->Write_Partial == 0x00) )
+   		return AT91C_WRITE_ERROR;
+   		
+   	if( sizeToWrite > pMCI_Device->pMCI_DeviceFeatures->Max_Write_DataBlock_Length )
+   		return AT91C_WRITE_ERROR;
+    ////////////////////////////////////////////////////////////////////////////////////////////
+  
+    // Init Mode Register
+	AT91C_BASE_MCI->MCI_MR |= ((pMCI_Device->pMCI_DeviceFeatures->Max_Write_DataBlock_Length << 16) | AT91C_MCI_PDCMODE);
+	
+	if (sizeToWrite %4)
+		sizeToWrite = (sizeToWrite /4)+1;
+	else
+		sizeToWrite = sizeToWrite/4;
+
+	// Init PDC for write sequence
+    AT91C_BASE_PDC_MCI->PDC_PTCR = (AT91C_PDC_TXTDIS | AT91C_PDC_RXTDIS);
+    AT91C_BASE_PDC_MCI->PDC_TPR = (unsigned int) dataBuffer;
+    AT91C_BASE_PDC_MCI->PDC_TCR = sizeToWrite;
+
+	// Send the write single block command
+    if ( AT91F_MCI_SendCommand(pMCI_Device, AT91C_WRITE_BLOCK_CMD, dest) != AT91C_CMD_SEND_OK)
+    	return AT91C_WRITE_ERROR;
+
+	pMCI_Device->pMCI_DeviceDesc->state = AT91C_MCI_TX_SINGLE_BLOCK;
+
+	// Enable AT91C_MCI_TXBUFE Interrupt
+    AT91C_BASE_MCI->MCI_IER = AT91C_MCI_TXBUFE;
+  
+  	// Enables TX for PDC transfert requests
+    AT91C_BASE_PDC_MCI->PDC_PTCR = AT91C_PDC_TXTEN;
+  
+	return AT91C_WRITE_OK;
+}

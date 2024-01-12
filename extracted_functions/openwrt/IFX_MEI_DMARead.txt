@@ -1,0 +1,24 @@
+IFX_MEI_DMARead (DSL_DEV_Device_t * pDev, u32 srcaddr, u32 * databuff,
+		       u32 databuffsize)
+{
+	u32 *p = databuff;
+	u32 temp;
+
+	if (srcaddr & 3)
+		return DSL_DEV_MEI_ERR_FAILURE;
+
+	//      Set the read transfer address
+	IFX_MEI_LongWordWriteOffset (pDev, (u32) ME_DX_AD, srcaddr);
+
+	//      Read the data popped across DMA
+	while (databuffsize--) {
+		IFX_MEI_LongWordReadOffset (pDev, (u32) ME_DX_DATA, &temp);
+		if (databuff == (u32 *) DSL_DEV_PRIVATE(pDev)->CMV_RxMsg)	// swap half word
+			MEI_HALF_WORD_SWAP (temp);
+		*p = temp;
+		p++;
+	}
+
+	return DSL_DEV_MEI_ERR_SUCCESS;
+
+}

@@ -1,0 +1,35 @@
+void memory_release(u32 *addr); 
+int aes_chip_init (void);
+void des_chip_init (void);
+int deu_dma_init (void);
+u32 endian_swap(u32 input);
+u32* memory_alignment(const u8 *arg, u32 *buff_alloc, int in_out, int nbytes);
+void dma_memory_copy(u32 *outcopy, u32 *out_dma, u8 *out_arg, int nbytes);
+void chip_version(void); 
+void deu_dma_priv_init(void);
+void __exit ifxdeu_fini_dma(void);
+
+#define DES_3DES_START  IFX_DES_CON
+#define AES_START       IFX_AES_CON
+#define CLC_START       IFX_DEU_CLK
+
+/* Variables definition */
+int ifx_danube_pre_1_4; 
+u8 *g_dma_page_ptr = NULL;
+u8 *g_dma_block = NULL;
+u8 *g_dma_block2 = NULL;
+
+deu_drv_priv_t deu_dma_priv;
+
+
+/*! \fn u32 endian_swap(u32 input) 
+ *  \ingroup BOARD_SPECIFIC_FUNCTIONS
+ *  \brief function is not used
+ *  \param input Data input to be swapped
+ *  \return input
+*/
+
+u32 endian_swap(u32 input)
+{
+    return input;
+}

@@ -1,0 +1,138 @@
+static void rtl838x_read_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
+{
+	for (int i = 0; i < N_FIXED_FIELDS; i++) {
+		enum template_field_id field_type = t[i];
+		u16 data, data_m;
+
+		field_type = t[i];
+		if (!(i % 2)) {
+			data = r[5 - i / 2];
+			data_m = r[12 - i / 2];
+		} else {
+			data = r[5 - i / 2] >> 16;
+			data_m = r[12 - i / 2] >> 16;
+		}
+
+		switch (field_type) {
+		case TEMPLATE_FIELD_SPM0:
+			pr->spm = (pr->spn << 16) | data;
+			pr->spm_m = (pr->spn << 16) | data_m;
+			break;
+		case TEMPLATE_FIELD_SPM1:
+			pr->spm = data;
+			pr->spm_m = data_m;
+			break;
+		case TEMPLATE_FIELD_OTAG:
+			pr->otag = data;
+			pr->otag_m = data_m;
+			break;
+		case TEMPLATE_FIELD_SMAC0:
+			pr->smac[4] = data >> 8;
+			pr->smac[5] = data;
+			pr->smac_m[4] = data >> 8;
+			pr->smac_m[5] = data;
+			break;
+		case TEMPLATE_FIELD_SMAC1:
+			pr->smac[2] = data >> 8;
+			pr->smac[3] = data;
+			pr->smac_m[2] = data >> 8;
+			pr->smac_m[3] = data;
+			break;
+		case TEMPLATE_FIELD_SMAC2:
+			pr->smac[0] = data >> 8;
+			pr->smac[1] = data;
+			pr->smac_m[0] = data >> 8;
+			pr->smac_m[1] = data;
+			break;
+		case TEMPLATE_FIELD_DMAC0:
+			pr->dmac[4] = data >> 8;
+			pr->dmac[5] = data;
+			pr->dmac_m[4] = data >> 8;
+			pr->dmac_m[5] = data;
+			break;
+		case TEMPLATE_FIELD_DMAC1:
+			pr->dmac[2] = data >> 8;
+			pr->dmac[3] = data;
+			pr->dmac_m[2] = data >> 8;
+			pr->dmac_m[3] = data;
+			break;
+		case TEMPLATE_FIELD_DMAC2:
+			pr->dmac[0] = data >> 8;
+			pr->dmac[1] = data;
+			pr->dmac_m[0] = data >> 8;
+			pr->dmac_m[1] = data;
+			break;
+		case TEMPLATE_FIELD_ETHERTYPE:
+			pr->ethertype = data;
+			pr->ethertype_m = data_m;
+			break;
+		case TEMPLATE_FIELD_ITAG:
+			pr->itag = data;
+			pr->itag_m = data_m;
+			break;
+		case TEMPLATE_FIELD_RANGE_CHK:
+			pr->field_range_check = data;
+			pr->field_range_check_m = data_m;
+			break;
+		case TEMPLATE_FIELD_SIP0:
+			pr->sip = data;
+			pr->sip_m = data_m;
+			break;
+		case TEMPLATE_FIELD_SIP1:
+			pr->sip = (pr->sip << 16) | data;
+			pr->sip_m = (pr->sip << 16) | data_m;
+			break;
+		case TEMPLATE_FIELD_SIP2:
+			pr->is_ipv6 = true;
+			/* Make use of limitiations on the position of the match values */
+			ipv6_addr_set(&pr->sip6, pr->sip, r[5 - i / 2],
+				      r[4 - i / 2], r[3 - i / 2]);
+			ipv6_addr_set(&pr->sip6_m, pr->sip_m, r[5 - i / 2],
+				      r[4 - i / 2], r[3 - i / 2]);
+		case TEMPLATE_FIELD_SIP3:
+		case TEMPLATE_FIELD_SIP4:
+		case TEMPLATE_FIELD_SIP5:
+		case TEMPLATE_FIELD_SIP6:
+		case TEMPLATE_FIELD_SIP7:
+			break;
+		case TEMPLATE_FIELD_DIP0:
+			pr->dip = data;
+			pr->dip_m = data_m;
+			break;
+		case TEMPLATE_FIELD_DIP1:
+			pr->dip = (pr->dip << 16) | data;
+			pr->dip_m = (pr->dip << 16) | data_m;
+			break;
+		case TEMPLATE_FIELD_DIP2:
+			pr->is_ipv6 = true;
+			ipv6_addr_set(&pr->dip6, pr->dip, r[5 - i / 2],
+				      r[4 - i / 2], r[3 - i / 2]);
+			ipv6_addr_set(&pr->dip6_m, pr->dip_m, r[5 - i / 2],
+				      r[4 - i / 2], r[3 - i / 2]);
+		case TEMPLATE_FIELD_DIP3:
+		case TEMPLATE_FIELD_DIP4:
+		case TEMPLATE_FIELD_DIP5:
+		case TEMPLATE_FIELD_DIP6:
+		case TEMPLATE_FIELD_DIP7:
+			break;
+		case TEMPLATE_FIELD_IP_TOS_PROTO:
+			pr->tos_proto = data;
+			pr->tos_proto_m = data_m;
+			break;
+		case TEMPLATE_FIELD_L4_SPORT:
+			pr->sport = data;
+			pr->sport_m = data_m;
+			break;
+		case TEMPLATE_FIELD_L4_DPORT:
+			pr->dport = data;
+			pr->dport_m = data_m;
+			break;
+		case TEMPLATE_FIELD_ICMP_IGMP:
+			pr->icmp_igmp = data;
+			pr->icmp_igmp_m = data_m;
+			break;
+		default:
+			pr_info("%s: unknown field %d\n", __func__, field_type);
+		}
+	}
+}

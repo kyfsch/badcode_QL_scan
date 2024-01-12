@@ -1,0 +1,6 @@
+inline u16 rtl_table_data(struct table_reg *r, int i)
+{
+	if (i >= r->max_data)
+		i = r->max_data - 1;
+	return r->data + i * 4;
+}

@@ -1,0 +1,62 @@
+static int oxnas_pcie_init_res(struct platform_device *pdev,
+				      struct oxnas_pcie *pcie,
+				      struct device_node *np)
+{
+	struct of_pci_range range;
+	struct of_pci_range_parser parser;
+	int ret;
+
+	if (of_pci_range_parser_init(&parser, np))
+		return -EINVAL;
+
+	/* Get the I/O and memory ranges from DT */
+	for_each_of_pci_range(&parser, &range) {
+
+		unsigned long restype = range.flags & IORESOURCE_TYPE_BITS;
+		if (restype == IORESOURCE_IO) {
+			of_pci_range_to_resource(&range, np, &pcie->io);
+			pcie->io.name = "I/O";
+		}
+		if (restype == IORESOURCE_MEM) {
+			if (range.flags & IORESOURCE_PREFETCH) {
+				of_pci_range_to_resource(&range, np, &pcie->pre_mem);
+				pcie->pre_mem.name = "PRE MEM";
+			} else {
+				of_pci_range_to_resource(&range, np, &pcie->non_mem);
+				pcie->non_mem.name = "NON MEM";
+			}
+
+		}
+		if (restype == 0)
+			of_pci_range_to_resource(&range, np, &pcie->cfg);
+	}
+
+	/* Get the bus range */
+	ret = of_pci_parse_bus_range(np, &pcie->busn);
+
+	if (ret) {
+		dev_err(&pdev->dev, "failed to parse bus-range property: %d\n",
+			ret);
+		return ret;
+	}
+
+	pcie->card_reset = of_get_gpio(np, 0);
+	if (pcie->card_reset < 0)
+		dev_info(&pdev->dev, "card reset gpio pin not exists\n");
+
+	if (of_property_read_u32(np, "plxtech,pcie-hcsl-bit", &pcie->hcsl_en))
+		return -EINVAL;
+
+	pcie->clk = of_clk_get_by_name(np, "pcie");
+	if (IS_ERR(pcie->clk)) {
+		return PTR_ERR(pcie->clk);
+	}
+
+	pcie->busclk = of_clk_get_by_name(np, "busclk");
+	if (IS_ERR(pcie->busclk)) {
+		clk_put(pcie->clk);
+		return PTR_ERR(pcie->busclk);
+	}
+
+	return 0;
+}

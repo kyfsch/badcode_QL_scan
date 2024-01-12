@@ -1,0 +1,15 @@
+int rtk_hal_set_ingress_rate(struct ra_switch_ioctl_data *data)
+{
+	rtk_api_ret_t ret;
+
+	if (data->on_off == 1)
+		ret =
+		    rtk_rate_igrBandwidthCtrlRate_set(data->port, data->bw, 0,
+						      1);
+	else
+		ret =
+		    rtk_rate_igrBandwidthCtrlRate_set(data->port, 1048568, 0,
+						      1);
+
+	return ret;
+}

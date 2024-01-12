@@ -1,0 +1,35 @@
+static void rtk_hal_set_port_mirror(unsigned int port ,unsigned int rx_port_map,unsigned int tx_port_map)
+{
+        rtk_portmask_t rx_portmask;
+        rtk_portmask_t tx_portmask;
+        rtk_api_ret_t ret;
+        int i;
+
+        rtk_mirror_portIso_set(ENABLED);
+        RTK_PORTMASK_CLEAR(rx_portmask);
+        RTK_PORTMASK_CLEAR(tx_portmask);
+
+	for (i = 0; i < 5; i++)
+                if (rx_port_map & (1 << i))
+                        RTK_PORTMASK_PORT_SET(rx_portmask, i);
+
+        for (i = 0; i < 2; i++)
+                if (rx_port_map & (1 << (i + 5)))
+                        RTK_PORTMASK_PORT_SET(rx_portmask, (i + EXT_PORT0));
+
+        RTK_PORTMASK_CLEAR(tx_portmask);
+
+	for (i = 0; i < 5; i++)
+		if (tx_port_map & (1 << i))
+		           RTK_PORTMASK_PORT_SET(tx_portmask, i);
+
+	for (i = 0; i < 2; i++)
+		if (tx_port_map & (1 << (i + 5)))
+			RTK_PORTMASK_PORT_SET(tx_portmask, (i + EXT_PORT0));
+
+	ret = rtk_mirror_portBased_set(port, &rx_portmask, &tx_portmask);
+
+        if (!ret)
+                printk("rtk_mirror_portBased_set success\n");
+
+}

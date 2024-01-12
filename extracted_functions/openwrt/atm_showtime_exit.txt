@@ -1,0 +1,19 @@
+static int atm_showtime_exit(void)
+{
+	int port_num;
+
+	if ( !g_showtime )
+		return -1;
+
+#if defined(CONFIG_VR9)
+	IFX_REG_W32(0x00, UTP_CFG);
+#endif
+
+	for ( port_num = 0; port_num < ATM_PORT_NUMBER; port_num++ )
+		atm_dev_signal_change(g_atm_priv_data.port[port_num].dev, ATM_PHY_SIG_LOST);
+
+	g_showtime = 0;
+	g_xdata_addr = NULL;
+	printk("leave showtime\n");
+	return 0;
+}

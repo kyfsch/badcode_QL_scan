@@ -1,0 +1,6 @@
+static int msdc_drv_suspend(struct platform_device *pdev, pm_message_t state)
+{
+	if (state.event == PM_EVENT_SUSPEND)
+		msdc_drv_pm(pdev, state);
+	return 0;
+}

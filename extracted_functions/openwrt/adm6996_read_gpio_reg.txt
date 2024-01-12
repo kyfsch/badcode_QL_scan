@@ -1,0 +1,31 @@
+adm6996_read_gpio_reg(struct adm6996_priv *priv, enum admreg reg)
+{
+	/* cmd: 01 10 T DD R RRRRRR */
+	u8 bits[6] = {
+		0xFF, 0xFF, 0xFF, 0xFF,
+		(0x06 << 4) | ((0 & 0x01) << 3 | (reg&64)>>6),
+		((reg&63)<<2)
+	};
+
+	u8 rbits[4];
+
+	/* Enable GPIO outputs with all pins to 0 */
+	gpio_direction_output(priv->eecs, 0);
+	gpio_direction_output(priv->eesk, 0);
+	gpio_direction_output(priv->eedi, 0);
+
+	adm6996_gpio_write(priv, 0, bits, 46);
+	gpio_direction_input(priv->eedi);
+	adm6996_gpio_adclk(priv, 2);
+	adm6996_gpio_read(priv, 0, rbits, 32);
+
+	/* Extra clock(s) required per datasheet */
+	adm6996_gpio_adclk(priv, 2);
+
+	/* Disable GPIO outputs */
+	gpio_direction_input(priv->eecs);
+	gpio_direction_input(priv->eesk);
+
+	 /* EEPROM has 16-bit registers, but pumps out two registers in one request */
+	return (reg & 0x01 ?  (rbits[0]<<8) | rbits[1] : (rbits[2]<<8) | (rbits[3]));
+}

@@ -1,0 +1,7 @@
+show_global(struct switch_dev *dev)
+{
+	struct switch_val val;
+
+	printf("Global attributes:\n");
+	show_attrs(dev, dev->ops, &val);
+}

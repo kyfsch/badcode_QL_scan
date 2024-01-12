@@ -1,0 +1,25 @@
+int set_led(struct led *led, unsigned char value)
+{
+	char buf[8];
+
+	if ( ! led )
+		return -1;
+
+	if ( ! led->controlfd )
+		return -1;
+
+	if ( led->state == value )
+		return 0;
+
+	snprintf(buf, 8, "%d", value);
+
+	rewind(led->controlfd);
+
+	if ( ! fwrite(buf, sizeof(char), strlen(buf), led->controlfd) )
+		return -2;
+
+	fflush(led->controlfd);
+	led->state=value;
+
+	return 0;
+}

@@ -1,0 +1,8 @@
+static u16 read_cr(void __iomem *phy_base, u16 address)
+{
+	iowrite32((u32)address, phy_base + PHY_STAT);
+	wait_cr_ack(phy_base);
+	iowrite32(CR_READ_ENABLE, phy_base + PHY_DATA);
+	wait_cr_ack(phy_base);
+	return (u16)ioread32(phy_base + PHY_STAT);
+}

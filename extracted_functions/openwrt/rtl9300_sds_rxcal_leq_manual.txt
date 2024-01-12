@@ -1,0 +1,10 @@
+void rtl9300_sds_rxcal_leq_manual(u32 sds_num, bool manual, u32 leq_gray)
+{
+	if (manual) {
+		rtl9300_sds_field_w(sds_num, 0x2e, 0x18, 15, 15, 0x1);
+		rtl9300_sds_field_w(sds_num, 0x2e, 0x16, 14, 10, leq_gray);
+	} else {
+		rtl9300_sds_field_w(sds_num, 0x2e, 0x18, 15, 15, 0x0);
+		mdelay(100);
+	}
+}

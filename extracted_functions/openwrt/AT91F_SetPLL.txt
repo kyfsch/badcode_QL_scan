@@ -1,0 +1,29 @@
+static unsigned int AT91F_SetPLL(void)
+{
+	AT91_REG tmp;
+	AT91PS_PMC pPmc = AT91C_BASE_PMC;
+	AT91PS_CKGR pCkgr = AT91C_BASE_CKGR;
+
+	pPmc->PMC_IDR = 0xFFFFFFFF;
+
+	/* -Setup the PLL A */
+	pCkgr->CKGR_PLLAR = AT91C_PLLA_VALUE;
+
+	while (!(*AT91C_PMC_SR & AT91C_PMC_LOCKA));
+	
+	/* - Switch Master Clock from PLLB to PLLA/3 */
+	tmp = pPmc->PMC_MCKR;
+	/* See Atmel Errata #27 and #28 */
+	if (tmp & 0x0000001C) {
+		tmp = (tmp & ~0x0000001C);
+		pPmc->PMC_MCKR = tmp;
+		while (!(*AT91C_PMC_SR & AT91C_PMC_MCKRDY));
+	}
+	if (tmp != 0x00000202) {
+		pPmc->PMC_MCKR = 0x00000202;
+		if ((tmp & 0x00000003) != 0x00000002)
+			while (!(*AT91C_PMC_SR & AT91C_PMC_MCKRDY));
+	}
+
+	return 1;	
+}

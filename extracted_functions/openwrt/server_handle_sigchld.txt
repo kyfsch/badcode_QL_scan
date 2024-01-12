@@ -1,0 +1,16 @@
+server_handle_sigchld(int sig)
+{
+	struct ead_instance *in;
+	struct list_head *p;
+	int pid = 0;
+	wait(&pid);
+
+	list_for_each(p, &instances) {
+		in = list_entry(p, struct ead_instance, list);
+		if (pid != in->pid)
+			continue;
+
+		in->pid = 0;
+		break;
+	}
+}

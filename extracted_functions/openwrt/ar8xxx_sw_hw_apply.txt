@@ -1,0 +1,56 @@
+ar8xxx_sw_hw_apply(struct switch_dev *dev)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	const struct ar8xxx_chip *chip = priv->chip;
+	u8 portmask[AR8X16_MAX_PORTS];
+	int i, j;
+
+	mutex_lock(&priv->reg_mutex);
+	/* flush all vlan translation unit entries */
+	priv->chip->vtu_flush(priv);
+
+	memset(portmask, 0, sizeof(portmask));
+	if (!priv->init) {
+		/* calculate the port destination masks and load vlans
+		 * into the vlan translation unit */
+		for (j = 0; j < dev->vlans; j++) {
+			u8 vp = priv->vlan_table[j];
+
+			if (!vp)
+				continue;
+
+			for (i = 0; i < dev->ports; i++) {
+				u8 mask = (1 << i);
+				if (vp & mask)
+					portmask[i] |= vp & ~mask;
+			}
+
+			chip->vtu_load_vlan(priv, priv->vlan_id[j],
+					    priv->vlan_table[j]);
+		}
+	} else {
+		/* vlan disabled:
+		 * isolate all ports, but connect them to the cpu port */
+		for (i = 0; i < dev->ports; i++) {
+			if (i == AR8216_PORT_CPU)
+				continue;
+
+			portmask[i] = 1 << AR8216_PORT_CPU;
+			portmask[AR8216_PORT_CPU] |= (1 << i);
+		}
+	}
+
+	/* update the port destination mask registers and tag settings */
+	for (i = 0; i < dev->ports; i++) {
+		chip->setup_port(priv, i, portmask[i]);
+	}
+
+	chip->set_mirror_regs(priv);
+
+	/* set age time */
+	if (chip->reg_arl_ctrl)
+		ar8xxx_set_age_time(priv, chip->reg_arl_ctrl);
+
+	mutex_unlock(&priv->reg_mutex);
+	return 0;
+}

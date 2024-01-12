@@ -1,0 +1,11 @@
+BigIntegerCmpInt(c1, c2)
+     BigInteger c1;
+     unsigned int c2;
+{
+  BIGNUM * a = BN_new();
+  int rv;
+  BN_set_word(a, c2);
+  rv = BN_cmp(c1, a);
+  BN_free(a);
+  return rv;
+}

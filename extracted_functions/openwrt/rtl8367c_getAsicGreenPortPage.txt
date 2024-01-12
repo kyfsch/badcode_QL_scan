@@ -1,0 +1,24 @@
+ret_t rtl8367c_getAsicGreenPortPage(rtk_uint32 port, rtk_uint32* pPage)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+    rtk_uint32 pageMeter;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    retVal = rtl8367c_getAsicReg(RTL8367C_PAGEMETER_PORT_REG(port), &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+   pageMeter = regData;
+
+    retVal = rtl8367c_getAsicReg(RTL8367C_PAGEMETER_PORT_REG(port) + 1, &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    pageMeter = pageMeter + (regData << 16);
+
+    *pPage = pageMeter;
+    return RT_ERR_OK;
+}

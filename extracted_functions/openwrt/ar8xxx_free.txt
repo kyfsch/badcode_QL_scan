@@ -1,0 +1,9 @@
+ar8xxx_free(struct ar8xxx_priv *priv)
+{
+	if (priv->chip && priv->chip->cleanup)
+		priv->chip->cleanup(priv);
+
+	kfree(priv->chip_data);
+	kfree(priv->mib_stats);
+	kfree(priv);
+}

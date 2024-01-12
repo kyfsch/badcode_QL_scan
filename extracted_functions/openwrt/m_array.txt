@@ -1,0 +1,8 @@
+static inline void m_array(const char *id, const uint8_t *value, size_t len) {
+	void *c = blobmsg_open_array(&b, id);
+
+	for (size_t i = 0; i < len; ++i)
+		blobmsg_add_u16(&b, "", value[i]);
+
+	blobmsg_close_array(&b, c);
+}

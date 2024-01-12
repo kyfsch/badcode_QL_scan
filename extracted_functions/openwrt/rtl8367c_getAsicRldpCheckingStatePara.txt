@@ -1,0 +1,10 @@
+ret_t rtl8367c_getAsicRldpCheckingStatePara(rtk_uint32 *pRetryCount, rtk_uint32 *pRetryPeriod)
+{
+    ret_t retVal;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_RLDP_RETRY_COUNT_REG, RTL8367C_RLDP_RETRY_COUNT_CHKSTATE_MASK, pRetryCount);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return rtl8367c_getAsicReg(RTL8367C_RLDP_RETRY_PERIOD_CHKSTATE_REG, pRetryPeriod);
+}

@@ -1,0 +1,21 @@
+rtk_api_ret_t rtk_trunk_port_get(rtk_trunk_group_t trk_gid, rtk_portmask_t *pTrunk_member_portmask)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 pmsk;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Trunk Group Valid */
+    RTK_CHK_TRUNK_GROUP_VALID(trk_gid);
+
+    if ((retVal = rtl8367c_getAsicTrunkingGroup(trk_gid, &pmsk)) != RT_ERR_OK)
+        return retVal;
+
+    pmsk = pmsk << RTL8367C_PORT_TRUNK_GROUP_MASK_OFFSET(trk_gid);
+
+    if((retVal = rtk_switch_portmask_P2L_get(pmsk, pTrunk_member_portmask)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

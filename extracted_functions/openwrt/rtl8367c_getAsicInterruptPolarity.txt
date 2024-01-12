@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicInterruptPolarity(rtk_uint32* pPolarity)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_INTR_CTRL, RTL8367C_INTR_CTRL_OFFSET, pPolarity);
+}

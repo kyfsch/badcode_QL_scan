@@ -1,0 +1,13 @@
+swconfig_get_vlan_ports(struct switch_dev *dev, const struct switch_attr *attr,
+			struct switch_val *val)
+{
+	int ret;
+	if (val->port_vlan >= dev->vlans)
+		return -EINVAL;
+
+	if (!dev->ops->get_vlan_ports)
+		return -EOPNOTSUPP;
+
+	ret = dev->ops->get_vlan_ports(dev, val);
+	return ret;
+}

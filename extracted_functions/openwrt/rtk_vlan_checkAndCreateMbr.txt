@@ -1,0 +1,119 @@
+rtk_api_ret_t rtk_vlan_checkAndCreateMbr(rtk_vlan_t vid, rtk_uint32 *pIndex)
+{
+    rtk_api_ret_t retVal;
+    rtl8367c_user_vlan4kentry vlan4K;
+    rtl8367c_vlanconfiguser vlanMC;
+    rtk_uint32 idx;
+    rtk_uint32 empty_idx = 0xFFFF;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* vid must be 0~8191 */
+    if (vid > RTL8367C_EVIDMAX)
+        return RT_ERR_VLAN_VID;
+
+    /* Null pointer check */
+    if(NULL == pIndex)
+        return RT_ERR_NULL_POINTER;
+
+    /* Get 4K VLAN */
+    if (vid <= RTL8367C_VIDMAX)
+    {
+        memset(&vlan4K, 0x00, sizeof(rtl8367c_user_vlan4kentry));
+        vlan4K.vid = vid;
+        if ((retVal = rtl8367c_getAsicVlan4kEntry(&vlan4K)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    /* Search exist entry */
+    for (idx = 0; idx <= RTL8367C_CVIDXMAX; idx++)
+    {
+        if(vlan_mbrCfgUsage[idx] == MBRCFG_USED_BY_VLAN)
+        {
+            if(vlan_mbrCfgVid[idx] == vid)
+            {
+                /* Found! return index */
+                *pIndex = idx;
+                return RT_ERR_OK;
+            }
+        }
+    }
+
+    /* Not found, Read H/W Member Configuration table to update database */
+    for (idx = 0; idx <= RTL8367C_CVIDXMAX; idx++)
+    {
+        if ((retVal = rtl8367c_getAsicVlanMemberConfig(idx, &vlanMC)) != RT_ERR_OK)
+            return retVal;
+
+        if( (vlanMC.evid == 0) && (vlanMC.mbr == 0x00))
+        {
+            vlan_mbrCfgUsage[idx]   = MBRCFG_UNUSED;
+            vlan_mbrCfgVid[idx]     = 0;
+        }
+        else
+        {
+            vlan_mbrCfgUsage[idx]   = MBRCFG_USED_BY_VLAN;
+            vlan_mbrCfgVid[idx]     = vlanMC.evid;
+        }
+    }
+
+    /* Search exist entry again */
+    for (idx = 0; idx <= RTL8367C_CVIDXMAX; idx++)
+    {
+        if(vlan_mbrCfgUsage[idx] == MBRCFG_USED_BY_VLAN)
+        {
+            if(vlan_mbrCfgVid[idx] == vid)
+            {
+                /* Found! return index */
+                *pIndex = idx;
+                return RT_ERR_OK;
+            }
+        }
+    }
+
+    /* try to look up an empty index */
+    for (idx = 0; idx <= RTL8367C_CVIDXMAX; idx++)
+    {
+        if(vlan_mbrCfgUsage[idx] == MBRCFG_UNUSED)
+        {
+            empty_idx = idx;
+            break;
+        }
+    }
+
+    if(empty_idx == 0xFFFF)
+    {
+        /* No empty index */
+        return RT_ERR_TBL_FULL;
+    }
+
+    if (vid > RTL8367C_VIDMAX)
+    {
+        /* > 4K, there is no 4K entry, create on member configuration directly */
+        memset(&vlanMC, 0x00, sizeof(rtl8367c_vlanconfiguser));
+        vlanMC.evid = vid;
+        if ((retVal = rtl8367c_setAsicVlanMemberConfig(empty_idx, &vlanMC)) != RT_ERR_OK)
+            return retVal;
+    }
+    else
+    {
+        /* Copy from 4K table */
+        vlanMC.evid = vid;
+        vlanMC.mbr = vlan4K.mbr;
+        vlanMC.fid_msti = vlan4K.fid_msti;
+        vlanMC.meteridx= vlan4K.meteridx;
+        vlanMC.envlanpol= vlan4K.envlanpol;
+        vlanMC.vbpen = vlan4K.vbpen;
+        vlanMC.vbpri = vlan4K.vbpri;
+        if ((retVal = rtl8367c_setAsicVlanMemberConfig(empty_idx, &vlanMC)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    /* Update Database */
+    vlan_mbrCfgUsage[empty_idx] = MBRCFG_USED_BY_VLAN;
+    vlan_mbrCfgVid[empty_idx] = vid;
+
+    *pIndex = empty_idx;
+    return RT_ERR_OK;
+}

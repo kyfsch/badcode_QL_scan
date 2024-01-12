@@ -1,0 +1,17 @@
+u32 msdc_time_calc(u32 old_L32, u32 old_H32, u32 new_L32, u32 new_H32)
+{
+	u32 ret = 0;
+
+	if (new_H32 == old_H32) {
+		ret = new_L32 - old_L32;
+	} else if (new_H32 == (old_H32 + 1)) {
+		if (new_L32 > old_L32)
+			printk("msdc old_L<0x%x> new_L<0x%x>\n", old_L32, new_L32);
+		ret = (0xffffffff - old_L32);
+		ret += new_L32;
+	} else {
+		printk("msdc old_H<0x%x> new_H<0x%x>\n", old_H32, new_H32);
+	}
+
+	return ret;
+}

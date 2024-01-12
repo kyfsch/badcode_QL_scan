@@ -1,0 +1,12 @@
+static void __exit wl_glue_exit(void)
+{
+	if (wl_glue_attached)
+	{
+		if (wl_glue_unregister())
+			pr_err("Failed to unregister glue driver\n");
+
+		wl_glue_attached = 0;
+	}
+
+	return;
+}

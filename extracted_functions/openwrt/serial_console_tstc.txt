@@ -1,0 +1,4 @@
+int serial_console_tstc(void)
+{
+	return ((in_8(reg_base + (UART_LSR << reg_shift)) & UART_LSR_DR) != 0);
+}

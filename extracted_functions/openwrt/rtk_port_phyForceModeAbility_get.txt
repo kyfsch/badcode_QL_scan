@@ -1,0 +1,84 @@
+rtk_api_ret_t rtk_port_phyForceModeAbility_get(rtk_port_t port, rtk_port_phy_ability_t *pAbility)
+{
+    rtk_api_ret_t       retVal;
+    rtk_uint32          phyData0;
+    rtk_uint32          phyData4;
+    rtk_uint32          phyData9;
+    rtk_port_media_t    media_type;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+     RTK_CHK_PORT_IS_UTP(port);
+
+     if(NULL == pAbility)
+        return RT_ERR_NULL_POINTER;
+
+     if (rtk_switch_isComboPort(port) == RT_ERR_OK)
+     {
+         if ((retVal = rtk_port_phyComboPortMedia_get(port, &media_type)) != RT_ERR_OK)
+             return retVal;
+
+         if(media_type == PORT_MEDIA_FIBER)
+         {
+             return _rtk_port_FiberModeAbility_get(port, pAbility);
+         }
+     }
+
+    /*Control register setting and restart auto*/
+    if ((retVal = rtl8367c_getAsicPHYReg(rtk_switch_port_L2P_get(port), PHY_CONTROL_REG, &phyData0)) != RT_ERR_OK)
+        return retVal;
+
+    /*Auto-Negotiation control register setting*/
+    if ((retVal = rtl8367c_getAsicPHYReg(rtk_switch_port_L2P_get(port), PHY_AN_ADVERTISEMENT_REG, &phyData4)) != RT_ERR_OK)
+        return retVal;
+
+    /*1000 BASE-T control register setting*/
+    if ((retVal = rtl8367c_getAsicPHYReg(rtk_switch_port_L2P_get(port), PHY_1000_BASET_CONTROL_REG, &phyData9)) != RT_ERR_OK)
+        return retVal;
+
+    if (phyData9 & (1 << 9))
+        pAbility->Full_1000 = 1;
+    else
+        pAbility->Full_1000 = 0;
+
+    if (phyData4 & (1 << 11))
+        pAbility->AsyFC = 1;
+    else
+        pAbility->AsyFC = 0;
+
+    if (phyData4 & ((1 << 10)))
+        pAbility->FC = 1;
+    else
+        pAbility->FC = 0;
+
+
+    if (phyData4 & (1 << 8))
+        pAbility->Full_100 = 1;
+    else
+        pAbility->Full_100 = 0;
+
+    if (phyData4 & (1 << 7))
+        pAbility->Half_100 = 1;
+    else
+        pAbility->Half_100 = 0;
+
+    if (phyData4 & (1 << 6))
+        pAbility->Full_10 = 1;
+    else
+        pAbility->Full_10 = 0;
+
+    if (phyData4 & (1 << 5))
+        pAbility->Half_10 = 1;
+    else
+        pAbility->Half_10 = 0;
+
+
+    if (phyData0 & (1 << 12))
+        pAbility->AutoNegotiation = 1;
+    else
+        pAbility->AutoNegotiation = 0;
+
+    return RT_ERR_OK;
+}

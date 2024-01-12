@@ -1,0 +1,58 @@
+ret_t rtl8367c_setAsicVlan4kEntry(rtl8367c_user_vlan4kentry *pVlan4kEntry )
+{
+    rtk_uint16              vlan_4k_entry[RTL8367C_VLAN_4KTABLE_LEN];
+    rtk_uint32                  page_idx;
+    rtk_uint16                  *tableAddr;
+    ret_t                   retVal;
+    rtk_uint32                  regData;
+
+    if(pVlan4kEntry->vid > RTL8367C_VIDMAX)
+        return RT_ERR_VLAN_VID;
+
+    if(pVlan4kEntry->mbr > RTL8367C_PORTMASK)
+        return RT_ERR_PORT_MASK;
+
+    if(pVlan4kEntry->untag > RTL8367C_PORTMASK)
+        return RT_ERR_PORT_MASK;
+
+    if(pVlan4kEntry->fid_msti > RTL8367C_FIDMAX)
+        return RT_ERR_L2_FID;
+
+    if(pVlan4kEntry->meteridx > RTL8367C_METERMAX)
+        return RT_ERR_FILTER_METER_ID;
+
+    if(pVlan4kEntry->vbpri > RTL8367C_PRIMAX)
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    memset(vlan_4k_entry, 0x00, sizeof(rtk_uint16) * RTL8367C_VLAN_4KTABLE_LEN);
+    _rtl8367c_Vlan4kStUser2Smi(pVlan4kEntry, vlan_4k_entry);
+
+    /* Prepare Data */
+    tableAddr = vlan_4k_entry;
+    for(page_idx = 0; page_idx < RTL8367C_VLAN_4KTABLE_LEN; page_idx++)
+    {
+        regData = *tableAddr;
+        retVal = rtl8367c_setAsicReg(RTL8367C_TABLE_ACCESS_WRDATA_BASE + page_idx, regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        tableAddr++;
+    }
+
+    /* Write Address (VLAN_ID) */
+    regData = pVlan4kEntry->vid;
+    retVal = rtl8367c_setAsicReg(RTL8367C_TABLE_ACCESS_ADDR_REG, regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    /* Write Command */
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_TABLE_ACCESS_CTRL_REG, RTL8367C_TABLE_TYPE_MASK | RTL8367C_COMMAND_TYPE_MASK,RTL8367C_TABLE_ACCESS_REG_DATA(TB_OP_WRITE,TB_TARGET_CVLAN));
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+#if defined(CONFIG_RTL8367C_ASICDRV_TEST)
+    memcpy(&Rtl8370sVirtualVlanTable[pVlan4kEntry->vid], pVlan4kEntry, sizeof(rtl8367c_user_vlan4kentry));
+#endif
+
+    return RT_ERR_OK;
+}

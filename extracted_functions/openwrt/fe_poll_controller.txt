@@ -1,0 +1,9 @@
+static void fe_poll_controller(struct net_device *dev)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+	u32 int_mask = priv->soc->tx_int | priv->soc->rx_int;
+
+	fe_int_disable(int_mask);
+	fe_handle_irq(dev->irq, dev);
+	fe_int_enable(int_mask);
+}

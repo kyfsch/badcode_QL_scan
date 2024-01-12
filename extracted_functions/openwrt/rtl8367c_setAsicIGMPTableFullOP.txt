@@ -1,0 +1,14 @@
+ret_t rtl8367c_setAsicIGMPTableFullOP(rtk_uint32 operation)
+{
+    ret_t  retVal;
+
+    if(operation >= TABLE_FULL_OP_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    /* Table full Operation */
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_IGMP_MLD_CFG1, RTL8367C_TABLE_FULL_OP_MASK, operation);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

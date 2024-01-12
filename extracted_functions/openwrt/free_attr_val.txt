@@ -1,0 +1,16 @@
+free_attr_val(const struct switch_attr *attr, const struct switch_val *val)
+{
+	switch (attr->type) {
+	case SWITCH_TYPE_STRING:
+		free(val->value.s);
+		break;
+	case SWITCH_TYPE_PORTS:
+		free(val->value.ports);
+		break;
+	case SWITCH_TYPE_LINK:
+		free(val->value.link);
+		break;
+	default:
+		break;
+	}
+}

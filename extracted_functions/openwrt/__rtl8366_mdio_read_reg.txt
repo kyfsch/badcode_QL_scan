@@ -1,0 +1,36 @@
+int __rtl8366_mdio_read_reg(struct rtl8366_smi *smi, u32 addr, u32 *data)
+{
+	u32 phy_id = MDC_REALTEK_PHY_ADDR;
+	struct mii_bus *mbus = smi->ext_mbus;
+
+	BUG_ON(in_interrupt());
+
+	mutex_lock(&mbus->mdio_lock);
+	/* Write Start command to register 29 */
+	mbus->write(mbus, phy_id, MDC_MDIO_START_REG, MDC_MDIO_START_OP);
+
+	/* Write address control code to register 31 */
+	mbus->write(mbus, phy_id, MDC_MDIO_CTRL0_REG, MDC_MDIO_ADDR_OP);
+
+	/* Write Start command to register 29 */
+	mbus->write(mbus, phy_id, MDC_MDIO_START_REG, MDC_MDIO_START_OP);
+
+	/* Write address to register 23 */
+	mbus->write(mbus, phy_id, MDC_MDIO_ADDRESS_REG, addr);
+
+	/* Write Start command to register 29 */
+	mbus->write(mbus, phy_id, MDC_MDIO_START_REG, MDC_MDIO_START_OP);
+
+	/* Write read control code to register 21 */
+	mbus->write(mbus, phy_id, MDC_MDIO_CTRL1_REG, MDC_MDIO_READ_OP);
+
+	/* Write Start command to register 29 */
+	mbus->write(smi->ext_mbus, phy_id, MDC_MDIO_START_REG, MDC_MDIO_START_OP);
+
+	/* Read data from register 25 */
+	*data = mbus->read(mbus, phy_id, MDC_MDIO_DATA_READ_REG);
+
+	mutex_unlock(&mbus->mdio_lock);
+
+	return 0;
+}

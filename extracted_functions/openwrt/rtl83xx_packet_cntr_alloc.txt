@@ -1,0 +1,28 @@
+int rtl83xx_packet_cntr_alloc(struct rtl838x_switch_priv *priv)
+{
+	int idx, j;
+
+	mutex_lock(&priv->reg_mutex);
+
+	/* Because initially no packet counters are free, the logic is reversed:
+	 * a 0-bit means the counter is already allocated (for octets)
+	 */
+	idx = find_first_bit(priv->packet_cntr_use_bm, MAX_COUNTERS * 2);
+	if (idx >= priv->n_counters * 2) {
+		j = find_first_zero_bit(priv->octet_cntr_use_bm, MAX_COUNTERS);
+		if (j >= priv->n_counters) {
+			mutex_unlock(&priv->reg_mutex);
+			return -1;
+		}
+		set_bit(j, priv->octet_cntr_use_bm);
+		idx = j * 2;
+		set_bit(j * 2 + 1, priv->packet_cntr_use_bm);
+
+	} else {
+		clear_bit(idx, priv->packet_cntr_use_bm);
+	}
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return idx;
+}

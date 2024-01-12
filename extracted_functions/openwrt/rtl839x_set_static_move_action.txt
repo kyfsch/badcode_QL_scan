@@ -1,0 +1,8 @@
+static void rtl839x_set_static_move_action(int port, bool forward)
+{
+	int shift = MV_ACT_PORT_SHIFT(port);
+	u32 val = forward ? MV_ACT_FORWARD : MV_ACT_DROP;
+
+	sw_w32_mask(MV_ACT_MASK << shift, val << shift,
+		    RTL839X_L2_PORT_STATIC_MV_ACT(port));
+}

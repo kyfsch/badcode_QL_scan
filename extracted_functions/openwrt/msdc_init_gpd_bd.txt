@@ -1,0 +1,20 @@
+static void msdc_init_gpd_bd(struct msdc_host *host, struct msdc_dma *dma)
+{
+	struct gpd *gpd = dma->gpd;
+	struct bd  *bd  = dma->bd;
+	int i;
+
+	/* we just support one gpd, but gpd->next must be set for desc
+	 * DMA. That's why we alloc 2 gpd structurs.
+	 */
+
+	memset(gpd, 0, sizeof(struct gpd) * 2);
+
+	gpd->bdp  = 1;   /* hwo, cs, bd pointer */
+	gpd->ptr = (void *)dma->bd_addr; /* physical address */
+	gpd->next = (void *)((u32)dma->gpd_addr + sizeof(struct gpd));
+
+	memset(bd, 0, sizeof(struct bd) * MAX_BD_NUM);
+	for (i = 0; i < (MAX_BD_NUM - 1); i++)
+		bd[i].next = (void *)(dma->bd_addr + sizeof(*bd) * (i + 1));
+}

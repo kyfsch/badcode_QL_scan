@@ -1,0 +1,14 @@
+static const char *md5_hash(FILE *f)
+{
+	MD5_CTX ctx;
+	unsigned char val[MD5_DIGEST_LENGTH];
+	void *buf;
+	int len;
+
+	MD5_begin(&ctx);
+	while ((buf = hash_buf(f, &len)) != NULL)
+		MD5_hash(buf, len, &ctx);
+	MD5_end(val, &ctx);
+
+	return hash_string(val, MD5_DIGEST_LENGTH);
+}

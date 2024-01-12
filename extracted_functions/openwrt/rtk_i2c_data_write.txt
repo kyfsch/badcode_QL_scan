@@ -1,0 +1,96 @@
+rtk_api_ret_t rtk_i2c_data_write(rtk_uint8 deviceAddr, rtk_uint32 slaveRegAddr, rtk_uint32 regData)
+{
+     rtk_uint32 retVal,counter;
+     rtk_uint8 controlByte_W;
+     rtk_uint8 slaveRegAddr_L, slaveRegAddr_H = 0x0, temp;
+     rtk_uint8 regData_L, regData_H;
+
+  /* control byte :deviceAddress + W    */
+    controlByte_W = (rtk_uint8)(deviceAddr<< 1) ;
+
+    slaveRegAddr_L = (rtk_uint8) (slaveRegAddr & 0x00FF) ;
+    slaveRegAddr_H = (rtk_uint8) (slaveRegAddr >>8) ;
+
+    regData_H   = (rtk_uint8) (regData>> 8);
+    regData_L   = (rtk_uint8) (regData & 0x00FF);
+
+    if( rtk_i2c_mode == I2C_70B_LSB_16BIT_MODE)
+    {
+        temp = slaveRegAddr_L ;
+        slaveRegAddr_L = slaveRegAddr_H;
+        slaveRegAddr_H = temp;
+    }
+
+
+  /*check bus state: idle*/
+  for(counter = 3000; counter>0; counter--)
+  {
+    if ( (retVal = rtl8367c_setAsicI2C_checkBusIdle() ) == RT_ERR_OK)
+        break;
+  }
+
+  if( counter ==0 )
+      return retVal; /*i2c is busy*/
+
+
+   /*tx Start cmd*/
+   if( (retVal = rtl8367c_setAsicI2CStartCmd() ) != RT_ERR_OK )
+       return retVal ;
+
+
+  /*tx control _W*/
+   if( (retVal = rtl8367c_setAsicI2CTxOneCharCmd(controlByte_W))!= RT_ERR_OK )
+      return retVal ;
+
+
+  /*check if RX ack from slave*/
+   if( (retVal = rtl8367c_setAsicI2CcheckRxAck()) != RT_ERR_OK )
+        return retVal;
+
+
+    /* tx slave buffer address low 8 bits */
+   if( (retVal = rtl8367c_setAsicI2CTxOneCharCmd(slaveRegAddr_L))!= RT_ERR_OK )
+        return retVal;
+
+
+   /*check if RX ack from slave*/
+   if( (retVal = rtl8367c_setAsicI2CcheckRxAck()) != RT_ERR_OK )
+        return retVal;
+
+
+   /* tx slave buffer address high 8 bits */
+   if( (retVal = rtl8367c_setAsicI2CTxOneCharCmd(slaveRegAddr_H))!= RT_ERR_OK )
+        return retVal;
+
+
+   /*check if RX ack from slave*/
+   if( (retVal = rtl8367c_setAsicI2CcheckRxAck()) != RT_ERR_OK )
+        return retVal;
+
+
+     /*tx Datavlue LSB*/
+   if( (retVal = rtl8367c_setAsicI2CTxOneCharCmd(regData_L))!= RT_ERR_OK )
+        return retVal;
+
+
+   /*check if RX ack from slave*/
+   if( (retVal = rtl8367c_setAsicI2CcheckRxAck()) != RT_ERR_OK )
+        return retVal;
+
+
+   /*tx Datavlue MSB*/
+   if( (retVal = rtl8367c_setAsicI2CTxOneCharCmd(regData_H))!= RT_ERR_OK )
+        return retVal;
+
+
+   /*check if RX ack from slave*/
+   if( (retVal = rtl8367c_setAsicI2CcheckRxAck()) != RT_ERR_OK )
+        return retVal;
+
+
+    /*tx Stop cmd */
+    if( (retVal = rtl8367c_setAsicI2CStopCmd()) != RT_ERR_OK )
+        return retVal;
+
+    return RT_ERR_OK;
+}

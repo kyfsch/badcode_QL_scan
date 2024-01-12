@@ -1,0 +1,8 @@
+builtin_platform_driver(clk_mt7988_topckgen_drv);
+
+static const struct of_device_id of_match_clk_mt7988_mcusys[] = {
+	{
+		.compatible = "mediatek,mt7988-mcusys",
+	},
+	{}
+};

@@ -1,0 +1,5 @@
+void spl_display_print(void)
+{
+	/* print a hint, so that we will not use the wrong SPL by mistake */
+	puts("  Boot device: " BOOT_DEVICE_TYPE "\n" );
+}

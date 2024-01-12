@@ -1,0 +1,37 @@
+static int hash_file(struct hash_type *t, const char *filename, bool add_filename,
+	bool no_newline)
+{
+	const char *str;
+
+	if (!filename || !strcmp(filename, "-")) {
+		str = t->func(stdin);
+	} else {
+		struct stat path_stat;
+		stat(filename, &path_stat);
+		if (S_ISDIR(path_stat.st_mode)) {
+			fprintf(stderr, "Failed to open '%s': Is a directory\n", filename);
+			return 1;
+		}
+
+		FILE *f = fopen(filename, "r");
+
+		if (!f) {
+			fprintf(stderr, "Failed to open '%s'\n", filename);
+			return 1;
+		}
+		str = t->func(f);
+		fclose(f);
+	}
+
+	if (!str) {
+		fprintf(stderr, "Failed to generate hash\n");
+		return 1;
+	}
+
+	if (add_filename)
+		printf("%s %s%s", str, filename ? filename : "-",
+			no_newline ? "" : "\n");
+	else
+		printf("%s%s", str, no_newline ? "" : "\n");
+	return 0;
+}

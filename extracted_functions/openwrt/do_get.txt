@@ -1,0 +1,13 @@
+static int do_get(nvram_handle_t *nvram, const char *var)
+{
+	const char *val;
+	int stat = 1;
+
+	if( (val = nvram_get(nvram, var)) != NULL )
+	{
+		printf("%s\n", val);
+		stat = 0;
+	}
+
+	return stat;
+}

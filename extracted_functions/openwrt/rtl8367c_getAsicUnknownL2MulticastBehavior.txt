@@ -1,0 +1,22 @@
+ret_t rtl8367c_getAsicUnknownL2MulticastBehavior(rtk_uint32 port, rtk_uint32 *pBehave)
+{
+    ret_t retVal;
+
+    if(port >  RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(port < 8)
+    {
+        retVal = rtl8367c_getAsicRegBits(RTL8367C_UNKNOWN_L2_MULTICAST_REG(port), RTL8367C_UNKNOWN_L2_MULTICAST_MASK(port), pBehave);
+        if (retVal != RT_ERR_OK)
+            return retVal;
+    }
+    else
+    {
+        retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_UNKNOWN_L2_MULTICAST_CTRL1, 3 << ((port - 8) << 1), pBehave);
+        if (retVal != RT_ERR_OK)
+            return retVal;
+    }
+
+    return RT_ERR_OK;
+}

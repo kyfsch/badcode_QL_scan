@@ -1,0 +1,7 @@
+static void pm_retx_counters_showtime(int fd, DSL_XTUDir_t direction) {
+#ifdef INCLUDE_DSL_CPE_PM_RETX_COUNTERS
+	IOCTL_DIR(DSL_PM_ReTxCounters_t, DSL_FIO_PM_RETX_COUNTERS_SHOWTIME_GET, direction);
+
+	m_u32("mineftr", out.data.nEftrMin);
+#endif
+}

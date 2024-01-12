@@ -1,0 +1,14 @@
+static int ip17xx_set_tagged(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	struct ip17xx_state *state = get_state(dev);
+
+	state->add_tag &= ~(1<<val->port_vlan);
+	state->remove_tag &= ~(1<<val->port_vlan);
+
+	if (val->value.i == 0)
+		state->remove_tag |= (1<<val->port_vlan);
+	if (val->value.i == 1)
+		state->add_tag |= (1<<val->port_vlan);
+
+	return state->regs->update_state(state);
+}

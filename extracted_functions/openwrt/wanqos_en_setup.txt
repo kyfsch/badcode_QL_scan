@@ -1,0 +1,9 @@
+static int __init wanqos_en_setup(char *line)
+{
+    wanqos_en = simple_strtoul(line, NULL, 0);
+
+    if ( wanqos_en < 1 || wanqos_en > 8 )
+        wanqos_en = 0;
+
+    return 0;
+}

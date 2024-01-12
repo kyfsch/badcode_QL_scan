@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicPortEnableAll(rtk_uint32 enable)
+{
+    if(enable >= 2)
+        return RT_ERR_INPUT;
+
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_PHY_AD, RTL8367C_PDNPHY_OFFSET, !enable);
+}

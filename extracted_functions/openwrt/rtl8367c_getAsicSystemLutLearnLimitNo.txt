@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsicSystemLutLearnLimitNo(rtk_uint32 *pNumber)
+{
+    if(NULL == pNumber)
+        return RT_ERR_NULL_POINTER;
+
+    return rtl8367c_getAsicReg(RTL8367C_REG_LUT_SYS_LEARN_LIMITNO, pNumber);
+}

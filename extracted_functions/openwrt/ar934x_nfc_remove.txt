@@ -1,0 +1,13 @@
+static int ar934x_nfc_remove(struct platform_device *pdev)
+{
+	struct ar934x_nfc *nfc;
+
+	nfc = platform_get_drvdata(pdev);
+	if (nfc) {
+		mtd_device_unregister(nand_to_mtd(&nfc->nand_chip));
+		nand_cleanup(&nfc->nand_chip);
+		ar934x_nfc_free_buf(nfc);
+	}
+
+	return 0;
+}

@@ -1,0 +1,4 @@
+static inline uint32_t get_walk_size(uint32_t entry_len)
+{
+	return (entry_len + 3) & ~0x03;
+}

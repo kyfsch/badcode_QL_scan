@@ -1,0 +1,6 @@
+static int __init mtdsplit_brnimage_init(void)
+{
+	register_mtd_parser(&mtdsplit_brnimage_parser);
+
+	return 0;
+}

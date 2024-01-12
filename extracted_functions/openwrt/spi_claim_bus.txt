@@ -1,0 +1,6 @@
+int spi_claim_bus(void)
+{
+	espi_claim_bus(&spi);
+
+	return 0;
+}

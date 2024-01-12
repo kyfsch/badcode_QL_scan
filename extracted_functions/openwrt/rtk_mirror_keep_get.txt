@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_mirror_keep_get(rtk_mirror_keep_t *pMode)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pMode)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicPortMirrorRealKeep(pMode)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

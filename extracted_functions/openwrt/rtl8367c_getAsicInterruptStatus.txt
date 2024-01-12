@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicInterruptStatus(rtk_uint32* pIms)
+{
+    return rtl8367c_getAsicReg(RTL8367C_REG_INTR_IMS, pIms);
+}

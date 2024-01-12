@@ -1,0 +1,17 @@
+static u64 rtl931x_read_mcast_pmask(int idx)
+{
+	u64 portmask;
+	/* Read MC_PMSK (2) via register RTL9310_TBL_0 */
+	struct table_reg *q = rtl_table_get(RTL9310_TBL_0, 2);
+
+	rtl_table_read(q, idx);
+	portmask = sw_r32(rtl_table_data(q, 0));
+	portmask <<= 32;
+	portmask |= sw_r32(rtl_table_data(q, 1));
+	portmask >>= 7;
+	rtl_table_release(q);
+
+	pr_debug("%s: Index idx %d has portmask %016llx\n", __func__, idx, portmask);
+
+	return portmask;
+}

@@ -1,0 +1,17 @@
+static int ehci_oxnas_drv_remove(struct platform_device *pdev)
+{
+	struct usb_hcd *hcd = platform_get_drvdata(pdev);
+	struct oxnas_hcd *oxnas = (struct oxnas_hcd *)hcd_to_ehci(hcd)->priv;
+
+	usb_remove_hcd(hcd);
+	if (oxnas->use_pllb) {
+		clk_disable_unprepare(oxnas->phyref);
+		clk_put(oxnas->phyref);
+		clk_disable_unprepare(oxnas->refsrc);
+		clk_put(oxnas->refsrc);
+	}
+	clk_disable_unprepare(oxnas->clk);
+	usb_put_hcd(hcd);
+
+	return 0;
+}

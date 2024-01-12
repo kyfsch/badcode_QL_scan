@@ -1,0 +1,64 @@
+static int mtk_bmt_debug_v2(void *data, u64 val)
+{
+	struct bbmt *bbmt = bmt_tbl(bmtd.bbt);
+	struct mtd_info *mtd = bmtd.mtd;
+	unsigned long *used;
+	int main_blocks = mtd->size >> bmtd.blk_shift;
+	int n_remap = 0;
+	int i;
+
+	used = mtk_bmt_get_mapping_mask();
+	if (!used)
+		return -ENOMEM;
+
+	switch (val) {
+	case 0:
+		for (i = 1; i < main_blocks; i++) {
+			if (bmtd.bbt->bb_tbl[i] == i)
+				continue;
+
+			printk("remap [%x->%x]\n", i, bmtd.bbt->bb_tbl[i]);
+			n_remap++;
+		}
+		for (i = 0; i <= bmtd.bmt_blk_idx; i++) {
+			char c;
+
+			switch (bbmt[i].mapped) {
+			case NO_MAPPED:
+				continue;
+			case NORMAL_MAPPED:
+				c = 'm';
+				if (test_bit(i, used))
+					c = 'M';
+				break;
+			case BMT_MAPPED:
+				c = 'B';
+				break;
+			default:
+				c = 'X';
+				break;
+			}
+			printk("[%x:%c] = 0x%x\n", i, c, bbmt[i].block);
+		}
+		break;
+	case 100:
+		for (i = 0; i <= bmtd.bmt_blk_idx; i++) {
+			if (bbmt[i].mapped != NORMAL_MAPPED)
+				continue;
+
+			if (test_bit(i, used))
+				continue;
+
+			n_remap++;
+			bbmt[i].mapped = NO_MAPPED;
+			printk("free block [%d:%x]\n", i, bbmt[i].block);
+		}
+		if (n_remap)
+			bmtd.bmt_blk_idx = upload_bmt(bmtd.bbt, bmtd.bmt_blk_idx);
+		break;
+	}
+
+	kfree(used);
+
+	return 0;
+}

@@ -1,0 +1,24 @@
+static int rtl83xx_netdevice_event(struct notifier_block *this,
+				   unsigned long event, void *ptr)
+{
+	struct net_device *ndev = netdev_notifier_info_to_dev(ptr);
+	struct rtl838x_switch_priv *priv;
+	int err;
+
+	pr_debug("In: %s, event: %lu\n", __func__, event);
+
+	if ((event != NETDEV_CHANGEUPPER) && (event != NETDEV_CHANGELOWERSTATE))
+		return NOTIFY_DONE;
+
+	priv = container_of(this, struct rtl838x_switch_priv, nb);
+	switch (event) {
+	case NETDEV_CHANGEUPPER:
+		err = rtl83xx_handle_changeupper(priv, ndev, ptr);
+		break;
+	}
+
+	if (err)
+		return err;
+
+	return NOTIFY_DONE;
+}

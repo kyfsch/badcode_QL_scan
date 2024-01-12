@@ -1,0 +1,25 @@
+ret_t rtl8367c_setAsicSpanningTreeStatus(rtk_uint32 port, rtk_uint32 msti, rtk_uint32 state)
+{
+    rtk_uint32  reg_addr,bits_msk;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    if(msti > RTL8367C_MSTIMAX)
+        return RT_ERR_MSTI;
+
+    if(state > STPST_FORWARDING)
+        return RT_ERR_MSTP_STATE;
+
+    if(port < 8)
+        return rtl8367c_setAsicRegBits(RTL8367C_VLAN_MSTI_REG(msti,port), RTL8367C_VLAN_MSTI_MASK(port),state);
+    else{
+        reg_addr = RTL8367C_VLAN_MSTI_REG(msti,port);
+        switch(port){
+            case 8: bits_msk = RTL8367C_VLAN_MSTI0_CTRL1_PORT8_STATE_MASK;break;
+            case 9: bits_msk = RTL8367C_VLAN_MSTI0_CTRL1_PORT9_STATE_MASK;break;
+            case 10: bits_msk = RTL8367C_VLAN_MSTI0_CTRL1_PORT10_STATE_MASK;break;
+        }
+        return rtl8367c_setAsicRegBits(reg_addr, bits_msk,state);
+    }
+}

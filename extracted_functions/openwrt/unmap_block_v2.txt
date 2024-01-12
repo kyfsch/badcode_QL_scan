@@ -1,0 +1,5 @@
+unmap_block_v2(u16 block)
+{
+	bmtd.bbt->bb_tbl[block] = block;
+	bmtd.bmt_blk_idx = upload_bmt(bmtd.bbt, bmtd.bmt_blk_idx);
+}

@@ -1,0 +1,26 @@
+rtk_api_ret_t rtk_filter_igrAcl_cfg_del(rtk_filter_id_t filter_id)
+{
+    rtl8367c_aclrule initRule;
+    rtl8367c_acl_act_t  initAct;
+    rtk_api_ret_t ret;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(filter_id > RTL8367C_ACLRULEMAX )
+        return RT_ERR_FILTER_ENTRYIDX;
+
+    memset(&initRule, 0, sizeof(rtl8367c_aclrule));
+    memset(&initAct, 0, sizeof(rtl8367c_acl_act_t));
+
+    if((ret = rtl8367c_setAsicAclRule(filter_id, &initRule)) != RT_ERR_OK)
+        return ret;
+    if((ret = rtl8367c_setAsicAclActCtrl(filter_id, FILTER_ENACT_INIT_MASK))!= RT_ERR_OK)
+        return ret;
+    if((ret = rtl8367c_setAsicAclAct(filter_id, &initAct)) != RT_ERR_OK)
+        return ret;
+    if((ret = rtl8367c_setAsicAclNot(filter_id, DISABLED)) != RT_ERR_OK )
+        return ret;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,17 @@
+rtk_api_ret_t rtk_vlan_UntagDscpPriorityEnable_get(rtk_enable_t *pEnable)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32  value;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pEnable)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicVlanUntagDscpPriorityEn(&value)) != RT_ERR_OK)
+        return retVal;
+
+    *pEnable = (rtk_enable_t)value;
+    return RT_ERR_OK;
+}

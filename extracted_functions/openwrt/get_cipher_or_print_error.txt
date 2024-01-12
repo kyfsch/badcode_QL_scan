@@ -1,0 +1,18 @@
+const cipher_t *get_cipher_or_print_error(char *name)
+{
+    const mbedtls_cipher_info_t *cipher;
+
+    cipher = mbedtls_cipher_info_from_string(upperstr(name));
+    if (cipher)
+	return cipher;
+
+    fprintf(stderr, "Error: invalid cipher: %s.\n", name);
+    fprintf(stderr, "Supported ciphers: \n");
+    for (const int *list = mbedtls_cipher_list(); *list; list++) {
+	cipher = mbedtls_cipher_info_from_type(*list);
+	if (!cipher)
+	    continue;
+	fprintf(stderr, "\t%s\n", cipher->name);
+    }
+    return NULL;
+}

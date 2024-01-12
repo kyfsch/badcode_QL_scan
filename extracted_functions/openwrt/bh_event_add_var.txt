@@ -1,0 +1,26 @@
+int bh_event_add_var(struct bh_event *event, int argv, const char *format, ...)
+{
+	char buf[128];
+	char *s;
+	va_list args;
+	int len;
+
+	if (argv)
+		return 0;
+
+	va_start(args, format);
+	len = vsnprintf(buf, sizeof(buf), format, args);
+	va_end(args);
+
+	if (len >= sizeof(buf)) {
+		WARN(1, "buffer size too small");
+		return -ENOMEM;
+	}
+
+	s = skb_put(event->skb, len + 1);
+	strcpy(s, buf);
+
+	pr_debug(PFX "added variable '%s'\n", s);
+
+	return 0;
+}

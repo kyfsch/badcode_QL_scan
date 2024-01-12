@@ -1,0 +1,15 @@
+static int rtl8367_led_group_set_ports(struct rtl8366_smi *smi,
+				       unsigned int group, u16 port_mask)
+{
+	u32 reg;
+	u32 s;
+	int err;
+
+	port_mask &= RTL8367_PARA_LED_IO_EN_PMASK;
+	s = (group % 2) * 8;
+	reg = RTL8367_PARA_LED_IO_EN1_REG + (group / 2);
+
+	REG_RMW(smi, reg, (RTL8367_PARA_LED_IO_EN_PMASK << s), port_mask << s);
+
+	return 0;
+}

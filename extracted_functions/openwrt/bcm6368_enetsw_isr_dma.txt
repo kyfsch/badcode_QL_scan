@@ -1,0 +1,13 @@
+static irqreturn_t bcm6368_enetsw_isr_dma(int irq, void *dev_id)
+{
+	struct net_device *ndev = dev_id;
+	struct bcm6368_enetsw *priv = netdev_priv(ndev);
+
+	/* mask rx/tx interrupts */
+	dmac_writel(priv, 0, DMAC_IRMASK_REG, priv->rx_chan);
+	dmac_writel(priv, 0, DMAC_IRMASK_REG, priv->tx_chan);
+
+	napi_schedule(&priv->napi);
+
+	return IRQ_HANDLED;
+}

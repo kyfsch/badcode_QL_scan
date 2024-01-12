@@ -1,0 +1,5 @@
+static void AT91F_FetchAbort()
+{
+	puts("IFA");
+	while (1);
+}

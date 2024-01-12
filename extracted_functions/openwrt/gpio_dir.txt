@@ -1,0 +1,9 @@
+static inline int gpio_dir(struct dc_ep_dev *dev, u32 gpio, int dir)
+{
+	if (WARN_ON(!dev))
+		return -EINVAL;
+	if (WARN_ON(!dev->priv))
+		return -EINVAL;
+
+	return dc_ep_gpio_dir(dev->priv, gpio, dir);
+}

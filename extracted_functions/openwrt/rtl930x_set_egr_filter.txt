@@ -1,0 +1,5 @@
+static void rtl930x_set_egr_filter(int port,  enum egr_filter state)
+{
+	sw_w32_mask(0x1 << (port % 0x1D), state << (port % 0x1D),
+		    RTL930X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));
+}

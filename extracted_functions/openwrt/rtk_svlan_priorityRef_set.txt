@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_svlan_priorityRef_set(rtk_svlan_pri_ref_t ref)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (ref >= REF_PRI_END)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicSvlanPrioritySel(ref)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

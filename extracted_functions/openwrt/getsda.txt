@@ -1,0 +1,4 @@
+static inline int getsda(void)
+{
+	return (gpio_get_value(sda_index));
+}

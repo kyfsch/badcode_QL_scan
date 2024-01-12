@@ -1,0 +1,11 @@
+static unsigned esw_get_vlan_id(struct rt305x_esw *esw, unsigned vlan)
+{
+	unsigned s;
+	unsigned val;
+
+	s = RT305X_ESW_VLANI_VID_S * (vlan % 2);
+	val = esw_r32(esw, RT305X_ESW_REG_VLANI(vlan / 2));
+	val = (val >> s) & RT305X_ESW_VLANI_VID_M;
+
+	return val;
+}

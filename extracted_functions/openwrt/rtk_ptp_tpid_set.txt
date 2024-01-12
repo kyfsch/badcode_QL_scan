@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_ptp_tpid_set(rtk_ptp_tpid_t outerId, rtk_ptp_tpid_t innerId)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if ((outerId>RTK_MAX_NUM_OF_TPID) ||(innerId>RTK_MAX_NUM_OF_TPID))
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicEavTpid(outerId, innerId)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

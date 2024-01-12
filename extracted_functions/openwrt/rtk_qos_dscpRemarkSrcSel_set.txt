@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_qos_dscpRemarkSrcSel_set(rtk_qos_dscpRmkSrc_t type)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (type >= DSCP_RMK_SRC_END )
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    if ((retVal = rtl8367c_setAsicRemarkingDscpSrc(type)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

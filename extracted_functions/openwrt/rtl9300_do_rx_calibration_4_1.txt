@@ -1,0 +1,14 @@
+void rtl9300_do_rx_calibration_4_1(int sds_num)
+{
+	u32 vth_list[2] = {0, 0};
+	u32 tap0_list[4] = {0, 0, 0, 0};
+
+	pr_info("start_1.4.1");
+
+	/* ##1.4.1 */
+	rtl9300_sds_rxcal_vth_manual(sds_num, false, vth_list);
+	rtl9300_sds_rxcal_tap_manual(sds_num, 0, false, tap0_list);
+	mdelay(200);
+
+	pr_info("end_1.4.1");
+}

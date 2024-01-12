@@ -1,0 +1,4 @@
+void rtl931x_sw_init(struct rtl838x_switch_priv *priv)
+{
+/*	rtl931x_sds_init(priv); */
+}

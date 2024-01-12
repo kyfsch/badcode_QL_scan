@@ -1,0 +1,9 @@
+void dfe_loopback_irq_handler (DSL_DEV_Device_t *pDev);
+
+#endif //CONFIG_AMAZON_S_MEI_FW_LOOPBACK
+
+DSL_DEV_Version_t bsp_mei_version = {
+	major:	5,
+	minor:	0,
+	revision:0
+};

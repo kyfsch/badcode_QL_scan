@@ -1,0 +1,4 @@
+uc_bpf_program_pin(uc_vm_t *vm, size_t nargs)
+{
+	return uc_bpf_obj_pin(vm, nargs, "bpf.program");
+}

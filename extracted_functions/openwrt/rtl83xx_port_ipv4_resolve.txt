@@ -1,0 +1,30 @@
+static int rtl83xx_port_ipv4_resolve(struct rtl838x_switch_priv *priv,
+				     struct net_device *dev, __be32 ip_addr)
+{
+	struct neighbour *n = neigh_lookup(&arp_tbl, &ip_addr, dev);
+	int err = 0;
+	u64 mac;
+
+	if (!n) {
+		n = neigh_create(&arp_tbl, &ip_addr, dev);
+		if (IS_ERR(n))
+			return PTR_ERR(n);
+	}
+
+	/* If the neigh is already resolved, then go ahead and
+	 * install the entry, otherwise start the ARP process to
+	 * resolve the neigh.
+	 */
+	if (n->nud_state & NUD_VALID) {
+		mac = ether_addr_to_u64(n->ha);
+		pr_info("%s: resolved mac: %016llx\n", __func__, mac);
+		rtl83xx_l3_nexthop_update(priv, ip_addr, mac);
+	} else {
+		pr_info("%s: need to wait\n", __func__);
+		neigh_event_send(n, NULL);
+	}
+
+	neigh_release(n);
+
+	return err;
+}

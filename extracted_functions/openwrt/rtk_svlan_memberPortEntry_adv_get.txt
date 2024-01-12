@@ -1,0 +1,33 @@
+rtk_api_ret_t rtk_svlan_memberPortEntry_adv_get(rtk_uint32 idx, rtk_svlan_memberCfg_t *pSvlan_cfg)
+{
+    rtk_api_ret_t retVal;
+    rtl8367c_svlan_memconf_t svlanMemConf;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pSvlan_cfg)
+        return RT_ERR_NULL_POINTER;
+
+    if (idx > RTL8367C_SVIDXMAX)
+        return RT_ERR_SVLAN_ENTRY_INDEX;
+
+    if ((retVal = rtl8367c_getAsicSvlanMemberConfiguration(idx, &svlanMemConf)) != RT_ERR_OK)
+        return retVal;
+
+    pSvlan_cfg->svid        = svlanMemConf.vs_svid;
+    if(rtk_switch_portmask_P2L_get(svlanMemConf.vs_member,&(pSvlan_cfg->memberport)) != RT_ERR_OK)
+        return RT_ERR_FAILED;
+
+    if(rtk_switch_portmask_P2L_get(svlanMemConf.vs_untag,&(pSvlan_cfg->untagport)) != RT_ERR_OK)
+        return RT_ERR_FAILED;
+
+    pSvlan_cfg->fiden       = svlanMemConf.vs_force_fid;
+    pSvlan_cfg->fid         = svlanMemConf.vs_fid_msti;
+    pSvlan_cfg->priority    = svlanMemConf.vs_priority;
+    pSvlan_cfg->efiden      = svlanMemConf.vs_efiden;
+    pSvlan_cfg->efid        = svlanMemConf.vs_efid;
+
+    return RT_ERR_OK;
+
+}

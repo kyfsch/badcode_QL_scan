@@ -1,0 +1,8 @@
+static ssize_t read_file_rx_ring(struct file *file, char __user *user_buf,
+				 size_t count, loff_t *ppos)
+{
+	struct ag71xx *ag = file->private_data;
+
+	return read_file_ring(file, user_buf, count, ppos, ag, &ag->rx_ring,
+			      AG71XX_REG_RX_DESC);
+}

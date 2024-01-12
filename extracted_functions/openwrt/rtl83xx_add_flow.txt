@@ -1,0 +1,85 @@
+static int rtl83xx_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_offload *f,
+			    struct rtl83xx_flow *flow)
+{
+	struct flow_rule *rule = flow_cls_offload_flow_rule(f);
+	const struct flow_action_entry *act;
+	int i, err;
+
+	pr_debug("%s\n", __func__);
+
+	rtl83xx_parse_flow_rule(priv, rule, flow);
+
+	flow_action_for_each(i, act, &rule->action) {
+		switch (act->id) {
+		case FLOW_ACTION_DROP:
+			pr_debug("%s: DROP\n", __func__);
+			flow->rule.drop = true;
+			rtl83xx_flow_bypass_all(flow);
+			return 0;
+
+		case FLOW_ACTION_TRAP:
+			pr_debug("%s: TRAP\n", __func__);
+			flow->rule.fwd_data = priv->cpu_port;
+			flow->rule.fwd_act = PIE_ACT_REDIRECT_TO_PORT;
+			rtl83xx_flow_bypass_all(flow);
+			break;
+
+		case FLOW_ACTION_MANGLE:
+			pr_err("%s: FLOW_ACTION_MANGLE not supported\n", __func__);
+			return -EOPNOTSUPP;
+
+		case FLOW_ACTION_ADD:
+			pr_err("%s: FLOW_ACTION_ADD not supported\n", __func__);
+			return -EOPNOTSUPP;
+
+		case FLOW_ACTION_VLAN_PUSH:
+			pr_debug("%s: VLAN_PUSH\n", __func__);
+/*			TODO: act->vlan.proto */
+			flow->rule.ivid_act = PIE_ACT_VID_ASSIGN;
+			flow->rule.ivid_sel = true;
+			flow->rule.ivid_data = htons(act->vlan.vid);
+			flow->rule.ovid_act = PIE_ACT_VID_ASSIGN;
+			flow->rule.ovid_sel = true;
+			flow->rule.ovid_data = htons(act->vlan.vid);
+			flow->rule.fwd_mod_to_cpu = true;
+			break;
+
+		case FLOW_ACTION_VLAN_POP:
+			pr_debug("%s: VLAN_POP\n", __func__);
+			flow->rule.ivid_act = PIE_ACT_VID_ASSIGN;
+			flow->rule.ivid_data = 0;
+			flow->rule.ivid_sel = true;
+			flow->rule.ovid_act = PIE_ACT_VID_ASSIGN;
+			flow->rule.ovid_data = 0;
+			flow->rule.ovid_sel = true;
+			flow->rule.fwd_mod_to_cpu = true;
+			break;
+
+		case FLOW_ACTION_CSUM:
+			pr_err("%s: FLOW_ACTION_CSUM not supported\n", __func__);
+			return -EOPNOTSUPP;
+
+		case FLOW_ACTION_REDIRECT:
+			pr_debug("%s: REDIRECT\n", __func__);
+			err = rtl83xx_parse_fwd(priv, act, flow);
+			if (err)
+				return err;
+			flow->rule.fwd_act = PIE_ACT_REDIRECT_TO_PORT;
+			break;
+
+		case FLOW_ACTION_MIRRED:
+			pr_debug("%s: MIRRED\n", __func__);
+			err = rtl83xx_parse_fwd(priv, act, flow);
+			if (err)
+				return err;
+			flow->rule.fwd_act = PIE_ACT_COPY_TO_PORT;
+			break;
+
+		default:
+			pr_err("%s: Flow action not supported: %d\n", __func__, act->id);
+			return -EOPNOTSUPP;
+		}
+	}
+
+	return 0;
+}

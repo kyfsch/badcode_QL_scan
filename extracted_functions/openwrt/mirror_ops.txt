@@ -1,0 +1,20 @@
+static ssize_t mirror_ops(struct file *file,
+                            const char __user *buffer, size_t count,
+                            loff_t *data)
+{
+        char buf[64];
+	 unsigned int port;
+        unsigned int tx_map,rx_map;
+
+        memset(buf, 0, 64);
+
+        if (copy_from_user(buf, buffer, count))
+                return -EFAULT;
+
+	if(sscanf(buf, "%d %x %x", &port,&rx_map,&tx_map) == -1)
+		return -EFAULT;
+	else
+		rtk_hal_set_port_mirror(port,rx_map,tx_map);
+
+        return count;
+}

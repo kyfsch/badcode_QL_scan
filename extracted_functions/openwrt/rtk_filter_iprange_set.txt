@@ -1,0 +1,21 @@
+rtk_api_ret_t rtk_filter_iprange_set(rtk_uint32 index, rtk_filter_iprange_t type, ipaddr_t upperIp, ipaddr_t lowerIp)
+{
+    rtk_api_ret_t ret;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(index > RTL8367C_ACLRANGEMAX)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if(type >= IPRANGE_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if(lowerIp > upperIp)
+        return RT_ERR_INPUT;
+
+    if((ret = rtl8367c_setAsicAclIpRange(index, type, upperIp, lowerIp)) != RT_ERR_OK)
+       return ret;
+
+    return RT_ERR_OK;
+}

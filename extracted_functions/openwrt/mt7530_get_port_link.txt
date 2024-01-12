@@ -1,0 +1,33 @@
+mt7530_get_port_link(struct switch_dev *dev,  int port,
+			struct switch_port_link *link)
+{
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+	u32 speed, pmsr;
+
+	if (port < 0 || port >= MT7530_NUM_PORTS)
+		return -EINVAL;
+
+	pmsr = mt7530_r32(priv, 0x3008 + (0x100 * port));
+
+	link->link = pmsr & 1;
+	link->duplex = (pmsr >> 1) & 1;
+	speed = (pmsr >> 2) & 3;
+
+	switch (speed) {
+	case 0:
+		link->speed = SWITCH_PORT_SPEED_10;
+		break;
+	case 1:
+		link->speed = SWITCH_PORT_SPEED_100;
+		break;
+	case 2:
+	case 3: /* forced gige speed can be 2 or 3 */
+		link->speed = SWITCH_PORT_SPEED_1000;
+		break;
+	default:
+		link->speed = SWITCH_PORT_SPEED_UNKNOWN;
+		break;
+	}
+
+	return 0;
+}

@@ -1,0 +1,36 @@
+ar8xxx_mib_fetch_port_stat(struct ar8xxx_priv *priv, int port, bool flush)
+{
+	unsigned int base;
+	u64 *mib_stats;
+	int i;
+
+	WARN_ON(port >= priv->dev.ports);
+
+	lockdep_assert_held(&priv->mib_lock);
+
+	base = priv->chip->reg_port_stats_start +
+	       priv->chip->reg_port_stats_length * port;
+
+	mib_stats = &priv->mib_stats[port * priv->chip->num_mibs];
+	for (i = 0; i < priv->chip->num_mibs; i++) {
+		const struct ar8xxx_mib_desc *mib;
+		u64 t;
+
+		mib = &priv->chip->mib_decs[i];
+		if (mib->type > priv->mib_type)
+			continue;
+		t = ar8xxx_read(priv, base + mib->offset);
+		if (mib->size == 2) {
+			u64 hi;
+
+			hi = ar8xxx_read(priv, base + mib->offset + 4);
+			t |= hi << 32;
+		}
+
+		if (flush)
+			mib_stats[i] = 0;
+		else
+			mib_stats[i] += t;
+		cond_resched();
+	}
+}

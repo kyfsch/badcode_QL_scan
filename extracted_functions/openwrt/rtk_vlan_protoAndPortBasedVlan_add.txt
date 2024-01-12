@@ -1,0 +1,81 @@
+rtk_api_ret_t rtk_vlan_protoAndPortBasedVlan_add(rtk_port_t port, rtk_vlan_protoAndPortInfo_t *pInfo)
+{
+    rtk_api_ret_t retVal, i;
+    rtk_uint32 exist, empty, used, index;
+    rtl8367c_protocolgdatacfg ppb_data_cfg;
+    rtl8367c_protocolvlancfg ppb_vlan_cfg;
+    rtl8367c_provlan_frametype tmp;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if(NULL == pInfo)
+        return RT_ERR_NULL_POINTER;
+
+    if (pInfo->proto_type > RTK_MAX_NUM_OF_PROTO_TYPE)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if (pInfo->frame_type >= FRAME_TYPE_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if (pInfo->cvid > RTL8367C_VIDMAX)
+        return RT_ERR_VLAN_VID;
+
+    if (pInfo->cpri > RTL8367C_PRIMAX)
+        return RT_ERR_VLAN_PRIORITY;
+
+    exist = 0xFF;
+    empty = 0xFF;
+    for (i = RTL8367C_PROTOVLAN_GIDX_MAX; i >= 0; i--)
+    {
+        if ((retVal = rtl8367c_getAsicVlanProtocolBasedGroupData(i, &ppb_data_cfg)) != RT_ERR_OK)
+            return retVal;
+        tmp = pInfo->frame_type;
+        if (ppb_data_cfg.etherType == pInfo->proto_type && ppb_data_cfg.frameType == tmp)
+        {
+            /*Already exist*/
+            exist = i;
+            break;
+        }
+        else if (ppb_data_cfg.etherType == 0 && ppb_data_cfg.frameType == 0)
+        {
+            /*find empty index*/
+            empty = i;
+        }
+    }
+
+    used = 0xFF;
+    /*No empty and exist index*/
+    if (0xFF == exist && 0xFF == empty)
+        return RT_ERR_TBL_FULL;
+    else if (exist<RTL8367C_PROTOVLAN_GROUPNO)
+    {
+       /*exist index*/
+       used = exist;
+    }
+    else if (empty<RTL8367C_PROTOVLAN_GROUPNO)
+    {
+        /*No exist index, but have empty index*/
+        ppb_data_cfg.frameType = pInfo->frame_type;
+        ppb_data_cfg.etherType = pInfo->proto_type;
+        if ((retVal = rtl8367c_setAsicVlanProtocolBasedGroupData(empty, &ppb_data_cfg)) != RT_ERR_OK)
+            return retVal;
+        used = empty;
+    }
+    else
+        return RT_ERR_FAILED;
+
+    if((retVal = rtk_vlan_checkAndCreateMbr(pInfo->cvid, &index)) != RT_ERR_OK)
+        return retVal;
+
+    ppb_vlan_cfg.vlan_idx = index;
+    ppb_vlan_cfg.valid = TRUE;
+    ppb_vlan_cfg.priority = pInfo->cpri;
+    if ((retVal = rtl8367c_setAsicVlanPortAndProtocolBased(rtk_switch_port_L2P_get(port), used, &ppb_vlan_cfg)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

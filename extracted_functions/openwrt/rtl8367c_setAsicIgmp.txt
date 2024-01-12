@@ -1,0 +1,9 @@
+ret_t rtl8367c_setAsicIgmp(rtk_uint32 enabled)
+{
+    ret_t retVal;
+
+    /* Enable/Disable H/W IGMP/MLD */
+    retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_IGMP_MLD_CFG0, RTL8367C_IGMP_MLD_EN_OFFSET, enabled);
+
+    return retVal;
+}

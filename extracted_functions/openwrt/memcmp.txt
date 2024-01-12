@@ -1,0 +1,6 @@
+  i = memcmp(expected, resp, sizeof(expected));
+  if(i == 0) {
+    SHA1Update(&ts->hash, expected, sizeof(expected));
+    SHA1Update(&ts->hash, ts->session_key, sizeof(ts->session_key));
+    SHA1Final(ts->session_response, &ts->hash);
+  }

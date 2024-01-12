@@ -1,0 +1,4 @@
+int putc(int c)
+{
+  return at91_serial_putc(c);
+}

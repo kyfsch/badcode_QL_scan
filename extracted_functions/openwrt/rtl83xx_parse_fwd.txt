@@ -1,0 +1,19 @@
+static int rtl83xx_parse_fwd(struct rtl838x_switch_priv *priv,
+			     const struct flow_action_entry *act, struct rtl83xx_flow *flow)
+{
+	struct net_device *dev = act->dev;
+	int port;
+
+	port = rtl83xx_port_is_under(dev, priv);
+	if (port < 0) {
+		netdev_info(dev, "%s: not a DSA device.\n", __func__);
+		return -EINVAL;
+	}
+
+	flow->rule.fwd_sel = true;
+	flow->rule.fwd_data = port;
+	pr_debug("Using port index: %d\n", port);
+	rtl83xx_flow_bypass_all(flow);
+
+	return 0;
+}

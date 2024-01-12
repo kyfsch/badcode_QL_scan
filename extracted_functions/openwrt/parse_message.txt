@@ -1,0 +1,61 @@
+parse_message(struct ead_packet *pkt, int len)
+{
+	bool (*handler)(struct ead_packet *pkt, int len, int *nstate);
+	int min_len = sizeof(struct ead_packet);
+	int nstate = state;
+	int type = ntohl(pkt->msg.type);
+
+	if ((type >= EAD_TYPE_GET_PRIME) &&
+		(state != type))
+		return;
+
+	if ((type != EAD_TYPE_PING) &&
+		((ntohs(pkt->msg.sid) & EAD_INSTANCE_MASK) >>
+		 EAD_INSTANCE_SHIFT) != instance->id)
+		return;
+
+	switch(type) {
+	case EAD_TYPE_PING:
+		handler = handle_ping;
+		break;
+	case EAD_TYPE_SET_USERNAME:
+		handler = handle_set_username;
+		min_len += sizeof(struct ead_msg_user);
+		break;
+	case EAD_TYPE_GET_PRIME:
+		handler = handle_get_prime;
+		break;
+	case EAD_TYPE_SEND_A:
+		handler = handle_send_a;
+		min_len += sizeof(struct ead_msg_number);
+		break;
+	case EAD_TYPE_SEND_AUTH:
+		handler = handle_send_auth;
+		min_len += sizeof(struct ead_msg_auth);
+		break;
+	case EAD_TYPE_SEND_CMD:
+		handler = handle_send_cmd;
+		min_len += sizeof(struct ead_msg_cmd) + sizeof(struct ead_msg_encrypted);
+		break;
+	default:
+		return;
+	}
+
+	if (len < min_len) {
+		DEBUG(2, "discarding packet: message too small\n");
+		return;
+	}
+
+	pktbuf->msg.magic = htonl(EAD_MAGIC);
+	pktbuf->msg.type = htonl(type + 1);
+	pktbuf->msg.nid = htons(nid);
+	pktbuf->msg.sid = pkt->msg.sid;
+	pktbuf->msg.len = 0;
+
+	if (handler(pkt, len, &nstate)) {
+		DEBUG(2, "sending response to packet type %d: %d\n", type + 1, ntohl(pktbuf->msg.len));
+		/* format response packet */
+		ead_send_packet_clone(pkt);
+	}
+	set_state(nstate);
+}

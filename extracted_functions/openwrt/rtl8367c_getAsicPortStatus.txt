@@ -1,0 +1,26 @@
+ret_t rtl8367c_getAsicPortStatus(rtk_uint32 port, rtl8367c_port_status_t *pPortStatus)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+
+    /* Invalid input parameter */
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    retVal = rtl8367c_getAsicReg(RTL8367C_REG_PORT0_STATUS+port,&regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    pPortStatus->lpi1000  = (regData >> 11) & 0x0001;
+    pPortStatus->lpi100   = (regData >> 10) & 0x0001;
+    pPortStatus->mstfault = (regData >> 9) & 0x0001;
+    pPortStatus->mstmode  = (regData >> 8) & 0x0001;
+    pPortStatus->nway     = (regData >> 7) & 0x0001;
+    pPortStatus->txpause  = (regData >> 6) & 0x0001;
+    pPortStatus->rxpause  = (regData >> 5) & 0x0001;
+    pPortStatus->link     = (regData >> 4) & 0x0001;
+    pPortStatus->duplex   = (regData >> 2) & 0x0001;
+    pPortStatus->speed    = regData  & 0x0003;
+
+    return RT_ERR_OK;
+}

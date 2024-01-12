@@ -1,0 +1,12 @@
+static int bmemcmp(const void *av, const void *bv, size_t bits)
+{
+	const uint8_t *a = av, *b = bv;
+	size_t bytes = bits / 8;
+	bits %= 8;
+
+	int res = memcmp(a, b, bytes);
+	if (res == 0 && bits > 0)
+		res = (a[bytes] >> (8 - bits)) - (b[bytes] >> (8 - bits));
+
+	return res;
+}

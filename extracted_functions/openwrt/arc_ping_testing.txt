@@ -1,0 +1,55 @@
+arc_ping_testing (DSL_DEV_Device_t *pDev)
+{
+#define MEI_PING 0x00000001
+	uint32_t wr_mbox[10], rd_mbox[10];
+	int i;
+
+	for (i = 0; i < 10; i++) {
+		wr_mbox[i] = 0;
+		rd_mbox[i] = 0;
+	}
+
+	FX_MEI_DMSG("send ping msg\n");
+	wr_mbox[0] = MEI_PING;
+	WriteMbox (&wr_mbox[0], 10);
+
+	while (got_int == 0) {
+		MEI_WAIT (100);
+	}
+
+	IFX_MEI_DMSG("send start event\n");
+	got_int = 0;
+
+	wr_mbox[0] = 0x4;
+	wr_mbox[1] = 0;
+	wr_mbox[2] = 0;
+	wr_mbox[3] = (uint32_t) 0xf5acc307e;
+	wr_mbox[4] = 5;
+	wr_mbox[5] = 2;
+	wr_mbox[6] = 0x1c000;
+	wr_mbox[7] = 64;
+	wr_mbox[8] = 0;
+	wr_mbox[9] = 0;
+	WriteMbox (&wr_mbox[0], 10);
+	DSL_ENABLE_IRQ (pDev->nIrq[IFX_DFEIR]);
+	//printk("IFX_MEI_MailboxWrite ret=%d\n",i);
+	IFX_MEI_LongWordWriteOffset (&dsl_devices[0],
+					   (u32) ME_ME2ARC_INT,
+					   MEI_TO_ARC_MSGAV);
+	IFX_MEI_DMSG("sleeping\n");
+	while (1) {
+		if (got_int > 0) {
+
+			if (got_int > 3)
+				IFX_MEI_DMSG("got_int >>>> 3\n");
+			else
+				IFX_MEI_DMSG("got int = %d\n", got_int);
+			got_int = 0;
+			//schedule();
+			DSL_ENABLE_IRQ (pDev->nIrq[IFX_DFEIR]);
+		}
+		//mbox_read(&rd_mbox[0],6);
+		MEI_WAIT (100);
+	}
+	return 0;
+}

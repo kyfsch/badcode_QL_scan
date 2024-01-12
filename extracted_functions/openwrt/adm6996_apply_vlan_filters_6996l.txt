@@ -1,0 +1,19 @@
+adm6996_apply_vlan_filters_6996l(struct adm6996_priv *priv)
+{
+	u8 ports;
+	u16 reg;
+	int i;
+
+	for (i = 0; i < ADM_NUM_VLANS; i++) {
+		ports = priv->vlan_table[i];
+
+		if (ports == 0) {
+			/* Disable VLAN entry */
+			w16(priv, ADM_VLAN_MAP(i), 0);
+			continue;
+		} else {
+			reg = ADM_VLAN_FILT(ports);
+			w16(priv, ADM_VLAN_MAP(i), reg);
+		}
+	}
+}

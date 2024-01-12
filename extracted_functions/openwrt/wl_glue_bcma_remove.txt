@@ -1,0 +1,9 @@
+static void wl_glue_bcma_remove(struct bcma_device *dev)
+{
+	void *wldev = bcma_get_drvdata(dev);
+
+	if (remove_cb)
+		remove_cb(wldev);
+
+	bcma_set_drvdata(dev, NULL);
+}

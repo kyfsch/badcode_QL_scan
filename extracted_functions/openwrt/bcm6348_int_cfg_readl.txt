@@ -1,0 +1,11 @@
+static u32 bcm6348_int_cfg_readl(u32 reg)
+{
+	struct bcm6348_pci *priv = &bcm6348_pci;
+	u32 tmp;
+
+	tmp = reg & MPI_PCICFGCTL_CFGADDR_MASK;
+	tmp |= MPI_PCICFGCTL_WRITEEN_MASK;
+	__raw_writel(tmp, priv->pci + MPI_PCICFGCTL_REG);
+	iob();
+	return __raw_readl(priv->pci + MPI_PCICFGDATA_REG);
+}

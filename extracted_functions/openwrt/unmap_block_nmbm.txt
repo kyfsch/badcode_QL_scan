@@ -1,0 +1,41 @@
+static void unmap_block_nmbm(u16 block)
+{
+	struct nmbm_instance *ni = bmtd.ni;
+	int start, offset;
+	int new_block;
+
+	if (block >= ni->data_block_count)
+		return;
+
+	start = block;
+	offset = 0;
+	while (ni->block_mapping[start] >= ni->mapping_blocks_ba) {
+		start--;
+		offset++;
+		if (start < 0)
+			return;
+	}
+
+	if (!offset)
+		return;
+
+	new_block = ni->block_mapping[start] + offset;
+	nmbm_set_block_state(ni, new_block, BLOCK_ST_GOOD);
+	ni->block_mapping[block] = new_block;
+	ni->block_mapping_changed++;
+
+	new_block = ni->signature_ba - 1;
+	for (block = 0; block < ni->data_block_count; block++) {
+		int cur = ni->block_mapping[block];
+
+		if (cur < ni->mapping_blocks_ba)
+			continue;
+
+		if (cur <= new_block)
+			new_block = cur - 1;
+	}
+
+	ni->mapping_blocks_top_ba = new_block;
+
+	nmbm_update_info_table(ni);
+}

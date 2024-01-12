@@ -1,0 +1,42 @@
+rtk_api_ret_t rtk_svlan_unmatch_action_set(rtk_svlan_unmatch_action_t action, rtk_vlan_t svid)
+{
+    rtk_api_ret_t   retVal;
+    rtk_uint32      i;
+    rtl8367c_svlan_memconf_t svlanMemConf;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (action >= UNMATCH_END)
+        return RT_ERR_OUT_OF_RANGE;
+
+    if (action == UNMATCH_ASSIGN)
+    {
+        if (svid > RTL8367C_VIDMAX)
+            return RT_ERR_SVLAN_VID;
+    }
+
+    if ((retVal = rtl8367c_setAsicSvlanIngressUnmatch((rtk_uint32)action)) != RT_ERR_OK)
+        return retVal;
+
+    if(action == UNMATCH_ASSIGN)
+    {
+        for (i = 0; i < RTL8367C_SVIDXNO; i++)
+        {
+            if ((retVal = rtl8367c_getAsicSvlanMemberConfiguration(i, &svlanMemConf)) != RT_ERR_OK)
+                return retVal;
+
+            if (svid == svlanMemConf.vs_svid)
+            {
+                if ((retVal = rtl8367c_setAsicSvlanUnmatchVlan(i)) != RT_ERR_OK)
+                    return retVal;
+
+                return RT_ERR_OK;
+            }
+        }
+
+        return RT_ERR_SVLAN_ENTRY_NOT_FOUND;
+    }
+
+    return RT_ERR_OK;
+}

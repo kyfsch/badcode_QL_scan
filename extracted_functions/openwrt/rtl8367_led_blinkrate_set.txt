@@ -1,0 +1,12 @@
+static int rtl8367_led_blinkrate_set(struct rtl8366_smi *smi, unsigned int rate)
+{
+	u16 mask;
+	u16 set;
+	int err;
+
+	mask = RTL8367_LED_MODE_RATE_M << RTL8367_LED_MODE_RATE_S;
+	set = (rate & RTL8367_LED_MODE_RATE_M) << RTL8367_LED_MODE_RATE_S;
+	REG_RMW(smi, RTL8367_LED_MODE_REG, mask, set);
+
+	return 0;
+}

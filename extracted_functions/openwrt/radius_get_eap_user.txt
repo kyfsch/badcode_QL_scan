@@ -1,0 +1,39 @@
+static int radius_get_eap_user(void *ctx, const u8 *identity,
+			       size_t identity_len, int phase2,
+			       struct eap_user *user)
+{
+	struct radius_state *s = ctx;
+	struct radius_user_data *u = phase2 ? &s->phase2 : &s->phase1;
+	struct blob_attr *entry;
+	struct eap_user *data;
+	char *id;
+
+	if (identity_len > 512)
+		return -1;
+
+	load_userfile(s);
+
+	id = alloca(identity_len + 1);
+	memcpy(id, identity, identity_len);
+	id[identity_len] = 0;
+
+	entry = radius_user_get(u, id);
+	if (!entry)
+		return -1;
+
+	if (!user)
+		return 0;
+
+	data = radius_user_get_state(u, entry, id);
+	if (!data)
+		return -1;
+
+	*user = *data;
+	if (user->password_len > 0)
+		user->password = os_memdup(user->password, user->password_len);
+	if (user->salt_len > 0)
+		user->salt = os_memdup(user->salt, user->salt_len);
+	user->phase2 = phase2;
+
+	return 0;
+}

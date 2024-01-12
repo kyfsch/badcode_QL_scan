@@ -1,0 +1,41 @@
+static int rtl83xx_port_lag_leave(struct dsa_switch *ds, int port,
+				    struct net_device *lag)
+{
+	int i, group = -1, err;
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	mutex_lock(&priv->reg_mutex);
+	for (i = 0; i < priv->n_lags; i++) {
+		if (priv->lags_port_members[i] & BIT_ULL(port)) {
+			group = i;
+			break;
+		}
+	}
+
+	if (group == -1) {
+		pr_info("port_lag_leave: port %d is not a member\n", port);
+		err = -EINVAL;
+		goto out;
+	}
+
+	if (port >= priv->cpu_port) {
+		err = -EINVAL;
+		goto out;
+	}
+	pr_info("port_lag_del: group %d, port %d\n",group, port);
+	priv->lagmembers &=~ (1ULL << port);
+	priv->lag_primary[i] = -1;
+	priv->is_lagmember[port] = 0;
+	pr_debug("lag_members = %llX\n", priv->lagmembers);
+	err = rtl83xx_lag_del(priv->ds, group, port);
+	if (err) {
+		err = -EINVAL;
+		goto out;
+	}
+	if (!priv->lags_port_members[i])
+		priv->lag_devs[i] = NULL;
+
+out:
+	mutex_unlock(&priv->reg_mutex);
+	return 0;
+}

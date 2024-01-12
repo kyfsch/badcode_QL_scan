@@ -1,0 +1,64 @@
+static int bcm6368_enetsw_refill_rx(struct net_device *ndev, bool napi_mode)
+{
+	struct bcm6368_enetsw *priv = netdev_priv(ndev);
+	struct platform_device *pdev = priv->pdev;
+	struct device *dev = &pdev->dev;
+
+	while (priv->rx_desc_count < priv->rx_ring_size) {
+		struct bcm6368_enetsw_desc *desc;
+		int desc_idx;
+		u32 len_stat;
+
+		desc_idx = priv->rx_dirty_desc;
+		desc = &priv->rx_desc_cpu[desc_idx];
+
+		if (!priv->rx_buf[desc_idx]) {
+			unsigned char *buf;
+			dma_addr_t p;
+
+			if (likely(napi_mode))
+				buf = napi_alloc_frag(priv->rx_frag_size);
+			else
+				buf = netdev_alloc_frag(priv->rx_frag_size);
+
+			if (unlikely(!buf))
+				break;
+
+			p = dma_map_single(dev, buf + NET_SKB_PAD,
+					   priv->rx_buf_size, DMA_FROM_DEVICE);
+			if (unlikely(dma_mapping_error(dev, p))) {
+				skb_free_frag(buf);
+				break;
+			}
+
+			priv->rx_buf[desc_idx] = buf;
+			desc->address = p;
+		}
+
+		len_stat = priv->rx_buf_size << DMADESC_LENGTH_SHIFT;
+		len_stat |= DMADESC_OWNER_MASK;
+		if (priv->rx_dirty_desc == priv->rx_ring_size - 1) {
+			len_stat |= DMADESC_WRAP_MASK;
+			priv->rx_dirty_desc = 0;
+		} else {
+			priv->rx_dirty_desc++;
+		}
+		wmb();
+		desc->len_stat = len_stat;
+
+		priv->rx_desc_count++;
+
+		/* tell dma engine we allocated one buffer */
+		dma_writel(priv, 1, DMA_BUFALLOC_REG(priv->rx_chan));
+	}
+
+	/* If rx ring is still empty, set a timer to try allocating
+	 * again at a later time. */
+	if (priv->rx_desc_count == 0 && netif_running(ndev)) {
+		dev_warn(dev, "unable to refill rx ring\n");
+		priv->rx_timeout.expires = jiffies + HZ;
+		add_timer(&priv->rx_timeout);
+	}
+
+	return 0;
+}

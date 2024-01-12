@@ -1,0 +1,30 @@
+rtk_api_ret_t rtk_igmp_portRxPktEnable_get(rtk_port_t port, rtk_igmp_rxPktEnable_t *pRxCfg)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check port valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if(NULL == pRxCfg)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicIGMPQueryRX(rtk_switch_port_L2P_get(port), (rtk_uint32 *)&(pRxCfg->rxQuery)))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicIGMPReportRX(rtk_switch_port_L2P_get(port), (rtk_uint32 *)&(pRxCfg->rxReport)))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicIGMPLeaveRX(rtk_switch_port_L2P_get(port), (rtk_uint32 *)&(pRxCfg->rxLeave)))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicIGMPMRPRX(rtk_switch_port_L2P_get(port), (rtk_uint32 *)&(pRxCfg->rxMRP)))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicIGMPMcDataRX(rtk_switch_port_L2P_get(port), (rtk_uint32 *)&(pRxCfg->rxMcast)))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

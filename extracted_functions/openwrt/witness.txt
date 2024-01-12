@@ -1,0 +1,47 @@
+static int witness(BIGNUM *w, const BIGNUM *a, const BIGNUM *a1,
+	const BIGNUM *a1_odd, int k, BN_CTX *ctx, BN_MONT_CTX *mont);
+
+/*
+ * This is the safe prime generation logic.
+ * To generate a safe prime p (where p = 2q+1 and q is prime), we start
+ * with a random odd q that is one bit shorter than the desired length
+ * of p.  We use a simple 30-element sieve to filter the values of q
+ * and consider only those that are 11, 23, or 29 (mod 30).  (If q were
+ * anything else, either q or p would be divisible by 2, 3, or 5).
+ * For the values of q that are left, we apply the following tests in
+ * this order:
+ *
+ *   trial divide q
+ *   let p = 2q + 1
+ *   trial divide p
+ *   apply Fermat test to q (2^q == 2 (mod q))
+ *   apply Fermat test to p (2^p == 2 (mod p))
+ *   apply real probablistic primality test to q
+ *   apply real probablistic primality test to p
+ *
+ * A number that passes all these tests is considered a safe prime for
+ * our purposes.  The tests are ordered this way for efficiency; the
+ * slower tests are run rarely if ever at all.
+ */
+
+static int
+trialdiv(x)
+     const BigInteger x;
+{
+  static int primes[] = {               /* All odd primes < 256 */
+      3,   5,   7,  11,  13,  17,  19,  23,  29,
+     31,  37,  41,  43,  47,  53,  59,  61,  67,
+     71,  73,  79,  83,  89,  97, 101, 103,
+    107, 109, 113, 127, 131, 137, 139, 149, 151,
+    157, 163, 167, 173, 179, 181, 191, 193, 197,
+    199, 211, 223, 227, 229, 233, 239, 241, 251
+  };
+  static int nprimes = sizeof(primes) / sizeof(int);
+  int i;
+
+  for(i = 0; i < nprimes; ++i) {
+    if(BigIntegerModInt(x, primes[i]) == 0)
+      return primes[i];
+  }
+  return 1;
+}

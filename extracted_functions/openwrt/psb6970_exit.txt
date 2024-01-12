@@ -1,0 +1,4 @@
+void __exit psb6970_exit(void)
+{
+	phy_driver_unregister(&psb6970_driver);
+}

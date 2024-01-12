@@ -1,0 +1,6 @@
+static int msp430_pattern_clear(struct led_classdev *ldev)
+{
+	msp430_brightness_set(ldev, LED_OFF);
+
+	return 0;
+}

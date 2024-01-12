@@ -1,0 +1,19 @@
+rtk_api_ret_t rtk_port_efid_set(rtk_port_t port, rtk_data_t efid)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    /* efid must be 0~7 */
+    if (efid > RTK_EFID_MAX)
+        return RT_ERR_INPUT;
+
+    if ((retVal = rtl8367c_setAsicPortIsolationEfid(rtk_switch_port_L2P_get(port), efid))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

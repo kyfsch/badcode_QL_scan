@@ -1,0 +1,21 @@
+void update_leds(rule_t *rules, int q)
+{
+	rule_t *rule = rules;
+	while (rule)
+	{
+		int b;
+		/* offset and factore correction according to rule */
+		b = ( q + rule->boffset ) * rule->bfactor;
+		if ( b < 0 )
+			b=0;
+		if ( b > 255 )
+			b=255;
+
+		if ( q >= rule->minq && q <= rule->maxq )
+			set_led(rule->led, (unsigned char)b);
+		else
+			set_led(rule->led, 0);
+
+		rule = rule->next;
+	}
+}

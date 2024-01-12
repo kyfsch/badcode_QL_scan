@@ -1,0 +1,115 @@
+static int find_entry(uint32_t id, struct tffs_entry *entry)
+{
+	uint32_t rev = 0;
+	uint32_t num_segments = 0;
+	struct tffs_entry_segment *segments = NULL;
+
+	off_t pos = 0;
+	uint8_t block_end = 0;
+	for (uint32_t sector = 0; sector < num_sectors; sector++, pos += TFFS_SECTOR_SIZE) {
+		if (block_end) {
+			if (pos % blocksize == 0) {
+				block_end = 0;
+			}
+		} else if (sector_get_good(sector)) {
+			if (sector_ids[sector]) {
+				if (sector_ids[sector] == TFFS_ID_END) {
+					/* no more entries in this block */
+					block_end = 1;
+					continue;
+				}
+
+				if (sector_ids[sector] != id)
+					continue;
+			}
+
+			if (read_sectoroob(pos) || read_sector(pos)) {
+				fprintf(stderr, "ERROR: sector isn't readable, but has been previously!\n");
+				exit(EXIT_FAILURE);
+			}
+			uint32_t read_id = read_uint32(readbuf, 0x00);
+			uint32_t read_len = read_uint32(readbuf, 0x04);
+			uint32_t read_rev = read_uint32(readbuf, 0x0c);
+			if (read_oob_sector_health) {
+				uint32_t oob_id = read_uint32(oobbuf, 0x02);
+				uint32_t oob_len = read_uint32(oobbuf, 0x06);
+				uint32_t oob_rev = read_uint32(oobbuf, 0x0a);
+
+				if (oob_id != read_id || oob_len != read_len || oob_rev != read_rev) {
+					fprintf(stderr, "Warning: sector has inconsistent metadata\n");
+					continue;
+				}
+			}
+			if (read_id == TFFS_ID_END) {
+				/* no more entries in this block */
+				block_end = 1;
+				continue;
+			}
+			if (read_len > TFFS_MAXIMUM_SEGMENT_SIZE) {
+				fprintf(stderr, "Warning: segment is longer than possible\n");
+				continue;
+			}
+			if (read_id == id) {
+				if (read_rev < rev) {
+					/* obsolete revision => ignore this */
+					continue;
+				}
+				if (read_rev > rev) {
+					/* newer revision => clear old data */
+					for (uint32_t i = 0; i < num_segments; i++) {
+						free(segments[i].val);
+					}
+					free (segments);
+					rev = read_rev;
+					num_segments = 0;
+					segments = NULL;
+				}
+
+				uint32_t seg = read_uint32(readbuf, 0x10);
+
+				if (seg == TFFS_SEGMENT_CLEARED) {
+					continue;
+				}
+
+				uint32_t next_seg = read_uint32(readbuf, 0x14);
+
+				uint32_t new_num_segs = next_seg == 0 ? seg + 1 : next_seg + 1;
+				if (new_num_segs > num_segments) {
+					segments = realloc(segments, new_num_segs * sizeof(struct tffs_entry_segment));
+					memset(segments + (num_segments * sizeof(struct tffs_entry_segment)), 0x0,
+							(new_num_segs - num_segments) * sizeof(struct tffs_entry_segment));
+					num_segments = new_num_segs;
+				}
+				segments[seg].len = read_len;
+				segments[seg].val = malloc(read_len);
+				memcpy(segments[seg].val, readbuf + TFFS_ENTRY_HEADER_SIZE, read_len);
+			}
+		}
+	}
+
+	if (num_segments == 0) {
+		return 0;
+	}
+
+	assert (segments != NULL);
+
+	uint32_t len = 0;
+	for (uint32_t i = 0; i < num_segments; i++) {
+		if (segments[i].val == NULL) {
+			/* missing segment */
+			return 0;
+		}
+
+		len += segments[i].len;
+	}
+
+	void *p = malloc(len);
+	entry->val = p;
+	entry->len = len;
+	for (uint32_t i = 0; i < num_segments; i++) {
+		memcpy(p, segments[i].val, segments[i].len);
+		p += segments[i].len;
+	}
+
+	return 1;
+}

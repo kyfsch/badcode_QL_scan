@@ -1,0 +1,32 @@
+rtk_api_ret_t rtk_svlan_defaultSvlan_set(rtk_port_t port, rtk_vlan_t svid)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 i;
+    rtl8367c_svlan_memconf_t svlanMemConf;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    /* svid must be 0~4095 */
+    if (svid > RTL8367C_VIDMAX)
+        return RT_ERR_SVLAN_VID;
+
+    for (i = 0; i < RTL8367C_SVIDXNO; i++)
+    {
+        if ((retVal = rtl8367c_getAsicSvlanMemberConfiguration(i, &svlanMemConf)) != RT_ERR_OK)
+            return retVal;
+
+        if (svid == svlanMemConf.vs_svid)
+        {
+            if ((retVal = rtl8367c_setAsicSvlanDefaultVlan(rtk_switch_port_L2P_get(port), i)) != RT_ERR_OK)
+                return retVal;
+
+            return RT_ERR_OK;
+        }
+    }
+
+    return RT_ERR_SVLAN_ENTRY_NOT_FOUND;
+}

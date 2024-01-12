@@ -1,0 +1,6 @@
+static const char *obj_stringval(uc_value_t *obj, const char *name)
+{
+	uc_value_t *val = ucv_object_get(obj, name, NULL);
+
+	return ucv_string_get(val);
+}

@@ -1,0 +1,21 @@
+void mtk_bmt_detach(struct mtd_info *mtd)
+{
+	if (bmtd.mtd != mtd)
+		return;
+
+	if (bmtd.debugfs_dir)
+		debugfs_remove_recursive(bmtd.debugfs_dir);
+	bmtd.debugfs_dir = NULL;
+
+	kfree(bmtd.bbt_buf);
+	kfree(bmtd.data_buf);
+
+	mtd->_read_oob = bmtd._read_oob;
+	mtd->_write_oob = bmtd._write_oob;
+	mtd->_erase = bmtd._erase;
+	mtd->_block_isbad = bmtd._block_isbad;
+	mtd->_block_markbad = bmtd._block_markbad;
+	mtd->size = bmtd.total_blks << bmtd.blk_shift;
+
+	memset(&bmtd, 0, sizeof(bmtd));
+}

@@ -1,0 +1,12 @@
+ret_t rtl8367c_getAsicIGMPVLANLeaky(rtk_uint32 *pLeaky)
+{
+    ret_t   retVal;
+    rtk_uint32  regData;
+
+    retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_IGMP_MLD_CFG0, RTL8367C_IGMP_MLD_VLAN_LEAKY_OFFSET, &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    *pLeaky = regData;
+    return RT_ERR_OK;
+}

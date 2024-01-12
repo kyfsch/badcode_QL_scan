@@ -1,0 +1,32 @@
+rtk_api_ret_t rtk_rldp_config_get(rtk_rldp_config_t *pConfig)
+{
+    rtk_api_ret_t retVal;
+    ether_addr_t magic;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if ((retVal = rtl8367c_getAsicRldp(&pConfig->rldp_enable))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicRldpTriggerMode(&pConfig->trigger_mode))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicRldpMagicNum(&magic))!=RT_ERR_OK)
+        return retVal;
+    memcpy(&pConfig->magic, &magic, sizeof(ether_addr_t));
+
+    if ((retVal = rtl8367c_getAsicRldpCompareRandomNumber(&pConfig->compare_type))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicRldpCompareRandomNumber(&pConfig->compare_type))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicRldpCheckingStatePara(&pConfig->num_check, &pConfig->interval_check))!=RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_getAsicRldpLoopStatePara(&pConfig->num_loop, &pConfig->interval_loop))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,4 @@
+void item_set_tag(char tag)
+{
+	item_cur->node.tag = tag;
+}

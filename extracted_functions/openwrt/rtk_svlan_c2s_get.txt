@@ -1,0 +1,41 @@
+rtk_api_ret_t rtk_svlan_c2s_get(rtk_vlan_t vid, rtk_port_t src_port, rtk_vlan_t *pSvid)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 i;
+    rtk_uint32 evid, pmsk, svidx;
+    rtl8367c_svlan_memconf_t svlanMemConf;
+    rtk_port_t phyPort;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pSvid)
+        return RT_ERR_NULL_POINTER;
+
+    if (vid > RTL8367C_VIDMAX)
+        return RT_ERR_VLAN_VID;
+
+    /* Check port Valid */
+    RTK_CHK_PORT_VALID(src_port);
+    phyPort = rtk_switch_port_L2P_get(src_port);
+
+    for (i = 0; i <= RTL8367C_C2SIDXMAX; i++)
+    {
+        if ((retVal = rtl8367c_getAsicSvlanC2SConf(i, &evid, &pmsk, &svidx)) != RT_ERR_OK)
+            return retVal;
+
+        if (evid == vid)
+        {
+            if(pmsk & (1 << phyPort))
+            {
+                if ((retVal = rtl8367c_getAsicSvlanMemberConfiguration(svidx, &svlanMemConf)) != RT_ERR_OK)
+                    return retVal;
+
+                *pSvid = svlanMemConf.vs_svid;
+                return RT_ERR_OK;
+            }
+        }
+    }
+
+    return RT_ERR_OUT_OF_RANGE;
+}

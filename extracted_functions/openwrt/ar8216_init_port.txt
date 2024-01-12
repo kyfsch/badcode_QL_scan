@@ -1,0 +1,5 @@
+ar8216_init_port(struct ar8xxx_priv *priv, int port)
+{
+	__ar8216_init_port(priv, port, ar8xxx_has_gige(priv),
+			   chip_is_ar8316(priv));
+}

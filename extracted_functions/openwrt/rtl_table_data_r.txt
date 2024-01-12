@@ -1,0 +1,4 @@
+inline u32 rtl_table_data_r(struct table_reg *r, int i)
+{
+	return sw_r32(rtl_table_data(r, i));
+}

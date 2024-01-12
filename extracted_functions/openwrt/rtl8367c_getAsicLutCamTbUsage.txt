@@ -1,0 +1,11 @@
+ret_t rtl8367c_getAsicLutCamTbUsage(rtk_uint32* pEnabled)
+{
+    ret_t       retVal;
+    rtk_uint32  regData;
+
+    if ((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_LUT_CFG, RTL8367C_BCAM_DISABLE_OFFSET, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    *pEnabled = regData ? 0 : 1;
+    return RT_ERR_OK;
+}

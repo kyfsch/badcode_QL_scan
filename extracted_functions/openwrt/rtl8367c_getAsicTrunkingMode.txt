@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicTrunkingMode(rtk_uint32* pMode)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_PORT_TRUNK_CTRL, RTL8367C_PORT_TRUNK_DUMB_OFFSET, pMode);
+}

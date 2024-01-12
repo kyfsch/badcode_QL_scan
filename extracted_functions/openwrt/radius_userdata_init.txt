@@ -1,0 +1,5 @@
+static void radius_userdata_init(struct radius_user_data *u)
+{
+	kvlist_init(&u->users, kvlist_blob_len);
+	avl_init(&u->user_state, avl_strcmp, false, NULL);
+}

@@ -1,0 +1,4 @@
+static int rtl8367c_get_mibs_num(void)
+{
+	return ARRAY_SIZE(rtl8367c_mib_counters);
+}

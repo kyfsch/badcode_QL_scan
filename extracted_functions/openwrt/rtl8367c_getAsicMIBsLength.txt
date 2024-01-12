@@ -1,0 +1,12 @@
+ret_t rtl8367c_getAsicMIBsLength(rtk_uint32 *pTxLengthMode, rtk_uint32 *pRxLengthMode)
+{
+    ret_t retVal;
+
+    if( (retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_MIB_RMON_LEN_CTRL, RTL8367C_TX_LENGTH_CTRL_OFFSET, pTxLengthMode)) != RT_ERR_OK)
+        return retVal;
+
+    if( (retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_MIB_RMON_LEN_CTRL, RTL8367C_RX_LENGTH_CTRL_OFFSET, pRxLengthMode)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,20 @@
+    BigIntegerSub(B, B, n);
+
+  ts->B.len = BigIntegerToBytes(B, ts->B.data);
+
+  BigIntegerFree(v);
+  BigIntegerFree(B);
+  BigIntegerFree(b);
+  BigIntegerFree(g);
+  BigIntegerFree(n);
+
+  SHA1Update(&ts->oldckhash, ts->B.data, ts->B.len);
+
+  return &ts->B;
+}
+
+_TYPE( unsigned char * )
+t_servergetkey(ts, clientval)
+     struct t_server * ts;
+     struct t_num * clientval;
+{

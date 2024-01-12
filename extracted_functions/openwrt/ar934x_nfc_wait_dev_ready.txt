@@ -1,0 +1,15 @@
+static int ar934x_nfc_wait_dev_ready(struct ar934x_nfc *nfc)
+{
+	unsigned long timeout;
+
+	timeout = jiffies + msecs_to_jiffies(AR934X_NFC_DEV_READY_TIMEOUT);
+	do {
+		if (__ar934x_nfc_dev_ready(nfc))
+			return 0;
+	} while time_before(jiffies, timeout);
+
+	nfc_dbg(nfc, "timeout waiting for device ready, status:%08x int:%08x\n",
+		ar934x_nfc_rr(nfc, AR934X_NFC_REG_STATUS),
+		ar934x_nfc_rr(nfc, AR934X_NFC_REG_INT_STATUS));
+	return -ETIMEDOUT;
+}

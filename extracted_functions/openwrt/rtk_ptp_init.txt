@@ -1,0 +1,8 @@
+rtk_api_ret_t rtk_ptp_init(void)
+{
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+
+    return RT_ERR_OK;
+}

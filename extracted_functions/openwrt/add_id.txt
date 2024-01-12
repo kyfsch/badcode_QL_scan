@@ -1,0 +1,10 @@
+add_id(struct nl_msg *msg, void *arg)
+{
+	struct attrlist_arg *l = arg;
+
+	NLA_PUT_U32(msg, SWITCH_ATTR_ID, l->id);
+
+	return 0;
+nla_put_failure:
+	return -1;
+}

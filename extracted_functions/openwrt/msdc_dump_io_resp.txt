@@ -1,0 +1,21 @@
+static void msdc_dump_io_resp(struct msdc_host *host, u32 resp)
+{
+	u32 flags = (resp >> 8) & 0xFF;
+#if 0
+	char *state[] = {"DIS", "CMD", "TRN", "RFU"};
+#endif
+	if (flags & (1 << 7))
+		N_MSG(RSP, "[IO] COM_CRC_ERR");
+	if (flags & (1 << 6))
+		N_MSG(RSP, "[IO] Illgal command");
+	if (flags & (1 << 3))
+		N_MSG(RSP, "[IO] Error");
+	if (flags & (1 << 2))
+		N_MSG(RSP, "[IO] RFU");
+	if (flags & (1 << 1))
+		N_MSG(RSP, "[IO] Function number error");
+	if (flags & (1 << 0))
+		N_MSG(RSP, "[IO] Out of range");
+
+	N_MSG(RSP, "[IO] State: %s, Data:0x%x", state[(resp >> 12) & 0x3], resp & 0xFF);
+}

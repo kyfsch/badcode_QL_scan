@@ -1,0 +1,4 @@
+static u32 encode_start(u32 ctrl_status)
+{
+	return ctrl_status & ~DMA_CTRL_STATUS_PAUSE;
+}

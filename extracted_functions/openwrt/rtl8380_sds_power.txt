@@ -1,0 +1,16 @@
+int rtl8380_sds_power(int mac, int val)
+{
+	u32 mode = (val == 1) ? 0x4 : 0x9;
+	u32 offset = (mac == 24) ? 5 : 0;
+
+	if ((mac != 24) && (mac != 26)) {
+		pr_err("%s: not a fibre port: %d\n", __func__, mac);
+		return -1;
+	}
+
+	sw_w32_mask(0x1f << offset, mode << offset, RTL838X_SDS_MODE_SEL);
+
+	rtl8380_sds_rst(mac);
+
+	return 0;
+}

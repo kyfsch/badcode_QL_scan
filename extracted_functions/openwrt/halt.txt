@@ -1,0 +1,5 @@
+static void halt(void)
+{
+	printf("\nSystem halted!\n");
+	for(;;);
+}

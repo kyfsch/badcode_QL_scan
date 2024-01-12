@@ -1,0 +1,10 @@
+int mt7620_has_carrier(struct fe_priv *priv)
+{
+	struct mt7620_gsw *gsw = (struct mt7620_gsw *)priv->soc->swpriv;
+	int i;
+
+	for (i = 0; i < GSW_PORT6; i++)
+		if (mtk_switch_r32(gsw, GSW_REG_PORT_STATUS(i)) & 0x1)
+			return 1;
+	return 0;
+}

@@ -1,0 +1,16 @@
+send_auth(void)
+{
+	struct ead_msg_auth *auth = EAD_DATA(msg, auth);
+
+	prepare_password();
+	t_clientpasswd(tc, password);
+	skey = t_clientgetkey(tc, &B);
+	if (!skey)
+		return 0;
+
+	ead_set_key(skey);
+	msg->type = htonl(EAD_TYPE_SEND_AUTH);
+	msg->len = htonl(sizeof(struct ead_msg_auth));
+	memcpy(auth->data, t_clientresponse(tc), sizeof(auth->data));
+	return send_packet(EAD_TYPE_DONE_AUTH, handle_done_auth, 1);
+}

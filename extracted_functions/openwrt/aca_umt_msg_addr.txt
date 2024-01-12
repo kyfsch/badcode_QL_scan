@@ -1,0 +1,15 @@
+u32 aca_umt_msg_addr(struct dc_ep_priv *priv, u32 endian, u32 type)
+{
+	switch (type) {
+	case ACA_TXIN:
+		ACA_ENDIAN_ADDR(TXIN_HD_ACCUM_ADD, endian);
+	case ACA_RXIN:
+		ACA_ENDIAN_ADDR(RXIN_HD_ACCUM_ADD, endian);
+	case ACA_TXOUT:
+		ACA_ENDIAN_ADDR(TXOUT_HD_ACCUM_SUB, endian);
+	case ACA_RXOUT:
+		ACA_ENDIAN_ADDR(RXOUT_HD_ACCUM_SUB, endian);
+	default:
+		ACA_ENDIAN_ADDR(RXIN_HD_ACCUM_ADD, endian);
+	};
+}

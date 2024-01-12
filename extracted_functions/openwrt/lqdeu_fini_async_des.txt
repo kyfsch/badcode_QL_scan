@@ -1,0 +1,13 @@
+void __exit lqdeu_fini_async_des (void)
+{
+    int i;
+    
+    for (i = 0; i < ARRAY_SIZE(des_drivers_alg); i++)
+        crypto_unregister_alg(&des_drivers_alg[i].alg);
+
+    des_queue->hw_status = DES_COMPLETED;
+    DEU_WAKEUP_EVENT(deu_dma_priv.deu_thread_wait, DES_ASYNC_EVENT,
+                                 deu_dma_priv.des_event_flags); 
+   
+    kfree(des_queue);
+}

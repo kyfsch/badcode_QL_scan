@@ -1,0 +1,18 @@
+static void rtl8366_smi_write_bits(struct rtl8366_smi *smi, u32 data, u32 len)
+{
+	unsigned int sda = smi->gpio_sda;
+	unsigned int sck = smi->gpio_sck;
+
+	for (; len > 0; len--) {
+		rtl8366_smi_clk_delay(smi);
+
+		/* prepare data */
+		gpio_set_value(sda, !!(data & ( 1 << (len - 1))));
+		rtl8366_smi_clk_delay(smi);
+
+		/* clocking */
+		gpio_set_value(sck, 1);
+		rtl8366_smi_clk_delay(smi);
+		gpio_set_value(sck, 0);
+	}
+}

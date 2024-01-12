@@ -1,0 +1,14 @@
+rtk_api_ret_t rtk_port_sds_reset(rtk_port_t port)
+{
+    rtk_uint32 ext_id;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    if(rtk_switch_isSgmiiPort(port) != RT_ERR_OK)
+        return RT_ERR_PORT_ID;
+
+    ext_id = port - 15;
+    return rtl8367c_sdsReset(ext_id);
+}

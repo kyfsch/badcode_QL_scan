@@ -1,0 +1,6 @@
+DECLARE_PCI_FIXUP_ENABLE(PCI_ANY_ID, PCI_ANY_ID, bcm6348_pci_fixup);
+
+static struct resource bcm6348_cb_io_resource = {
+	.name = "bcm6348 CB IO space",
+	.flags = IORESOURCE_IO,
+};

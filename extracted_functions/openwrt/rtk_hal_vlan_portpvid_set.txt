@@ -1,0 +1,4 @@
+void rtk_hal_vlan_portpvid_set(rtk_port_t port, rtk_vlan_t pvid, rtk_pri_t priority)
+{
+	rtk_vlan_portPvid_set(port, pvid, priority);
+}

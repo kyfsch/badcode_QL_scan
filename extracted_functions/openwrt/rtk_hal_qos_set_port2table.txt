@@ -1,0 +1,8 @@
+void rtk_hal_qos_set_port2table(struct ra_switch_ioctl_data *data)
+{
+	rtk_api_ret_t ret;
+	
+	ret = rtk_qos_portPriSelIndex_set(data->port, data->qos_table_idx);
+	if (ret != 0)
+		printk("rtk_qos_portPriSelIndex_set failed\n");
+}

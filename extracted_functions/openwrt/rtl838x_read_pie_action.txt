@@ -1,0 +1,46 @@
+static void rtl838x_read_pie_action(u32 r[],  struct pie_rule *pr)
+{
+	u16 *aif = (u16 *)&r[17];
+
+	aif--;
+
+	pr_debug("%s, at %08x\n", __func__, (u32)aif);
+	if (pr->drop)
+		pr_debug("%s: Action Drop: %d", __func__, pr->drop);
+
+	if (pr->fwd_sel){ /* Forwarding action */
+		pr->fwd_act = *aif >> 13;
+		pr->fwd_data = *aif--;
+		pr->bypass_all = pr->fwd_data & BIT(12);
+		pr->bypass_ibc_sc = pr->fwd_data & BIT(11);
+		pr->bypass_igr_stp = pr->fwd_data & BIT(10);
+		if (pr->bypass_all || pr->bypass_ibc_sc || pr->bypass_igr_stp)
+			pr->bypass_sel = true;
+	}
+	if (pr->ovid_sel) /* Outer VID action */
+		pr->ovid_data = *aif--;
+	if (pr->ivid_sel) /* Inner VID action */
+		pr->ivid_data = *aif--;
+	if (pr->flt_sel) /* Filter action */
+		pr->flt_data = *aif--;
+	if (pr->log_sel) /* Log action */
+		pr->log_data = *aif--;
+	if (pr->rmk_sel) /* Remark action */
+		pr->rmk_data = *aif--;
+	if (pr->meter_sel) /* Meter action */
+		pr->meter_data = *aif--;
+	if (pr->tagst_sel) /* Egress Tag Status action */
+		pr->tagst_data = *aif--;
+	if (pr->mir_sel) /* Mirror action */
+		pr->mir_data = *aif--;
+	if (pr->nopri_sel) /* Normal Priority action */
+		pr->nopri_data = *aif--;
+	if (pr->cpupri_sel) /* CPU Priority action */
+		pr->nopri_data = *aif--;
+	if (pr->otpid_sel) /* OTPID action */
+		pr->otpid_data = *aif--;
+	if (pr->itpid_sel) /* ITPID action */
+		pr->itpid_data = *aif--;
+	if (pr->shaper_sel) /* Traffic shaper action */
+		pr->shaper_data = *aif--;
+}

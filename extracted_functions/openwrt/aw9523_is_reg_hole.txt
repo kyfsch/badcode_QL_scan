@@ -1,0 +1,7 @@
+static bool aw9523_is_reg_hole(unsigned int reg)
+{
+	return (reg > AW9523_REG_PORT_MODE(AW9523_PINS_PER_PORT) &&
+		reg < AW9523_REG_SOFT_RESET) ||
+	       (reg > AW9523_REG_INTR_DIS(AW9523_PINS_PER_PORT) &&
+		reg < AW9523_REG_CHIPID);
+}

@@ -1,0 +1,36 @@
+static int ip17xx_probe(struct phy_device *pdev)
+{
+	struct ip17xx_state *state;
+	struct switch_dev *dev;
+	int err;
+
+	/* We only attach to PHY 0, but use all available PHYs */
+	if (pdev->mdio.addr != 0)
+		return -ENODEV;
+
+	state = kzalloc(sizeof(*state), GFP_KERNEL);
+	if (!state)
+		return -ENOMEM;
+
+	dev = &state->dev;
+
+	pdev->priv = state;
+	state->mii_bus = pdev->mdio.bus;
+
+	err = get_model(state);
+	if (err < 0)
+		goto error;
+
+	dev->vlans = MAX_VLANS;
+	dev->cpu_port = state->regs->CPU_PORT;
+	dev->ports = state->regs->NUM_PORTS;
+	dev->name = state->regs->NAME;
+	dev->ops = &ip17xx_ops;
+
+	pr_info("IP17xx: Found %s at %s\n", dev->name, dev_name(&pdev->mdio.dev));
+	return 0;
+
+error:
+	kfree(state);
+	return err;
+}

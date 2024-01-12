@@ -1,0 +1,19 @@
+rtk_api_ret_t rtk_rate_stormControlExtPortmask_set(rtk_portmask_t *pPortmask)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 pmask;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pPortmask)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtk_switch_portmask_L2P_get(pPortmask, &pmask)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicStormFilterExtEnablePortMask(pmask)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

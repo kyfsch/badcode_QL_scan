@@ -1,0 +1,17 @@
+rtk_api_ret_t rtk_int_status_get(rtk_int_status_t* pStatusMask)
+{
+    rtk_api_ret_t   retVal;
+    rtk_uint32          ims_mask;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pStatusMask)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicInterruptStatus(&ims_mask)) != RT_ERR_OK)
+        return retVal;
+
+    pStatusMask->value[0] = (ims_mask & 0x00000FFF);
+    return RT_ERR_OK;
+}

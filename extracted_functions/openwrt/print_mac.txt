@@ -1,0 +1,15 @@
+static void print_mac(struct data_header **data_table, int cnt)
+{
+
+	for (int i = 0; i < cnt; i++) {
+		if (data_table[i]->type == DATA_HEADER_CONFIG
+		    && data_table[i]->id == DATA_HEADER_ID_MAC) {
+			int j;
+			for (j = 0; j < 5; j++)
+				printf("%02x:", data_table[i]->data[j]);
+			printf("%02x\n", data_table[i]->data[j]);
+		}
+
+	}
+
+}

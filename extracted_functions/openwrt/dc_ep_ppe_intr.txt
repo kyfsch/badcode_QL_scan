@@ -1,0 +1,14 @@
+static irqreturn_t dc_ep_ppe_intr(int irq, void *dev_id)
+{
+	struct dc_ep_dev *dev = dev_id;
+
+	ppe_irq_num++;
+	if (ep_rd32(MBOX_IGU0_ISR) == 0) {
+		pr_err("Fatal error, dummy interrupt\n");
+		return IRQ_NONE;
+	}
+
+	ep_wr32(PPE_MBOX_TEST_BIT, MBOX_IGU0_ISRC);
+	ep_rd32(MBOX_IGU0_ISR);
+	return IRQ_HANDLED;
+}

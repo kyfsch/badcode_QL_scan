@@ -1,0 +1,5 @@
+uint8 Uart16550GetPoll()
+{
+    while((UART16550_READ(OFS_LINE_STATUS) & 0x1) == 0);
+    return UART16550_READ(OFS_RCV_BUFFER);
+}

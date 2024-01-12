@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_led_serialMode_set(rtk_led_active_t active)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if ( active >= LED_ACTIVE_END)
+        return RT_ERR_INPUT;
+
+     if ((retVal = rtl8367c_setAsicLedSerialModeConfig(active,1))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

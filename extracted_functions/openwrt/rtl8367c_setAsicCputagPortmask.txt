@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicCputagPortmask(rtk_uint32 portmask)
+{
+    if(portmask > RTL8367C_PORTMASK)
+        return RT_ERR_PORT_MASK;
+
+    return rtl8367c_setAsicReg(RTL8367C_CPU_PORT_MASK_REG, portmask);
+}

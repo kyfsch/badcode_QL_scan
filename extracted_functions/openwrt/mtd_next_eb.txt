@@ -1,0 +1,4 @@
+static ssize_t mtd_next_eb(struct mtd_info *mtd, size_t offset)
+{
+	return mtd_rounddown_to_eb(offset, mtd) + mtd->erasesize;
+}

@@ -1,0 +1,9 @@
+mtk_bmt_remap_block(u32 block, u32 mapped_block, int copy_len)
+{
+	int start, end;
+
+	if (!mapping_block_in_range(block, &start, &end))
+		return false;
+
+	return bmtd.ops->remap_block(block, mapped_block, copy_len);
+}

@@ -1,0 +1,37 @@
+static void fe_phy_link_adjust(struct net_device *dev)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+	unsigned long flags;
+	int i;
+
+	spin_lock_irqsave(&priv->phy->lock, flags);
+	for (i = 0; i < 8; i++) {
+		if (priv->phy->phy_node[i]) {
+			struct phy_device *phydev = priv->phy->phy[i];
+			int status_change = 0;
+
+			if (phydev->link)
+				if (priv->phy->duplex[i] != phydev->duplex ||
+				    priv->phy->speed[i] != phydev->speed)
+					status_change = 1;
+
+			if (phydev->link != priv->link[i])
+				status_change = 1;
+
+			switch (phydev->speed) {
+			case SPEED_1000:
+			case SPEED_100:
+			case SPEED_10:
+				priv->link[i] = phydev->link;
+				priv->phy->duplex[i] = phydev->duplex;
+				priv->phy->speed[i] = phydev->speed;
+
+				if (status_change &&
+				    priv->soc->mdio_adjust_link)
+					priv->soc->mdio_adjust_link(priv, i);
+				break;
+			}
+		}
+	}
+	spin_unlock_irqrestore(&priv->phy->lock, flags);
+}

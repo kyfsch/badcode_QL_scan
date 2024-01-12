@@ -1,0 +1,16 @@
+show_attrs(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *val)
+{
+	while (attr) {
+		if (attr->type != SWITCH_TYPE_NOVAL) {
+			printf("\t%s: ", attr->name);
+			if (swlib_get_attr(dev, attr, val) < 0)
+				printf("???");
+			else {
+				print_attr_val(attr, val);
+				free_attr_val(attr, val);
+			}
+			putchar('\n');
+		}
+		attr = attr->next;
+	}
+}

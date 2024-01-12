@@ -1,0 +1,5 @@
+static int arc4_set_key_skcipher(struct crypto_skcipher *tfm, const u8 *inkey,
+                       unsigned int key_len)
+{
+        return arc4_set_key(crypto_skcipher_ctx(tfm), inkey, key_len);
+}

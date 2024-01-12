@@ -1,0 +1,6 @@
+get_prime(void)
+{
+	msg->type = htonl(EAD_TYPE_GET_PRIME);
+	msg->len = 0;
+	return send_packet(EAD_TYPE_PRIME, handle_prime, 1);
+}

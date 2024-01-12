@@ -1,0 +1,13 @@
+rtk_api_ret_t rtk_i2c_gpioPinGroup_set( rtk_I2C_gpio_pin_t pins_group )
+{
+    rtk_uint32 retVal;
+
+
+    if( ( pins_group > I2C_GPIO_PIN_END )|| ( pins_group < I2C_GPIO_PIN_8_9) )
+        return RT_ERR_INPUT;
+
+    if( (retVal = rtl8367c_setAsicI2CGpioPinGroup(pins_group) ) != RT_ERR_OK )
+        return retVal ;
+
+    return RT_ERR_OK;
+}

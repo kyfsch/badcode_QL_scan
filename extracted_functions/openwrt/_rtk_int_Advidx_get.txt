@@ -1,0 +1,23 @@
+static rtk_api_ret_t _rtk_int_Advidx_get(rtk_int_advType_t adv_type, rtk_uint32 *pAsic_idx)
+{
+    rtk_uint32 asic_idx[ADV_END] =
+    {
+        INTRST_L2_LEARN,
+        INTRST_SPEED_CHANGE,
+        INTRST_SPECIAL_CONGESTION,
+        INTRST_PORT_LINKDOWN,
+        INTRST_PORT_LINKUP,
+        ADV_NOT_SUPPORT,
+        INTRST_RLDP_LOOPED,
+        INTRST_RLDP_RELEASED,
+    };
+
+    if(adv_type >= ADV_END)
+        return RT_ERR_INPUT;
+
+    if(asic_idx[adv_type] == ADV_NOT_SUPPORT)
+        return RT_ERR_CHIP_NOT_SUPPORTED;
+
+    *pAsic_idx = asic_idx[adv_type];
+    return RT_ERR_OK;
+}

@@ -1,0 +1,44 @@
+int rtl9300_serdes_setup(int sds_num, phy_interface_t phy_mode)
+{
+	int sds_mode;
+	int calib_tries = 0;
+
+	switch (phy_mode) {
+	case PHY_INTERFACE_MODE_HSGMII:
+		sds_mode = 0x12;
+		break;
+	case PHY_INTERFACE_MODE_1000BASEX:
+		sds_mode = 0x04;
+		break;
+	case PHY_INTERFACE_MODE_XGMII:
+		sds_mode = 0x10;
+		break;
+	case PHY_INTERFACE_MODE_10GBASER:
+		sds_mode = 0x1a;
+		break;
+	case PHY_INTERFACE_MODE_USXGMII:
+		sds_mode = 0x0d;
+		break;
+	default:
+		pr_err("%s: unknown serdes mode: %s\n", __func__, phy_modes(phy_mode));
+		return -EINVAL;
+	}
+
+	/* Maybe use dal_longan_sds_init */
+
+	/* dal_longan_construct_serdesConfig_init */ /* Serdes Construct */
+	rtl9300_phy_enable_10g_1g(sds_num);
+
+	/* Set Serdes Mode */
+	rtl9300_sds_set(sds_num, 0x1a); /* 0x1b: RTK_MII_10GR1000BX_AUTO */
+
+	/* Do RX calibration */
+	do {
+		rtl9300_do_rx_calibration(sds_num, phy_mode);
+		calib_tries++;
+		mdelay(50);
+	} while (rtl9300_sds_check_calibration(sds_num, phy_mode) && calib_tries < 3);
+
+
+	return 0;
+}

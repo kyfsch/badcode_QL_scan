@@ -1,0 +1,9 @@
+be32enc(void *buf, uint32_t u)
+{
+	uint8_t *p = buf;
+
+	p[0] = ((uint8_t) ((u >> 24) & 0xff));
+	p[1] = ((uint8_t) ((u >> 16) & 0xff));
+	p[2] = ((uint8_t) ((u >> 8) & 0xff));
+	p[3] = ((uint8_t) (u & 0xff));
+}

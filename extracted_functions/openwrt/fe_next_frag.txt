@@ -1,0 +1,10 @@
+fe_next_frag(struct sk_buff *head, struct sk_buff *skb)
+{
+	if (skb != head)
+		return skb->next;
+
+	if (skb_has_frag_list(skb))
+		return skb_shinfo(skb)->frag_list;
+
+	return NULL;
+}

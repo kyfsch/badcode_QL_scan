@@ -1,0 +1,13 @@
+BIGNUM *BN_CTX_get(BN_CTX *ctx)
+	{
+	if (ctx->depth > BN_CTX_NUM_POS || ctx->tos >= BN_CTX_NUM)
+		{
+		if (!ctx->too_many)
+			{
+			/* disable error code until BN_CTX_end is called: */
+			ctx->too_many = 1;
+			}
+		return NULL;
+		}
+	return (&(ctx->bn[ctx->tos++]));
+	}

@@ -1,0 +1,32 @@
+static int fe_vlan_rx_add_vid(struct net_device *dev,
+			      __be16 proto, u16 vid)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+	u32 idx = (vid & 0xf);
+	u32 vlan_cfg;
+
+	if (!((fe_reg_table[FE_REG_FE_DMA_VID_BASE]) &&
+	      (dev->features & NETIF_F_HW_VLAN_CTAG_TX)))
+		return 0;
+
+	if (test_bit(idx, &priv->vlan_map)) {
+		netdev_warn(dev, "disable tx vlan offload\n");
+		dev->wanted_features &= ~NETIF_F_HW_VLAN_CTAG_TX;
+		netdev_update_features(dev);
+	} else {
+		vlan_cfg = fe_r32(fe_reg_table[FE_REG_FE_DMA_VID_BASE] +
+				((idx >> 1) << 2));
+		if (idx & 0x1) {
+			vlan_cfg &= 0xffff;
+			vlan_cfg |= (vid << 16);
+		} else {
+			vlan_cfg &= 0xffff0000;
+			vlan_cfg |= vid;
+		}
+		fe_w32(vlan_cfg, fe_reg_table[FE_REG_FE_DMA_VID_BASE] +
+				((idx >> 1) << 2));
+		set_bit(idx, &priv->vlan_map);
+	}
+
+	return 0;
+}

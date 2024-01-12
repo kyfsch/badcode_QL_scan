@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicLutFlushMode(rtk_uint32 mode)
+{
+    if( mode >= FLUSHMDOE_END )
+        return RT_ERR_NOT_ALLOWED;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_L2_FLUSH_CTRL2, RTL8367C_LUT_FLUSH_MODE_MASK, mode);
+}

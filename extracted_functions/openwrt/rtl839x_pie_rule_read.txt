@@ -1,0 +1,28 @@
+static int rtl839x_pie_rule_read(struct rtl838x_switch_priv *priv, int idx, struct  pie_rule *pr)
+{
+	/* Read IACL table (2) via register 0 */
+	struct table_reg *q = rtl_table_get(RTL8380_TBL_0, 2);
+	u32 r[17];
+	int block = idx / PIE_BLOCK_SIZE;
+	u32 t_select = sw_r32(RTL839X_ACL_BLK_TMPLTE_CTRL(block));
+
+	memset(pr, 0, sizeof(*pr));
+	rtl_table_read(q, idx);
+	for (int i = 0; i < 17; i++)
+		r[i] = sw_r32(rtl_table_data(q, i));
+
+	rtl_table_release(q);
+
+	rtl839x_read_pie_fixed_fields(r, pr);
+	if (!pr->valid)
+		return 0;
+
+	pr_debug("%s: template_selectors %08x, tid: %d\n", __func__, t_select, pr->tid);
+	rtl839x_pie_rule_dump_raw(r);
+
+	rtl839x_read_pie_templated(r, pr, fixed_templates[(t_select >> (pr->tid * 3)) & 0x7]);
+
+	rtl839x_read_pie_action(r, pr);
+
+	return 0;
+}

@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicCputagPriorityRemapping(rtk_uint32 srcPri, rtk_uint32 newPri)
+{
+    if((srcPri > RTL8367C_PRIMAX) || (newPri > RTL8367C_PRIMAX))
+        return RT_ERR_QOS_INT_PRIORITY;
+
+    return rtl8367c_setAsicRegBits(RTL8367C_QOS_PRIPORITY_REMAPPING_IN_CPU_REG(srcPri), RTL8367C_QOS_PRIPORITY_REMAPPING_IN_CPU_MASK(srcPri), newPri);
+}

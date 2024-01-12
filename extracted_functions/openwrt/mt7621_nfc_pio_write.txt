@@ -1,0 +1,19 @@
+static void mt7621_nfc_pio_write(struct mt7621_nfc *nfc, u32 val, bool bw)
+{
+	u32 reg;
+
+	reg = (nfi_read32(nfc, NFI_STA) & STA_NFI_FSM_M) >> STA_NFI_FSM_S;
+	if (reg != STA_FSM_CUSTOM_DATA) {
+		reg = nfi_read16(nfc, NFI_CNFG);
+		reg &= ~(CNFG_READ_MODE | CNFG_BYTE_RW);
+		if (bw)
+			reg |= CNFG_BYTE_RW;
+		nfi_write16(nfc, NFI_CNFG, reg);
+
+		nfi_write16(nfc, NFI_CON, CON_NFI_SEC_M | CON_NFI_BWR);
+		nfi_write16(nfc, NFI_STRDATA, STR_DATA);
+	}
+
+	mt7621_nfc_wait_pio_ready(nfc);
+	nfi_write32(nfc, NFI_DATAW, val);
+}

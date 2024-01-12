@@ -1,0 +1,4 @@
+static void uc_gc_timer(struct uloop_timeout *timeout)
+{
+	ucv_gc(&vm);
+}

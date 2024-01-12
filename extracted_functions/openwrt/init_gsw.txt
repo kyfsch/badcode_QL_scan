@@ -1,0 +1,6 @@
+void init_gsw(void)
+{
+	rtl8367s_hw_init();
+	set_rtl8367s_sgmii();
+	set_rtl8367s_rgmii();
+}

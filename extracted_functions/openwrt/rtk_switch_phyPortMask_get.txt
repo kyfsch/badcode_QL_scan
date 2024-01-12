@@ -1,0 +1,7 @@
+rtk_uint32 rtk_switch_phyPortMask_get(void)
+{
+    if(init_state != INIT_COMPLETED)
+        return 0x00; /* No port in portmask */
+
+    return (halCtrl->phy_portmask);
+}

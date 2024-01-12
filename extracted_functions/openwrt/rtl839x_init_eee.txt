@@ -1,0 +1,18 @@
+static void rtl839x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
+{
+	pr_info("Setting up EEE, state: %d\n", enable);
+
+	/* Set wake timer for TX and pause timer both to 0x21 */
+	sw_w32_mask(0xff << 20| 0xff, 0x21 << 20| 0x21, RTL839X_EEE_TX_TIMER_GELITE_CTRL);
+	/* Set pause wake timer for GIGA-EEE to 0x11 */
+	sw_w32_mask(0xff << 20, 0x11 << 20, RTL839X_EEE_TX_TIMER_GIGA_CTRL);
+	/* Set pause wake timer for 10GBit ports to 0x11 */
+	sw_w32_mask(0xff << 20, 0x11 << 20, RTL839X_EEE_TX_TIMER_10G_CTRL);
+
+	/* Setup EEE on all ports */
+	for (int i = 0; i < priv->cpu_port; i++) {
+		if (priv->ports[i].phy)
+			rtl839x_port_eee_set(priv, i, enable);
+	}
+	priv->eee_enabled = enable;
+}

@@ -1,0 +1,4 @@
+void item_set_selected(int val)
+{
+	item_cur->node.selected = val;
+}

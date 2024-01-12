@@ -1,0 +1,58 @@
+static int rtl8231_gpio_probe(struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
+	struct device_node *np = dev->of_node;
+	struct rtl8231_gpios *gpios;
+	int err;
+
+	pr_info("Probing RTL8231 GPIOs\n");
+
+	if (!np) {
+		dev_err(&pdev->dev, "No DT found\n");
+		return -EINVAL;
+	}
+
+	gpios = devm_kzalloc(dev, sizeof(*gpios), GFP_KERNEL);
+	if (!gpios)
+		return -ENOMEM;
+
+	gpios->id = soc_info.id;
+	if (soc_info.family == RTL8380_FAMILY_ID) {
+		gpios->ext_gpio_indrt_access = RTL838X_EXT_GPIO_INDRT_ACCESS;
+	}
+
+	if (soc_info.family == RTL8390_FAMILY_ID) {
+		gpios->ext_gpio_indrt_access = RTL839X_EXT_GPIO_INDRT_ACCESS;
+	}
+
+	err = of_property_read_u32(np, "indirect-access-bus-id", &gpios->smi_bus_id);
+	if (!err && gpios->smi_bus_id > RTL8231_SMI_BUS_ID_MAX)
+		err = -EINVAL;
+
+	if (err) {
+		dev_err(dev, "invalid or missing indirect-access-bus-id\n");
+		return err;
+	}
+
+	err = rtl8231_init(gpios);
+	if (err) {
+		dev_err(dev, "no device found at bus address %d\n", gpios->smi_bus_id);
+		return err;
+	}
+
+	gpios->dev = dev;
+	gpios->gc.base = -1;
+	gpios->gc.ngpio = 37;
+	gpios->gc.label = "rtl8231";
+	gpios->gc.parent = dev;
+	gpios->gc.owner = THIS_MODULE;
+	gpios->gc.can_sleep = true;
+
+	gpios->gc.direction_input = rtl8231_direction_input;
+	gpios->gc.direction_output = rtl8231_direction_output;
+	gpios->gc.set = rtl8231_gpio_set;
+	gpios->gc.get = rtl8231_gpio_get;
+	gpios->gc.get_direction = rtl8231_get_direction;
+
+	return devm_gpiochip_add_data(dev, &gpios->gc, gpios);
+}

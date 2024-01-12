@@ -1,0 +1,78 @@
+static unsigned int msdc_do_command(struct msdc_host   *host,
+				    struct mmc_command *cmd,
+				    int                 tune,
+				    unsigned long       timeout);
+
+static int msdc_tune_cmdrsp(struct msdc_host *host, struct mmc_command *cmd);
+
+#ifdef MT6575_SD_DEBUG
+static void msdc_dump_card_status(struct msdc_host *host, u32 status)
+{
+/* N_MSG is currently a no-op */
+#if 0
+	static char *state[] = {
+		"Idle",			/* 0 */
+		"Ready",		/* 1 */
+		"Ident",		/* 2 */
+		"Stby",			/* 3 */
+		"Tran",			/* 4 */
+		"Data",			/* 5 */
+		"Rcv",			/* 6 */
+		"Prg",			/* 7 */
+		"Dis",			/* 8 */
+		"Reserved",		/* 9 */
+		"Reserved",		/* 10 */
+		"Reserved",		/* 11 */
+		"Reserved",		/* 12 */
+		"Reserved",		/* 13 */
+		"Reserved",		/* 14 */
+		"I/O mode",		/* 15 */
+	};
+#endif
+	if (status & R1_OUT_OF_RANGE)
+		N_MSG(RSP, "[CARD_STATUS] Out of Range");
+	if (status & R1_ADDRESS_ERROR)
+		N_MSG(RSP, "[CARD_STATUS] Address Error");
+	if (status & R1_BLOCK_LEN_ERROR)
+		N_MSG(RSP, "[CARD_STATUS] Block Len Error");
+	if (status & R1_ERASE_SEQ_ERROR)
+		N_MSG(RSP, "[CARD_STATUS] Erase Seq Error");
+	if (status & R1_ERASE_PARAM)
+		N_MSG(RSP, "[CARD_STATUS] Erase Param");
+	if (status & R1_WP_VIOLATION)
+		N_MSG(RSP, "[CARD_STATUS] WP Violation");
+	if (status & R1_CARD_IS_LOCKED)
+		N_MSG(RSP, "[CARD_STATUS] Card is Locked");
+	if (status & R1_LOCK_UNLOCK_FAILED)
+		N_MSG(RSP, "[CARD_STATUS] Lock/Unlock Failed");
+	if (status & R1_COM_CRC_ERROR)
+		N_MSG(RSP, "[CARD_STATUS] Command CRC Error");
+	if (status & R1_ILLEGAL_COMMAND)
+		N_MSG(RSP, "[CARD_STATUS] Illegal Command");
+	if (status & R1_CARD_ECC_FAILED)
+		N_MSG(RSP, "[CARD_STATUS] Card ECC Failed");
+	if (status & R1_CC_ERROR)
+		N_MSG(RSP, "[CARD_STATUS] CC Error");
+	if (status & R1_ERROR)
+		N_MSG(RSP, "[CARD_STATUS] Error");
+	if (status & R1_UNDERRUN)
+		N_MSG(RSP, "[CARD_STATUS] Underrun");
+	if (status & R1_OVERRUN)
+		N_MSG(RSP, "[CARD_STATUS] Overrun");
+	if (status & R1_CID_CSD_OVERWRITE)
+		N_MSG(RSP, "[CARD_STATUS] CID/CSD Overwrite");
+	if (status & R1_WP_ERASE_SKIP)
+		N_MSG(RSP, "[CARD_STATUS] WP Eraser Skip");
+	if (status & R1_CARD_ECC_DISABLED)
+		N_MSG(RSP, "[CARD_STATUS] Card ECC Disabled");
+	if (status & R1_ERASE_RESET)
+		N_MSG(RSP, "[CARD_STATUS] Erase Reset");
+	if (status & R1_READY_FOR_DATA)
+		N_MSG(RSP, "[CARD_STATUS] Ready for Data");
+	if (status & R1_SWITCH_ERROR)
+		N_MSG(RSP, "[CARD_STATUS] Switch error");
+	if (status & R1_APP_CMD)
+		N_MSG(RSP, "[CARD_STATUS] App Command");
+
+	N_MSG(RSP, "[CARD_STATUS] '%s' State", state[R1_CURRENT_STATE(status)]);
+}

@@ -1,0 +1,29 @@
+SC_TAG_SHOW_STORE_U32TVS_FUNCS(bootdevices)
+SC_TAG_SHOW_STORE_BOOLTS_FUNCS(bootkey)
+SC_TAG_SHOW_STORE_BOOLTS_FUNCS(cpumode)
+SC_TAG_SHOW_STORE_BOOLTS_FUNCS(bootproto)
+SC_TAG_SHOW_STORE_BOOLTS_FUNCS(booter)
+SC_TAG_SHOW_STORE_BOOLTS_FUNCS(silent_boot)
+
+static ssize_t sc_tag_show_bootdelays(const u8 *pld, u16 pld_len, char *buf)
+{
+	const char *fmt;
+	char *out = buf;
+	u32 data;	// cpu-endian
+	int i;
+
+	if (sizeof(data) != pld_len)
+		return -EINVAL;
+
+	read_lock(&sc_bufrwl);
+	data = *(u32 *)pld;		// pld aliases sc_buf
+	read_unlock(&sc_bufrwl);
+
+	for (i = RB_BOOT_DELAY_MIN; i <= RB_BOOT_DELAY_MAX; i++) {
+		fmt = (i == data) ? "[%d] " : "%d ";
+		out += sprintf(out, fmt, i);
+	}
+
+	out += sprintf(out, "\n");
+	return out - buf;
+}

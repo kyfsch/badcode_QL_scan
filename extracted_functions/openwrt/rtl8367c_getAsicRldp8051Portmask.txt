@@ -1,0 +1,17 @@
+ret_t rtl8367c_getAsicRldp8051Portmask(rtk_uint32 *pPortmask)
+{
+    rtk_uint32 tmpPmsk;
+    ret_t retVal;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_RLDP_CTRL0_REG,RTL8367C_RLDP_8051_LOOP_PORTMSK_MASK,&tmpPmsk);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+    *pPortmask = tmpPmsk & 0xff;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_RLDP_CTRL5,RTL8367C_RLDP_CTRL5_MASK,&tmpPmsk);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+    *pPortmask |= (tmpPmsk & 7) <<8;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,36 @@
+static int bcm6368_enetsw_poll(struct napi_struct *napi, int budget)
+{
+	struct bcm6368_enetsw *priv = container_of(napi, struct bcm6368_enetsw, napi);
+	struct net_device *ndev = priv->net_dev;
+	int rx_work_done;
+
+	/* ack interrupts */
+	dmac_writel(priv, DMAC_IR_PKTDONE_MASK,
+			 DMAC_IR_REG, priv->rx_chan);
+	dmac_writel(priv, DMAC_IR_PKTDONE_MASK,
+			 DMAC_IR_REG, priv->tx_chan);
+
+	/* reclaim sent skb */
+	bcm6368_enetsw_tx_reclaim(ndev, 0, budget);
+
+	spin_lock(&priv->rx_lock);
+	rx_work_done = bcm6368_enetsw_receive_queue(ndev, budget);
+	spin_unlock(&priv->rx_lock);
+
+	if (rx_work_done >= budget) {
+		/* rx queue is not yet empty/clean */
+		return rx_work_done;
+	}
+
+	/* no more packet in rx/tx queue, remove device from poll
+	 * queue */
+	napi_complete_done(napi, rx_work_done);
+
+	/* restore rx/tx interrupt */
+	dmac_writel(priv, DMAC_IR_PKTDONE_MASK,
+		    DMAC_IRMASK_REG, priv->rx_chan);
+	dmac_writel(priv, DMAC_IR_PKTDONE_MASK,
+		    DMAC_IRMASK_REG, priv->tx_chan);
+
+	return rx_work_done;
+}

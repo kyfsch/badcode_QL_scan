@@ -1,0 +1,823 @@
+yyparse (void)
+{
+    yy_state_fast_t yystate = 0;
+    /* Number of tokens to shift before error messages enabled.  */
+    int yyerrstatus = 0;
+
+    /* Refer to the stacks through separate pointers, to allow yyoverflow
+       to reallocate them elsewhere.  */
+
+    /* Their size.  */
+    YYPTRDIFF_T yystacksize = YYINITDEPTH;
+
+    /* The state stack: array, bottom, top.  */
+    yy_state_t yyssa[YYINITDEPTH];
+    yy_state_t *yyss = yyssa;
+    yy_state_t *yyssp = yyss;
+
+    /* The semantic value stack: array, bottom, top.  */
+    YYSTYPE yyvsa[YYINITDEPTH];
+    YYSTYPE *yyvs = yyvsa;
+    YYSTYPE *yyvsp = yyvs;
+
+  int yyn;
+  /* The return value of yyparse.  */
+  int yyresult;
+  /* Lookahead symbol kind.  */
+  yysymbol_kind_t yytoken = YYSYMBOL_YYEMPTY;
+  /* The variables used to return semantic value and location from the
+     action routines.  */
+  YYSTYPE yyval;
+
+
+
+#define YYPOPSTACK(N)   (yyvsp -= (N), yyssp -= (N))
+
+  /* The number of symbols on the RHS of the reduced rule.
+     Keep to zero when no symbol should be popped.  */
+  int yylen = 0;
+
+  YYDPRINTF ((stderr, "Starting parse\n"));
+
+  yychar = YYEMPTY; /* Cause a token to be read.  */
+  goto yysetstate;
+
+
+/*------------------------------------------------------------.
+| yynewstate -- push a new state, which is found in yystate.  |
+`------------------------------------------------------------*/
+yynewstate:
+  /* In all cases, when you get here, the value and location stacks
+     have just been pushed.  So pushing a state here evens the stacks.  */
+  yyssp++;
+
+
+/*--------------------------------------------------------------------.
+| yysetstate -- set current state (the top of the stack) to yystate.  |
+`--------------------------------------------------------------------*/
+yysetstate:
+  YYDPRINTF ((stderr, "Entering state %d\n", yystate));
+  YY_ASSERT (0 <= yystate && yystate < YYNSTATES);
+  YY_IGNORE_USELESS_CAST_BEGIN
+  *yyssp = YY_CAST (yy_state_t, yystate);
+  YY_IGNORE_USELESS_CAST_END
+  YY_STACK_PRINT (yyss, yyssp);
+
+  if (yyss + yystacksize - 1 <= yyssp)
+#if !defined yyoverflow && !defined YYSTACK_RELOCATE
+    goto yyexhaustedlab;
+#else
+    {
+      /* Get the current used size of the three stacks, in elements.  */
+      YYPTRDIFF_T yysize = yyssp - yyss + 1;
+
+# if defined yyoverflow
+      {
+        /* Give user a chance to reallocate the stack.  Use copies of
+           these so that the &'s don't force the real ones into
+           memory.  */
+        yy_state_t *yyss1 = yyss;
+        YYSTYPE *yyvs1 = yyvs;
+
+        /* Each stack pointer address is followed by the size of the
+           data in use in that stack, in bytes.  This used to be a
+           conditional around just the two extra args, but that might
+           be undefined if yyoverflow is a macro.  */
+        yyoverflow (YY_("memory exhausted"),
+                    &yyss1, yysize * YYSIZEOF (*yyssp),
+                    &yyvs1, yysize * YYSIZEOF (*yyvsp),
+                    &yystacksize);
+        yyss = yyss1;
+        yyvs = yyvs1;
+      }
+# else /* defined YYSTACK_RELOCATE */
+      /* Extend the stack our own way.  */
+      if (YYMAXDEPTH <= yystacksize)
+        goto yyexhaustedlab;
+      yystacksize *= 2;
+      if (YYMAXDEPTH < yystacksize)
+        yystacksize = YYMAXDEPTH;
+
+      {
+        yy_state_t *yyss1 = yyss;
+        union yyalloc *yyptr =
+          YY_CAST (union yyalloc *,
+                   YYSTACK_ALLOC (YY_CAST (YYSIZE_T, YYSTACK_BYTES (yystacksize))));
+        if (! yyptr)
+          goto yyexhaustedlab;
+        YYSTACK_RELOCATE (yyss_alloc, yyss);
+        YYSTACK_RELOCATE (yyvs_alloc, yyvs);
+#  undef YYSTACK_RELOCATE
+        if (yyss1 != yyssa)
+          YYSTACK_FREE (yyss1);
+      }
+# endif
+
+      yyssp = yyss + yysize - 1;
+      yyvsp = yyvs + yysize - 1;
+
+      YY_IGNORE_USELESS_CAST_BEGIN
+      YYDPRINTF ((stderr, "Stack size increased to %ld\n",
+                  YY_CAST (long, yystacksize)));
+      YY_IGNORE_USELESS_CAST_END
+
+      if (yyss + yystacksize - 1 <= yyssp)
+        YYABORT;
+    }
+#endif /* !defined yyoverflow && !defined YYSTACK_RELOCATE */
+
+  if (yystate == YYFINAL)
+    YYACCEPT;
+
+  goto yybackup;
+
+
+/*-----------.
+| yybackup.  |
+`-----------*/
+yybackup:
+  /* Do appropriate processing given the current state.  Read a
+     lookahead token if we need one and don't already have one.  */
+
+  /* First try to decide what to do without reference to lookahead token.  */
+  yyn = yypact[yystate];
+  if (yypact_value_is_default (yyn))
+    goto yydefault;
+
+  /* Not known => get a lookahead token if don't already have one.  */
+
+  /* YYCHAR is either empty, or end-of-input, or a valid lookahead.  */
+  if (yychar == YYEMPTY)
+    {
+      YYDPRINTF ((stderr, "Reading a token\n"));
+      yychar = yylex ();
+    }
+
+  if (yychar <= YYEOF)
+    {
+      yychar = YYEOF;
+      yytoken = YYSYMBOL_YYEOF;
+      YYDPRINTF ((stderr, "Now at end of input.\n"));
+    }
+  else if (yychar == YYerror)
+    {
+      /* The scanner already issued an error message, process directly
+         to error recovery.  But do not keep the error token as
+         lookahead, it is too special and may lead us to an endless
+         loop in error recovery. */
+      yychar = YYUNDEF;
+      yytoken = YYSYMBOL_YYerror;
+      goto yyerrlab1;
+    }
+  else
+    {
+      yytoken = YYTRANSLATE (yychar);
+      YY_SYMBOL_PRINT ("Next token is", yytoken, &yylval, &yylloc);
+    }
+
+  /* If the proper action on seeing token YYTOKEN is to reduce or to
+     detect an error, take that action.  */
+  yyn += yytoken;
+  if (yyn < 0 || YYLAST < yyn || yycheck[yyn] != yytoken)
+    goto yydefault;
+  yyn = yytable[yyn];
+  if (yyn <= 0)
+    {
+      if (yytable_value_is_error (yyn))
+        goto yyerrlab;
+      yyn = -yyn;
+      goto yyreduce;
+    }
+
+  /* Count tokens shifted since error; after three, turn off error
+     status.  */
+  if (yyerrstatus)
+    yyerrstatus--;
+
+  /* Shift the lookahead token.  */
+  YY_SYMBOL_PRINT ("Shifting", yytoken, &yylval, &yylloc);
+  yystate = yyn;
+  YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
+  *++yyvsp = yylval;
+  YY_IGNORE_MAYBE_UNINITIALIZED_END
+
+  /* Discard the shifted token.  */
+  yychar = YYEMPTY;
+  goto yynewstate;
+
+
+/*-----------------------------------------------------------.
+| yydefault -- do the default action for the current state.  |
+`-----------------------------------------------------------*/
+yydefault:
+  yyn = yydefact[yystate];
+  if (yyn == 0)
+    goto yyerrlab;
+  goto yyreduce;
+
+
+/*-----------------------------.
+| yyreduce -- do a reduction.  |
+`-----------------------------*/
+yyreduce:
+  /* yyn is the number of a rule to reduce with.  */
+  yylen = yyr2[yyn];
+
+  /* If YYLEN is nonzero, implement the default value of the action:
+     '$$ = $1'.
+
+     Otherwise, the following line sets YYVAL to garbage.
+     This behavior is undocumented and Bison
+     users should not rely upon it.  Assigning to YYVAL
+     unconditionally makes the parser a bit smaller, and it avoids a
+     GCC warning that YYVAL may be used uninitialized.  */
+  yyval = yyvsp[1-yylen];
+
+
+  YY_REDUCE_PRINT (yyn);
+  switch (yyn)
+    {
+  case 4: /* mainmenu_stmt: T_MAINMENU T_WORD_QUOTE T_EOL  */
+{
+	menu_add_prompt(P_MENU, (yyvsp[-1].string), NULL);
+}
+    break;
+
+  case 14: /* stmt_list: stmt_list T_WORD error T_EOL  */
+                                        { zconf_error("unknown statement \"%s\"", (yyvsp[-2].string)); }
+    break;
+
+  case 15: /* stmt_list: stmt_list error T_EOL  */
+                                        { zconf_error("invalid statement"); }
+    break;
+
+  case 20: /* stmt_list_in_choice: stmt_list_in_choice error T_EOL  */
+                                                { zconf_error("invalid statement"); }
+    break;
+
+  case 21: /* config_entry_start: T_CONFIG nonconst_symbol T_EOL  */
+{
+	(yyvsp[-1].symbol)->flags |= SYMBOL_OPTIONAL;
+	menu_add_entry((yyvsp[-1].symbol));
+	printd(DEBUG_PARSE, "%s:%d:config %s\n", zconf_curname(), zconf_lineno(), (yyvsp[-1].symbol)->name);
+}
+    break;
+
+  case 22: /* config_stmt: config_entry_start config_option_list  */
+{
+	printd(DEBUG_PARSE, "%s:%d:endconfig\n", zconf_curname(), zconf_lineno());
+}
+    break;
+
+  case 23: /* menuconfig_entry_start: T_MENUCONFIG nonconst_symbol T_EOL  */
+{
+	(yyvsp[-1].symbol)->flags |= SYMBOL_OPTIONAL;
+	menu_add_entry((yyvsp[-1].symbol));
+	printd(DEBUG_PARSE, "%s:%d:menuconfig %s\n", zconf_curname(), zconf_lineno(), (yyvsp[-1].symbol)->name);
+}
+    break;
+
+  case 24: /* menuconfig_stmt: menuconfig_entry_start config_option_list  */
+{
+	if (current_entry->prompt)
+		current_entry->prompt->type = P_MENU;
+	else
+		zconfprint("warning: menuconfig statement without prompt");
+	printd(DEBUG_PARSE, "%s:%d:endconfig\n", zconf_curname(), zconf_lineno());
+}
+    break;
+
+  case 29: /* config_option: type prompt_stmt_opt T_EOL  */
+{
+	menu_set_type((yyvsp[-2].type));
+	printd(DEBUG_PARSE, "%s:%d:type(%u)\n",
+		zconf_curname(), zconf_lineno(),
+		(yyvsp[-2].type));
+}
+    break;
+
+  case 30: /* config_option: T_PROMPT T_WORD_QUOTE if_expr T_EOL  */
+{
+	menu_add_prompt(P_PROMPT, (yyvsp[-2].string), (yyvsp[-1].expr));
+	printd(DEBUG_PARSE, "%s:%d:prompt\n", zconf_curname(), zconf_lineno());
+}
+    break;
+
+  case 31: /* config_option: default expr if_expr T_EOL  */
+{
+	menu_add_expr(P_DEFAULT, (yyvsp[-2].expr), (yyvsp[-1].expr));
+	if ((yyvsp[-3].type) != S_UNKNOWN)
+		menu_set_type((yyvsp[-3].type));
+	printd(DEBUG_PARSE, "%s:%d:default(%u)\n",
+		zconf_curname(), zconf_lineno(),
+		(yyvsp[-3].type));
+}
+    break;
+
+  case 32: /* config_option: T_SELECT nonconst_symbol if_expr T_EOL  */
+{
+	menu_add_symbol(P_SELECT, (yyvsp[-2].symbol), (yyvsp[-1].expr));
+	printd(DEBUG_PARSE, "%s:%d:select\n", zconf_curname(), zconf_lineno());
+}
+    break;
+
+  case 33: /* config_option: T_IMPLY nonconst_symbol if_expr T_EOL  */
+{
+	menu_add_symbol(P_IMPLY, (yyvsp[-2].symbol), (yyvsp[-1].expr));
+	printd(DEBUG_PARSE, "%s:%d:imply\n", zconf_curname(), zconf_lineno());
+}
+    break;
+
+  case 34: /* config_option: T_RANGE symbol symbol if_expr T_EOL  */
+{
+	menu_add_expr(P_RANGE, expr_alloc_comp(E_RANGE,(yyvsp[-3].symbol), (yyvsp[-2].symbol)), (yyvsp[-1].expr));
+	printd(DEBUG_PARSE, "%s:%d:range\n", zconf_curname(), zconf_lineno());
+}
+    break;
+
+  case 35: /* config_option: T_MODULES T_EOL  */
+{
+	if (modules_sym)
+		zconf_error("symbol '%s' redefines option 'modules' already defined by symbol '%s'",
+			    current_entry->sym->name, modules_sym->name);
+	modules_sym = current_entry->sym;
+}
+    break;
+
+  case 36: /* choice: T_CHOICE word_opt T_EOL  */
+{
+	struct symbol *sym = sym_lookup((yyvsp[-1].string), SYMBOL_CHOICE);
+	sym->flags |= SYMBOL_NO_WRITE;
+	menu_add_entry(sym);
+	menu_add_expr(P_CHOICE, NULL, NULL);
+	free((yyvsp[-1].string));
+	printd(DEBUG_PARSE, "%s:%d:choice\n", zconf_curname(), zconf_lineno());
+}
+    break;
+
+  case 37: /* choice_entry: choice choice_option_list  */
+{
+	(yyval.menu) = menu_add_menu();
+}
+    break;
+
+  case 38: /* choice_end: end  */
+{
+	if (zconf_endtoken((yyvsp[0].string), "choice")) {
+		menu_end_menu();
+		printd(DEBUG_PARSE, "%s:%d:endchoice\n", zconf_curname(), zconf_lineno());
+	}
+}
+    break;
+
+  case 44: /* choice_option: T_PROMPT T_WORD_QUOTE if_expr T_EOL  */
+{
+	menu_add_prompt(P_PROMPT, (yyvsp[-2].string), (yyvsp[-1].expr));
+	printd(DEBUG_PARSE, "%s:%d:prompt\n", zconf_curname(), zconf_lineno());
+}
+    break;
+
+  case 45: /* choice_option: logic_type prompt_stmt_opt T_EOL  */
+{
+	menu_set_type((yyvsp[-2].type));
+	printd(DEBUG_PARSE, "%s:%d:type(%u)\n",
+	       zconf_curname(), zconf_lineno(), (yyvsp[-2].type));
+}
+    break;
+
+  case 46: /* choice_option: T_OPTIONAL T_EOL  */
+{
+	current_entry->sym->flags |= SYMBOL_OPTIONAL;
+	printd(DEBUG_PARSE, "%s:%d:optional\n", zconf_curname(), zconf_lineno());
+}
+    break;
+
+  case 47: /* choice_option: T_RESET if_expr T_EOL  */
+{
+	menu_add_prop(P_RESET, NULL, (yyvsp[-1].expr));
+}
+    break;
+
+  case 48: /* choice_option: T_DEFAULT nonconst_symbol if_expr T_EOL  */
+{
+	menu_add_symbol(P_DEFAULT, (yyvsp[-2].symbol), (yyvsp[-1].expr));
+	printd(DEBUG_PARSE, "%s:%d:default\n",
+	       zconf_curname(), zconf_lineno());
+}
+    break;
+
+  case 50: /* type: T_INT  */
+                                { (yyval.type) = S_INT; }
+    break;
+
+  case 51: /* type: T_HEX  */
+                                { (yyval.type) = S_HEX; }
+    break;
+
+  case 52: /* type: T_STRING  */
+                                { (yyval.type) = S_STRING; }
+    break;
+
+  case 53: /* logic_type: T_BOOL  */
+                                { (yyval.type) = S_BOOLEAN; }
+    break;
+
+  case 54: /* logic_type: T_TRISTATE  */
+                                { (yyval.type) = S_TRISTATE; }
+    break;
+
+  case 55: /* default: T_DEFAULT  */
+                                { (yyval.type) = S_UNKNOWN; }
+    break;
+
+  case 56: /* default: T_DEF_BOOL  */
+                                { (yyval.type) = S_BOOLEAN; }
+    break;
+
+  case 57: /* default: T_DEF_TRISTATE  */
+                                { (yyval.type) = S_TRISTATE; }
+    break;
+
+  case 58: /* if_entry: T_IF expr T_EOL  */
+{
+	printd(DEBUG_PARSE, "%s:%d:if\n", zconf_curname(), zconf_lineno());
+	menu_add_entry(NULL);
+	menu_add_dep((yyvsp[-1].expr));
+	(yyval.menu) = menu_add_menu();
+}
+    break;
+
+  case 59: /* if_end: end  */
+{
+	if (zconf_endtoken((yyvsp[0].string), "if")) {
+		menu_end_menu();
+		printd(DEBUG_PARSE, "%s:%d:endif\n", zconf_curname(), zconf_lineno());
+	}
+}
+    break;
+
+  case 62: /* menu: T_MENU T_WORD_QUOTE T_EOL  */
+{
+	menu_add_entry(NULL);
+	menu_add_prompt(P_MENU, (yyvsp[-1].string), NULL);
+	printd(DEBUG_PARSE, "%s:%d:menu\n", zconf_curname(), zconf_lineno());
+}
+    break;
+
+  case 63: /* menu_entry: menu menu_option_list  */
+{
+	(yyval.menu) = menu_add_menu();
+}
+    break;
+
+  case 64: /* menu_end: end  */
+{
+	if (zconf_endtoken((yyvsp[0].string), "menu")) {
+		menu_end_menu();
+		printd(DEBUG_PARSE, "%s:%d:endmenu\n", zconf_curname(), zconf_lineno());
+	}
+}
+    break;
+
+  case 69: /* source_stmt: T_SOURCE T_WORD_QUOTE T_EOL  */
+{
+	printd(DEBUG_PARSE, "%s:%d:source %s\n", zconf_curname(), zconf_lineno(), (yyvsp[-1].string));
+	zconf_nextfile((yyvsp[-1].string));
+	free((yyvsp[-1].string));
+}
+    break;
+
+  case 70: /* comment: T_COMMENT T_WORD_QUOTE T_EOL  */
+{
+	menu_add_entry(NULL);
+	menu_add_prompt(P_COMMENT, (yyvsp[-1].string), NULL);
+	printd(DEBUG_PARSE, "%s:%d:comment\n", zconf_curname(), zconf_lineno());
+}
+    break;
+
+  case 74: /* help_start: T_HELP T_EOL  */
+{
+	printd(DEBUG_PARSE, "%s:%d:help\n", zconf_curname(), zconf_lineno());
+	zconf_starthelp();
+}
+    break;
+
+  case 75: /* help: help_start T_HELPTEXT  */
+{
+	/* Is the help text empty or all whitespace? */
+	if ((yyvsp[0].string)[strspn((yyvsp[0].string), " \f\n\r\t\v")] == '\0')
+		zconfprint("warning: '%s' defined with blank help text",
+			   current_entry->sym->name ?: "<choice>");
+
+	current_entry->help = (yyvsp[0].string);
+}
+    break;
+
+  case 76: /* depends: T_DEPENDS T_ON expr T_EOL  */
+{
+	menu_add_dep((yyvsp[-1].expr));
+	printd(DEBUG_PARSE, "%s:%d:depends on\n", zconf_curname(), zconf_lineno());
+}
+    break;
+
+  case 77: /* visible: T_VISIBLE if_expr T_EOL  */
+{
+	menu_add_visibility((yyvsp[-1].expr));
+}
+    break;
+
+  case 79: /* prompt_stmt_opt: T_WORD_QUOTE if_expr  */
+{
+	menu_add_prompt(P_PROMPT, (yyvsp[-1].string), (yyvsp[0].expr));
+}
+    break;
+
+  case 80: /* end: T_ENDMENU T_EOL  */
+                                { (yyval.string) = "menu"; }
+    break;
+
+  case 81: /* end: T_ENDCHOICE T_EOL  */
+                                { (yyval.string) = "choice"; }
+    break;
+
+  case 82: /* end: T_ENDIF T_EOL  */
+                                { (yyval.string) = "if"; }
+    break;
+
+  case 83: /* if_expr: %empty  */
+                                        { (yyval.expr) = NULL; }
+    break;
+
+  case 84: /* if_expr: T_IF expr  */
+                                        { (yyval.expr) = (yyvsp[0].expr); }
+    break;
+
+  case 85: /* expr: symbol  */
+                                                { (yyval.expr) = expr_alloc_symbol((yyvsp[0].symbol)); }
+    break;
+
+  case 86: /* expr: symbol T_LESS symbol  */
+                                                { (yyval.expr) = expr_alloc_comp(E_LTH, (yyvsp[-2].symbol), (yyvsp[0].symbol)); }
+    break;
+
+  case 87: /* expr: symbol T_LESS_EQUAL symbol  */
+                                                { (yyval.expr) = expr_alloc_comp(E_LEQ, (yyvsp[-2].symbol), (yyvsp[0].symbol)); }
+    break;
+
+  case 88: /* expr: symbol T_GREATER symbol  */
+                                                { (yyval.expr) = expr_alloc_comp(E_GTH, (yyvsp[-2].symbol), (yyvsp[0].symbol)); }
+    break;
+
+  case 89: /* expr: symbol T_GREATER_EQUAL symbol  */
+                                                { (yyval.expr) = expr_alloc_comp(E_GEQ, (yyvsp[-2].symbol), (yyvsp[0].symbol)); }
+    break;
+
+  case 90: /* expr: symbol T_EQUAL symbol  */
+                                                { (yyval.expr) = expr_alloc_comp(E_EQUAL, (yyvsp[-2].symbol), (yyvsp[0].symbol)); }
+    break;
+
+  case 91: /* expr: symbol T_UNEQUAL symbol  */
+                                                { (yyval.expr) = expr_alloc_comp(E_UNEQUAL, (yyvsp[-2].symbol), (yyvsp[0].symbol)); }
+    break;
+
+  case 92: /* expr: T_OPEN_PAREN expr T_CLOSE_PAREN  */
+                                                { (yyval.expr) = (yyvsp[-1].expr); }
+    break;
+
+  case 93: /* expr: T_NOT expr  */
+                                                { (yyval.expr) = expr_alloc_one(E_NOT, (yyvsp[0].expr)); }
+    break;
+
+  case 94: /* expr: expr T_OR expr  */
+                                                { (yyval.expr) = expr_alloc_two(E_OR, (yyvsp[-2].expr), (yyvsp[0].expr)); }
+    break;
+
+  case 95: /* expr: expr T_AND expr  */
+                                                { (yyval.expr) = expr_alloc_two(E_AND, (yyvsp[-2].expr), (yyvsp[0].expr)); }
+    break;
+
+  case 96: /* nonconst_symbol: T_WORD  */
+                        { (yyval.symbol) = sym_lookup((yyvsp[0].string), 0); free((yyvsp[0].string)); }
+    break;
+
+  case 98: /* symbol: T_WORD_QUOTE  */
+                        { (yyval.symbol) = sym_lookup((yyvsp[0].string), SYMBOL_CONST); free((yyvsp[0].string)); }
+    break;
+
+  case 99: /* word_opt: %empty  */
+                                        { (yyval.string) = NULL; }
+    break;
+
+  case 101: /* assignment_stmt: T_WORD assign_op assign_val T_EOL  */
+                                                        { variable_add((yyvsp[-3].string), (yyvsp[-1].string), (yyvsp[-2].flavor)); free((yyvsp[-3].string)); free((yyvsp[-1].string)); }
+    break;
+
+  case 102: /* assign_op: T_EQUAL  */
+                        { (yyval.flavor) = VAR_RECURSIVE; }
+    break;
+
+  case 103: /* assign_op: T_COLON_EQUAL  */
+                        { (yyval.flavor) = VAR_SIMPLE; }
+    break;
+
+  case 104: /* assign_op: T_PLUS_EQUAL  */
+                        { (yyval.flavor) = VAR_APPEND; }
+    break;
+
+  case 105: /* assign_val: %empty  */
+                                { (yyval.string) = xstrdup(""); }
+    break;
+
+
+
+      default: break;
+    }
+  /* User semantic actions sometimes alter yychar, and that requires
+     that yytoken be updated with the new translation.  We take the
+     approach of translating immediately before every use of yytoken.
+     One alternative is translating here after every semantic action,
+     but that translation would be missed if the semantic action invokes
+     YYABORT, YYACCEPT, or YYERROR immediately after altering yychar or
+     if it invokes YYBACKUP.  In the case of YYABORT or YYACCEPT, an
+     incorrect destructor might then be invoked immediately.  In the
+     case of YYERROR or YYBACKUP, subsequent parser actions might lead
+     to an incorrect destructor call or verbose syntax error message
+     before the lookahead is translated.  */
+  YY_SYMBOL_PRINT ("-> $$ =", YY_CAST (yysymbol_kind_t, yyr1[yyn]), &yyval, &yyloc);
+
+  YYPOPSTACK (yylen);
+  yylen = 0;
+
+  *++yyvsp = yyval;
+
+  /* Now 'shift' the result of the reduction.  Determine what state
+     that goes to, based on the state we popped back to and the rule
+     number reduced by.  */
+  {
+    const int yylhs = yyr1[yyn] - YYNTOKENS;
+    const int yyi = yypgoto[yylhs] + *yyssp;
+    yystate = (0 <= yyi && yyi <= YYLAST && yycheck[yyi] == *yyssp
+               ? yytable[yyi]
+               : yydefgoto[yylhs]);
+  }
+
+  goto yynewstate;
+
+
+/*--------------------------------------.
+| yyerrlab -- here on detecting error.  |
+`--------------------------------------*/
+yyerrlab:
+  /* Make sure we have latest lookahead translation.  See comments at
+     user semantic actions for why this is necessary.  */
+  yytoken = yychar == YYEMPTY ? YYSYMBOL_YYEMPTY : YYTRANSLATE (yychar);
+  /* If not already recovering from an error, report this error.  */
+  if (!yyerrstatus)
+    {
+      ++yynerrs;
+      yyerror (YY_("syntax error"));
+    }
+
+  if (yyerrstatus == 3)
+    {
+      /* If just tried and failed to reuse lookahead token after an
+         error, discard it.  */
+
+      if (yychar <= YYEOF)
+        {
+          /* Return failure if at end of input.  */
+          if (yychar == YYEOF)
+            YYABORT;
+        }
+      else
+        {
+          yydestruct ("Error: discarding",
+                      yytoken, &yylval);
+          yychar = YYEMPTY;
+        }
+    }
+
+  /* Else will try to reuse lookahead token after shifting the error
+     token.  */
+  goto yyerrlab1;
+
+
+/*---------------------------------------------------.
+| yyerrorlab -- error raised explicitly by YYERROR.  |
+`---------------------------------------------------*/
+yyerrorlab:
+  /* Pacify compilers when the user code never invokes YYERROR and the
+     label yyerrorlab therefore never appears in user code.  */
+  if (0)
+    YYERROR;
+
+  /* Do not reclaim the symbols of the rule whose action triggered
+     this YYERROR.  */
+  YYPOPSTACK (yylen);
+  yylen = 0;
+  YY_STACK_PRINT (yyss, yyssp);
+  yystate = *yyssp;
+  goto yyerrlab1;
+
+
+/*-------------------------------------------------------------.
+| yyerrlab1 -- common code for both syntax error and YYERROR.  |
+`-------------------------------------------------------------*/
+yyerrlab1:
+  yyerrstatus = 3;      /* Each real token shifted decrements this.  */
+
+  /* Pop stack until we find a state that shifts the error token.  */
+  for (;;)
+    {
+      yyn = yypact[yystate];
+      if (!yypact_value_is_default (yyn))
+        {
+          yyn += YYSYMBOL_YYerror;
+          if (0 <= yyn && yyn <= YYLAST && yycheck[yyn] == YYSYMBOL_YYerror)
+            {
+              yyn = yytable[yyn];
+              if (0 < yyn)
+                break;
+            }
+        }
+
+      /* Pop the current state because it cannot handle the error token.  */
+      if (yyssp == yyss)
+        YYABORT;
+
+
+      yydestruct ("Error: popping",
+                  YY_ACCESSING_SYMBOL (yystate), yyvsp);
+      YYPOPSTACK (1);
+      yystate = *yyssp;
+      YY_STACK_PRINT (yyss, yyssp);
+    }
+
+  YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
+  *++yyvsp = yylval;
+  YY_IGNORE_MAYBE_UNINITIALIZED_END
+
+
+  /* Shift the error token.  */
+  YY_SYMBOL_PRINT ("Shifting", YY_ACCESSING_SYMBOL (yyn), yyvsp, yylsp);
+
+  yystate = yyn;
+  goto yynewstate;
+
+
+/*-------------------------------------.
+| yyacceptlab -- YYACCEPT comes here.  |
+`-------------------------------------*/
+yyacceptlab:
+  yyresult = 0;
+  goto yyreturn;
+
+
+/*-----------------------------------.
+| yyabortlab -- YYABORT comes here.  |
+`-----------------------------------*/
+yyabortlab:
+  yyresult = 1;
+  goto yyreturn;
+
+
+#if !defined yyoverflow
+/*-------------------------------------------------.
+| yyexhaustedlab -- memory exhaustion comes here.  |
+`-------------------------------------------------*/
+yyexhaustedlab:
+  yyerror (YY_("memory exhausted"));
+  yyresult = 2;
+  goto yyreturn;
+#endif
+
+
+/*-------------------------------------------------------.
+| yyreturn -- parsing is finished, clean up and return.  |
+`-------------------------------------------------------*/
+yyreturn:
+  if (yychar != YYEMPTY)
+    {
+      /* Make sure we have latest lookahead translation.  See comments at
+         user semantic actions for why this is necessary.  */
+      yytoken = YYTRANSLATE (yychar);
+      yydestruct ("Cleanup: discarding lookahead",
+                  yytoken, &yylval);
+    }
+  /* Do not reclaim the symbols of the rule whose action triggered
+     this YYABORT or YYACCEPT.  */
+  YYPOPSTACK (yylen);
+  YY_STACK_PRINT (yyss, yyssp);
+  while (yyssp != yyss)
+    {
+      yydestruct ("Cleanup: popping",
+                  YY_ACCESSING_SYMBOL (+*yyssp), yyvsp);
+      YYPOPSTACK (1);
+    }
+#ifndef yyoverflow
+  if (yyss != yyssa)
+    YYSTACK_FREE (yyss);
+#endif
+
+  return yyresult;
+}

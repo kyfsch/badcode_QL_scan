@@ -1,0 +1,21 @@
+static int aes_cbcmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final);
+
+/*! \fn static void aes_cbcmac_transform(struct shash_desc *desc, u8 const *in)
+ *  \ingroup IFX_aes_cbcmac_FUNCTIONS
+ *  \brief save input block to context
+ *  \param desc linux crypto shash descriptor
+ *  \param in 16-byte block of input
+*/
+static void aes_cbcmac_transform(struct shash_desc *desc, u8 const *in)
+{
+    struct aes_ctx *mctx = crypto_shash_ctx(desc->tfm);
+
+    if ( ((mctx->dbn)+1) > AES_CBCMAC_DBN_TEMP_SIZE )
+    {
+        //printk("aes_cbcmac_DBN_TEMP_SIZE exceeded\n");
+        aes_cbcmac_final_impl(desc, (u8 *)mctx->hash, false);
+    }
+
+    memcpy(&mctx->temp[mctx->dbn], in, 16); //dbn workaround
+    mctx->dbn += 1;
+}

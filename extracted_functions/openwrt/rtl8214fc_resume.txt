@@ -1,0 +1,12 @@
+static int rtl8214fc_resume(struct phy_device *phydev)
+{
+	if (rtl8214fc_media_is_fibre(phydev)) {
+		rtl8214fc_power_set(phydev, PORT_MII, false);
+		rtl8214fc_power_set(phydev, PORT_FIBRE, true);
+	} else {
+		rtl8214fc_power_set(phydev, PORT_FIBRE, false);
+		rtl8214fc_power_set(phydev, PORT_MII, true);
+	}
+
+	return 0;
+}

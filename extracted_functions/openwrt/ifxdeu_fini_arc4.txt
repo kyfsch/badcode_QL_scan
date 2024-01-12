@@ -1,0 +1,7 @@
+void ifxdeu_fini_arc4(void)
+{
+        crypto_unregister_alg (&ifxdeu_arc4_alg);
+        crypto_unregister_skcipher (&ifxdeu_ecb_arc4_alg);
+
+
+}

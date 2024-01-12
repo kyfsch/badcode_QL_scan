@@ -1,0 +1,14 @@
+static int b53_global_reset_switch(struct switch_dev *dev)
+{
+	struct b53_device *priv = sw_to_b53(dev);
+
+	/* reset vlans */
+	priv->enable_vlan = 0;
+	priv->enable_jumbo = 0;
+	priv->allow_vid_4095 = 0;
+
+	memset(priv->vlans, 0, sizeof(*priv->vlans) * dev->vlans);
+	memset(priv->ports, 0, sizeof(*priv->ports) * dev->ports);
+
+	return b53_switch_reset(priv);
+}

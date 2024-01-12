@@ -1,0 +1,40 @@
+static int rtl838x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rule *pr)
+{
+	int idx, block, j;
+
+	pr_debug("In %s\n", __func__);
+
+	mutex_lock(&priv->pie_mutex);
+
+	for (block = 0; block < priv->n_pie_blocks; block++) {
+		for (j = 0; j < 3; j++) {
+			int t = (sw_r32(RTL838X_ACL_BLK_TMPLTE_CTRL(block)) >> (j * 3)) & 0x7;
+			pr_debug("Testing block %d, template %d, template id %d\n", block, j, t);
+			idx = rtl838x_pie_verify_template(priv, pr, t, block);
+			if (idx >= 0)
+				break;
+		}
+		if (j < 3)
+			break;
+	}
+
+	if (block >= priv->n_pie_blocks) {
+		mutex_unlock(&priv->pie_mutex);
+		return -EOPNOTSUPP;
+	}
+
+	pr_debug("Using block: %d, index %d, template-id %d\n", block, idx, j);
+	set_bit(idx, priv->pie_use_bm);
+
+	pr->valid = true;
+	pr->tid = j;  /* Mapped to template number */
+	pr->tid_m = 0x3;
+	pr->id = idx;
+
+	rtl838x_pie_lookup_enable(priv, idx);
+	rtl838x_pie_rule_write(priv, idx, pr);
+
+	mutex_unlock(&priv->pie_mutex);
+
+	return 0;
+}

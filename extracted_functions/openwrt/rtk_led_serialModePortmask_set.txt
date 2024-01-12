@@ -1,0 +1,22 @@
+rtk_api_ret_t rtk_led_serialModePortmask_set(rtk_led_serialOutput_t output, rtk_portmask_t *pPortmask)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 pmask;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(output >= SERIAL_LED_END)
+        return RT_ERR_INPUT;
+
+    if(pPortmask == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtk_switch_portmask_L2P_get(pPortmask, &pmask)) != RT_ERR_OK)
+        return retVal;
+
+    if ((retVal = rtl8367c_setAsicLedSerialOutput((rtk_uint32)output, pmask))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

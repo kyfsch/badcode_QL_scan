@@ -1,0 +1,23 @@
+ret_t rtl8367c_getAsicPortEgressRate(rtk_uint32 port, rtk_uint32 *rate)
+{
+    ret_t retVal;
+    rtk_uint32 regAddr, regData,regData2;
+
+    if(port > RTL8367C_PORTIDMAX)
+        return RT_ERR_PORT_ID;
+
+    regAddr = RTL8367C_PORT_EGRESSBW_LSB_REG(port);
+
+    retVal = rtl8367c_getAsicReg(regAddr, &regData);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    regAddr = RTL8367C_PORT_EGRESSBW_MSB_REG(port);
+    retVal = rtl8367c_getAsicRegBits(regAddr, RTL8367C_PORT6_EGRESSBW_CTRL1_MASK, &regData2);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    *rate = regData | (regData2 << RTL8367C_QOS_GRANULARTY_MSB_OFFSET);
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,26 @@
+static int rtl838x_eee_port_ability(struct rtl838x_switch_priv *priv,
+				    struct ethtool_eee *e, int port)
+{
+	u64 link;
+
+	if (port >= 24)
+		return 0;
+
+	link = rtl839x_get_port_reg_le(RTL838X_MAC_LINK_STS);
+	if (!(link & BIT(port)))
+		return 0;
+
+	if (sw_r32(rtl838x_mac_force_mode_ctrl(port)) & BIT(9))
+		e->advertised |= ADVERTISED_100baseT_Full;
+
+	if (sw_r32(rtl838x_mac_force_mode_ctrl(port)) & BIT(10))
+		e->advertised |= ADVERTISED_1000baseT_Full;
+
+	if (sw_r32(RTL838X_MAC_EEE_ABLTY) & BIT(port)) {
+		e->lp_advertised = ADVERTISED_100baseT_Full;
+		e->lp_advertised |= ADVERTISED_1000baseT_Full;
+		return 1;
+	}
+
+	return 0;
+}

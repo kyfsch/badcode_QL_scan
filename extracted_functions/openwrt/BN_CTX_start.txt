@@ -1,0 +1,6 @@
+void BN_CTX_start(BN_CTX *ctx)
+	{
+	if (ctx->depth < BN_CTX_NUM_POS)
+		ctx->pos[ctx->depth] = ctx->tos;
+	ctx->depth++;
+	}

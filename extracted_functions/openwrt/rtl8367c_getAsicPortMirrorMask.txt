@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicPortMirrorMask(rtk_uint32 *pSourcePortmask)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_MIRROR_SRC_PMSK, RTL8367C_MIRROR_SRC_PMSK_MASK, pSourcePortmask);
+}

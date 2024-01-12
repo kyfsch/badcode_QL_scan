@@ -1,0 +1,10 @@
+static void rtl9300_sda_sel(struct i2c_mux_core *muxc, int pin)
+{
+	struct rtl9300_mux *mux = i2c_mux_priv(muxc);
+	u32 v;
+
+	/* Set SDA pin to I2C functionality */
+	v = readl(REG(0, RTL9300_I2C_MST_GLB_CTRL));
+	v |= BIT(pin);
+	writel(v, REG(0, RTL9300_I2C_MST_GLB_CTRL));
+}

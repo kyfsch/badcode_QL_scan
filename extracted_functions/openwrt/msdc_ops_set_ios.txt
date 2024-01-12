@@ -1,0 +1,65 @@
+static void msdc_ops_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+{
+	struct msdc_host *host = mmc_priv(mmc);
+	void __iomem *base = host->base;
+	u32 ddr = 0;
+
+#ifdef MT6575_SD_DEBUG
+	static char *vdd[] = {
+		"1.50v", "1.55v", "1.60v", "1.65v", "1.70v", "1.80v", "1.90v",
+		"2.00v", "2.10v", "2.20v", "2.30v", "2.40v", "2.50v", "2.60v",
+		"2.70v", "2.80v", "2.90v", "3.00v", "3.10v", "3.20v", "3.30v",
+		"3.40v", "3.50v", "3.60v"
+	};
+	static char *power_mode[] = {
+		"OFF", "UP", "ON"
+	};
+	static char *bus_mode[] = {
+		"UNKNOWN", "OPENDRAIN", "PUSHPULL"
+	};
+	static char *timing[] = {
+		"LEGACY", "MMC_HS", "SD_HS"
+	};
+
+	printk("SET_IOS: CLK(%dkHz), BUS(%s), BW(%u), PWR(%s), VDD(%s), TIMING(%s)",
+		ios->clock / 1000, bus_mode[ios->bus_mode],
+		(ios->bus_width == MMC_BUS_WIDTH_4) ? 4 : 1,
+		power_mode[ios->power_mode], vdd[ios->vdd], timing[ios->timing]);
+#endif
+
+	msdc_set_buswidth(host, ios->bus_width);
+
+	/* Power control ??? */
+	switch (ios->power_mode) {
+	case MMC_POWER_OFF:
+	case MMC_POWER_UP:
+		// msdc_set_power_mode(host, ios->power_mode); /* --- by chhung */
+		break;
+	case MMC_POWER_ON:
+		host->power_mode = MMC_POWER_ON;
+		break;
+	default:
+		break;
+	}
+
+	/* Clock control */
+	if (host->mclk != ios->clock) {
+		if (ios->clock > 25000000) {
+			//if (!(host->hw->flags & MSDC_REMOVABLE)) {
+			INIT_MSG("SD data latch edge<%d>", MSDC_SMPL_FALLING);
+			sdr_set_field(MSDC_IOCON, MSDC_IOCON_RSPL,
+				      MSDC_SMPL_FALLING);
+			sdr_set_field(MSDC_IOCON, MSDC_IOCON_DSPL,
+				      MSDC_SMPL_FALLING);
+			//} /* for tuning debug */
+		} else { /* default value */
+			sdr_write32(MSDC_IOCON,      0x00000000);
+			// sdr_write32(MSDC_DAT_RDDLY0, 0x00000000);
+			sdr_write32(MSDC_DAT_RDDLY0, 0x10101010);		// for MT7620 E2 and afterward
+			sdr_write32(MSDC_DAT_RDDLY1, 0x00000000);
+			// sdr_write32(MSDC_PAD_TUNE,   0x00000000);
+			sdr_write32(MSDC_PAD_TUNE,   0x84101010);		// for MT7620 E2 and afterward
+		}
+		msdc_set_mclk(host, ddr, ios->clock);
+	}
+}

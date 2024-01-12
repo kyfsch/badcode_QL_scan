@@ -1,0 +1,29 @@
+ret_t rtl8367c_setAsicIGMPBypassGroup(rtk_uint32 bypassType, rtk_uint32 enabled)
+{
+    ret_t   retVal;
+    rtk_uint32 offset;
+
+    switch(bypassType)
+    {
+        case BYPASS_224_0_0_X:
+            offset = RTL8367C_IGMP_MLD_IP4_BYPASS_224_0_0_OFFSET;
+            break;
+        case BYPASS_224_0_1_X:
+            offset = RTL8367C_IGMP_MLD_IP4_BYPASS_224_0_1_OFFSET;
+            break;
+        case BYPASS_239_255_255_X:
+            offset = RTL8367C_IGMP_MLD_IP4_BYPASS_239_255_255_OFFSET;
+            break;
+        case BYPASS_IPV6_00XX:
+            offset = RTL8367C_IGMP_MLD_IP6_BYPASS_OFFSET;
+            break;
+        default:
+            return RT_ERR_INPUT;
+    }
+
+    retVal = rtl8367c_setAsicRegBit(RTL8367C_REG_IGMP_MLD_CFG3, offset, enabled);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,18 @@
+ret_t rtl8367c_setAsic1xProcConfig(rtk_uint32 port, rtk_uint32 proc)
+{
+
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    if(proc >= DOT1X_UNAUTH_END)
+        return RT_ERR_DOT1X_PROC;
+
+    if(port < 8)
+    {
+        return rtl8367c_setAsicRegBits(RTL8367C_DOT1X_UNAUTH_ACT_BASE, RTL8367C_DOT1X_UNAUTH_ACT_MASK(port),proc);
+    }
+    else
+    {
+        return rtl8367c_setAsicRegBits(RTL8367C_REG_DOT1X_UNAUTH_ACT_W1, RTL8367C_DOT1X_UNAUTH_ACT_MASK(port),proc);
+    }
+}

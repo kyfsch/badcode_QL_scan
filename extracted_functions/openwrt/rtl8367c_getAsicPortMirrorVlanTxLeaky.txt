@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicPortMirrorVlanTxLeaky(rtk_uint32* pEnabled)
+{
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_MIRROR_CTRL2, RTL8367C_MIRROR_TX_VLAN_LEAKY_OFFSET, pEnabled);
+}

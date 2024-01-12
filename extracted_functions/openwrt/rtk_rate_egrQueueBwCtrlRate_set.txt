@@ -1,0 +1,29 @@
+rtk_api_ret_t rtk_rate_egrQueueBwCtrlRate_set(rtk_port_t port, rtk_qid_t queue, rtk_meter_id_t index)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 offset_idx;
+    rtk_uint32 phy_port;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if (queue >= RTK_MAX_NUM_OF_QUEUE)
+        return RT_ERR_QUEUE_ID;
+
+    if (index > RTK_MAX_METER_ID)
+        return RT_ERR_FILTER_METER_ID;
+
+    phy_port = rtk_switch_port_L2P_get(port);
+    if (index < ((phy_port%4)*8) ||  index > (7 + (phy_port%4)*8))
+        return RT_ERR_FILTER_METER_ID;
+
+    offset_idx = index - ((phy_port%4)*8);
+
+    if ((retVal=rtl8367c_setAsicAprMeter(phy_port,queue,offset_idx))!=RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

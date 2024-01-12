@@ -1,0 +1,4 @@
+static int msdc_debug_show(struct inode *inode, struct file *file)
+{
+	return single_open(file, msdc_debug_proc_read, NULL);
+}

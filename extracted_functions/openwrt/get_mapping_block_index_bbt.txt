@@ -1,0 +1,37 @@
+get_mapping_block_index_bbt(int block)
+{
+	int start, end, ofs;
+	int bad_blocks = 0;
+	int i;
+
+	if (!mapping_block_in_range(block, &start, &end))
+		return block;
+
+	start >>= bmtd.blk_shift;
+	end >>= bmtd.blk_shift;
+	/* skip bad blocks within the mapping range */
+	ofs = block - start;
+	for (i = start; i < end; i++) {
+		if (bbt_block_is_bad(i))
+			bad_blocks++;
+		else if (ofs)
+			ofs--;
+		else
+			break;
+	}
+
+	if (i < end)
+		return i;
+
+	/* when overflowing, remap remaining blocks to bad ones */
+	for (i = end - 1; bad_blocks > 0; i--) {
+		if (!bbt_block_is_bad(i))
+			continue;
+
+		bad_blocks--;
+		if (bad_blocks <= ofs)
+			return i;
+	}
+
+	return block;
+}

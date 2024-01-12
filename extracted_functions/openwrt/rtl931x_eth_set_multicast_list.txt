@@ -1,0 +1,17 @@
+static void rtl931x_eth_set_multicast_list(struct net_device *ndev)
+{
+	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
+	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
+	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00.
+	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
+	 */
+	if (ndev->flags & (IFF_ALLMULTI | IFF_PROMISC)) {
+		sw_w32(GENMASK(31, 2), RTL931X_RMA_CTRL_0);
+		sw_w32(GENMASK(31, 0), RTL931X_RMA_CTRL_1);
+		sw_w32(GENMASK(31, 0), RTL931X_RMA_CTRL_2);
+	} else {
+		sw_w32(0x0, RTL931X_RMA_CTRL_0);
+		sw_w32(0x0, RTL931X_RMA_CTRL_1);
+		sw_w32(0x0, RTL931X_RMA_CTRL_2);
+	}
+}

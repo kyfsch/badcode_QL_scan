@@ -1,0 +1,52 @@
+int init_led(struct led **led, char *ledname)
+{
+	struct led *newled;
+	struct stat statbuffer;
+	int status;
+	char *bp;
+	FILE *bfp;
+
+	bp = calloc(sizeof(char), strlen(ledname) + strlen(LEDS_BASEPATH) + 12);
+	if ( ! bp )
+		goto return_error;
+
+	sprintf(bp, "%s%s/brightness", LEDS_BASEPATH, ledname);
+
+	status = stat(bp, &statbuffer);
+	if ( status )
+		goto cleanup_fname;
+
+	bfp = fopen( bp, "w" );
+	if ( !bfp )
+		goto cleanup_fname;
+
+	if ( ferror(bfp) )
+		goto cleanup_fp;
+
+	/* sysfs path exists and, allocate LED struct */
+	newled = calloc(sizeof(struct led),1);
+	if ( !newled )
+		goto cleanup_fp;
+
+	newled->sysfspath = bp;
+	newled->controlfd = bfp;
+
+	*led = newled;
+
+	if ( set_led(newled, 255) )
+		goto cleanup_fp;
+
+	if ( set_led(newled, 0) )
+		goto cleanup_fp;
+
+	return 0;
+
+cleanup_fp:
+	fclose(bfp);
+cleanup_fname:
+	free(bp);
+return_error:
+	syslog(LOG_CRIT, "can't open LED %s\n", ledname);
+	*led = NULL;
+	return -1;
+}

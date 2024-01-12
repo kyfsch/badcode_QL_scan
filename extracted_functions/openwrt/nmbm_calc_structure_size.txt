@@ -1,0 +1,20 @@
+static size_t nmbm_calc_structure_size(void)
+{
+	uint32_t state_table_size, mapping_table_size, info_table_size;
+	uint32_t block_count;
+
+	block_count = bmtd.total_blks;
+
+	/* Calculate info table size */
+	state_table_size = ((block_count + NMBM_BITMAP_BLOCKS_PER_UNIT - 1) /
+		NMBM_BITMAP_BLOCKS_PER_UNIT) * NMBM_BITMAP_UNIT_SIZE;
+	mapping_table_size = block_count * sizeof(int32_t);
+
+	info_table_size = ALIGN(sizeof(struct nmbm_info_table_header),
+				     bmtd.pg_size);
+	info_table_size += ALIGN(state_table_size, bmtd.pg_size);
+	info_table_size += ALIGN(mapping_table_size, bmtd.pg_size);
+
+	return info_table_size + state_table_size + mapping_table_size +
+		sizeof(struct nmbm_instance);
+}

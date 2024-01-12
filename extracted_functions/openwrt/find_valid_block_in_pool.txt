@@ -1,0 +1,18 @@
+static u16 find_valid_block_in_pool(struct bbbt *bbt)
+{
+	int i;
+
+	if (bmtd.bmt_blk_idx == 0)
+		goto error;
+
+	for (i = 0; i < bmtd.bmt_blk_idx; i++) {
+		if (bmt_tbl(bbt)[i].block != 0 && bmt_tbl(bbt)[i].mapped == NO_MAPPED) {
+			bmt_tbl(bbt)[i].mapped = NORMAL_MAPPED;
+			return bmt_tbl(bbt)[i].block;
+		}
+	}
+
+error:
+	pr_info("nand: FATAL ERR: BMT pool is run out!\n");
+	return 0;
+}

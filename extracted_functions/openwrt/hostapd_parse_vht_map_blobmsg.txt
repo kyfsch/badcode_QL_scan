@@ -1,0 +1,14 @@
+hostapd_parse_vht_map_blobmsg(uint16_t map)
+{
+	char label[4];
+	int16_t val;
+	int i;
+
+	for (i = 0; i < 8; i++) {
+		snprintf(label, 4, "%dss", i + 1);
+
+		val = (map & (BIT(1) | BIT(0))) + 7;
+		blobmsg_add_u16(&b, label, val == 10 ? -1 : val);
+		map = map >> 2;
+	}
+}

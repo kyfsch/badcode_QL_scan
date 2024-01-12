@@ -1,0 +1,15 @@
+static int rtl8218d_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
+{
+	int addr = phydev->mdio.addr;
+	u64 poll_state;
+
+	pr_info("In %s, port %d, enabled %d\n", __func__, addr, e->eee_enabled);
+
+	poll_state = disable_polling(addr);
+
+	rtl8218d_eee_set(phydev, (bool) e->eee_enabled);
+
+	resume_polling(poll_state);
+
+	return 0;
+}

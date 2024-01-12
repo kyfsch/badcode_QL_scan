@@ -1,0 +1,8 @@
+static unsigned esw_get_pvid(struct rt305x_esw *esw, unsigned port)
+{
+	unsigned s, val;
+
+	s = RT305X_ESW_PVIDC_PVID_S * (port % 2);
+	val = esw_r32(esw, RT305X_ESW_REG_PVIDC(port / 2));
+	return (val >> s) & RT305X_ESW_PVIDC_PVID_M;
+}

@@ -1,0 +1,17 @@
+static int block_load_image_raw_os(block_dev_desc_t * device)
+{
+	int n;
+
+	n = device->block_read(device->dev, CONFIG_SYS_BLOCK_RAW_MODE_ARGS_SECTOR,
+					CONFIG_SYS_BLOCK_RAW_MODE_ARGS_SECTORS,
+					(u32 *)CONFIG_SYS_SPL_ARGS_ADDR);
+	/* flush cache after read */
+	flush_cache(addr, CONFIG_SYS_BLOCK_RAW_MODE_ARGS_SECTORS * 512);
+
+	if (n != CONFIG_SYS_BLOCK_RAW_MODE_ARGS_SECTORS) {
+		printf("args blk read error\n");
+		return -1;
+	}
+
+	return block_load_image_raw(device, CONFIG_SYS_BLOCK_RAW_MODE_KERNEL_SECTOR);
+}

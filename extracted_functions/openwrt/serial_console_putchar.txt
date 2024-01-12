@@ -1,0 +1,5 @@
+void serial_console_putchar(char c)
+{
+	while ((in_8(reg_base + (UART_LSR << reg_shift)) & UART_LSR_THRE) == 0);
+	out_8(reg_base, c);
+}

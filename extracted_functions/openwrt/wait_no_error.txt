@@ -1,0 +1,27 @@
+static inline int wait_no_error(int device)
+{
+	int status = 0;
+
+	/* Check for ATA core error */
+	if (*(sata_regs_base[device] + SATA_INT_STATUS_OFF)
+		& (1 << SATA_INT_STATUS_ERROR_BIT)) {
+		printf("wait_no_error() SATA core flagged error\n");
+	} else {
+		int loops = MAX_NO_ERROR_LOOPS;
+		do {
+			/* Check for ATA device error */
+			if (!(ide_inb(device, ATA_PORT_COMMAND)
+				& (1 << ATA_STATUS_ERR_BIT))) {
+				status = 1;
+				break;
+			}
+			udelay(10);
+		} while (--loops);
+
+		if (!loops) {
+			printf("wait_no_error() Timed out of wait for SATA no-error condition\n");
+		}
+	}
+
+	return status;
+}

@@ -1,0 +1,68 @@
+static void rtl839x_rate_control_init(struct rtl838x_switch_priv *priv)
+{
+	pr_info("%s: enabling rate control\n", __func__);
+	/* Tick length and token size settings for SoC with 250MHz,
+	 * RTL8350 family would use 50MHz
+	 */
+	/* Set the special tick period */
+	sw_w32(976563, RTL839X_STORM_CTRL_SPCL_LB_TICK_TKN_CTRL);
+	/* Ingress tick period and token length 10G */
+	sw_w32(18 << 11 | 151, RTL839X_IGR_BWCTRL_LB_TICK_TKN_CTRL_0);
+	/* Ingress tick period and token length 1G */
+	sw_w32(245 << 11 | 129, RTL839X_IGR_BWCTRL_LB_TICK_TKN_CTRL_1);
+	/* Egress tick period 10G, bytes/token 10G and tick period 1G, bytes/token 1G */
+	sw_w32(18 << 24 | 151 << 16 | 185 << 8 | 97, RTL839X_SCHED_LB_TICK_TKN_CTRL);
+	/* Set the tick period of the CPU and the Token Len */
+	sw_w32(3815 << 8 | 1, RTL839X_SCHED_LB_TICK_TKN_PPS_CTRL);
+
+	/* Set the Weighted Fair Queueing burst size */
+	sw_w32_mask(0xffff, 4500, RTL839X_SCHED_LB_THR);
+
+	/* Storm-rate calculation is based on bytes/sec (bit 5), include IFG (bit 6) */
+	sw_w32_mask(0, 1 << 5 | 1 << 6, RTL839X_STORM_CTRL);
+
+	/* Based on the rate control mode being bytes/s
+	 * set tick period and token length for 10G
+	 */
+	sw_w32(18 << 10 | 151, RTL839X_STORM_CTRL_LB_TICK_TKN_CTRL_0);
+	/* and for 1G ports */
+	sw_w32(246 << 10 | 129, RTL839X_STORM_CTRL_LB_TICK_TKN_CTRL_1);
+
+	/* Set default burst rates on all ports (the same for 1G / 10G) with a PHY
+	 * for UC, MC and BC
+	 * For 1G port, the minimum burst rate is 1700, maximum 65535,
+	 * For 10G ports it is 2650 and 1048575 respectively */
+	for (int p = 0; p < priv->cpu_port; p++) {
+		if (priv->ports[p].phy && !priv->ports[p].is10G) {
+			sw_w32_mask(0xffff, 0x8000, RTL839X_STORM_CTRL_PORT_UC_1(p));
+			sw_w32_mask(0xffff, 0x8000, RTL839X_STORM_CTRL_PORT_MC_1(p));
+			sw_w32_mask(0xffff, 0x8000, RTL839X_STORM_CTRL_PORT_BC_1(p));
+		}
+	}
+
+	/* Setup ingress/egress per-port rate control */
+	for (int p = 0; p < priv->cpu_port; p++) {
+		if (!priv->ports[p].phy)
+			continue;
+
+		if (priv->ports[p].is10G)
+			rtl839x_set_egress_rate(priv, p, 625000); /* 10GB/s */
+		else
+			rtl839x_set_egress_rate(priv, p, 62500);  /* 1GB/s */
+
+		/* Setup queues: all RTL83XX SoCs have 8 queues, maximum rate */
+		for (int q = 0; q < 8; q++)
+			rtl839x_egress_rate_queue_limit(priv, p, q, 0xfffff);
+
+		if (priv->ports[p].is10G) {
+			/* Set high threshold to maximum */
+			sw_w32_mask(0xffff, 0xffff, RTL839X_IGR_BWCTRL_PORT_CTRL_10G_0(p));
+		} else {
+			/* Set high threshold to maximum */
+			sw_w32_mask(0xffff, 0xffff, RTL839X_IGR_BWCTRL_PORT_CTRL_1(p));
+		}
+	}
+
+	/* Set global ingress low watermark rate */
+	sw_w32(65532, RTL839X_IGR_BWCTRL_CTRL_LB_THR);
+}

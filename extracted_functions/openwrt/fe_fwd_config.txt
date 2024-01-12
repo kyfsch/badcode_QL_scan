@@ -1,0 +1,15 @@
+void fe_fwd_config(struct fe_priv *priv)
+{
+	u32 fwd_cfg;
+
+	fwd_cfg = fe_r32(FE_GDMA1_FWD_CFG);
+
+	/* disable jumbo frame */
+	if (priv->flags & FE_FLAG_JUMBO_FRAME)
+		fwd_cfg &= ~FE_GDM1_JMB_EN;
+
+	/* set unicast/multicast/broadcast frame to cpu */
+	fwd_cfg &= ~0xffff;
+
+	fe_w32(fwd_cfg, FE_GDMA1_FWD_CFG);
+}

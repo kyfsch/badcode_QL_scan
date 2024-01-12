@@ -1,0 +1,19 @@
+ret_t rtl8367c_getAsicRldpRandomNumber(ether_addr_t *pRandNumber)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+    rtk_int16 accessPtr[3];
+    rtk_uint32 i;
+
+    for(i = 0; i < 3; i++)
+    {
+        retVal = rtl8367c_getAsicReg(RTL8367C_RLDP_RAND_NUM_REG_BASE+ i, &regData);
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        accessPtr[i] = regData;
+    }
+
+    memcpy(pRandNumber, accessPtr, 6);
+    return retVal;
+}

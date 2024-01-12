@@ -1,0 +1,46 @@
+uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
+{
+	struct hostapd_data *hapd = uc_fn_thisval("hostapd.bss");
+	uc_value_t *ifname_arg = uc_fn_arg(0);
+	char prev_ifname[IFNAMSIZ + 1];
+	struct sta_info *sta;
+	const char *ifname;
+	int ret;
+
+	if (!hapd || ucv_type(ifname_arg) != UC_STRING)
+		return NULL;
+
+	os_strlcpy(prev_ifname, hapd->conf->iface, sizeof(prev_ifname));
+	ifname = ucv_string_get(ifname_arg);
+
+	hostapd_ubus_free_bss(hapd);
+	if (interfaces->ctrl_iface_deinit)
+		interfaces->ctrl_iface_deinit(hapd);
+
+	ret = hostapd_drv_if_rename(hapd, WPA_IF_AP_BSS, NULL, ifname);
+	if (ret)
+		goto out;
+
+	for (sta = hapd->sta_list; sta; sta = sta->next) {
+		char cur_name[IFNAMSIZ + 1], new_name[IFNAMSIZ + 1];
+
+		if (!(sta->flags & WLAN_STA_WDS) || sta->pending_wds_enable)
+			continue;
+
+		snprintf(cur_name, sizeof(cur_name), "%s.sta%d", prev_ifname, sta->aid);
+		snprintf(new_name, sizeof(new_name), "%s.sta%d", ifname, sta->aid);
+		hostapd_drv_if_rename(hapd, WPA_IF_AP_VLAN, cur_name, new_name);
+	}
+
+	if (!strncmp(hapd->conf->ssid.vlan, hapd->conf->iface, sizeof(hapd->conf->ssid.vlan)))
+		os_strlcpy(hapd->conf->ssid.vlan, ifname, sizeof(hapd->conf->ssid.vlan));
+	os_strlcpy(hapd->conf->iface, ifname, sizeof(hapd->conf->iface));
+	hostapd_ubus_add_bss(hapd);
+
+	hostapd_ucode_update_interfaces();
+out:
+	if (interfaces->ctrl_iface_init)
+		interfaces->ctrl_iface_init(hapd);
+
+	return ret ? NULL : ucv_boolean_new(true);
+}

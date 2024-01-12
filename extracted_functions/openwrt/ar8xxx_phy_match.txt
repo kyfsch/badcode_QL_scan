@@ -1,0 +1,10 @@
+ar8xxx_phy_match(u32 phy_id)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(ar8xxx_phy_ids); i++)
+		if (phy_id == ar8xxx_phy_ids[i])
+			return true;
+
+	return false;
+}

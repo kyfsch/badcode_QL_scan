@@ -1,0 +1,40 @@
+t_sessionkey(key, sk, sklen)
+     unsigned char * key;
+     unsigned char * sk;
+     unsigned sklen;
+{
+  unsigned i, klen;
+  unsigned char * hbuf;
+  unsigned char hout[SHA_DIGESTSIZE];
+  SHA1_CTX ctxt;
+
+  while(sklen > 0 && *sk == 0) {        /* Skip leading 0's */
+    --sklen;
+    ++sk;
+  }
+
+  klen = sklen / 2;
+  if((hbuf = malloc(klen * sizeof(char))) == 0)
+    return 0;
+
+  for(i = 0; i < klen; ++i)
+    hbuf[i] = sk[sklen - 2 * i - 1];
+  SHA1Init(&ctxt);
+  SHA1Update(&ctxt, hbuf, klen);
+  SHA1Final(hout, &ctxt);
+  for(i = 0; i < sizeof(hout); ++i)
+    key[2 * i] = hout[i];
+
+  for(i = 0; i < klen; ++i)
+    hbuf[i] = sk[sklen - 2 * i - 2];
+  SHA1Init(&ctxt);
+  SHA1Update(&ctxt, hbuf, klen);
+  SHA1Final(hout, &ctxt);
+  for(i = 0; i < sizeof(hout); ++i)
+    key[2 * i + 1] = hout[i];
+
+  memset(hout, 0, sizeof(hout));
+  memset(hbuf, 0, klen);
+  free(hbuf);
+  return key;
+}

@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicTrunkingHashSelect(rtk_uint32 hashsel)
+{
+    return rtl8367c_setAsicRegBits(RTL8367C_REG_PORT_TRUNK_CTRL, RTL8367C_PORT_TRUNK_HASH_MASK, hashsel);
+}

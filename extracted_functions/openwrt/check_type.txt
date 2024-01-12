@@ -1,0 +1,11 @@
+int check_type(void)
+{
+	struct ifreq ifr;
+
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+
+	if (ioctl(capture_sock, SIOCGIFHWADDR, &ifr) < 0)
+		return -1;
+
+	return (ifr.ifr_hwaddr.sa_family == ARPHRD_IEEE80211_RADIOTAP);
+}

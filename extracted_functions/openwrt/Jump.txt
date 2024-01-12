@@ -1,0 +1,19 @@
+extern void Jump(unsigned int addr);
+
+const char *menu_dataflash[] = {
+#ifdef XMODEM
+	"1: P DFboot\n",
+	"2: P U-Boot\n",
+#endif
+	"3: P SDCard\n",
+#ifdef	PAGESZ_1056
+	"4: R UBOOT\n",
+#else
+	"4: R UBOOT\n",
+#endif
+#ifdef XMODEM
+	"5: P DF [addr]\n",
+#endif
+	"6: RD DF [addr]\n",
+	"7: E DF\n"
+};

@@ -1,0 +1,22 @@
+t_nextfield(fp, s, max)
+FILE * fp;
+char * s;
+unsigned max;
+{
+  int c, count = 0;
+
+  while((c = getc(fp)) != EOF) {
+    if(c == '\n') {
+      ungetc(c, fp);
+      break;
+    }
+    else if(c == FSEPARATOR)
+      break;
+    if(count < max - 1) {
+      *s++ = c;
+      ++count;
+    }
+  }
+  *s++ = '\0';
+  return count;
+}

@@ -1,0 +1,25 @@
+static int msp430_brightness_set(struct led_classdev *led_cdev,
+				 enum led_brightness brightness)
+{
+	struct msp430_led *led =
+		container_of(led_cdev, struct msp430_led, cdev);
+	u8 tx[MSP430_CMD_BYTES] = {led->id, 0, 0, 0, 0, 0};
+	u8 rx[MSP430_CMD_BYTES];
+	u8 val = (u8) brightness;
+
+	switch (val)
+	{
+	case LED_OFF:
+		tx[1] = MSP430_LED_OFF;
+		break;
+	case MSP430_LED_BRIGHTNESS_MAX:
+		tx[1] = MSP430_LED_ON;
+		break;
+	default:
+		tx[1] = MSP430_LED_LEVEL;
+		tx[2] = val - 1;
+		break;
+	}
+
+	return msp430_cmd(led->spi, tx, rx);
+}

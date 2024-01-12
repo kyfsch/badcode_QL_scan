@@ -1,0 +1,37 @@
+static int rb4xx_gpio_probe(struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
+	struct device *parent = dev->parent;
+	struct rb4xx_gpio *gpio;
+	u32 val;
+
+	if (!parent)
+		return -ENODEV;
+
+	gpio = devm_kzalloc(dev, sizeof(*gpio), GFP_KERNEL);
+	if (!gpio)
+		return -ENOMEM;
+
+	platform_set_drvdata(pdev, gpio);
+	gpio->cpld	= dev_get_drvdata(parent);
+	gpio->dev	= dev;
+	gpio->values	= 0;
+	mutex_init(&gpio->lock);
+
+	gpio->chip.label		= "rb4xx-gpio";
+	gpio->chip.parent		= dev;
+	gpio->chip.owner		= THIS_MODULE;
+	gpio->chip.get_direction	= rb4xx_gpio_get_direction;
+	gpio->chip.direction_input	= rb4xx_gpio_direction_input;
+	gpio->chip.direction_output	= rb4xx_gpio_direction_output;
+	gpio->chip.get			= rb4xx_gpio_get;
+	gpio->chip.set			= rb4xx_gpio_set;
+	gpio->chip.ngpio		= 9;
+	gpio->chip.base			= -1;
+	gpio->chip.can_sleep		= 1;
+
+	if (!of_property_read_u32(dev->of_node, "base", &val))
+		gpio->chip.base = val;
+
+	return gpiochip_add_data(&gpio->chip, gpio);
+}

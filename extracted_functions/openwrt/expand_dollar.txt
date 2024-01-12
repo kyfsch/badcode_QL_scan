@@ -1,0 +1,4 @@
+char *expand_dollar(const char **str)
+{
+	return expand_dollar_with_args(str, 0, NULL);
+}

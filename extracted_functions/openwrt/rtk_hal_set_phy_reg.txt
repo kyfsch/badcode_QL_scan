@@ -1,0 +1,10 @@
+static void rtk_hal_set_phy_reg(unsigned int port ,unsigned int reg_addr,unsigned int reg_val)
+{
+        ret_t retVal;
+
+        retVal = rtk_port_phyReg_set(port, reg_addr, reg_val);
+        if (retVal == RT_ERR_OK)
+                printk("Set: phy[%d].reg[%d] = 0x%04x\n", port, reg_addr, reg_val);
+        else
+                printk("write phy reg failed\n");
+}

@@ -1,0 +1,14 @@
+ret_t rtl8367c_getAsicIGMPdynamicRouterPort2(rtk_uint32 *port, rtk_uint32 *timer)
+{
+    ret_t   retVal;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_IGMP_DYNAMIC_ROUTER_PORT, RTL8367C_D_ROUTER_PORT_2_MASK, port);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_IGMP_DYNAMIC_ROUTER_PORT, RTL8367C_D_ROUTER_PORT_TMR_2_MASK, timer);
+    if(retVal != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

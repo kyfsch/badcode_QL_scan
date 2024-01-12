@@ -1,0 +1,41 @@
+static void aca_rxin_init(struct dc_ep_priv *priv,
+	struct aca_cfg_param *aca_rxin)
+{
+	u32 val = 0;
+	struct aca_mem_layout *mem_layout = to_mem_layout(priv);
+	struct aca_hif_params *hif_params = to_hif_params(priv);
+	struct aca_hif_param *rxin_param = &hif_params->rxin;
+
+	if (aca_rxin->byteswap)
+		val = BYTE_SWAP_EN;
+
+	val |= (aca_rxin->hd_size_in_dw - 1)
+		| SM((aca_rxin->pd_size_in_dw - 1), PD_DESC_IN_DW);
+	wr32(val, RXIN_CONV_CFG);
+
+	/* SoC cumulative counter address */
+	wr32(aca_rxin->soc_cmlt_cnt_addr, GNRC_RXIN_CMLT_CNT_ADDR);
+
+    /* RXIN may not be used */
+	if (!(aca_rxin->soc_desc_base))
+		goto __RXIN_DONE;
+	/* SoC descriptors */
+	rxin_param->soc_desc_base = aca_rxin->soc_desc_base;
+	rxin_param->soc_desc_num = aca_rxin->soc_desc_num;
+
+	/* Ping/pong buffer */
+	rxin_param->pp_buf_base = (u32)priv->phymem
+		+ mem_layout->rxin_host_desc_base;
+
+	rxin_param->pp_buf_num = mem_layout->rxin_host_dnum;
+
+	/* PD ring */
+	rxin_param->pd_desc_base = (u32)priv->phymem
+		+ aca_rxin->pd_desc_base;
+	rxin_param->pd_desc_num = aca_rxin->pd_desc_num;
+
+	rxin_param->pd_desc_threshold = aca_rxin->pp_buf_desc_num;
+
+__RXIN_DONE:
+	dev_dbg(priv->dev, "aca rxin init done\n");
+}

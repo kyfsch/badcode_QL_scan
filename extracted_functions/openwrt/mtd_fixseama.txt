@@ -1,0 +1,80 @@
+mtd_fixseama(const char *mtd, size_t offset, size_t data_size)
+{
+	int fd;
+	char *first_block;
+	ssize_t res;
+	size_t block_offset;
+	size_t data_offset;
+	struct seama_entity_header *shdr;
+
+	if (quiet < 2)
+		fprintf(stderr, "Trying to fix SEAMA header in %s at 0x%x...\n",
+			mtd, offset);
+
+	block_offset = offset & ~(erasesize - 1);
+	offset -= block_offset;
+
+	fd = mtd_check_open(mtd);
+	if(fd < 0) {
+		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
+		exit(1);
+	}
+
+	if (block_offset + erasesize > mtdsize) {
+		fprintf(stderr, "Offset too large, device size 0x%x\n",
+			mtdsize);
+		exit(1);
+	}
+
+	first_block = malloc(erasesize);
+	if (!first_block) {
+		perror("malloc");
+		exit(1);
+	}
+
+	res = pread(fd, first_block, erasesize, block_offset);
+	if (res != erasesize) {
+		perror("pread");
+		exit(1);
+	}
+
+	shdr = (struct seama_entity_header *)(first_block + offset);
+	if (shdr->magic != htonl(SEAMA_MAGIC)) {
+		fprintf(stderr, "No SEAMA header found\n");
+		exit(1);
+	} else if (!ntohl(shdr->size)) {
+		fprintf(stderr, "Seama entity with empty image\n");
+		exit(1);
+	}
+
+	data_offset = offset + sizeof(struct seama_entity_header) + ntohs(shdr->metasize);
+	if (!data_size)
+		data_size = mtdsize - data_offset;
+	if (data_size > ntohl(shdr->size))
+		data_size = ntohl(shdr->size);
+	if (seama_fix_md5(shdr, fd, data_offset, data_size))
+		goto out;
+
+	if (mtd_erase_block(fd, block_offset)) {
+		fprintf(stderr, "Can't erease block at 0x%x (%s)\n",
+			block_offset, strerror(errno));
+		exit(1);
+	}
+
+	if (quiet < 2)
+		fprintf(stderr, "Rewriting block at 0x%x\n", block_offset);
+
+	if (pwrite(fd, first_block, erasesize, block_offset) != erasesize) {
+		fprintf(stderr, "Error writing block (%s)\n", strerror(errno));
+		exit(1);
+	}
+
+	if (quiet < 2)
+		fprintf(stderr, "Done.\n");
+
+out:
+	close (fd);
+	sync();
+
+	return 0;
+}

@@ -1,0 +1,15 @@
+rtk_api_ret_t rtk_trap_unmatchMacPktAction_get(rtk_trap_ucast_action_t *pUcast_action)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pUcast_action)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicPortUnmatchedSaBehavior(pUcast_action)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

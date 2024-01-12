@@ -1,0 +1,9 @@
+adm6996_get_enable_vlan(struct switch_dev *dev, const struct switch_attr *attr,
+			struct switch_val *val)
+{
+	struct adm6996_priv *priv = to_adm(dev);
+
+	val->value.i = priv->enable_vlan;
+
+	return 0;
+};

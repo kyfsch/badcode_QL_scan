@@ -1,0 +1,68 @@
+static bool nmbm_rescue_single_info_table(struct nmbm_instance *ni)
+{
+	uint32_t table_start_ba, table_end_ba, write_ba;
+	bool success;
+
+	/* Try to write new info table in front of existing table */
+	success = nmbm_write_info_table(ni, ni->mgmt_start_ba,
+					ni->main_table_ba,
+					&table_start_ba,
+					&table_end_ba);
+	if (success) {
+		/*
+		 * New table becomes the main table, existing table becomes
+		 * the backup table.
+		 */
+		ni->backup_table_ba = ni->main_table_ba;
+		ni->main_table_ba = table_start_ba;
+
+		nmbm_mark_tables_clean(ni);
+
+		/* Erase spare blocks of main table to clean possible interference data */
+		nmbm_erase_range(ni, table_end_ba, ni->backup_table_ba);
+
+		nlog_table_creation(ni, true, table_start_ba, table_end_ba);
+
+		return true;
+	}
+
+	/* Try to reserve spare blocks for existing table */
+	success = nmbm_try_reserve_blocks(ni, ni->mapping_blocks_ba, &write_ba,
+					  ni->info_table_spare_blocks, 0,
+					  ni->mapping_blocks_top_ba -
+					  size2blk(ni, ni->info_table_size));
+	if (!success) {
+		nlog_warn(ni, "Failed to rescue single info table\n");
+		return false;
+	}
+
+	/* Try to write new info table next to the existing table */
+	while (write_ba >= ni->mapping_blocks_ba) {
+		success = nmbm_write_info_table(ni, write_ba,
+						ni->mapping_blocks_top_ba,
+						&table_start_ba,
+						&table_end_ba);
+		if (success)
+			break;
+
+		write_ba--;
+	}
+
+	if (success) {
+		/* Erase spare blocks of main table to clean possible interference data */
+		nmbm_erase_range(ni, ni->mapping_blocks_ba, table_start_ba);
+
+		/* New table becomes the backup table */
+		ni->backup_table_ba = table_start_ba;
+		ni->mapping_blocks_ba = table_end_ba;
+
+		nmbm_mark_tables_clean(ni);
+
+		nlog_table_creation(ni, false, table_start_ba, table_end_ba);
+
+		return true;
+	}
+
+	nlog_warn(ni, "Failed to rescue single info table\n");
+	return false;
+}

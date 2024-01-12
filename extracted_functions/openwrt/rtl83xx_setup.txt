@@ -1,0 +1,66 @@
+static int rtl83xx_setup(struct dsa_switch *ds)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	pr_debug("%s called\n", __func__);
+
+	/* Disable MAC polling the PHY so that we can start configuration */
+	priv->r->set_port_reg_le(0ULL, priv->r->smi_poll_ctrl);
+
+	for (int i = 0; i < ds->num_ports; i++)
+		priv->ports[i].enable = false;
+	priv->ports[priv->cpu_port].enable = true;
+
+	/* Configure ports so they are disabled by default, but once enabled
+	 * they will work in isolated mode (only traffic between port and CPU).
+	 */
+	for (int i = 0; i < priv->cpu_port; i++) {
+		if (priv->ports[i].phy) {
+			priv->ports[i].pm = BIT_ULL(priv->cpu_port);
+			priv->r->traffic_set(i, BIT_ULL(i));
+		}
+	}
+	priv->r->traffic_set(priv->cpu_port, BIT_ULL(priv->cpu_port));
+
+	/* For standalone ports, forward packets even if a static fdb
+	 * entry for the source address exists on another port.
+	 */
+	if (priv->r->set_static_move_action) {
+		for (int i = 0; i <= priv->cpu_port; i++)
+			priv->r->set_static_move_action(i, true);
+	}
+
+	if (priv->family_id == RTL8380_FAMILY_ID)
+		rtl838x_print_matrix();
+	else
+		rtl839x_print_matrix();
+
+	rtl83xx_init_stats(priv);
+
+	rtl83xx_vlan_setup(priv);
+
+	rtl83xx_setup_bpdu_traps(priv);
+
+	ds->configure_vlan_while_not_filtering = true;
+
+	priv->r->l2_learning_setup();
+
+	rtl83xx_port_set_salrn(priv, priv->cpu_port, false);
+	ds->assisted_learning_on_cpu_port = true;
+
+	/* Make sure all frames sent to the switch's MAC are trapped to the CPU-port
+	 *  0: FWD, 1: DROP, 2: TRAP2CPU
+	 */
+	if (priv->family_id == RTL8380_FAMILY_ID)
+		sw_w32(0x2, RTL838X_SPCL_TRAP_SWITCH_MAC_CTRL);
+	else
+		sw_w32(0x2, RTL839X_SPCL_TRAP_SWITCH_MAC_CTRL);
+
+	/* Enable MAC Polling PHY again */
+	rtl83xx_enable_phy_polling(priv);
+	pr_debug("Please wait until PHY is settled\n");
+	msleep(1000);
+	priv->r->pie_init(priv);
+
+	return 0;
+}

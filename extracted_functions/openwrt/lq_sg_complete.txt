@@ -1,0 +1,8 @@
+static void lq_sg_complete(struct aes_container *aes_con) 
+{
+    unsigned long queue_flag;
+
+    spin_lock_irqsave(&aes_queue->lock, queue_flag);
+    kfree(aes_con);
+    spin_unlock_irqrestore(&aes_queue->lock, queue_flag);
+}

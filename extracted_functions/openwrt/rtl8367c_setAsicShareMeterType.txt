@@ -1,0 +1,13 @@
+ret_t rtl8367c_setAsicShareMeterType(rtk_uint32 index, rtk_uint32 type)
+{
+    rtk_uint32 reg;
+
+    if(index > RTL8367C_METERMAX)
+        return RT_ERR_FILTER_METER_ID;
+
+    if(index < 32)
+        reg = RTL8367C_REG_METER_MODE_SETTING0 + (index / 16);
+    else
+        reg = RTL8367C_REG_METER_MODE_SETTING2 + ((index - 32) / 16);
+    return rtl8367c_setAsicRegBit(reg, index % 16, type);
+}

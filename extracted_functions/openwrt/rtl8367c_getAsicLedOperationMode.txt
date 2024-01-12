@@ -1,0 +1,17 @@
+ret_t rtl8367c_getAsicLedOperationMode(rtk_uint32 *mode)
+{
+    ret_t retVal;
+    rtk_uint32 regData;
+
+    if((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_LED_SYS_CONFIG, RTL8367C_LED_SELECT_OFFSET, &regData))!=  RT_ERR_OK)
+        return retVal;
+
+    if (regData == 1)
+        *mode = LEDOP_SERIAL;
+    else if (regData == 0)
+        *mode = LEDOP_PARALLEL;
+    else
+        return RT_ERR_FAILED;
+
+    return RT_ERR_OK;
+}

@@ -1,0 +1,30 @@
+static void __md5_Final(unsigned char [16], struct MD5Context *);
+static void __md5_Transform(uint32_t [4], const unsigned char [64]);
+
+
+#define MD5_MAGIC_STR "$1$"
+#define MD5_MAGIC_LEN (sizeof(MD5_MAGIC_STR) - 1)
+static const unsigned char __md5__magic[] = MD5_MAGIC_STR;
+
+
+#ifdef i386
+#define __md5_Encode memcpy
+#define __md5_Decode memcpy
+#else /* i386 */
+
+/*
+ * __md5_Encodes input (uint32_t) into output (unsigned char). Assumes len is
+ * a multiple of 4.
+ */
+static void
+__md5_Encode(unsigned char *output, uint32_t *input, unsigned int len)
+{
+	unsigned int i, j;
+
+	for (i = 0, j = 0; j < len; i++, j += 4) {
+		output[j] = input[i];
+		output[j+1] = (input[i] >> 8);
+		output[j+2] = (input[i] >> 16);
+		output[j+3] = (input[i] >> 24);
+	}
+}

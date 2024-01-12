@@ -1,0 +1,11 @@
+static void bcm6348_emac_set_duplex(struct bcm6348_emac *emac, int fullduplex)
+{
+	u32 val;
+
+	val = emac_readl(emac, ENET_TXCTL_REG);
+	if (fullduplex)
+		val |= ENET_TXCTL_FD_MASK;
+	else
+		val &= ~ENET_TXCTL_FD_MASK;
+	emac_writel(emac, val, ENET_TXCTL_REG);
+}

@@ -1,0 +1,51 @@
+rtk_api_ret_t rtk_stat_port_get(rtk_port_t port, rtk_stat_port_type_t cntr_idx, rtk_stat_counter_t *pCntr)
+{
+    rtk_api_ret_t       retVal;
+    RTL8367C_MIBCOUNTER mib_idx;
+    rtk_stat_counter_t  second_cnt;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pCntr)
+        return RT_ERR_NULL_POINTER;
+
+    /* Check port valid */
+    RTK_CHK_PORT_VALID(port);
+
+    if (cntr_idx>=STAT_PORT_CNTR_END)
+        return RT_ERR_STAT_INVALID_PORT_CNTR;
+
+    if((retVal = _get_asic_mib_idx(cntr_idx, &mib_idx)) != RT_ERR_OK)
+        return retVal;
+
+    if(mib_idx == MIB_NOT_SUPPORT)
+        return RT_ERR_CHIP_NOT_SUPPORTED;
+
+    if ((retVal = rtl8367c_getAsicMIBsCounter(rtk_switch_port_L2P_get(port), mib_idx, pCntr)) != RT_ERR_OK)
+        return retVal;
+
+    if(cntr_idx == STAT_EtherStatsMulticastPkts)
+    {
+        if((retVal = _get_asic_mib_idx(STAT_IfOutMulticastPkts, &mib_idx)) != RT_ERR_OK)
+            return retVal;
+
+        if((retVal = rtl8367c_getAsicMIBsCounter(rtk_switch_port_L2P_get(port), mib_idx, &second_cnt)) != RT_ERR_OK)
+            return retVal;
+
+        *pCntr += second_cnt;
+    }
+
+    if(cntr_idx == STAT_EtherStatsBroadcastPkts)
+    {
+        if((retVal = _get_asic_mib_idx(STAT_IfOutBroadcastPkts, &mib_idx)) != RT_ERR_OK)
+            return retVal;
+
+        if((retVal = rtl8367c_getAsicMIBsCounter(rtk_switch_port_L2P_get(port), mib_idx, &second_cnt)) != RT_ERR_OK)
+            return retVal;
+
+        *pCntr += second_cnt;
+    }
+
+    return RT_ERR_OK;
+}

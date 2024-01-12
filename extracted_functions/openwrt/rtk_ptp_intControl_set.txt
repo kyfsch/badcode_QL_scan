@@ -1,0 +1,41 @@
+rtk_api_ret_t rtk_ptp_intControl_set(rtk_ptp_intType_t type, rtk_enable_t enable)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 mask;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (type>=PTP_INT_TYPE_END)
+        return RT_ERR_INPUT;
+
+    if (PTP_INT_TYPE_ALL!=type)
+    {
+        if ((retVal = rtl8367c_getAsicEavInterruptMask(&mask)) != RT_ERR_OK)
+            return retVal;
+
+        if (ENABLED == enable)
+            mask = mask | (1<<type);
+        else if (DISABLED == enable)
+            mask = mask & ~(1<<type);
+        else
+            return RT_ERR_INPUT;
+
+        if ((retVal = rtl8367c_setAsicEavInterruptMask(mask)) != RT_ERR_OK)
+            return retVal;
+    }
+    else
+    {
+        if (ENABLED == enable)
+            mask = RTK_PTP_INTR_MASK;
+        else if (DISABLED == enable)
+            mask = 0;
+        else
+            return RT_ERR_INPUT;
+
+        if ((retVal = rtl8367c_setAsicEavInterruptMask(mask)) != RT_ERR_OK)
+            return retVal;
+    }
+
+    return RT_ERR_OK;
+}

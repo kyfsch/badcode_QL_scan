@@ -1,0 +1,4 @@
+ret_t rtl8367c_setAsicSvlanLookupType(rtk_uint32 type)
+{
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_SVLAN_LOOKUP_TYPE, RTL8367C_SVLAN_LOOKUP_TYPE_OFFSET, type);
+}

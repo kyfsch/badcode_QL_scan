@@ -1,0 +1,4 @@
+static int mtk_bmt_debug(void *data, u64 val)
+{
+	return bmtd.ops->debug(data, val);
+}

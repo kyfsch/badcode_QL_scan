@@ -1,0 +1,18 @@
+rtk_api_ret_t rtk_vlan_reservedVidAction_get(rtk_vlan_resVidAction_t *pAction_vid0, rtk_vlan_resVidAction_t *pAction_vid4095)
+{
+    rtk_api_ret_t retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(pAction_vid0 == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    if(pAction_vid4095 == NULL)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getReservedVidAction((rtk_uint32 *)pAction_vid0, (rtk_uint32 *)pAction_vid4095)) != RT_ERR_OK)
+        return retVal;
+
+    return RT_ERR_OK;
+}

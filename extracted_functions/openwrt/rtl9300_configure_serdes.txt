@@ -1,0 +1,106 @@
+int rtl9300_configure_serdes(struct phy_device *phydev)
+{
+	int phy_mode = PHY_INTERFACE_MODE_10GBASER;
+	struct device *dev = &phydev->mdio.dev;
+	int calib_tries = 0;
+	u32 sds_num = 0;
+	int sds_mode;
+
+	if (dev->of_node) {
+		struct device_node *dn = dev->of_node;
+		int phy_addr = phydev->mdio.addr;
+
+		if (of_property_read_u32(dn, "sds", &sds_num))
+			sds_num = -1;
+		pr_info("%s: Port %d, SerDes is %d\n", __func__, phy_addr, sds_num);
+	} else {
+		dev_err(dev, "No DT node.\n");
+		return -EINVAL;
+	}
+
+	if (sds_num < 0)
+		return 0;
+
+	if (phy_mode != PHY_INTERFACE_MODE_10GBASER) /* TODO: for now we only patch 10GR SerDes */
+		return 0;
+
+	switch (phy_mode) {
+	case PHY_INTERFACE_MODE_HSGMII:
+		sds_mode = 0x12;
+		break;
+	case PHY_INTERFACE_MODE_1000BASEX:
+		sds_mode = 0x04;
+		break;
+	case PHY_INTERFACE_MODE_XGMII:
+		sds_mode = 0x10;
+		break;
+	case PHY_INTERFACE_MODE_10GBASER:
+		sds_mode = 0x1a;
+		break;
+	case PHY_INTERFACE_MODE_USXGMII:
+		sds_mode = 0x0d;
+		break;
+	default:
+		pr_err("%s: unknown serdes mode: %s\n", __func__, phy_modes(phy_mode));
+		return -EINVAL;
+	}
+
+	pr_info("%s CMU BAND is %d\n", __func__, rtl9300_sds_cmu_band_get(sds_num));
+
+	/* Turn Off Serdes */
+	rtl9300_sds_rst(sds_num, 0x1f);
+
+	pr_info("%s PATCHING SerDes %d\n", __func__, sds_num);
+	if (sds_num % 2) {
+		for (int i = 0; i < sizeof(rtl9300_a_sds_10gr_lane1) / sizeof(sds_config); ++i) {
+			rtl930x_write_sds_phy(sds_num, rtl9300_a_sds_10gr_lane1[i].page,
+			                      rtl9300_a_sds_10gr_lane1[i].reg,
+			                      rtl9300_a_sds_10gr_lane1[i].data);
+		}
+	} else {
+		for (int i = 0; i < sizeof(rtl9300_a_sds_10gr_lane0) / sizeof(sds_config); ++i) {
+			rtl930x_write_sds_phy(sds_num, rtl9300_a_sds_10gr_lane0[i].page,
+			                      rtl9300_a_sds_10gr_lane0[i].reg,
+			                      rtl9300_a_sds_10gr_lane0[i].data);
+		}
+	}
+
+	rtl9300_phy_enable_10g_1g(sds_num);
+
+	/* Disable MAC */
+	sw_w32_mask(0, 1, RTL930X_MAC_FORCE_MODE_CTRL);
+	mdelay(20);
+
+	/* ----> dal_longan_sds_mode_set */
+	pr_info("%s: Configuring RTL9300 SERDES %d, mode %02x\n", __func__, sds_num, sds_mode);
+
+	/* Configure link to MAC */
+	rtl9300_serdes_mac_link_config(sds_num, true, true);	/* MAC Construct */
+
+	/* Disable MAC */
+	sw_w32_mask(0, 1, RTL930X_MAC_FORCE_MODE_CTRL);
+	mdelay(20);
+
+	rtl9300_force_sds_mode(sds_num, PHY_INTERFACE_MODE_NA);
+
+	/* Re-Enable MAC */
+	sw_w32_mask(1, 0, RTL930X_MAC_FORCE_MODE_CTRL);
+
+	rtl9300_force_sds_mode(sds_num, phy_mode);
+
+	/* Do RX calibration */
+	do {
+		rtl9300_do_rx_calibration(sds_num, phy_mode);
+		calib_tries++;
+		mdelay(50);
+	} while (rtl9300_sds_check_calibration(sds_num, phy_mode) && calib_tries < 3);
+
+	if (calib_tries >= 3)
+		pr_err("%s CALIBTRATION FAILED\n", __func__);
+
+	rtl9300_sds_tx_config(sds_num, phy_mode);
+
+	/* The clock needs only to be configured on the FPGA implementation */
+
+	return 0;
+}

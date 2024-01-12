@@ -1,0 +1,4 @@
+static int rtl8367b_enable_vlan4k(struct rtl8366_smi *smi, int enable)
+{
+	return 0;
+}

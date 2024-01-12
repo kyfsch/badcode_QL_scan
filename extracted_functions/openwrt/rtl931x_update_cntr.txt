@@ -1,0 +1,10 @@
+void rtl931x_update_cntr(int r, int released)
+{
+	int pos = (r % 3) * 10;
+	u32 reg = RTL931X_DMA_IF_RX_RING_CNTR + ((r / 3) << 2);
+	u32 v = sw_r32(reg);
+
+	v = (v >> pos) & 0x3ff;
+	sw_w32_mask(0x3ff << pos, released << pos, reg);
+	sw_w32(v, reg);
+}

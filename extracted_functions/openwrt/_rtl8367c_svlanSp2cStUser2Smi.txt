@@ -1,0 +1,9 @@
+static void _rtl8367c_svlanSp2cStUser2Smi(rtl8367c_svlan_s2c_t *pUserSt, rtk_uint16 *pSmiSt)
+{
+    pSmiSt[0] |= (pUserSt->dstport & 0x0007);
+    pSmiSt[0] |= (pUserSt->svidx & 0x003F) << 3;
+    pSmiSt[0] |= ((pUserSt->dstport & 0x0008) >> 3) << 9;
+
+    pSmiSt[1] |= (pUserSt->vid & 0x0FFF);
+    pSmiSt[1] |= (pUserSt->valid & 0x0001) << 12;
+}

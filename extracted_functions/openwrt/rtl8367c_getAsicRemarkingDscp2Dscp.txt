@@ -1,0 +1,8 @@
+ret_t rtl8367c_getAsicRemarkingDscp2Dscp(rtk_uint32 dscp, rtk_uint32 *pRmkDscp)
+{
+    if(dscp > RTL8367C_DSCPMAX)
+        return RT_ERR_QOS_DSCP_VALUE;
+
+    return rtl8367c_getAsicRegBits(RTL8367C_QOS_DSCP_TO_DSCP_REG(dscp), RTL8367C_QOS_DSCP_TO_DSCP_MASK(dscp), pRmkDscp);
+
+}

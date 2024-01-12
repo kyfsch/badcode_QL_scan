@@ -1,0 +1,9 @@
+void board_putc(int ch)
+{
+	if (!UART_BASE)
+		return;
+
+	wait_xfered();
+	WRITEREG(UART_BASE + UART_FIFO_REG, ch);
+	wait_xfered();
+}

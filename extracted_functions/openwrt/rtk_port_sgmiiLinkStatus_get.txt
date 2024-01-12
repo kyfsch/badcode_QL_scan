@@ -1,0 +1,23 @@
+rtk_api_ret_t rtk_port_sgmiiLinkStatus_get(rtk_port_t port, rtk_data_t *pSignalDetect, rtk_data_t *pSync, rtk_port_linkStatus_t *pLink)
+{
+    rtk_uint32 ext_id;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    /* Check Port Valid */
+    if(rtk_switch_isSgmiiPort(port) != RT_ERR_OK)
+        return RT_ERR_PORT_ID;
+
+    if(NULL == pSignalDetect)
+        return RT_ERR_NULL_POINTER;
+
+    if(NULL == pSync)
+        return RT_ERR_NULL_POINTER;
+
+    if(NULL == pLink)
+        return RT_ERR_NULL_POINTER;
+
+    ext_id = port - 15;
+    return rtl8367c_getSdsLinkStatus(ext_id, (rtk_uint32 *)pSignalDetect, (rtk_uint32 *)pSync, (rtk_uint32 *)pLink);
+}

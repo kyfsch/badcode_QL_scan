@@ -1,0 +1,28 @@
+static void button_hotplug_work(struct work_struct *work)
+{
+	struct bh_event *event = container_of(work, struct bh_event, work);
+	int ret = 0;
+
+	event->skb = alloc_skb(BH_SKB_SIZE, GFP_KERNEL);
+	if (!event->skb)
+		goto out_free_event;
+
+	ret = bh_event_add_var(event, 0, "%s@", event->action);
+	if (ret)
+		goto out_free_skb;
+
+	ret = button_hotplug_fill_event(event);
+	if (ret)
+		goto out_free_skb;
+
+	NETLINK_CB(event->skb).dst_group = 1;
+	broadcast_uevent(event->skb, 0, 1, GFP_KERNEL);
+
+ out_free_skb:
+	if (ret) {
+		pr_err(PFX "work error %d\n", ret);
+		kfree_skb(event->skb);
+	}
+ out_free_event:
+	kfree(event);
+}

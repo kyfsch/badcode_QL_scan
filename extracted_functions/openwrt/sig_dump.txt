@@ -1,0 +1,4 @@
+void sig_dump(int sig)
+{
+	run_dump = 1;
+}

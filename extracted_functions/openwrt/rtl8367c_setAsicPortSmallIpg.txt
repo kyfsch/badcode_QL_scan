@@ -1,0 +1,7 @@
+ret_t rtl8367c_setAsicPortSmallIpg(rtk_uint32 port, rtk_uint32 enable)
+{
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    return rtl8367c_setAsicRegBit(RTL8367C_PORT_SMALL_IPG_REG(port), RTL8367C_PORT0_MISC_CFG_SMALL_TAG_IPG_OFFSET, enable);
+}

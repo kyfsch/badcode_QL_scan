@@ -1,0 +1,31 @@
+static int rtl8367_sw_get_port_mib(struct switch_dev *dev,
+			    const struct switch_attr *attr,
+			    struct switch_val *val)
+{	
+	int i, len = 0;
+	unsigned long long counter = 0;
+	static char mib_buf[4096];
+
+	if (val->port_vlan >= RTL8367C_NUM_PORTS)
+		return -EINVAL;
+
+	len += snprintf(mib_buf + len, sizeof(mib_buf) - len,
+			"Port %d MIB counters\n",
+			val->port_vlan);	
+
+	for (i = 0; i <rtl8367c_get_mibs_num(); ++i) {
+		len += snprintf(mib_buf + len, sizeof(mib_buf) - len,
+				"%-36s: ",rtl8367c_get_mib_name(i));
+		if (!rtl8367c_get_port_mib_counter(i, val->port_vlan,
+					       &counter))
+			len += snprintf(mib_buf + len, sizeof(mib_buf) - len,
+					"%llu\n", counter);
+		else
+			len += snprintf(mib_buf + len, sizeof(mib_buf) - len,
+					"%s\n", "N/A");
+	}
+
+	val->value.s = mib_buf;
+	val->len = len;
+	return 0;
+}

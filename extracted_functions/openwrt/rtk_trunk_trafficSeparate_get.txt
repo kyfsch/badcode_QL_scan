@@ -1,0 +1,20 @@
+rtk_api_ret_t rtk_trunk_trafficSeparate_get(rtk_trunk_group_t trk_gid, rtk_trunk_separateType_t *pSeparateType)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 enabled;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if (trk_gid != RTK_WHOLE_SYSTEM)
+        return RT_ERR_LA_TRUNK_ID;
+
+    if(NULL == pSeparateType)
+        return RT_ERR_NULL_POINTER;
+
+    if ((retVal = rtl8367c_getAsicTrunkingFlood(&enabled)) != RT_ERR_OK)
+        return retVal;
+
+    *pSeparateType = (enabled == ENABLED) ? SEPARATE_FLOOD : SEPARATE_NONE;
+    return RT_ERR_OK;
+}

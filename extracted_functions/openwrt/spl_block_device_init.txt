@@ -1,0 +1,4 @@
+void spl_block_device_init(void)
+{
+	ide_init();
+}

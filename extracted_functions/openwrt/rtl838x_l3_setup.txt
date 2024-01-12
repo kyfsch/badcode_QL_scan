@@ -1,0 +1,5 @@
+static int rtl838x_l3_setup(struct rtl838x_switch_priv *priv)
+{
+	/* Nothing to be done */
+	return 0;
+}

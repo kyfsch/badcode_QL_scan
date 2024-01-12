@@ -1,0 +1,4 @@
+static inline u16 nfi_read16(struct mt7621_nfc *nfc, u32 reg)
+{
+	return readw(nfc->nfi_regs + reg);
+}

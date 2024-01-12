@@ -1,0 +1,82 @@
+    fclose(fp);
+    return NULL;
+  }
+  tpw->instream = fp;
+  tpw->close_on_exit = close_flag;
+  tpw->state = FILE_ONLY;
+
+  return tpw;
+}
+
+_TYPE( struct t_pw * )
+t_openpwbyname(pwname)
+     const char * pwname;
+{
+  FILE * fp;
+  struct t_pw * t;
+
+  if(pwname == NULL)            /* Deprecated */
+    return t_openpw(NULL);
+
+  if((fp = fopen(pwname, "r")) == NULL)
+    return NULL;
+
+  t = t_openpw(fp);
+  t->close_on_exit = 1;
+  return t;
+}
+
+_TYPE( void )
+t_closepw(tpw)
+     struct t_pw * tpw;
+{
+  if(tpw->close_on_exit)
+    fclose(tpw->instream);
+  free(tpw);
+}
+
+_TYPE( void )
+t_rewindpw(tpw)
+     struct t_pw * tpw;
+{
+#ifdef ENABLE_YP
+  if(tpw->state == IN_NIS)
+    tpw->state = FILE_NIS;
+#endif
+  rewind(tpw->instream);
+}
+
+#ifdef ENABLE_YP
+static void
+savepwent(tpw, pwent)
+     struct t_pw * tpw;
+     struct t_pwent *pwent;
+{
+  tpw->pebuf.name = tpw->userbuf;
+  tpw->pebuf.password.data = tpw->pwbuf;
+  tpw->pebuf.salt.data = tpw->saltbuf;
+  strcpy(tpw->pebuf.name, pwent->name);
+  tpw->pebuf.password.len = pwent->password.len;
+  memcpy(tpw->pebuf.password.data, pwent->password.data, pwent->password.len);
+  tpw->pebuf.salt.len = pwent->salt.len;
+  memcpy(tpw->pebuf.salt.data, pwent->salt.data, pwent->salt.len);
+  tpw->pebuf.index = pwent->index;
+}
+#endif /* ENABLE_YP */
+
+_TYPE( struct t_pwent * )
+t_getpwbyname(tpw, user)
+     struct t_pw * tpw;
+     const char * user;
+{
+  char indexbuf[16];
+  char passbuf[MAXB64PARAMLEN];
+  char saltstr[MAXB64SALTLEN];
+  char username[MAXUSERLEN];
+#ifdef ENABLE_YP
+  struct t_passwd * nisent;
+#endif
+
+  t_rewindpw(tpw);
+
+  while(t_nextfield(tpw->instream, username, MAXUSERLEN) > 0) {

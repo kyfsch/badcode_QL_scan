@@ -1,0 +1,4 @@
+int br_foreach_bridge(int (*iterator)(const char *, void *), void *arg)
+{
+	return new_foreach_bridge(iterator, arg);
+}

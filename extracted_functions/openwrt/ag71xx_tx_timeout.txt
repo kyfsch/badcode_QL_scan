@@ -1,0 +1,9 @@
+static void ag71xx_tx_timeout(struct net_device *dev, unsigned int txqueue)
+{
+	struct ag71xx *ag = netdev_priv(dev);
+
+	if (netif_msg_tx_err(ag))
+		pr_info("%s: tx timeout\n", ag->dev->name);
+
+	schedule_delayed_work(&ag->restart_work, 1);
+}

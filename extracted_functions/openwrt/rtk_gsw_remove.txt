@@ -1,0 +1,7 @@
+static int rtk_gsw_remove(struct platform_device *pdev)
+{
+	platform_set_drvdata(pdev, NULL);
+	gsw_debug_proc_exit();
+
+	return 0;
+}

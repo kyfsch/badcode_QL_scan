@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicIGMPAllowDynamicRouterPort(rtk_uint32 *pPmsk)
+{
+    return rtl8367c_getAsicReg(RTL8367C_REG_IGMP_MLD_CFG4, pPmsk);
+}

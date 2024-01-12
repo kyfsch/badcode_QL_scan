@@ -1,0 +1,91 @@
+static int bcm6348_iudma_probe(struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
+	struct device_node *node = dev->of_node;
+	struct bcm6348_iudma *iudma;
+	unsigned i;
+	int num_resets;
+	int ret;
+
+	iudma = devm_kzalloc(dev, sizeof(*iudma), GFP_KERNEL);
+	if (!iudma)
+		return -ENOMEM;
+
+	if (of_property_read_u32(node, "dma-channels", &iudma->dma_channels))
+		return -ENODEV;
+
+	iudma->dma_base = devm_platform_ioremap_resource_byname(pdev, "dma");
+	if (IS_ERR_OR_NULL(iudma->dma_base))
+		return PTR_ERR(iudma->dma_base);
+
+	iudma->dma_chan = devm_platform_ioremap_resource_byname(pdev,
+								"dma-channels");
+	if (IS_ERR_OR_NULL(iudma->dma_chan))
+		return PTR_ERR(iudma->dma_chan);
+
+	iudma->dma_sram = devm_platform_ioremap_resource_byname(pdev,
+								"dma-sram");
+	if (IS_ERR_OR_NULL(iudma->dma_sram))
+		return PTR_ERR(iudma->dma_sram);
+
+	iudma->num_clocks = of_clk_get_parent_count(node);
+	if (iudma->num_clocks) {
+		iudma->clock = devm_kcalloc(dev, iudma->num_clocks,
+					    sizeof(struct clk *), GFP_KERNEL);
+		if (IS_ERR_OR_NULL(iudma->clock))
+			return PTR_ERR(iudma->clock);
+	}
+	for (i = 0; i < iudma->num_clocks; i++) {
+		iudma->clock[i] = of_clk_get(node, i);
+		if (IS_ERR_OR_NULL(iudma->clock[i])) {
+			dev_err(dev, "error getting iudma clock %d\n", i);
+			return PTR_ERR(iudma->clock[i]);
+		}
+
+		ret = clk_prepare_enable(iudma->clock[i]);
+		if (ret) {
+			dev_err(dev, "error enabling iudma clock %d\n", i);
+			return ret;
+		}
+	}
+
+	num_resets = of_count_phandle_with_args(node, "resets",
+						"#reset-cells");
+	if (num_resets > 0)
+		iudma->num_resets = num_resets;
+	else
+		iudma->num_resets = 0;
+	if (iudma->num_resets) {
+		iudma->reset = devm_kcalloc(dev, iudma->num_resets,
+					    sizeof(struct reset_control *),
+					    GFP_KERNEL);
+		if (IS_ERR_OR_NULL(iudma->reset))
+			return PTR_ERR(iudma->reset);
+	}
+	for (i = 0; i < iudma->num_resets; i++) {
+		iudma->reset[i] = devm_reset_control_get_by_index(dev, i);
+		if (IS_ERR_OR_NULL(iudma->reset[i])) {
+			dev_err(dev, "error getting iudma reset %d\n", i);
+			return PTR_ERR(iudma->reset[i]);
+		}
+
+		ret = reset_control_reset(iudma->reset[i]);
+		if (ret) {
+			dev_err(dev, "error performing iudma reset %d\n", i);
+			return ret;
+		}
+	}
+
+	dma_writel(iudma, 0, DMA_CFG_REG);
+	for (i = 0; i < iudma->dma_channels; i++)
+		bcm6348_iudma_chan_stop(iudma, i);
+	dma_writel(iudma, DMA_CFG_EN_MASK, DMA_CFG_REG);
+
+	spin_lock_init(&iudma->dma_base_lock);
+
+	dev_info(dev, "bcm6348-iudma @ 0x%px\n", iudma->dma_base);
+
+	platform_set_drvdata(pdev, iudma);
+
+	return bcm6348_iudma_drivers_register(pdev);
+}

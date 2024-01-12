@@ -1,0 +1,5 @@
+ret_t rtl8367c_getAsicSvlanIngressUnmatch(rtk_uint32* pMode)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_SVLAN_CFG, RTL8367C_VS_UNMAT_MASK, pMode);
+
+}

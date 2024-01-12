@@ -1,0 +1,184 @@
+static int bcm6348_emac_probe(struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
+	struct device_node *node = dev->of_node;
+	struct device_node *dma_node;
+	struct platform_device *dma_pdev;
+	struct bcm6348_emac *emac;
+	struct bcm6348_iudma *iudma;
+	struct net_device *ndev;
+	unsigned char dev_addr[ETH_ALEN];
+	unsigned i;
+	int num_resets;
+	int ret;
+
+	dma_node = of_parse_phandle(node, "brcm,iudma", 0);
+	if (!dma_node)
+		return -EINVAL;
+
+	dma_pdev = of_find_device_by_node(dma_node);
+	of_node_put(dma_node);
+	if (!dma_pdev)
+		return -EINVAL;
+
+	iudma = platform_get_drvdata(dma_pdev);
+	if (!iudma)
+		return -EPROBE_DEFER;
+
+	ndev = devm_alloc_etherdev(dev, sizeof(*emac));
+	if (!ndev)
+		return -ENOMEM;
+
+	platform_set_drvdata(pdev, ndev);
+	SET_NETDEV_DEV(ndev, dev);
+
+	emac = netdev_priv(ndev);
+	emac->iudma = iudma;
+	emac->pdev = pdev;
+	emac->net_dev = ndev;
+
+	emac->base = devm_platform_ioremap_resource(pdev, 0);
+	if (IS_ERR_OR_NULL(emac->base))
+		return PTR_ERR(emac->base);
+
+	ndev->irq = of_irq_get_byname(node, "emac");
+	if (!ndev->irq)
+		return -ENODEV;
+
+	emac->irq_rx = of_irq_get_byname(node, "rx");
+	if (!emac->irq_rx)
+		return -ENODEV;
+
+	emac->irq_tx = of_irq_get_byname(node, "tx");
+	if (!emac->irq_tx)
+		return -ENODEV;
+
+	if (of_property_read_u32(node, "dma-rx", &emac->rx_chan))
+		return -ENODEV;
+
+	if (of_property_read_u32(node, "dma-tx", &emac->tx_chan))
+		return -ENODEV;
+
+	emac->ext_mii = of_property_read_bool(node, "brcm,external-mii");
+
+	emac->rx_ring_size = ENET_DEF_RX_DESC;
+	emac->tx_ring_size = ENET_DEF_TX_DESC;
+	emac->copybreak = ENET_DEF_CPY_BREAK;
+
+	emac->old_link = 0;
+	emac->old_duplex = -1;
+	emac->old_pause = -1;
+
+	of_get_mac_address(node, dev_addr);
+	if (is_valid_ether_addr(dev_addr)) {
+		dev_addr_set(ndev, dev_addr);
+		dev_info(dev, "mtd mac %pM\n", dev_addr);
+	} else {
+		eth_hw_addr_random(ndev);
+		dev_info(dev, "random mac\n");
+	}
+
+	emac->rx_skb_size = ALIGN(ndev->mtu + ENET_MTU_OVERHEAD,
+				  ENET_DMA_MAXBURST * 4);
+
+	emac->num_clocks = of_clk_get_parent_count(node);
+	if (emac->num_clocks) {
+		emac->clock = devm_kcalloc(dev, emac->num_clocks,
+					   sizeof(struct clk *), GFP_KERNEL);
+		if (IS_ERR_OR_NULL(emac->clock))
+			return PTR_ERR(emac->clock);
+	}
+	for (i = 0; i < emac->num_clocks; i++) {
+		emac->clock[i] = of_clk_get(node, i);
+		if (IS_ERR_OR_NULL(emac->clock[i])) {
+			dev_err(dev, "error getting emac clock %d\n", i);
+			return PTR_ERR(emac->clock[i]);
+		}
+
+		ret = clk_prepare_enable(emac->clock[i]);
+		if (ret) {
+			dev_err(dev, "error enabling emac clock %d\n", i);
+			return ret;
+		}
+	}
+
+	num_resets = of_count_phandle_with_args(node, "resets",
+						"#reset-cells");
+	if (num_resets > 0)
+		emac->num_resets = num_resets;
+	else
+		emac->num_resets = 0;
+	if (emac->num_resets) {
+		emac->reset = devm_kcalloc(dev, emac->num_resets,
+					   sizeof(struct reset_control *),
+					   GFP_KERNEL);
+		if (IS_ERR_OR_NULL(emac->reset))
+			return PTR_ERR(emac->reset);
+		
+	}
+	for (i = 0; i < emac->num_resets; i++) {
+		emac->reset[i] = devm_reset_control_get_by_index(dev, i);
+		if (IS_ERR_OR_NULL(emac->reset[i])) {
+			dev_err(dev, "error getting emac reset %d\n", i);
+			return PTR_ERR(emac->reset[i]);
+		}
+
+		ret = reset_control_reset(emac->reset[i]);
+		if (ret) {
+			dev_err(dev, "error performing emac reset %d\n", i);
+			return ret;
+		}
+	}
+
+	/* do minimal hardware init to be able to probe mii bus */
+	bcm6348_emac_hw_preinit(emac);
+
+	ret = bcm6348_emac_mdio_init(emac, node);
+	if (ret)
+		return ret;
+
+	spin_lock_init(&emac->rx_lock);
+
+	timer_setup(&emac->rx_timeout, bcm6348_emac_refill_rx_timer, 0);
+
+	/* zero mib counters */
+	for (i = 0; i < ENET_MIB_REG_COUNT; i++)
+		emac_writel(emac, 0, ENET_MIB_REG(i));
+
+	/* register netdevice */
+	ndev->netdev_ops = &bcm6348_emac_ops;
+	ndev->min_mtu = ETH_ZLEN - ETH_HLEN;
+	ndev->mtu = ETH_DATA_LEN - VLAN_ETH_HLEN;
+	ndev->max_mtu = ENET_MAX_MTU - VLAN_ETH_HLEN;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
+	netif_napi_add(ndev, &emac->napi, bcm6348_emac_poll);
+#else
+	netif_napi_add(ndev, &emac->napi, bcm6348_emac_poll, 16);
+#endif
+	SET_NETDEV_DEV(ndev, dev);
+
+	ret = devm_register_netdev(dev, ndev);
+	if (ret)
+		goto out_disable_clk;
+
+	netif_carrier_off(ndev);
+
+	ndev->phydev = of_phy_get_and_connect(ndev, node,
+					      bcm6348_emac_adjust_phy);
+	if (IS_ERR_OR_NULL(ndev->phydev))
+		dev_warn(dev, "PHY not found!\n");
+
+	dev_info(dev, "%s at 0x%px, IRQ %d\n", ndev->name, emac->base,
+		 ndev->irq);
+
+	return 0;
+
+out_disable_clk:
+	for (i = 0; i < emac->num_resets; i++)
+		reset_control_assert(emac->reset[i]);
+
+	for (i = 0; i < emac->num_clocks; i++)
+		clk_disable_unprepare(emac->clock[i]);
+
+	return ret;
+}

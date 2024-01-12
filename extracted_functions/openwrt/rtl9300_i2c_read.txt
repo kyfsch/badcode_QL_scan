@@ -1,0 +1,4 @@
+static int rtl9300_i2c_read(struct rtl9300_i2c *i2c, u8 *buf, int len)
+{
+	return i2c_read(REG(i2c, RTL9300_I2C_DATA_WORD0), buf, len);
+}

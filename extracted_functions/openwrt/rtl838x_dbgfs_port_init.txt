@@ -1,0 +1,45 @@
+static int rtl838x_dbgfs_port_init(struct dentry *parent, struct rtl838x_switch_priv *priv,
+				   int port)
+{
+	struct dentry *port_dir;
+	struct debugfs_regset32 *port_ctrl_regset;
+
+	port_dir = debugfs_create_dir(priv->ports[port].dp->name, parent);
+
+	if (priv->family_id == RTL8380_FAMILY_ID) {
+		debugfs_create_x32("storm_rate_uc", 0644, port_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL838X_STORM_CTRL_PORT_UC(port)));
+
+		debugfs_create_x32("storm_rate_mc", 0644, port_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL838X_STORM_CTRL_PORT_MC(port)));
+
+		debugfs_create_x32("storm_rate_bc", 0644, port_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL838X_STORM_CTRL_PORT_BC(port)));
+	} else {
+		debugfs_create_x32("storm_rate_uc", 0644, port_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL839X_STORM_CTRL_PORT_UC_0(port)));
+
+		debugfs_create_x32("storm_rate_mc", 0644, port_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL839X_STORM_CTRL_PORT_MC_0(port)));
+
+		debugfs_create_x32("storm_rate_bc", 0644, port_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL839X_STORM_CTRL_PORT_BC_0(port)));
+	}
+
+	debugfs_create_u32("id", 0444, port_dir, (u32 *)&priv->ports[port].dp->index);
+
+	port_ctrl_regset = devm_kzalloc(priv->dev, sizeof(*port_ctrl_regset), GFP_KERNEL);
+	if (!port_ctrl_regset)
+		return -ENOMEM;
+
+	port_ctrl_regset->regs = port_ctrl_regs;
+	port_ctrl_regset->nregs = ARRAY_SIZE(port_ctrl_regs);
+	port_ctrl_regset->base = (void *)(RTL838X_SW_BASE + (port << 2));
+	debugfs_create_regset32("port_ctrl", 0400, port_dir, port_ctrl_regset);
+
+	debugfs_create_file("stp_state", 0600, port_dir, &priv->ports[port], &stp_state_fops);
+	debugfs_create_file("age_out", 0600, port_dir, &priv->ports[port], &age_out_fops);
+	debugfs_create_file("port_egress_rate", 0600, port_dir, &priv->ports[port],
+			    &port_egress_fops);
+	return 0;
+}

@@ -1,0 +1,45 @@
+static int aw9523_drive_reset_gpio(struct aw9523 *awi)
+{
+	unsigned int chip_id;
+	int ret;
+
+	/*
+	 * If the chip is already configured for any reason, then we
+	 * will probably succeed in sending the soft reset signal to
+	 * the hardware through I2C: this operation takes less time
+	 * compared to a full HW reset and it gives the same results.
+	 */
+	ret = regmap_write(awi->regmap, AW9523_REG_SOFT_RESET, 0);
+	if (ret == 0)
+		goto done;
+
+	dev_dbg(awi->dev, "Cannot execute soft reset: trying hard reset\n");
+	ret = gpiod_direction_output(awi->reset_gpio, 0);
+	if (ret)
+		return ret;
+
+	/* The reset pulse has to be longer than 20uS due to deglitch */
+	usleep_range(AW9523_HW_RESET_US, AW9523_HW_RESET_US + 1);
+
+	ret = gpiod_direction_output(awi->reset_gpio, 1);
+	if (ret)
+		return ret;
+done:
+	/* The HW needs at least 1uS to reliably recover after reset */
+	usleep_range(AW9523_HW_RESET_RECOVERY_US,
+		     AW9523_HW_RESET_RECOVERY_US + 1);
+
+	/* Check the ChipID */
+	ret = regmap_read(awi->regmap, AW9523_REG_CHIPID, &chip_id);
+	if (ret) {
+		dev_err(awi->dev, "Cannot read Chip ID: %d\n", ret);
+		return ret;
+	}
+	if (chip_id != AW9523_VAL_EXPECTED_CHIPID) {
+		dev_err(awi->dev, "Bad ChipID; read 0x%x, expected 0x%x\n",
+			chip_id, AW9523_VAL_EXPECTED_CHIPID);
+		return -EINVAL;
+	}
+
+	return 0;
+}

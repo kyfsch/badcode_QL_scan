@@ -1,0 +1,7 @@
+void rtl9300_do_rx_calibration_3(int sds_num, phy_interface_t phy_mode)
+{
+	rtl9300_sds_rxcal_3_1(sds_num, phy_mode);
+
+	if (phy_mode == PHY_INTERFACE_MODE_10GBASER || phy_mode == PHY_INTERFACE_MODE_1000BASEX)
+		rtl9300_sds_rxcal_3_2(sds_num, phy_mode);
+}

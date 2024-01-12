@@ -1,0 +1,159 @@
+ret_t rtl8367c_getAsicPortForceLinkExt(rtk_uint32 id, rtl8367c_port_ability_t *pPortAbility)
+{
+    rtk_uint32  reg_data, regValue, type;
+    rtk_uint32  sgmiiSel;
+    rtk_uint32  hsgmiiSel;
+    ret_t       retVal;
+
+    /* Invalid input parameter */
+    if(id >= RTL8367C_EXTNO)
+        return RT_ERR_OUT_OF_RANGE;
+    /*cfg_magic_id  &  get chip_id*/
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0249)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_getAsicReg(0x1300, &regValue)) != RT_ERR_OK)
+        return retVal;
+
+    if((retVal = rtl8367c_setAsicReg(0x13C2, 0x0000)) != RT_ERR_OK)
+        return retVal;
+
+    type = 0;
+
+    switch (regValue)
+    {
+        case 0x0276:
+        case 0x0597:
+        case 0x6367:
+            type = 1;
+            break;
+        case 0x0652:
+        case 0x6368:
+            type = 2;
+            break;
+        case 0x0801:
+        case 0x6511:
+            type = 3;
+            break;
+        default:
+            return RT_ERR_FAILED;
+    }
+
+    if (1 == type)
+    {
+        if(1 == id)
+        {
+            if((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_MAC8_SEL_SGMII_OFFSET, &sgmiiSel)) != RT_ERR_OK)
+                return retVal;
+
+            if((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_MAC8_SEL_HSGMII_OFFSET, &hsgmiiSel)) != RT_ERR_OK)
+                return retVal;
+
+            if( (sgmiiSel == 1) || (hsgmiiSel == 1) )
+            {
+                memset(pPortAbility, 0x00, sizeof(rtl8367c_port_ability_t));
+                pPortAbility->forcemode = 1;
+
+                if((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_FDUP_OFFSET, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+
+                pPortAbility->duplex = reg_data;
+
+                if((retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_SPD_MASK, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+
+                pPortAbility->speed = reg_data;
+
+                if((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_LINK_OFFSET, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+
+                pPortAbility->link = reg_data;
+
+                if((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_TXFC_OFFSET, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+
+                pPortAbility->txpause = reg_data;
+
+                if((retVal = rtl8367c_getAsicRegBit(RTL8367C_REG_SDS_MISC, RTL8367C_CFG_SGMII_RXFC_OFFSET, &reg_data)) != RT_ERR_OK)
+                    return retVal;
+
+                pPortAbility->rxpause = reg_data;
+
+                return RT_ERR_OK;
+            }
+        }
+
+        if(0 == id || 1 == id)
+            retVal = rtl8367c_getAsicReg(RTL8367C_REG_DIGITAL_INTERFACE0_FORCE+id, &reg_data);
+        else
+            retVal = rtl8367c_getAsicReg(RTL8367C_REG_DIGITAL_INTERFACE2_FORCE, &reg_data);
+
+        if(retVal != RT_ERR_OK)
+            return retVal;
+
+        pPortAbility->forcemode = (reg_data >> 12) & 0x0001;
+        pPortAbility->mstfault  = (reg_data >> 9) & 0x0001;
+        pPortAbility->mstmode   = (reg_data >> 8) & 0x0001;
+        pPortAbility->nway      = (reg_data >> 7) & 0x0001;
+        pPortAbility->txpause   = (reg_data >> 6) & 0x0001;
+        pPortAbility->rxpause   = (reg_data >> 5) & 0x0001;
+        pPortAbility->link      = (reg_data >> 4) & 0x0001;
+        pPortAbility->duplex    = (reg_data >> 2) & 0x0001;
+        pPortAbility->speed     = reg_data & 0x0003;
+    }
+    else if (2 == type)
+    {
+        if (id == 1)
+        {
+            if ((retVal = rtl8367c_getAsicReg(0x1311, &reg_data))!=RT_ERR_OK)
+                return retVal;
+
+            pPortAbility->forcemode = (reg_data >> 12) & 1;
+            pPortAbility->duplex = (reg_data >> 2) & 1;
+            pPortAbility->link = (reg_data >> 4) & 1;
+            pPortAbility->speed = reg_data & 3;
+            pPortAbility->rxpause = (reg_data >> 5) & 1;
+            pPortAbility->txpause = (reg_data >> 6) & 1;
+        }
+        else if (2 == id)
+        {
+            if ((retVal = rtl8367c_getAsicReg(0x13c4, &reg_data))!=RT_ERR_OK)
+                return retVal;
+
+            pPortAbility->forcemode = (reg_data >> 12) & 1;
+            pPortAbility->duplex = (reg_data >> 2) & 1;
+            pPortAbility->link = (reg_data >> 4) & 1;
+            pPortAbility->speed = reg_data & 3;
+            pPortAbility->rxpause = (reg_data >> 5) & 1;
+            pPortAbility->txpause = (reg_data >> 6) & 1;
+        }
+    }
+    else if (3 == type)
+    {
+        if (id == 1)
+        {
+            if ((retVal = rtl8367c_getAsicReg(0x1311, &reg_data))!=RT_ERR_OK)
+                return retVal;
+
+            pPortAbility->forcemode = (reg_data >> 12) & 1;
+            pPortAbility->duplex = (reg_data >> 2) & 1;
+            pPortAbility->link = (reg_data >> 4) & 1;
+            pPortAbility->speed = reg_data & 3;
+            pPortAbility->rxpause = (reg_data >> 5) & 1;
+            pPortAbility->txpause = (reg_data >> 6) & 1;
+        }
+        else if (2 == id)
+        {
+            if ((retVal = rtl8367c_getAsicReg(0x13c4, &reg_data))!=RT_ERR_OK)
+                return retVal;
+
+            pPortAbility->forcemode = (reg_data >> 12) & 1;
+            pPortAbility->duplex = (reg_data >> 2) & 1;
+            pPortAbility->link = (reg_data >> 4) & 1;
+            pPortAbility->speed = reg_data & 3;
+            pPortAbility->rxpause = (reg_data >> 5) & 1;
+            pPortAbility->txpause = (reg_data >> 6) & 1;
+        }
+    }
+    return RT_ERR_OK;
+}

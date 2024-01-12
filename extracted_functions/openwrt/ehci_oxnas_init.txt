@@ -1,0 +1,8 @@
+static int __init ehci_oxnas_init(void)
+{
+	if (usb_disabled())
+		return -ENODEV;
+
+	ehci_init_driver(&oxnas_hc_driver, &oxnas_overrides);
+	return platform_driver_register(&ehci_oxnas_driver);
+}

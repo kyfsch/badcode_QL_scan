@@ -1,0 +1,3 @@
+void lowlevel_init(void)
+{
+}

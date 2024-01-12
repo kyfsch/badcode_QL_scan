@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsicSystemLutLearnOverAct(rtk_uint32 *pAction)
+{
+    if(NULL == pAction)
+        return RT_ERR_NULL_POINTER;
+
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_LUT_LRN_SYS_LMT_CTRL, RTL8367C_LUT_SYSTEM_LEARN_OVER_ACT_MASK, pAction);
+}

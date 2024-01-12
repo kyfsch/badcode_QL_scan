@@ -1,0 +1,27 @@
+static const char *yysymbol_name (yysymbol_kind_t yysymbol) YY_ATTRIBUTE_UNUSED;
+
+/* YYTNAME[SYMBOL-NUM] -- String name of the symbol SYMBOL-NUM.
+   First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
+static const char *const yytname[] =
+{
+  "\"end of file\"", "error", "\"invalid token\"", "T_HELPTEXT", "T_WORD",
+  "T_WORD_QUOTE", "T_BOOL", "T_CHOICE", "T_CLOSE_PAREN", "T_COLON_EQUAL",
+  "T_COMMENT", "T_CONFIG", "T_DEFAULT", "T_DEF_BOOL", "T_DEF_TRISTATE",
+  "T_DEPENDS", "T_ENDCHOICE", "T_ENDIF", "T_ENDMENU", "T_HELP", "T_HEX",
+  "T_IF", "T_IMPLY", "T_INT", "T_MAINMENU", "T_MENU", "T_MENUCONFIG",
+  "T_MODULES", "T_ON", "T_OPEN_PAREN", "T_OPTIONAL", "T_PLUS_EQUAL",
+  "T_PROMPT", "T_RANGE", "T_RESET", "T_SELECT", "T_SOURCE", "T_STRING",
+  "T_TRISTATE", "T_VISIBLE", "T_EOL", "T_ASSIGN_VAL", "T_OR", "T_AND",
+  "T_EQUAL", "T_UNEQUAL", "T_LESS", "T_LESS_EQUAL", "T_GREATER",
+  "T_GREATER_EQUAL", "T_NOT", "$accept", "input", "mainmenu_stmt",
+  "stmt_list", "stmt_list_in_choice", "config_entry_start", "config_stmt",
+  "menuconfig_entry_start", "menuconfig_stmt", "config_option_list",
+  "config_option", "choice", "choice_entry", "choice_end", "choice_stmt",
+  "choice_option_list", "choice_option", "type", "logic_type", "default",
+  "if_entry", "if_end", "if_stmt", "if_stmt_in_choice", "menu",
+  "menu_entry", "menu_end", "menu_stmt", "menu_option_list", "source_stmt",
+  "comment", "comment_stmt", "comment_option_list", "help_start", "help",
+  "depends", "visible", "prompt_stmt_opt", "end", "if_expr", "expr",
+  "nonconst_symbol", "symbol", "word_opt", "assignment_stmt", "assign_op",
+  "assign_val", YY_NULLPTR
+};

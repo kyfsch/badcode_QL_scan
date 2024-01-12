@@ -1,0 +1,10 @@
+IFX_MEI_IoctlCopyTo (int from_kernel, char *dest, char *from, int size)
+{
+	int ret = 0;
+
+	if (!from_kernel)
+		ret = copy_to_user ((char *) dest, (char *) from, size);
+	else
+		ret = (int)memcpy ((char *) dest, (char *) from, size);
+	return ret;
+}

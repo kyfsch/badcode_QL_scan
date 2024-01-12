@@ -1,0 +1,21 @@
+handle_send_auth(struct ead_packet *pkt, int len, int *nstate)
+{
+	struct ead_msg *msg = &pkt->msg;
+	struct ead_msg_auth *auth = EAD_DATA(msg, auth);
+
+	if (t_serververify(ts, auth->data) != 0) {
+		DEBUG(2, "Client authentication failed\n");
+		*nstate = EAD_TYPE_SET_USERNAME;
+		return false;
+	}
+
+	msg = &pktbuf->msg;
+	auth = EAD_DATA(msg, auth);
+	msg->len = htonl(sizeof(struct ead_msg_auth));
+
+	DEBUG(2, "Client authentication successful\n");
+	memcpy(auth->data, t_serverresponse(ts), sizeof(auth->data));
+
+	*nstate = EAD_TYPE_SEND_CMD;
+	return true;
+}

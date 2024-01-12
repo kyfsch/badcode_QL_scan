@@ -1,0 +1,7 @@
+ReadRegLong (u32 addr)
+{
+	// u32  rd_val;
+	//rd_val = *((volatile u32 *)(addr));
+	// return rd_val;
+	return IFX_MEI_READ_REGISTER_L (addr);
+}

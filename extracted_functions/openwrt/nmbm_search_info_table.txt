@@ -1,0 +1,24 @@
+static bool nmbm_search_info_table(struct nmbm_instance *ni, uint32_t ba,
+				   uint32_t limit, uint32_t *table_start_ba,
+				   uint32_t *table_end_ba,
+				   uint32_t *write_count,
+				   uint32_t *mapping_blocks_top_ba,
+				   bool table_loaded)
+{
+	bool success;
+
+	while (ba < limit - size2blk(ni, ni->info_table_size)) {
+		success = nmbm_try_load_info_table(ni, ba, table_end_ba,
+						   write_count,
+						   mapping_blocks_top_ba,
+						   table_loaded);
+		if (success) {
+			*table_start_ba = ba;
+			return true;
+		}
+
+		ba++;
+	}
+
+	return false;
+}

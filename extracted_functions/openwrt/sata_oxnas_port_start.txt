@@ -1,0 +1,52 @@
+static int sata_oxnas_port_start(struct ata_port *ap)
+{
+	struct sata_oxnas_host_priv *host_priv = ap->host->private_data;
+	struct device *dev = ap->host->dev;
+	struct sata_oxnas_port_priv *pp;
+	void *mem;
+	dma_addr_t mem_dma;
+
+	DPRINTK("ENTER\n");
+
+	pp = kzalloc(sizeof(*pp), GFP_KERNEL);
+	if (!pp)
+		return -ENOMEM;
+
+	pp->port_base = host_priv->port_base +
+			(ap->port_no ? PORT_SIZE : 0);
+	pp->dmactl_base = host_priv->dmactl_base +
+			 (ap->port_no ? DMA_CORESIZE : 0);
+	pp->sgdma_base = host_priv->sgdma_base +
+			 (ap->port_no ? SGDMA_CORESIZE : 0);
+	pp->core_base = host_priv->core_base;
+
+	/* preallocated */
+	if (host_priv->dma_size >= SATA_OXNAS_DMA_SIZE * host_priv->n_ports) {
+		DPRINTK("using preallocated DMA\n");
+		mem_dma = host_priv->dma_base +
+				(ap->port_no ? SATA_OXNAS_DMA_SIZE : 0);
+		mem = ioremap(mem_dma, SATA_OXNAS_DMA_SIZE);
+	} else {
+		mem = dma_alloc_coherent(dev, SATA_OXNAS_DMA_SIZE, &mem_dma,
+					 GFP_KERNEL);
+	}
+	if (!mem)
+		goto err_ret;
+
+	pp->sgdma_request_pa = mem_dma;
+	pp->sgdma_request = mem;
+
+	ap->bmdma_prd_dma = mem_dma + sizeof(struct sgdma_request);
+	ap->bmdma_prd = mem + sizeof(struct sgdma_request);
+
+	ap->private_data = pp;
+
+	sata_oxnas_post_reset_init(ap);
+
+	return 0;
+
+err_ret:
+	kfree(pp);
+	return -ENOMEM;
+
+}

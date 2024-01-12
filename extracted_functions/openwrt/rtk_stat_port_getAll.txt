@@ -1,0 +1,45 @@
+rtk_api_ret_t rtk_stat_port_getAll(rtk_port_t port, rtk_stat_port_cntr_t *pPort_cntrs)
+{
+    rtk_api_ret_t retVal;
+    rtk_uint32 mibIndex;
+    rtk_uint64 mibCounter;
+    rtk_uint32 *accessPtr;
+    /* address offset to MIBs counter */
+    CONST_T rtk_uint16 mibLength[STAT_PORT_CNTR_END]= {
+        2,1,1,1,1,1,1,1,1,
+        2,1,1,1,1,1,1,1,1,1,1,
+        2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pPort_cntrs)
+        return RT_ERR_NULL_POINTER;
+
+    /* Check port valid */
+    RTK_CHK_PORT_VALID(port);
+
+    accessPtr = (rtk_uint32*)pPort_cntrs;
+    for (mibIndex=0;mibIndex<STAT_PORT_CNTR_END;mibIndex++)
+    {
+        if ((retVal = rtk_stat_port_get(port, mibIndex, &mibCounter)) != RT_ERR_OK)
+        {
+            if (retVal == RT_ERR_CHIP_NOT_SUPPORTED)
+                mibCounter = 0;
+            else
+                return retVal;
+        }
+
+        if (2 == mibLength[mibIndex])
+            *(rtk_uint64*)accessPtr = mibCounter;
+        else if (1 == mibLength[mibIndex])
+            *accessPtr = mibCounter;
+        else
+            return RT_ERR_FAILED;
+
+        accessPtr+=mibLength[mibIndex];
+    }
+
+    return RT_ERR_OK;
+}

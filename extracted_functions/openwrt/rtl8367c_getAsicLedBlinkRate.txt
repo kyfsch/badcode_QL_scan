@@ -1,0 +1,4 @@
+ret_t rtl8367c_getAsicLedBlinkRate(rtk_uint32* pBlinkRate)
+{
+    return rtl8367c_getAsicRegBits(RTL8367C_REG_LED_MODE, RTL8367C_SEL_LEDRATE_MASK, pBlinkRate);
+}

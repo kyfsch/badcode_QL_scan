@@ -1,0 +1,3 @@
+static inline void m_u32(const char *id, uint32_t value) {
+	blobmsg_add_u64(&b, id, value);
+}

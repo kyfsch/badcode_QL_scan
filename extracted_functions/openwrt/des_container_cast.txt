@@ -1,0 +1,5 @@
+static inline struct des_container *des_container_cast(
+                        struct ablkcipher_request *areq)
+{
+    return container_of(areq, struct des_container, arequest);
+}

@@ -1,0 +1,19 @@
+  x = BigIntegerFromBytes(dig, sizeof(dig));
+
+  BigIntegerModExp(v, g, x, n);
+  tpw->pebuf.password.len = BigIntegerToBytes(v, tpw->pebuf.password.data);
+
+  BigIntegerFree(v);
+  BigIntegerFree(x);
+  BigIntegerFree(g);
+  BigIntegerFree(n);
+
+  return &tpw->pebuf;
+}
+
+int
+t_pwcopy(pwdest, pwsrc, diff)
+     FILE * pwdest;
+     FILE * pwsrc;
+     struct t_pwent * diff;
+{

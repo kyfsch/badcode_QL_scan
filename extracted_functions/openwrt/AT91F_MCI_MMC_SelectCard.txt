@@ -1,0 +1,28 @@
+int AT91F_MCI_MMC_SelectCard(AT91PS_MciDevice pMCI_Device, unsigned int relative_card_address)
+{
+    int status;
+	
+	//* Check if the MMC card chosen is already the selected one
+	status = AT91F_MCI_GetStatus(pMCI_Device,relative_card_address);
+
+	if (status < 0)
+		return AT91C_CARD_SELECTED_ERROR;
+
+	if ((status & AT91C_SR_CARD_SELECTED) == AT91C_SR_CARD_SELECTED)
+		return AT91C_CARD_SELECTED_OK;
+
+	//* Search for the MMC Card to be selected, status = the Corresponding Device Number
+	status = 0;
+	while( (pMCI_Device->pMCI_DeviceFeatures[status].Relative_Card_Address != relative_card_address)
+		   && (status < AT91C_MAX_MCI_CARDS) )
+		status++;
+
+	if (status > AT91C_MAX_MCI_CARDS)
+    	return AT91C_CARD_SELECTED_ERROR;
+
+    if (AT91F_MCI_SendCommand( pMCI_Device,
+    								   AT91C_SEL_DESEL_CARD_CMD,
+    								   pMCI_Device->pMCI_DeviceFeatures[status].Relative_Card_Address << 16) == AT91C_CMD_SEND_OK)
+    	return AT91C_CARD_SELECTED_OK;
+    return AT91C_CARD_SELECTED_ERROR;
+}

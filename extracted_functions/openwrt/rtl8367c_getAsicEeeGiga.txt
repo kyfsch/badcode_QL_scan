@@ -1,0 +1,14 @@
+ret_t rtl8367c_getAsicEeeGiga(rtk_uint32 port, rtk_uint32 *enable)
+{
+    rtk_api_ret_t   retVal;
+    rtk_uint32      regData;
+
+    if(port >= RTL8367C_PORTNO)
+        return RT_ERR_PORT_ID;
+
+    if((retVal = rtl8367c_getAsicPHYOCPReg(port, EEE_OCP_PHY_ADDR, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    *enable = (regData & (0x0001 << 2)) ? ENABLED : DISABLED;
+    return RT_ERR_OK;
+}

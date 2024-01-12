@@ -1,0 +1,4 @@
+void expr_fprint(struct expr *e, FILE *out)
+{
+	expr_print(e, expr_print_file_helper, out, E_NONE);
+}

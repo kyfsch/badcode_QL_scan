@@ -1,0 +1,6 @@
+swconfig_close_portlist(struct swconfig_callback *cb, void *arg)
+{
+	if (cb->nest[0])
+		nla_nest_end(cb->msg, cb->nest[0]);
+	return 0;
+}

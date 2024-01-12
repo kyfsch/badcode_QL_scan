@@ -1,0 +1,6 @@
+static int radius_init(struct radius_state *s)
+{
+	memset(s, 0, sizeof(*s));
+	radius_userdata_init(&s->phase1);
+	radius_userdata_init(&s->phase2);
+}

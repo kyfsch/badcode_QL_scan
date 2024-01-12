@@ -1,0 +1,39 @@
+static void msdc_pm(pm_message_t state, void *data)
+{
+	struct msdc_host *host = (struct msdc_host *)data;
+	int evt = state.event;
+
+	if (evt == PM_EVENT_USER_RESUME || evt == PM_EVENT_USER_SUSPEND) {
+		INIT_MSG("USR_%s: suspend<%d> power<%d>",
+			evt == PM_EVENT_USER_RESUME ? "EVENT_USER_RESUME" : "EVENT_USER_SUSPEND",
+			host->suspend, host->power_mode);
+	}
+
+	if (evt == PM_EVENT_SUSPEND || evt == PM_EVENT_USER_SUSPEND) {
+		if (host->suspend) /* already suspend */  /* default 0*/
+			return;
+
+		/* for memory card. already power off by mmc */
+		if (evt == PM_EVENT_SUSPEND && host->power_mode == MMC_POWER_OFF)
+			return;
+
+		host->suspend = 1;
+		host->pm_state = state;  /* default PMSG_RESUME */
+
+	} else if (evt == PM_EVENT_RESUME || evt == PM_EVENT_USER_RESUME) {
+		if (!host->suspend) {
+			//ERR_MSG("warning: already resume");
+			return;
+		}
+
+		/* No PM resume when USR suspend */
+		if (evt == PM_EVENT_RESUME && host->pm_state.event == PM_EVENT_USER_SUSPEND) {
+			ERR_MSG("PM Resume when in USR Suspend");		/* won't happen. */
+			return;
+		}
+
+		host->suspend = 0;
+		host->pm_state = state;
+
+	}
+}

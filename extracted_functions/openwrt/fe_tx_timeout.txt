@@ -1,0 +1,28 @@
+static void fe_tx_timeout(struct net_device *dev, unsigned int txqueue)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+	struct fe_tx_ring *ring = &priv->tx_ring;
+
+	priv->netdev->stats.tx_errors++;
+	netif_err(priv, tx_err, dev,
+		  "transmit timed out\n");
+	netif_info(priv, drv, dev, "dma_cfg:%08x\n",
+		   fe_reg_r32(FE_REG_PDMA_GLO_CFG));
+	netif_info(priv, drv, dev, "tx_ring=%d, "
+		   "base=%08x, max=%u, ctx=%u, dtx=%u, fdx=%hu, next=%hu\n",
+		   0, fe_reg_r32(FE_REG_TX_BASE_PTR0),
+		   fe_reg_r32(FE_REG_TX_MAX_CNT0),
+		   fe_reg_r32(FE_REG_TX_CTX_IDX0),
+		   fe_reg_r32(FE_REG_TX_DTX_IDX0),
+		   ring->tx_free_idx,
+		   ring->tx_next_idx);
+	netif_info(priv, drv, dev,
+		   "rx_ring=%d, base=%08x, max=%u, calc=%u, drx=%u\n",
+		   0, fe_reg_r32(FE_REG_RX_BASE_PTR0),
+		   fe_reg_r32(FE_REG_RX_MAX_CNT0),
+		   fe_reg_r32(FE_REG_RX_CALC_IDX0),
+		   fe_reg_r32(FE_REG_RX_DRX_IDX0));
+
+	if (!test_and_set_bit(FE_FLAG_RESET_PENDING, priv->pending_flags))
+		schedule_work(&priv->pending_work);
+}

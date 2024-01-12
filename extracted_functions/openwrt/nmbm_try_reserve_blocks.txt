@@ -1,0 +1,17 @@
+static bool nmbm_try_reserve_blocks(struct nmbm_instance *ni, uint32_t ba,
+				    uint32_t *nba, uint32_t count,
+				    int32_t min_count, int32_t limit)
+{
+	int32_t nblocks = count;
+	bool success;
+
+	while (nblocks >= min_count) {
+		success = nmbm_block_walk(ni, true, ba, nba, nblocks, limit);
+		if (success)
+			return true;
+
+		nblocks--;
+	}
+
+	return false;
+}

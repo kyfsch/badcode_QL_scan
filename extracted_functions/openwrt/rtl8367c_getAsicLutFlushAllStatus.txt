@@ -1,0 +1,7 @@
+ret_t rtl8367c_getAsicLutFlushAllStatus(rtk_uint32 *pBusyStatus)
+{
+    if(NULL == pBusyStatus)
+        return RT_ERR_NULL_POINTER;
+
+    return rtl8367c_getAsicRegBit(RTL8367C_REG_L2_FLUSH_CTRL3, RTL8367C_L2_FLUSH_CTRL3_OFFSET, pBusyStatus);
+}

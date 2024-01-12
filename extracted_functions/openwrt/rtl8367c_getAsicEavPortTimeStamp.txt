@@ -1,0 +1,85 @@
+ret_t rtl8367c_getAsicEavPortTimeStamp(rtk_uint32 port, rtk_uint32 type, rtl8367c_ptp_time_stamp_t* timeStamp)
+{
+    ret_t retVal;
+    rtk_uint32 sec_h, sec_l, nsec8_h, nsec8_l;
+    rtk_uint32 nano_second_8;
+
+    if(port > 9)
+        return RT_ERR_PORT_ID;
+    if(type >= PTP_PKT_TYPE_END)
+        return RT_ERR_INPUT;
+
+    if(port < 5){
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_SEQ_ID(port, type), &timeStamp->sequence_id))!=  RT_ERR_OK)
+            return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_PORT_SEC_H(port) , &sec_h)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_PORT_SEC_L(port), &sec_l)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_PORT_NSEC_H(port) , RTL8367C_PORT_NSEC_H_MASK,&nsec8_h)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_PORT_NSEC_L(port) , &nsec8_l)) != RT_ERR_OK)
+           return retVal;
+    }else if(port == 5){
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P5_TX_SYNC_SEQ_ID+type, &timeStamp->sequence_id))!=  RT_ERR_OK)
+            return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P5_PORT_SEC_31_16, &sec_h)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P5_PORT_SEC_15_0, &sec_l)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_P5_PORT_NSEC_26_16 , RTL8367C_PORT_NSEC_H_MASK,&nsec8_h)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P5_PORT_NSEC_15_0, &nsec8_l)) != RT_ERR_OK)
+           return retVal;
+    }else if(port == 6){
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P6_TX_SYNC_SEQ_ID+type, &timeStamp->sequence_id))!=  RT_ERR_OK)
+            return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P6_PORT_SEC_31_16, &sec_h)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P6_PORT_SEC_15_0, &sec_l)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_P6_PORT_NSEC_26_16 , RTL8367C_PORT_NSEC_H_MASK,&nsec8_h)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P6_PORT_NSEC_15_0, &nsec8_l)) != RT_ERR_OK)
+           return retVal;
+    }else if(port == 7){
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P7_TX_SYNC_SEQ_ID+type, &timeStamp->sequence_id))!=  RT_ERR_OK)
+            return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P7_PORT_SEC_31_16, &sec_h)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P7_PORT_SEC_15_0, &sec_l)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_P7_PORT_NSEC_26_16 , RTL8367C_PORT_NSEC_H_MASK,&nsec8_h)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P7_PORT_NSEC_15_0, &nsec8_l)) != RT_ERR_OK)
+           return retVal;
+    }else if(port == 8){
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P8_TX_SYNC_SEQ_ID+type, &timeStamp->sequence_id))!=  RT_ERR_OK)
+            return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P8_PORT_SEC_31_16, &sec_h)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P8_PORT_SEC_15_0, &sec_l)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_P8_PORT_NSEC_26_16 , RTL8367C_PORT_NSEC_H_MASK,&nsec8_h)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P8_PORT_NSEC_15_0, &nsec8_l)) != RT_ERR_OK)
+           return retVal;
+    }else if(port == 9){
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P9_TX_SYNC_SEQ_ID+type, &timeStamp->sequence_id))!=  RT_ERR_OK)
+            return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P9_PORT_SEC_31_16, &sec_h)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P9_PORT_SEC_15_0, &sec_l)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_P9_PORT_NSEC_26_16 , RTL8367C_PORT_NSEC_H_MASK,&nsec8_h)) != RT_ERR_OK)
+           return retVal;
+        if((retVal = rtl8367c_getAsicReg(RTL8367C_REG_P9_PORT_NSEC_15_0, &nsec8_l)) != RT_ERR_OK)
+           return retVal;
+    }
+
+    timeStamp->second = (sec_h<<16) | sec_l;
+    nano_second_8 = (nsec8_h<<16) | nsec8_l;
+    timeStamp->nano_second = nano_second_8<<3;
+
+    return RT_ERR_OK;
+}

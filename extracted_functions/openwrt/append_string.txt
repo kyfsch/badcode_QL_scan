@@ -1,0 +1,7 @@
+		append_string(yytext, yyleng);
+		if (!first_ts)
+			first_ts = last_ts;
+	}
+	YY_BREAK
+case YY_STATE_EOF(HELP):
+{

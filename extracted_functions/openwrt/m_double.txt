@@ -1,0 +1,3 @@
+static inline void m_double(const char *id, double value) {
+	blobmsg_add_double(&b, id, value);
+}

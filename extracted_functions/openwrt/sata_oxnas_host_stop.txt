@@ -1,0 +1,4 @@
+static void sata_oxnas_host_stop(struct ata_host *host_set)
+{
+	DPRINTK("\n");
+}

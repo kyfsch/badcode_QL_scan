@@ -1,0 +1,20 @@
+static int aes_setkey(struct crypto_ablkcipher *tfm, const u8 *in_key,
+                      unsigned int keylen)
+{
+    struct aes_ctx *ctx = crypto_ablkcipher_ctx(tfm); 
+    unsigned long *flags = (unsigned long *) &tfm->base.crt_flags;
+
+    DPRINTF(2, "set_key in %s\n", __FILE__);
+
+    if (keylen != 16 && keylen != 24 && keylen != 32) {
+        *flags |= CRYPTO_TFM_RES_BAD_KEY_LEN;
+        return -EINVAL;
+    }
+
+    ctx->key_length = keylen;
+    DPRINTF(0, "ctx @%p, keylen %d, ctx->key_length %d\n", ctx, keylen, ctx->key_length);
+    memcpy ((u8 *) (ctx->buf), in_key, keylen);
+
+    return 0;
+
+}

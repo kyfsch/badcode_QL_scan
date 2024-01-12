@@ -1,0 +1,90 @@
+bcm6368_enetsw_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+{
+	struct bcm6368_enetsw *priv = netdev_priv(ndev);
+	struct platform_device *pdev = priv->pdev;
+	struct device *dev = &pdev->dev;
+	struct bcm6368_enetsw_desc *desc;
+	u32 len_stat;
+	netdev_tx_t ret;
+	dma_addr_t p;
+
+	/* lock against tx reclaim */
+	spin_lock(&priv->tx_lock);
+
+	/* make sure the tx hw queue is not full, should not happen
+	 * since we stop queue before it's the case */
+	if (unlikely(!priv->tx_desc_count)) {
+		netif_stop_queue(ndev);
+		dev_err(dev, "xmit called with no tx desc available?\n");
+		ret = NETDEV_TX_BUSY;
+		goto out_unlock;
+	}
+
+	/* pad small packets */
+	if (skb->len < (ETH_ZLEN + ETH_FCS_LEN)) {
+		int needed = (ETH_ZLEN + ETH_FCS_LEN) - skb->len;
+		char *data;
+
+		if (unlikely(skb_tailroom(skb) < needed)) {
+			struct sk_buff *nskb;
+
+			nskb = skb_copy_expand(skb, 0, needed, GFP_ATOMIC);
+			if (!nskb) {
+				ret = NETDEV_TX_BUSY;
+				goto out_unlock;
+			}
+
+			dev_kfree_skb(skb);
+			skb = nskb;
+		}
+		data = skb_put_zero(skb, needed);
+	}
+
+	/* fill descriptor */
+	p = dma_map_single(dev, skb->data, skb->len, DMA_TO_DEVICE);
+	if (unlikely(dma_mapping_error(dev, p))) {
+		dev_kfree_skb(skb);
+		ret = NETDEV_TX_OK;
+		goto out_unlock;
+	}
+
+	/* point to the next available desc */
+	desc = &priv->tx_desc_cpu[priv->tx_curr_desc];
+	priv->tx_skb[priv->tx_curr_desc] = skb;
+	desc->address = p;
+
+	len_stat = (skb->len << DMADESC_LENGTH_SHIFT) & DMADESC_LENGTH_MASK;
+	len_stat |= DMADESC_ESOP_MASK | DMADESC_APPEND_CRC |
+		    DMADESC_OWNER_MASK;
+
+	priv->tx_curr_desc++;
+	if (priv->tx_curr_desc == priv->tx_ring_size) {
+		priv->tx_curr_desc = 0;
+		len_stat |= DMADESC_WRAP_MASK;
+	}
+	priv->tx_desc_count--;
+
+	/* dma might be already polling, make sure we update desc
+	 * fields in correct order */
+	wmb();
+	desc->len_stat = len_stat;
+	wmb();
+
+	netdev_sent_queue(ndev, skb->len);
+
+	/* kick tx dma */
+	dmac_writel(priv, DMAC_CHANCFG_EN_MASK, DMAC_CHANCFG_REG,
+		    priv->tx_chan);
+
+	/* stop queue if no more desc available */
+	if (!priv->tx_desc_count)
+		netif_stop_queue(ndev);
+
+	ndev->stats.tx_bytes += skb->len;
+	ndev->stats.tx_packets++;
+	ret = NETDEV_TX_OK;
+
+out_unlock:
+	spin_unlock(&priv->tx_lock);
+	return ret;
+}

@@ -1,0 +1,14 @@
+rtk_api_ret_t rtk_svlan_unassign_action_get(rtk_svlan_unassign_action_t *pAction)
+{
+    rtk_api_ret_t   retVal;
+
+    /* Check initialization state */
+    RTK_CHK_INIT_STATE();
+
+    if(NULL == pAction)
+        return RT_ERR_NULL_POINTER;
+
+    retVal = rtl8367c_getAsicSvlanEgressUnassign(pAction);
+
+    return retVal;
+}

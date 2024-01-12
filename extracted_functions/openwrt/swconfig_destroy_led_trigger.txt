@@ -1,0 +1,1 @@
+swconfig_destroy_led_trigger(struct switch_dev *swdev) { }
