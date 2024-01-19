@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 
-#Usage: [your program that outputs a code string] | python3 flawfinder_on_str.py
+#Usage: [your program that outputs function string] | python3 flawfinder_on_str.py
 def run_flawfinder(): 
   # pipes the given string into flawfinder using a temporary file and cleans up, STDIO output
   txt_in = sys.stdin.read()
