@@ -1,0 +1,2 @@
+
+#define RTK_WHOLE_SYSTEM 0
